@@ -80,7 +80,7 @@ function loadFrame(frameIndex) {
     
     const pixels = document.querySelectorAll('.pixel');
     
-    // Nettoyer tous les points rouges existants
+    // Nettoyer tous les points existants
     document.querySelectorAll('.previous-pixel-marker').forEach(marker => marker.remove());
     
     // Réinitialiser les pixels
@@ -97,12 +97,14 @@ function loadFrame(frameIndex) {
         }
     });
     
-    // Ajouter les points rouges uniquement pour la frame précédente
+    // Ajouter les points colorés pour la frame précédente
     if (frameIndex > 0 && frames[frameIndex - 1]) {
         frames[frameIndex - 1].forEach((pixel, i) => {
             if (!pixel.isEmpty) {
                 const marker = document.createElement('div');
                 marker.className = 'previous-pixel-marker';
+                // Utiliser la couleur du pixel de la frame précédente
+                marker.style.backgroundColor = pixel.color;
                 pixels[i].appendChild(marker);
             }
         });
