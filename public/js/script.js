@@ -464,8 +464,8 @@ styleSheet.textContent = `
 #pixelGrid {
     position: relative;
     display: grid;
-    grid-template-columns: repeat(32, 22px);
-    grid-template-rows: repeat(32, 22px);
+    grid-template-columns: repeat(32, 16px);  /* De 22px à 16px */
+    grid-template-rows: repeat(32, 16px);     /* De 22px à 16px */
     gap: 1px;
     background-color: #ddd;
     padding: 1px;
