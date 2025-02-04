@@ -81,7 +81,7 @@ function loadFrame(frameIndex) {
     const pixels = document.querySelectorAll('.pixel');
     
     // Nettoyer tous les points existants
-    document.querySelectorAll('.previous-pixel-marker').forEach(marker => marker.remove());
+    document.querySelectorAll('.previous-pixel-marker, .next-pixel-marker-1, .next-pixel-marker-2').forEach(marker => marker.remove());
     
     // Réinitialiser les pixels
     pixels.forEach(pixel => {
@@ -97,15 +97,31 @@ function loadFrame(frameIndex) {
         }
     });
     
-    // Ajouter les points colorés pour la frame précédente
+    // Ajouter le point pour la frame précédente
     if (frameIndex > 0 && frames[frameIndex - 1]) {
         frames[frameIndex - 1].forEach((pixel, i) => {
             if (!pixel.isEmpty) {
                 const marker = document.createElement('div');
                 marker.className = 'previous-pixel-marker';
-                // Utiliser la couleur du pixel de la frame précédente
                 marker.style.backgroundColor = pixel.color;
                 pixels[i].appendChild(marker);
+            }
+        });
+    }
+    
+    // Ajouter les deux points pour la frame suivante
+    if (frames[frameIndex + 1]) {
+        frames[frameIndex + 1].forEach((pixel, i) => {
+            if (!pixel.isEmpty) {
+                const marker1 = document.createElement('div');
+                marker1.className = 'next-pixel-marker-1';
+                marker1.style.backgroundColor = pixel.color;
+                pixels[i].appendChild(marker1);
+                
+                const marker2 = document.createElement('div');
+                marker2.className = 'next-pixel-marker-2';
+                marker2.style.backgroundColor = pixel.color;
+                pixels[i].appendChild(marker2);
             }
         });
     }
@@ -240,7 +256,7 @@ function clearAllFrames() {
         });
 
         // Nettoyer les marqueurs
-        document.querySelectorAll('.previous-pixel-marker').forEach(marker => marker.remove());
+        document.querySelectorAll('.previous-pixel-marker, .next-pixel-marker-1, .next-pixel-marker-2').forEach(marker => marker.remove());
 
         // Mettre à jour l'interface
         updateFramesList();
@@ -435,7 +451,7 @@ function previewAnimation() {
     let frameIndex = 0;
     const interval = setInterval(() => {
         // Nettoyer les points rouges pendant l'animation
-        document.querySelectorAll('.previous-pixel-marker').forEach(marker => marker.remove());
+        document.querySelectorAll('.previous-pixel-marker, .next-pixel-marker-1, .next-pixel-marker-2').forEach(marker => marker.remove());
         
         const pixels = document.querySelectorAll('.pixel');
         frames[frameIndex].forEach((pixel, i) => {
@@ -466,46 +482,53 @@ styleSheet.textContent = `
 #pixelGrid {
     position: relative;
     display: grid;
-    grid-template-columns: repeat(32, 16px);  /* De 22px à 16px */
-    grid-template-rows: repeat(32, 16px);     /* De 22px à 16px */
+    grid-template-columns: repeat(32, 18px);
+    grid-template-rows: repeat(32, 18px);
     gap: 1px;
     background-color: #ddd;
     padding: 1px;
     border: 1px solid #999;
 }
 
-.main-grid {
-    display: grid;
-    grid-template-columns: repeat(32, 1fr);
-    grid-template-rows: repeat(32, 1fr);
-    gap: 1px;
-    position: relative;
-    z-index: 1;
-}
-
-.frame-overlay {
-    position: absolute;
-    top: 1px;
-    left: 1px;
-    right: 1px;
-    bottom: 1px;
-    display: grid;
-    grid-template-columns: repeat(32, 1fr);
-    grid-template-rows: repeat(32, 1fr);
-    gap: 1px;
-    pointer-events: none;
-    z-index: 2;
-}
-
-.pixel, .overlay-pixel {
+.pixel {
     width: 100%;
     height: 100%;
     background-color: white;
-    transition: background-color 0.1s;
+    position: relative;
+    border: none;
 }
 
-.overlay-pixel {
-    transition: opacity 0.2s;
+.previous-pixel-marker {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.next-pixel-marker-1 {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.next-pixel-marker-2 {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    top: 65%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    pointer-events: none;
 }
 `;
 document.head.appendChild(styleSheet);

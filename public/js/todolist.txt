@@ -1,0 +1,2 @@
+Création de bouton pour on/off les filigramme de la frame precedent et aussi un bouton on/off les filigramme de la frame suivante.
+donner la possibilité de pixelisé n'importe quelle photo pour la mettre dans la frame.
