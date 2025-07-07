@@ -1,6 +1,34 @@
-# Pixel Editor
+# Éditeur Pixel Art
 
-Éditeur de pixels indépendant permettant de créer et modifier des images pixel par pixel.
+Un éditeur de pixel art interactif avec support des animations et interface responsive.
+
+## 🎨 Fonctionnalités
+
+- **Création de pixel art** : Grille 32x32 pixels
+- **Animations** : Système multi-frames avec prévisualisation
+- **Interface responsive** : Optimisé pour mobile, tablette et desktop
+- **Sauvegarde** : Export/import de projets en JSON
+- **Outils avancés** : Palette de couleurs, gomme, copier/coller de frames
+
+## 📱 Compatible
+
+- Desktop
+- Mobile (iOS/Android)
+- Tablettes
+
+## 🚀 Technologies
+
+- Node.js + Express
+- HTML5/CSS3/JavaScript
+- Interface tactile optimisée
+- Déployé sur Vercel
+
+## 🌐 Demo
+
+Accessible en ligne via Vercel deployment.
+
+---
+*Dernière mise à jour : Interface mobile responsive + Configuration Vercel*
 
 ## Installation
 
