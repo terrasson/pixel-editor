@@ -721,11 +721,6 @@ function initMobileFeatures() {
         
         // Optimiser les interactions tactiles
         optimizeTouchInteractions();
-        
-        // Ajouter le menu contextuel mobile si l'écran est petit
-        if (window.innerWidth <= 480) {
-            addMobileMenu();
-        }
     }
     
     // Gérer le changement d'orientation
@@ -776,31 +771,23 @@ function optimizeTouchInteractions() {
     }, { passive: false });
 }
 
-function addMobileMenu() {
-    // Créer le bouton de menu mobile
-    const menuButton = document.createElement('button');
-    menuButton.className = 'mobile-menu-toggle';
-    menuButton.innerHTML = '☰';
-    menuButton.title = 'Menu';
-    
-    let toolbarVisible = true;
+// Fonction pour gérer l'affichage/masquage de la toolbar
+function toggleToolbar() {
     const toolbar = document.querySelector('.toolbar');
+    const menuButton = document.getElementById('menuToggle');
     
-    menuButton.addEventListener('click', () => {
-        toolbarVisible = !toolbarVisible;
+    if (toolbar && menuButton) {
+        toolbar.classList.toggle('hidden');
         
-        if (toolbarVisible) {
-            toolbar.classList.remove('collapsed');
-            toolbar.classList.add('expanded');
+        // Changer l'icône du bouton
+        if (toolbar.classList.contains('hidden')) {
             menuButton.innerHTML = '✕';
+            menuButton.title = 'Afficher les outils';
         } else {
-            toolbar.classList.remove('expanded');
-            toolbar.classList.add('collapsed');
             menuButton.innerHTML = '☰';
+            menuButton.title = 'Cacher les outils';
         }
-    });
-    
-    document.body.appendChild(menuButton);
+    }
 }
 
 function adjustForOrientation() {
@@ -943,6 +930,9 @@ function initEventListeners() {
     
     // Bouton gomme
     document.getElementById('eraserBtn')?.addEventListener('click', toggleEraser);
+    
+    // Menu hamburger
+    document.getElementById('menuToggle')?.addEventListener('click', toggleToolbar);
     
     // Initialiser les autres fonctionnalités
     initColorPicker();
