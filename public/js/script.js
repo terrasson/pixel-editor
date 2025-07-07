@@ -338,8 +338,22 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFrame(0);
     updateFramesList();
     
+    // Initialiser les fonctionnalités mobiles
+    initMobileFeatures();
+    
     // Modifier l'événement du bouton de sauvegarde
     document.getElementById('saveBtn').addEventListener('click', saveToFile);
+    
+    // Ajouter les event listeners pour les nouveaux boutons
+    document.getElementById('saveServerBtn').addEventListener('click', saveToServer);
+    
+    // Utiliser la version mobile du chargement si c'est un appareil mobile
+    const isMobileDevice = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+    document.getElementById('loadServerBtn').addEventListener('click', isMobileDevice ? loadFromServerMobile : loadFromServer);
+    
+    document.getElementById('loadBtn').addEventListener('click', loadFromFile);
+    document.getElementById('previewBtn').addEventListener('click', previewAnimation);
+    document.getElementById('clearBtn').addEventListener('click', clearAllFrames);
 });
 
 async function saveToFile() {
@@ -356,20 +370,16 @@ async function saveToFile() {
             lastModified: new Date().toISOString()
         };
 
-        // Utiliser la boîte de dialogue système de sauvegarde
-        const handle = await window.showSaveFilePicker({
-            suggestedName: `${fileName}.json`,
-            types: [{
-                description: 'Fichier Pixel Art',
-                accept: {
-                    'application/json': ['.json'],
-                },
-            }],
-        });
-
-        const writable = await handle.createWritable();
-        await writable.write(JSON.stringify(data, null, 2));
-        await writable.close();
+        // Utiliser la méthode de téléchargement compatible avec tous les navigateurs
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileName}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
         alert('Projet sauvegardé avec succès !');
     } catch (err) {
@@ -690,4 +700,292 @@ function saveProject() {
     saveDialog.querySelector('#dialogCancel').addEventListener('click', () => {
         saveDialog.remove();
     });
+}
+
+// Fonction pour sauvegarder sur le serveur
+async function saveToServer() {
+    try {
+        const fileName = await showSaveDialog();
+        if (!fileName) return;
+
+        const data = {
+            name: fileName,
+            frames: frames,
+            currentFrame: currentFrame
+        };
+
+        const response = await fetch('/api/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Projet sauvegardé sur le serveur avec succès !');
+        } else {
+            alert('Erreur lors de la sauvegarde: ' + result.error);
+        }
+    } catch (err) {
+        console.error('Erreur lors de la sauvegarde:', err);
+        alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+    }
+}
+
+// Fonction pour charger depuis le serveur
+async function loadFromServer() {
+    try {
+        const projects = await fetch('/api/projects').then(res => res.json());
+        
+        if (projects.length === 0) {
+            alert('Aucun projet sauvegardé trouvé.');
+            return;
+        }
+
+        const projectList = projects.map(p => 
+            `${p.name} (${new Date(p.lastModified).toLocaleDateString()})`
+        ).join('\n');
+
+        const projectName = prompt(
+            'Projets disponibles:\n' + projectList + '\n\nEntrez le nom du projet à charger:'
+        );
+
+        if (!projectName) return;
+
+        const project = projects.find(p => p.name === projectName);
+        if (!project) {
+            alert('Projet non trouvé.');
+            return;
+        }
+
+        const response = await fetch(`/api/load/${project.filename}`);
+        const data = await response.json();
+
+        frames = data.frames;
+        currentFrame = data.currentFrame;
+        
+        const title = document.getElementById('projectTitle');
+        if (title) {
+            title.textContent = data.name || 'Projet sans nom';
+        }
+        
+        updateFramesList();
+        loadFrame(currentFrame);
+        
+        alert('Projet chargé avec succès !');
+    } catch (err) {
+        console.error('Erreur lors du chargement:', err);
+        alert('Erreur lors du chargement. Veuillez réessayer.');
+    }
+}
+
+// Fonctionnalités mobiles
+function initMobileFeatures() {
+    // Détection mobile
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isTouch = 'ontouchstart' in window;
+    
+    if (isMobile || isTouch) {
+        document.body.classList.add('is-mobile');
+        
+        // Optimiser les interactions tactiles
+        optimizeTouchInteractions();
+        
+        // Ajouter le menu contextuel mobile si l'écran est petit
+        if (window.innerWidth <= 480) {
+            addMobileMenu();
+        }
+    }
+    
+    // Gérer le changement d'orientation
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+            adjustForOrientation();
+        }, 100);
+    });
+    
+    window.addEventListener('resize', () => {
+        adjustForOrientation();
+    });
+}
+
+function optimizeTouchInteractions() {
+    // Optimiser le dessin tactile
+    let touchStarted = false;
+    
+    document.getElementById('pixelGrid').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        touchStarted = true;
+        
+        const touch = e.touches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        
+        if (element && element.classList.contains('pixel')) {
+            startDrawing({ target: element });
+        }
+    }, { passive: false });
+    
+    document.getElementById('pixelGrid').addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        
+        if (touchStarted) {
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if (element && element.classList.contains('pixel')) {
+                draw({ target: element });
+            }
+        }
+    }, { passive: false });
+    
+    document.getElementById('pixelGrid').addEventListener('touchend', (e) => {
+        e.preventDefault();
+        touchStarted = false;
+        stopDrawing();
+    }, { passive: false });
+}
+
+function addMobileMenu() {
+    // Créer le bouton de menu mobile
+    const menuButton = document.createElement('button');
+    menuButton.className = 'mobile-menu-toggle';
+    menuButton.innerHTML = '☰';
+    menuButton.title = 'Menu';
+    
+    let toolbarVisible = true;
+    const toolbar = document.querySelector('.toolbar');
+    
+    menuButton.addEventListener('click', () => {
+        toolbarVisible = !toolbarVisible;
+        
+        if (toolbarVisible) {
+            toolbar.classList.remove('collapsed');
+            toolbar.classList.add('expanded');
+            menuButton.innerHTML = '✕';
+        } else {
+            toolbar.classList.remove('expanded');
+            toolbar.classList.add('collapsed');
+            menuButton.innerHTML = '☰';
+        }
+    });
+    
+    document.body.appendChild(menuButton);
+}
+
+function adjustForOrientation() {
+    // Ajuster la grille selon l'orientation
+    const grid = document.getElementById('pixelGrid');
+    const container = document.querySelector('.grid-container');
+    
+    if (window.innerHeight < window.innerWidth) {
+        // Mode paysage - optimiser pour la largeur
+        const maxSize = Math.min(window.innerHeight * 0.7, window.innerWidth * 0.6);
+        grid.style.maxWidth = `${maxSize}px`;
+        grid.style.maxHeight = `${maxSize}px`;
+    } else {
+        // Mode portrait - optimiser pour la hauteur
+        const maxSize = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.5);
+        grid.style.maxWidth = `${maxSize}px`;
+        grid.style.maxHeight = `${maxSize}px`;
+    }
+}
+
+// Améliorer les dialogues pour mobile
+function createMobileDialog(title, content) {
+    const dialog = document.createElement('div');
+    dialog.className = 'mobile-dialog';
+    
+    dialog.innerHTML = `
+        <div class="mobile-dialog-content">
+            <div class="mobile-dialog-header">
+                <h3>${title}</h3>
+                <button class="mobile-dialog-close">✕</button>
+            </div>
+            <div class="mobile-dialog-body">
+                ${content}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Fermer le dialogue
+    dialog.querySelector('.mobile-dialog-close').addEventListener('click', () => {
+        dialog.remove();
+    });
+    
+    dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+            dialog.remove();
+        }
+    });
+    
+    return dialog;
+}
+
+// Fonction améliorée pour charger depuis le serveur sur mobile
+async function loadFromServerMobile() {
+    try {
+        const projects = await fetch('/api/projects').then(res => res.json());
+        
+        if (projects.length === 0) {
+            alert('Aucun projet sauvegardé trouvé.');
+            return;
+        }
+
+        // Créer une liste interactive pour mobile
+        const projectsList = projects.map(p => 
+            `<div class="project-item" data-filename="${p.filename}">
+                <div class="project-name">${p.name}</div>
+                <div class="project-date">${new Date(p.lastModified).toLocaleDateString()}</div>
+            </div>`
+        ).join('');
+
+        const dialog = createMobileDialog('Charger un projet', `
+            <div class="projects-list">
+                ${projectsList}
+            </div>
+            <button id="cancelLoad" class="dialog-button secondary">Annuler</button>
+        `);
+
+        // Gérer la sélection
+        dialog.querySelectorAll('.project-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const filename = item.dataset.filename;
+                
+                try {
+                    const response = await fetch(`/api/load/${filename}`);
+                    const data = await response.json();
+
+                    frames = data.frames;
+                    currentFrame = data.currentFrame;
+                    
+                    const title = document.getElementById('projectTitle');
+                    if (title) {
+                        title.textContent = data.name || 'Projet sans nom';
+                    }
+                    
+                    updateFramesList();
+                    loadFrame(currentFrame);
+                    
+                    dialog.remove();
+                    alert('Projet chargé avec succès !');
+                } catch (err) {
+                    console.error('Erreur lors du chargement:', err);
+                    alert('Erreur lors du chargement.');
+                }
+            });
+        });
+
+        dialog.querySelector('#cancelLoad').addEventListener('click', () => {
+            dialog.remove();
+        });
+
+    } catch (err) {
+        console.error('Erreur lors du chargement:', err);
+        alert('Erreur lors du chargement. Veuillez réessayer.');
+    }
 }
