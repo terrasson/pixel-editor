@@ -30,7 +30,16 @@ function startDrawing(e) {
 
 function draw(e) {
     if (!isDrawing) return;
-    if (e.target.classList.contains('pixel')) {
+    
+    // Vérification stricte : le pixel doit être dans la grille ET être un élément pixel valide
+    const pixelGrid = document.getElementById('pixelGrid');
+    if (e.target.classList.contains('pixel') && 
+        pixelGrid && 
+        pixelGrid.contains(e.target) &&
+        !e.target.classList.contains('previous-pixel-marker') &&
+        !e.target.classList.contains('next-pixel-marker-1') &&
+        !e.target.classList.contains('next-pixel-marker-2')) {
+        
         if (isErasing) {
             // Mode gomme
             e.target.style.backgroundColor = '#FFFFFF';
@@ -85,6 +94,35 @@ function initColorPicker() {
     });
 }
 
+// Fonctions de nettoyage pour éviter les débordements
+function cleanUpMarkers() {
+    // Supprimer tous les marqueurs existants
+    document.querySelectorAll('.previous-pixel-marker, .next-pixel-marker-1, .next-pixel-marker-2').forEach(marker => {
+        marker.remove();
+    });
+}
+
+function cleanUpOutsideElements() {
+    // Supprimer tout élément de pixel qui ne serait pas dans la grille
+    const pixelGrid = document.getElementById('pixelGrid');
+    if (!pixelGrid) return;
+    
+    // Nettoyer les éléments potentiellement mal placés
+    document.querySelectorAll('.pixel').forEach(pixel => {
+        if (!pixelGrid.contains(pixel)) {
+            pixel.remove();
+        }
+    });
+    
+    // Nettoyer les marqueurs orphelins
+    document.querySelectorAll('.previous-pixel-marker, .next-pixel-marker-1, .next-pixel-marker-2').forEach(marker => {
+        const parent = marker.parentElement;
+        if (!parent || !parent.classList.contains('pixel') || !pixelGrid.contains(parent)) {
+            marker.remove();
+        }
+    });
+}
+
 // Gestion des frames
 function saveCurrentFrame() {
     const pixels = document.querySelectorAll('.pixel');
@@ -100,8 +138,11 @@ function loadFrame(frameIndex) {
     
     const pixels = document.querySelectorAll('.pixel');
     
-    // Nettoyer tous les points existants
-    document.querySelectorAll('.previous-pixel-marker, .next-pixel-marker-1, .next-pixel-marker-2').forEach(marker => marker.remove());
+    // Nettoyer tous les marqueurs existants de manière stricte
+    cleanUpMarkers();
+    
+    // Nettoyage de sécurité : supprimer tout élément indésirable en dehors de la grille
+    cleanUpOutsideElements();
     
     // Réinitialiser les pixels
     pixels.forEach(pixel => {
@@ -388,8 +429,8 @@ function loadFromFile() {
 function previewAnimation() {
     let frameIndex = 0;
     const interval = setInterval(() => {
-        // Nettoyer les points rouges pendant l'animation
-        document.querySelectorAll('.previous-pixel-marker, .next-pixel-marker-1, .next-pixel-marker-2').forEach(marker => marker.remove());
+        // Nettoyer pendant l'animation
+        cleanUpMarkers();
         
         const pixels = document.querySelectorAll('.pixel');
         frames[frameIndex].forEach((pixel, i) => {
@@ -943,6 +984,10 @@ function initEventListeners() {
 document.addEventListener('DOMContentLoaded', () => {
     initGrid();
     initEventListeners();
+    
+    // Nettoyage initial pour s'assurer qu'aucun élément indésirable n'existe
+    cleanUpOutsideElements();
+    
     updateFramesList();
     loadFrame(0);
 });
