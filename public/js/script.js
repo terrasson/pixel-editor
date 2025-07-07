@@ -779,12 +779,12 @@ function toggleToolbar() {
     if (toolbar && menuButton) {
         toolbar.classList.toggle('hidden');
         
-        // Changer l'icône du bouton
+        // Changer l'icône du bouton (logique inversée)
         if (toolbar.classList.contains('hidden')) {
-            menuButton.innerHTML = '✕';
+            menuButton.innerHTML = '☰';
             menuButton.title = 'Afficher les outils';
         } else {
-            menuButton.innerHTML = '☰';
+            menuButton.innerHTML = '✕';
             menuButton.title = 'Cacher les outils';
         }
     }
