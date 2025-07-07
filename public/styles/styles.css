@@ -75,19 +75,20 @@ html, body {
     text-align: center;
 }
 
-/* Toolbar principal avec boutons bleus compacts */
+/* Toolbar principal avec boutons bleus compacts - cachée par défaut */
 .toolbar {
-    padding: 6px;
+    padding: 0 6px;
     background-color: #f8f9fa;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: none;
     transition: all 0.3s ease;
     overflow: hidden;
+    max-height: 0;
 }
 
-.toolbar.hidden {
-    max-height: 0;
-    padding: 0 6px;
-    border-bottom: none;
+.toolbar.visible {
+    padding: 6px;
+    border-bottom: 1px solid #e0e0e0;
+    max-height: 200px;
 }
 
 /* Outils avec boutons optimisés et compacts */

@@ -777,15 +777,15 @@ function toggleToolbar() {
     const menuButton = document.getElementById('menuToggle');
     
     if (toolbar && menuButton) {
-        toolbar.classList.toggle('hidden');
+        toolbar.classList.toggle('visible');
         
-        // Changer l'icône du bouton (logique inversée)
-        if (toolbar.classList.contains('hidden')) {
-            menuButton.innerHTML = '☰';
-            menuButton.title = 'Afficher les outils';
-        } else {
+        // Changer l'icône du bouton
+        if (toolbar.classList.contains('visible')) {
             menuButton.innerHTML = '✕';
             menuButton.title = 'Cacher les outils';
+        } else {
+            menuButton.innerHTML = '☰';
+            menuButton.title = 'Afficher les outils';
         }
     }
 }
