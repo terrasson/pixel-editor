@@ -49,18 +49,38 @@ function stopDrawing() {
 }
 
 // Gestion des couleurs
+function toggleEraser() {
+    isErasing = !isErasing;
+    const eraserBtn = document.getElementById('eraserBtn');
+    if (eraserBtn) {
+        eraserBtn.classList.toggle('active');
+    }
+    document.getElementById('pixelGrid')?.classList.toggle('eraser-mode');
+}
+
+// Fonction améliorée pour gérer la gomme avec les couleurs
 function initColorPicker() {
     const colorPicker = document.getElementById('colorPicker');
+    const eraserBtn = document.getElementById('eraserBtn');
+    
     colorPicker.addEventListener('change', (e) => {
         currentColor = e.target.value;
         isErasing = false;
-        document.getElementById('eraserBtn')?.classList.remove('active');
+        if (eraserBtn) {
+            eraserBtn.classList.remove('active');
+            document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
+        }
     });
 
     document.querySelectorAll('.color-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             currentColor = btn.style.backgroundColor;
             colorPicker.value = rgbToHex(currentColor);
+            isErasing = false;
+            if (eraserBtn) {
+                eraserBtn.classList.remove('active');
+                document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
+            }
         });
     });
 }
@@ -263,98 +283,6 @@ function clearAllFrames() {
         loadFrame(currentFrame);
     }
 }
-
-// Ajouter la fonction toggleEraser
-function toggleEraser() {
-    isErasing = !isErasing;
-    const eraserBtn = document.getElementById('eraserBtn');
-    eraserBtn.classList.toggle('active');
-    document.getElementById('pixelGrid').classList.toggle('eraser-mode');
-}
-
-// Initialisation
-document.addEventListener('DOMContentLoaded', () => {
-    initGrid();
-    initColorPicker();
-    
-    // Ajouter le bouton gomme
-    const eraserBtn = document.createElement('button');
-    eraserBtn.textContent = 'Gomme';
-    eraserBtn.id = 'eraserBtn';
-    eraserBtn.addEventListener('click', toggleEraser);
-    
-    // L'ajouter après le color picker
-    const colorPicker = document.getElementById('colorPicker');
-    colorPicker.parentNode.insertBefore(eraserBtn, colorPicker.nextSibling);
-    
-    // Désactiver la gomme quand on change de couleur
-    colorPicker.addEventListener('change', (e) => {
-        currentColor = e.target.value;
-        isErasing = false;
-        eraserBtn.classList.remove('active');
-        document.getElementById('pixelGrid').classList.remove('eraser-mode');
-    });
-    
-    const deleteFrameBtn = document.createElement('button');
-    deleteFrameBtn.textContent = 'Supprimer la frame';
-    deleteFrameBtn.id = 'deleteFrameBtn';
-    deleteFrameBtn.addEventListener('click', deleteCurrentFrame);
-    
-    const clearBtn = document.getElementById('clearBtn');
-    clearBtn.parentNode.insertBefore(deleteFrameBtn, clearBtn.nextSibling);
-    
-    // Utiliser la nouvelle fonction clearAllFrames
-    document.getElementById('clearBtn').addEventListener('click', clearAllFrames);
-    
-    document.getElementById('addFrameBtn').addEventListener('click', addFrame);
-    document.getElementById('previewBtn').addEventListener('click', previewAnimation);
-    
-    // Ajouter les boutons copier/coller dans la barre d'outils
-    const copyFrameBtn = document.createElement('button');
-    copyFrameBtn.textContent = 'Copier la frame';
-    copyFrameBtn.id = 'copyFrameBtn';
-    copyFrameBtn.addEventListener('click', copyCurrentFrame);
-    
-    const pasteFrameBtn = document.createElement('button');
-    pasteFrameBtn.textContent = 'Coller la frame';
-    pasteFrameBtn.id = 'pasteFrameBtn';
-    pasteFrameBtn.disabled = true; // Désactivé par défaut
-    pasteFrameBtn.addEventListener('click', pasteFrame);
-    
-    // Ajouter les boutons dans la barre d'outils
-    const tools = document.querySelector('.tools');
-    tools.appendChild(copyFrameBtn);
-    tools.appendChild(pasteFrameBtn);
-    
-    // Ajouter le bouton crédits
-    const creditsBtn = document.createElement('button');
-    creditsBtn.textContent = 'Crédits';
-    creditsBtn.id = 'creditsBtn';
-    creditsBtn.addEventListener('click', showCredits);
-    
-    // L'ajouter à la fin de la barre d'outils
-    tools.appendChild(creditsBtn);
-    
-    loadFrame(0);
-    updateFramesList();
-    
-    // Initialiser les fonctionnalités mobiles
-    initMobileFeatures();
-    
-    // Modifier l'événement du bouton de sauvegarde
-    document.getElementById('saveBtn').addEventListener('click', saveToFile);
-    
-    // Ajouter les event listeners pour les nouveaux boutons
-    document.getElementById('saveServerBtn').addEventListener('click', saveToServer);
-    
-    // Utiliser la version mobile du chargement si c'est un appareil mobile
-    const isMobileDevice = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
-    document.getElementById('loadServerBtn').addEventListener('click', isMobileDevice ? loadFromServerMobile : loadFromServer);
-    
-    document.getElementById('loadBtn').addEventListener('click', loadFromFile);
-    document.getElementById('previewBtn').addEventListener('click', previewAnimation);
-    document.getElementById('clearBtn').addEventListener('click', clearAllFrames);
-});
 
 async function saveToFile() {
     try {
@@ -576,14 +504,14 @@ function copyCurrentFrame() {
 
 // Ajouter la fonction pasteFrame
 function pasteFrame() {
-    if (!copiedFrame) return;
-    
-    saveCurrentFrame();
-    // Insérer la copie après la frame actuelle
-    frames.splice(currentFrame + 1, 0, JSON.parse(JSON.stringify(copiedFrame)));
-    currentFrame++;
-    loadFrame(currentFrame);
-    updateFramesList();
+    if (copiedFrame) {
+        frames[currentFrame] = [...copiedFrame];
+        loadFrame(currentFrame);
+        
+        // Activer le bouton coller
+        const pasteBtn = document.getElementById('pasteFrameBtn');
+        if (pasteBtn) pasteBtn.disabled = false;
+    }
 }
 
 // Ajouter la fonction pour afficher les crédits
@@ -989,3 +917,42 @@ async function loadFromServerMobile() {
         alert('Erreur lors du chargement. Veuillez réessayer.');
     }
 }
+
+// Initialisation de tous les event listeners
+function initEventListeners() {
+    // Boutons principaux
+    document.getElementById('clearBtn')?.addEventListener('click', clearAllFrames);
+    document.getElementById('deleteFrameBtn')?.addEventListener('click', deleteCurrentFrame);
+    document.getElementById('previewBtn')?.addEventListener('click', previewAnimation);
+    document.getElementById('saveBtn')?.addEventListener('click', showSaveDialog);
+    document.getElementById('saveServerBtn')?.addEventListener('click', saveToServer);
+    document.getElementById('loadBtn')?.addEventListener('click', loadFromFile);
+    document.getElementById('loadServerBtn')?.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+            loadFromServerMobile();
+        } else {
+            loadFromServer();
+        }
+    });
+    document.getElementById('copyFrameBtn')?.addEventListener('click', copyCurrentFrame);
+    document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
+    document.getElementById('creditsBtn')?.addEventListener('click', showCredits);
+    
+    // Bouton nouvelle frame
+    document.getElementById('addFrameBtn')?.addEventListener('click', addFrame);
+    
+    // Bouton gomme
+    document.getElementById('eraserBtn')?.addEventListener('click', toggleEraser);
+    
+    // Initialiser les autres fonctionnalités
+    initColorPicker();
+    initMobileFeatures();
+}
+
+// Initialisation au chargement de la page
+document.addEventListener('DOMContentLoaded', () => {
+    initGrid();
+    initEventListeners();
+    updateFramesList();
+    loadFrame(0);
+});

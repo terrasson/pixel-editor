@@ -27,37 +27,61 @@ html, body {
     position: relative;
 }
 
-/* Header responsive */
-h1 {
-    font-size: clamp(1.2rem, 4vw, 2rem);
-    margin: 8px 0 4px 0;
-    text-align: center;
-    color: #333;
-    font-weight: 600;
-}
-
+/* Project info optimisé */
 .project-info {
     text-align: center;
-    padding: 0 10px;
+    padding: 4px 10px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .project-info h2 {
-    font-size: clamp(0.9rem, 3vw, 1.2rem);
-    margin: 4px 0 8px 0;
+    font-size: 1rem;
+    margin: 6px 0;
     color: #666;
     font-weight: 400;
 }
 
-/* Toolbar mobile-first */
+/* Toolbar principal avec boutons bleus compacts */
 .toolbar {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px;
+    padding: 6px;
     background-color: #f8f9fa;
     border-bottom: 1px solid #e0e0e0;
-    position: relative;
-    z-index: 10;
+}
+
+/* Outils avec boutons optimisés et compacts */
+.tools {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 4px;
+    justify-content: center;
+}
+
+.tools button {
+    padding: 8px 6px;
+    border: none;
+    border-radius: 6px;
+    background-color: #007AFF;
+    color: white;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 500;
+    touch-action: manipulation;
+    transition: all 0.1s ease;
+    min-height: 36px;
+    line-height: 1.2;
+}
+
+.tools button:active {
+    transform: scale(0.98);
+    background-color: #0056b3;
+}
+
+/* Section secondaire pour couleurs et gomme */
+.tools-secondary {
+    padding: 6px;
+    background-color: #f0f0f2;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 /* Palette de couleurs compacte */
@@ -70,12 +94,32 @@ h1 {
 }
 
 #colorPicker {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border: 2px solid #ddd;
     border-radius: 8px;
     cursor: pointer;
     outline: none;
+}
+
+.eraser-btn {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background-color: white;
+    color: #666;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.1s ease;
+    min-height: 36px;
+}
+
+.eraser-btn:active, .eraser-btn.active {
+    background-color: #ff6b6b;
+    color: white;
+    border-color: #ff5252;
+    transform: scale(0.95);
 }
 
 .preset-colors {
@@ -86,8 +130,8 @@ h1 {
 }
 
 .color-btn {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border: 2px solid #ccc;
     border-radius: 6px;
     cursor: pointer;
@@ -98,42 +142,16 @@ h1 {
     transform: scale(0.95);
 }
 
-/* Outils avec boutons optimisés pour mobile */
-.tools {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 6px;
-    justify-content: center;
-}
-
-.tools button {
-    padding: 12px 8px;
-    border: none;
-    border-radius: 8px;
-    background-color: #007AFF;
-    color: white;
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
-    touch-action: manipulation;
-    transition: all 0.1s ease;
-    min-height: 44px; /* Minimum touch target */
-}
-
-.tools button:active {
-    transform: scale(0.98);
-    background-color: #0056b3;
-}
-
-/* Container de la grille - utilise tout l'espace disponible */
+/* Container de la grille - utilise l'espace disponible */
 .grid-container {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 8px;
+    padding: 6px;
     overflow: hidden;
     background-color: #fafafa;
+    min-height: 200px;
 }
 
 /* Grille de pixels adaptative */
@@ -166,27 +184,27 @@ h1 {
     outline: 1px solid #007AFF;
 }
 
-/* Container de frames responsive */
+/* Container de frames optimisé */
 .frames-container {
     background-color: #f8f9fa;
     border-top: 1px solid #e0e0e0;
-    padding: 8px;
-    max-height: 140px;
+    padding: 6px;
+    max-height: 120px;
     overflow-y: auto;
 }
 
 #addFrameBtn {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     background-color: #28a745;
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 500;
-    margin-bottom: 8px;
-    min-height: 44px;
+    margin-bottom: 6px;
+    min-height: 40px;
     touch-action: manipulation;
 }
 
@@ -197,13 +215,30 @@ h1 {
 
 #framesList {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     overflow-x: auto;
-    padding: 4px 0;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
+    padding: 2px 0;
 }
 
+/* Espace publicitaire réservé */
+.ad-space {
+    height: 60px;
+    background-color: #f0f0f2;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.ad-space::before {
+    content: "Espace publicitaire réservé";
+    opacity: 0.5;
+}
+
+/* Styles pour les frames */
 .frame-container {
     display: flex;
     align-items: center;
@@ -212,17 +247,17 @@ h1 {
 }
 
 .frame-preview {
-    padding: 8px 12px;
+    padding: 6px 10px;
     background-color: white;
     border: 2px solid #ddd;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     white-space: nowrap;
-    min-width: 80px;
+    min-width: 70px;
     text-align: center;
     touch-action: manipulation;
-    min-height: 40px;
+    min-height: 32px;
 }
 
 .frame-preview.active {
@@ -231,13 +266,13 @@ h1 {
 }
 
 .insert-frame-btn {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border: 1px solid #ccc;
     background-color: #f0f0f0;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;

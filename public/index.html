@@ -11,15 +11,29 @@
 </head>
 <body>
     <div class="editor-container">
-        <h1>Éditeur Pixel Art</h1>
-        
         <div class="project-info">
             <h2 id="projectTitle">Nouveau projet</h2>
         </div>
         
         <div class="toolbar">
+            <div class="tools">
+                <button id="clearBtn">Effacer tout</button>
+                <button id="deleteFrameBtn">Supprimer la frame</button>
+                <button id="previewBtn">Prévisualiser</button>
+                <button id="saveBtn">Sauvegarder</button>
+                <button id="saveServerBtn">Sauvegarder (Serveur)</button>
+                <button id="loadBtn">Charger</button>
+                <button id="loadServerBtn">Charger (Serveur)</button>
+                <button id="copyFrameBtn">Copier la frame</button>
+                <button id="pasteFrameBtn">Coller la frame</button>
+                <button id="creditsBtn">Crédits</button>
+            </div>
+        </div>
+
+        <div class="tools-secondary">
             <div class="color-palette">
                 <input type="color" id="colorPicker" value="#000000">
+                <button id="eraserBtn" class="eraser-btn">Gomme</button>
                 <div class="preset-colors">
                     <button class="color-btn" style="background-color: #000000"></button>
                     <button class="color-btn" style="background-color: #FFFFFF"></button>
@@ -31,15 +45,6 @@
                     <button class="color-btn" style="background-color: #00FFFF"></button>
                 </div>
             </div>
-            
-            <div class="tools">
-                <button id="clearBtn">Effacer tout</button>
-                <button id="previewBtn">Prévisualiser</button>
-                <button id="saveBtn">Sauvegarder</button>
-                <button id="saveServerBtn">Sauvegarder (Serveur)</button>
-                <button id="loadBtn">Charger</button>
-                <button id="loadServerBtn">Charger (Serveur)</button>
-            </div>
         </div>
 
         <div class="grid-container">
@@ -50,6 +55,9 @@
             <button id="addFrameBtn">+ Nouvelle Frame</button>
             <div id="framesList"></div>
         </div>
+
+        <!-- Espace réservé pour la publicité future -->
+        <div class="ad-space"></div>
     </div>
 
     <script src="js/script.js"></script>
