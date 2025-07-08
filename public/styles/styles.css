@@ -21,11 +21,11 @@ html, body {
 .editor-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: calc(100vh - 60px); /* Réserver l'espace pour la bannière */
     width: 100vw;
     background-color: white;
     position: relative;
-    padding-bottom: 60px; /* Espace pour la bannière pub fixe */
+    overflow-y: auto;
 }
 
 /* Project info optimisé avec menu hamburger */
@@ -269,6 +269,7 @@ html, body {
     overflow: hidden;
     background-color: #fafafa;
     min-height: 200px;
+    max-height: calc(100vh - 300px); /* Laisser de la place pour les frames */
 }
 
 /* Grille de pixels adaptative avec liseré fin */
@@ -309,9 +310,13 @@ html, body {
 .frames-container {
     background-color: #f8f9fa;
     border-top: 1px solid #e0e0e0;
-    padding: 4px;
-    max-height: 85px;
+    padding: 6px;
+    min-height: 80px;
+    max-height: 100px;
     overflow-y: auto;
+    flex-shrink: 0; /* Empêche la compression */
+    position: relative;
+    z-index: 5; /* Au-dessus de la bannière */
 }
 
 #addFrameBtn {
@@ -338,7 +343,8 @@ html, body {
     display: flex;
     gap: 4px;
     overflow-x: auto;
-    padding: 2px 0;
+    padding: 4px 0;
+    min-height: 50px; /* Hauteur minimale garantie */
 }
 
 /* Espace publicitaire réservé */
@@ -356,7 +362,8 @@ html, body {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 10;
+    z-index: 1;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .ad-space::before {
@@ -882,11 +889,12 @@ html, body {
     }
     
     .editor-container {
-        padding-bottom: 50px;
+        height: calc(100vh - 50px);
     }
     
     .frames-container {
-        max-height: 80px;
+        max-height: 90px;
+        padding: 6px;
     }
 }
 
@@ -970,12 +978,17 @@ html, body {
     
     /* Ajustement spécial mobile pour éviter les chevauchements */
     .editor-container {
-        padding-bottom: 45px;
+        height: calc(100vh - 45px) !important;
     }
     
     .ad-space {
         height: 45px;
         font-size: 0.65rem;
+    }
+    
+    .frames-container {
+        max-height: 85px !important;
+        padding: 5px !important;
     }
 }
 
@@ -1089,12 +1102,17 @@ html, body {
     
     /* Ajustement mode paysage pour éviter les chevauchements */
     .editor-container {
-        padding-bottom: 40px;
+        height: calc(100vh - 40px) !important;
     }
     
     .ad-space {
         height: 40px;
         font-size: 0.6rem;
+    }
+    
+    .frames-container {
+        max-height: 75px !important;
+        padding: 3px !important;
     }
     
     .mobile-dialog-content {
