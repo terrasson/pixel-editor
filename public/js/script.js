@@ -8,6 +8,8 @@ let clipboard = null; // Pour le copier-coller
 let copiedFrame = null;
 let customColors = []; // Palette de couleurs personnalisées
 const maxCustomColors = 8; // Nombre maximum de couleurs personnalisées
+let autoSaveProjects = []; // Projets sauvegardés automatiquement en local
+const maxAutoSaveProjects = 10; // Nombre maximum de projets auto-sauvegardés
 
 // Initialisation de la grille
 function initGrid() {
@@ -50,8 +52,16 @@ function draw(e) {
             // Mode dessin normal
             e.target.style.backgroundColor = currentColor;
             e.target.classList.remove('empty');
+            
+            // Ajouter la couleur à la palette personnalisée si ce n'est pas une couleur prédéfinie
+            if (!isPredefinedColor(currentColor)) {
+                addCustomColor(currentColor);
+            }
         }
         saveCurrentFrame();
+        
+        // Déclencher l'auto-sauvegarde après modification
+        triggerAutoSave();
     }
 }
 
@@ -79,6 +89,221 @@ function loadCustomColors() {
 
 function saveCustomColors() {
     localStorage.setItem('pixelEditor_customColors', JSON.stringify(customColors));
+}
+
+// Fonctions Supabase pour la sauvegarde en ligne
+let currentProjectId = null; // ID du projet actuel pour les mises à jour
+
+async function loadSupabaseProjects() {
+    try {
+        autoSaveProjects = await supabase.getProjects();
+        console.log(`📱 ${autoSaveProjects.length} projets chargés depuis Supabase`);
+    } catch (error) {
+        console.error('Erreur chargement projets:', error);
+        // Fallback vers localStorage si Supabase ne fonctionne pas
+        loadAutoSaveProjects();
+    }
+}
+
+async function saveToSupabase(projectData) {
+    try {
+        if (currentProjectId) {
+            // Mise à jour du projet existant
+            const updated = await supabase.updateProject(currentProjectId, {
+                ...projectData,
+                updated_at: new Date().toISOString()
+            });
+            console.log('✅ Projet mis à jour sur Supabase');
+            return updated[0];
+        } else {
+            // Création d'un nouveau projet
+            const created = await supabase.createProject({
+                ...projectData,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+            currentProjectId = created[0].id;
+            console.log('✅ Nouveau projet créé sur Supabase');
+            return created[0];
+        }
+    } catch (error) {
+        console.error('Erreur sauvegarde Supabase:', error);
+        // Fallback vers localStorage
+        autoSaveProjectLocal(projectData.name);
+        throw error;
+    }
+}
+
+async function autoSaveProject(name = null) {
+    const projectName = name || `Auto-save ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
+    
+    const projectData = {
+        name: projectName,
+        frames: JSON.stringify(frames),
+        current_frame: currentFrame,
+        custom_colors: JSON.stringify(customColors),
+        device_info: navigator.userAgent.substring(0, 100) // Pour identifier l'appareil
+    };
+    
+    try {
+        await saveToSupabase(projectData);
+    } catch (error) {
+        console.log('🔄 Fallback vers sauvegarde locale');
+    }
+}
+
+// Fallback localStorage (au cas où Supabase ne fonctionne pas)
+function loadAutoSaveProjects() {
+    const saved = localStorage.getItem('pixelEditor_autoSaveProjects');
+    if (saved) {
+        autoSaveProjects = JSON.parse(saved);
+    }
+}
+
+function autoSaveProjectLocal(name) {
+    const projectName = name || `Local ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
+    
+    const projectData = {
+        id: Date.now().toString(),
+        name: projectName,
+        frames: frames,
+        currentFrame: currentFrame,
+        customColors: customColors,
+        dateCreated: new Date().toISOString(),
+        lastModified: new Date().toISOString()
+    };
+    
+    autoSaveProjects.unshift(projectData);
+    
+    if (autoSaveProjects.length > maxAutoSaveProjects) {
+        autoSaveProjects = autoSaveProjects.slice(0, maxAutoSaveProjects);
+    }
+    
+    localStorage.setItem('pixelEditor_autoSaveProjects', JSON.stringify(autoSaveProjects));
+    console.log(`Projet sauvé localement : ${projectName}`);
+}
+
+async function showLocalProjects() {
+    try {
+        // Charger depuis Supabase d'abord
+        await loadSupabaseProjects();
+    } catch (error) {
+        // Si Supabase échoue, utiliser localStorage
+        loadAutoSaveProjects();
+    }
+    
+    if (autoSaveProjects.length === 0) {
+        alert('📱 Aucun projet trouvé.\n\nCommencez à dessiner et vos projets seront automatiquement sauvegardés en ligne ! 🌐');
+        return;
+    }
+    
+    // Créer une liste interactive pour mobile (compatible Supabase et localStorage)
+    const projectsList = autoSaveProjects.map((p, index) => {
+        const projectId = p.id || p.project_id || index;
+        const projectName = p.name || 'Projet sans nom';
+        const lastModified = p.lastModified || p.updated_at || p.created_at;
+        const deviceInfo = p.device_info ? ` 📱 ${p.device_info.includes('iPhone') ? 'iPhone' : p.device_info.includes('Android') ? 'Android' : 'Web'}` : '';
+        
+        return `<div class="project-item" data-project-id="${projectId}" data-index="${index}">
+            <div class="project-name">${projectName}${deviceInfo}</div>
+            <div class="project-date">${new Date(lastModified).toLocaleDateString('fr-FR')} à ${new Date(lastModified).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</div>
+        </div>`;
+    }).join('');
+
+    const dialog = createMobileDialog('🌐 Mes projets', `
+        <div class="projects-list">
+            ${projectsList}
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 8px;">
+            <button id="loadLocalProject" class="dialog-button" disabled>Charger</button>
+            <button id="deleteLocalProject" class="dialog-button secondary" disabled>Supprimer</button>
+            <button id="cancelLocalLoad" class="dialog-button secondary">Fermer</button>
+        </div>
+    `);
+
+    let selectedProject = null;
+    const loadBtn = dialog.querySelector('#loadLocalProject');
+    const deleteBtn = dialog.querySelector('#deleteLocalProject');
+
+    // Gérer la sélection
+    dialog.querySelectorAll('.project-item').forEach(item => {
+        item.addEventListener('click', () => {
+            // Désélectionner les autres
+            dialog.querySelectorAll('.project-item').forEach(p => p.classList.remove('selected'));
+            
+            // Sélectionner celui-ci
+            item.classList.add('selected');
+            selectedProject = {
+                id: item.dataset.projectId,
+                index: parseInt(item.dataset.index)
+            };
+            
+            loadBtn.disabled = false;
+            deleteBtn.disabled = false;
+        });
+    });
+
+    // Charger le projet sélectionné
+    loadBtn.addEventListener('click', () => {
+        if (selectedProject) {
+            const project = autoSaveProjects[selectedProject.index];
+            
+            // Compatible Supabase (JSON stringifié) et localStorage (objets directs)
+            frames = typeof project.frames === 'string' ? JSON.parse(project.frames) : project.frames;
+            currentFrame = project.current_frame || project.currentFrame || 0;
+            
+            if (project.custom_colors || project.customColors) {
+                const colors = project.custom_colors || project.customColors;
+                customColors = typeof colors === 'string' ? JSON.parse(colors) : colors;
+                saveCustomColors();
+                updateColorPalette();
+            }
+            
+            // Définir l'ID du projet actuel pour les futures sauvegardes
+            currentProjectId = project.id;
+            
+            const title = document.getElementById('projectTitle');
+            if (title) {
+                title.textContent = project.name || 'Projet sans nom';
+            }
+            
+            updateFramesList();
+            loadFrame(currentFrame);
+            
+            dialog.remove();
+            alert('✅ Projet chargé avec succès !');
+        }
+    });
+
+    // Supprimer le projet sélectionné
+    deleteBtn.addEventListener('click', async () => {
+        if (selectedProject && confirm('Supprimer ce projet définitivement ?')) {
+            const project = autoSaveProjects[selectedProject.index];
+            
+            try {
+                // Supprimer de Supabase si c'est un projet en ligne
+                if (project.id && typeof project.id === 'number') {
+                    await supabase.deleteProject(project.id);
+                    console.log('✅ Projet supprimé de Supabase');
+                } else {
+                    // Supprimer du localStorage pour les projets locaux
+                    autoSaveProjects.splice(selectedProject.index, 1);
+                    localStorage.setItem('pixelEditor_autoSaveProjects', JSON.stringify(autoSaveProjects));
+                }
+                
+                dialog.remove();
+                showLocalProjects(); // Rafraîchir la liste
+                
+            } catch (error) {
+                console.error('Erreur suppression:', error);
+                alert('Erreur lors de la suppression. Veuillez réessayer.');
+            }
+        }
+    });
+
+    dialog.querySelector('#cancelLocalLoad').addEventListener('click', () => {
+        dialog.remove();
+    });
 }
 
 function addCustomColor(color) {
@@ -1108,6 +1333,7 @@ function initEventListeners() {
             loadFromServer();
         }
     });
+    document.getElementById('loadLocalBtn')?.addEventListener('click', showLocalProjects);
     document.getElementById('copyFrameBtn')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
     document.getElementById('creditsBtn')?.addEventListener('click', showCredits);
@@ -1126,10 +1352,24 @@ function initEventListeners() {
     initMobileFeatures();
 }
 
+// Auto-save sur modifications importantes
+function triggerAutoSave() {
+    // Auto-save après 2 secondes d'inactivité
+    clearTimeout(window.autoSaveTimer);
+    window.autoSaveTimer = setTimeout(() => {
+        autoSaveProject();
+    }, 2000);
+}
+
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
     initGrid();
     initEventListeners();
+    
+    // Charger les données (Supabase + localStorage en fallback)
+    loadCustomColors();
+    loadSupabaseProjects().catch(() => loadAutoSaveProjects());
+    updateColorPalette();
     
     // Nettoyage initial pour s'assurer qu'aucun élément indésirable n'existe
     cleanUpOutsideElements();
@@ -1142,4 +1382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     updateFramesList();
     loadFrame(0);
+    
+    // Déclencher la première auto-sauvegarde
+    autoSaveProject('Premier projet');
 });
