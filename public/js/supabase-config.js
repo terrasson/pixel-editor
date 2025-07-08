@@ -1,7 +1,7 @@
 // Configuration Supabase
 // 🚨 REMPLACEZ CES VALEURS PAR VOS VRAIES CLÉS SUPABASE
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_KEY;
+const SUPABASE_URL = 'https://votre-projet.supabase.co';
+const SUPABASE_ANON_KEY = 'votre-cle-publique-ici';
 
 // Client Supabase simple (sans SDK lourd)
 class SupabaseClient {

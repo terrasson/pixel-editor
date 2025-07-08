@@ -59,9 +59,6 @@ function draw(e) {
             }
         }
         saveCurrentFrame();
-        
-        // Déclencher l'auto-sauvegarde après modification
-        triggerAutoSave();
     }
 }
 
@@ -134,23 +131,7 @@ async function saveToSupabase(projectData) {
     }
 }
 
-async function autoSaveProject(name = null) {
-    const projectName = name || `Auto-save ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
-    
-    const projectData = {
-        name: projectName,
-        frames: JSON.stringify(frames),
-        current_frame: currentFrame,
-        custom_colors: JSON.stringify(customColors),
-        device_info: navigator.userAgent.substring(0, 100) // Pour identifier l'appareil
-    };
-    
-    try {
-        await saveToSupabase(projectData);
-    } catch (error) {
-        console.log('🔄 Fallback vers sauvegarde locale');
-    }
-}
+// Auto-save function removed - now using manual save only
 
 // Fallback localStorage (au cas où Supabase ne fonctionne pas)
 function loadAutoSaveProjects() {
@@ -633,39 +614,32 @@ function clearAllFrames() {
 
 async function saveToFile() {
     try {
-        // Demander le nom du fichier avec une boîte de dialogue personnalisée
-        const fileName = await showSaveDialog();
-        if (!fileName) return; // Si l'utilisateur annule
+        // Demander le nom du projet avec une boîte de dialogue personnalisée
+        const projectName = await showSaveDialog();
+        if (!projectName) return; // Si l'utilisateur annule
 
-        const data = {
-            name: fileName,
-            frames: frames,
-            currentFrame: currentFrame,
-            customColors: customColors, // Inclure les couleurs personnalisées
-            dateCreated: new Date().toISOString(),
-            lastModified: new Date().toISOString()
+        const projectData = {
+            name: projectName,
+            frames: JSON.stringify(frames),
+            current_frame: currentFrame,
+            custom_colors: JSON.stringify(customColors),
+            device_info: navigator.userAgent.substring(0, 100)
         };
 
-        // Utiliser la méthode de téléchargement compatible avec tous les navigateurs
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${fileName}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        // Message plus détaillé pour mobile
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const message = isMobile ? 
-            `✅ Projet sauvegardé !\n\n📱 Sur mobile :\n• Le fichier est dans vos Téléchargements\n• Ouvrez l'app "Fichiers" pour le retrouver\n• Nom du fichier : ${fileName}.json` :
-            'Projet sauvegardé avec succès !';
-        alert(message);
+        // Sauvegarder sur Supabase
+        await saveToSupabase(projectData);
+        
+        // Mettre à jour le titre du projet
+        const titleElement = document.getElementById('projectTitle');
+        if (titleElement) {
+            titleElement.textContent = projectName;
+        }
+        
+        alert('✅ Projet sauvegardé sur Supabase !');
+        
     } catch (err) {
         console.error('Erreur lors de la sauvegarde:', err);
-        alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+        alert('❌ Erreur lors de la sauvegarde. Vérifiez votre configuration Supabase.');
     }
 }
 
@@ -675,8 +649,8 @@ function showSaveDialog() {
         dialog.className = 'save-dialog';
         dialog.innerHTML = `
             <div class="save-dialog-content">
-                <h3>Sauvegarder le projet</h3>
-                <input type="text" id="saveFileName" placeholder="Nom du fichier" value="mon-pixel-art">
+                <h3>💾 Sauvegarder sur Supabase</h3>
+                <input type="text" id="saveFileName" placeholder="Nom du projet" value="mon-pixel-art">
                 <div class="dialog-buttons">
                     <button id="dialogSave">Sauvegarder</button>
                     <button id="dialogCancel">Annuler</button>
@@ -707,52 +681,9 @@ function showSaveDialog() {
     });
 }
 
-function loadFromFile() {
-    // Message d'aide pour mobile
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-        const userConfirm = confirm(`📂 Charger un projet\n\n📱 Sur mobile :\n• Ouvrez l'app "Fichiers"\n• Allez dans "Téléchargements"\n• Sélectionnez votre fichier .json\n\nContinuer ?`);
-        if (!userConfirm) return;
-    }
-    
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = e => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = event => {
-            try {
-                const data = JSON.parse(event.target.result);
-                frames = data.frames;
-                currentFrame = data.currentFrame;
-                
-                // Charger les couleurs personnalisées si elles existent
-                if (data.customColors) {
-                    customColors = data.customColors;
-                    saveCustomColors(); // Sauvegarder dans localStorage
-                    updateColorPalette(); // Mettre à jour l'affichage
-                }
-                
-                // Afficher le nom du fichier chargé
-                const title = document.getElementById('projectTitle');
-                if (title) {
-                    title.textContent = data.name || 'Projet sans nom';
-                }
-                
-                updateFramesList();
-                loadFrame(currentFrame);
-            } catch (error) {
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                const errorMsg = isMobile ? 
-                    `❌ Erreur de chargement\n\n📱 Vérifiez que :\n• Le fichier est bien un .json\n• Il vient de cette application\n• Il n'est pas corrompu\n\nErreur technique : ${error.message}` :
-                    'Erreur lors du chargement du fichier : ' + error.message;
-                alert(errorMsg);
-            }
-        };
-        reader.readAsText(file);
-    };
-    input.click();
+async function loadFromFile() {
+    // Chargement direct depuis Supabase - même fonction que "Mes projets"
+    await showLocalProjects();
 }
 
 // Prévisualisation de l'animation
@@ -1324,15 +1255,7 @@ function initEventListeners() {
     document.getElementById('deleteFrameBtn')?.addEventListener('click', deleteCurrentFrame);
     document.getElementById('previewBtn')?.addEventListener('click', previewAnimation);
     document.getElementById('saveBtn')?.addEventListener('click', saveToFile);
-    document.getElementById('saveServerBtn')?.addEventListener('click', saveToServer);
     document.getElementById('loadBtn')?.addEventListener('click', loadFromFile);
-    document.getElementById('loadServerBtn')?.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-            loadFromServerMobile();
-        } else {
-            loadFromServer();
-        }
-    });
     document.getElementById('loadLocalBtn')?.addEventListener('click', showLocalProjects);
     document.getElementById('copyFrameBtn')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
@@ -1352,14 +1275,7 @@ function initEventListeners() {
     initMobileFeatures();
 }
 
-// Auto-save sur modifications importantes
-function triggerAutoSave() {
-    // Auto-save après 2 secondes d'inactivité
-    clearTimeout(window.autoSaveTimer);
-    window.autoSaveTimer = setTimeout(() => {
-        autoSaveProject();
-    }, 2000);
-}
+// Auto-save function removed - manual save only
 
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
@@ -1382,7 +1298,4 @@ document.addEventListener('DOMContentLoaded', () => {
     
     updateFramesList();
     loadFrame(0);
-    
-    // Déclencher la première auto-sauvegarde
-    autoSaveProject('Premier projet');
 });
