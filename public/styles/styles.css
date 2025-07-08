@@ -312,7 +312,7 @@ html, body {
 .frames-container {
     background-color: #f8f9fa;
     border-top: 1px solid #e0e0e0;
-    padding: 6px 6px 66px 6px; /* Padding bottom pour la bannière pub */
+    padding: 6px 6px 70px 6px; /* Padding bottom pour la bannière pub */
     min-height: 120px;
     max-height: 150px;
     overflow-y: auto;
@@ -320,7 +320,7 @@ html, body {
     margin-top: auto;
     margin-bottom: 0;
     position: relative;
-    bottom: 0;
+    bottom: 4px; /* Remonter légèrement */
 }
 
 #addFrameBtn {
@@ -898,8 +898,9 @@ html, body {
     }
     
     .frames-container {
-        padding: 6px 6px 56px 6px; /* Ajuster pour bannière 50px */
+        padding: 6px 6px 58px 6px; /* Ajuster pour bannière 50px */
         max-height: 130px;
+        bottom: 3px; /* Remonter légèrement sur mobile */
     }
 }
 
@@ -992,8 +993,9 @@ html, body {
     }
     
     .frames-container {
-        padding: 5px 5px 51px 5px !important; /* Ajuster pour bannière 45px */
+        padding: 5px 5px 53px 5px !important; /* Ajuster pour bannière 45px */
         max-height: 120px !important;
+        bottom: 3px !important; /* Remonter légèrement sur petit mobile */
     }
 }
 
@@ -1116,8 +1118,9 @@ html, body {
     }
     
     .frames-container {
-        padding: 3px 3px 46px 3px !important; /* Ajuster pour bannière 40px */
+        padding: 3px 3px 48px 3px !important; /* Ajuster pour bannière 40px */
         max-height: 100px !important;
+        bottom: 2px !important; /* Remonter légèrement en mode paysage */
     }
     
     .mobile-dialog-content {
