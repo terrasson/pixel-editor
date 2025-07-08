@@ -184,6 +184,34 @@ html, body {
     transform: scale(0.95);
 }
 
+/* Styles pour les couleurs personnalisées */
+.color-btn.custom-color {
+    border: 2px solid #007AFF;
+    box-shadow: 0 0 0 1px rgba(0, 122, 255, 0.3);
+    position: relative;
+}
+
+.color-btn.custom-color::after {
+    content: '★';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: 0.6rem;
+    color: #007AFF;
+    background: white;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #007AFF;
+}
+
+.color-btn.default-color {
+    border: 2px solid #ccc;
+}
+
 /* Container de la grille - utilise l'espace disponible */
 .grid-container {
     flex: 1;

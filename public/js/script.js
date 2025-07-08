@@ -6,6 +6,8 @@ let isErasing = false; // Pour la gomme
 let modifiedPixels = [new Set()]; // Pour suivre les pixels modifiés
 let clipboard = null; // Pour le copier-coller
 let copiedFrame = null;
+let customColors = []; // Palette de couleurs personnalisées
+const maxCustomColors = 8; // Nombre maximum de couleurs personnalisées
 
 // Initialisation de la grille
 function initGrid() {
@@ -67,10 +69,96 @@ function toggleEraser() {
     document.getElementById('pixelGrid')?.classList.toggle('eraser-mode');
 }
 
-// Fonction améliorée pour gérer la gomme avec les couleurs
+// Fonctions pour gérer les couleurs personnalisées
+function loadCustomColors() {
+    const saved = localStorage.getItem('pixelEditor_customColors');
+    if (saved) {
+        customColors = JSON.parse(saved);
+    }
+}
+
+function saveCustomColors() {
+    localStorage.setItem('pixelEditor_customColors', JSON.stringify(customColors));
+}
+
+function addCustomColor(color) {
+    // Convertir en hex si nécessaire
+    const hexColor = color.startsWith('#') ? color : rgbToHex(color);
+    
+    // Ne pas ajouter si la couleur existe déjà
+    if (customColors.includes(hexColor)) {
+        return;
+    }
+    
+    // Ajouter la nouvelle couleur au début
+    customColors.unshift(hexColor);
+    
+    // Limiter le nombre de couleurs personnalisées
+    if (customColors.length > maxCustomColors) {
+        customColors = customColors.slice(0, maxCustomColors);
+    }
+    
+    // Sauvegarder et mettre à jour l'affichage
+    saveCustomColors();
+    updateColorPalette();
+}
+
+function updateColorPalette() {
+    const presetColors = document.querySelector('.preset-colors');
+    if (!presetColors) return;
+    
+    // Vider la palette actuelle
+    presetColors.innerHTML = '';
+    
+    // Ajouter les couleurs personnalisées
+    customColors.forEach(color => {
+        const btn = document.createElement('button');
+        btn.className = 'color-btn custom-color';
+        btn.style.backgroundColor = color;
+        btn.title = `Couleur personnalisée: ${color}`;
+        btn.addEventListener('click', () => {
+            currentColor = color;
+            document.getElementById('colorPicker').value = color;
+            isErasing = false;
+            const eraserBtn = document.getElementById('eraserBtn');
+            if (eraserBtn) {
+                eraserBtn.classList.remove('active');
+                document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
+            }
+        });
+        presetColors.appendChild(btn);
+    });
+    
+    // Ajouter les couleurs de base si il reste de la place
+    const defaultColors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    const remainingSlots = maxCustomColors - customColors.length;
+    
+    defaultColors.slice(0, remainingSlots).forEach(color => {
+        const btn = document.createElement('button');
+        btn.className = 'color-btn default-color';
+        btn.style.backgroundColor = color;
+        btn.addEventListener('click', () => {
+            currentColor = color;
+            document.getElementById('colorPicker').value = color;
+            isErasing = false;
+            const eraserBtn = document.getElementById('eraserBtn');
+            if (eraserBtn) {
+                eraserBtn.classList.remove('active');
+                document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
+            }
+        });
+        presetColors.appendChild(btn);
+    });
+}
+
+// Fonction améliorée pour gérer la gomme avec les couleurs personnalisées
 function initColorPicker() {
     const colorPicker = document.getElementById('colorPicker');
     const eraserBtn = document.getElementById('eraserBtn');
+    
+    // Charger les couleurs personnalisées sauvegardées
+    loadCustomColors();
+    updateColorPalette();
     
     colorPicker.addEventListener('change', (e) => {
         currentColor = e.target.value;
@@ -79,19 +167,12 @@ function initColorPicker() {
             eraserBtn.classList.remove('active');
             document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
         }
+        
+        // Ajouter automatiquement la couleur à la palette personnalisée
+        addCustomColor(currentColor);
     });
 
-    document.querySelectorAll('.color-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            currentColor = btn.style.backgroundColor;
-            colorPicker.value = rgbToHex(currentColor);
-            isErasing = false;
-            if (eraserBtn) {
-                eraserBtn.classList.remove('active');
-                document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
-            }
-        });
-    });
+    // Note: Les event listeners pour les boutons de couleur sont maintenant gérés dans updateColorPalette()
 }
 
 // Fonctions de nettoyage pour éviter les débordements
@@ -335,6 +416,7 @@ async function saveToFile() {
             name: fileName,
             frames: frames,
             currentFrame: currentFrame,
+            customColors: customColors, // Inclure les couleurs personnalisées
             dateCreated: new Date().toISOString(),
             lastModified: new Date().toISOString()
         };
@@ -408,6 +490,13 @@ function loadFromFile() {
                 frames = data.frames;
                 currentFrame = data.currentFrame;
                 
+                // Charger les couleurs personnalisées si elles existent
+                if (data.customColors) {
+                    customColors = data.customColors;
+                    saveCustomColors(); // Sauvegarder dans localStorage
+                    updateColorPalette(); // Mettre à jour l'affichage
+                }
+                
                 // Afficher le nom du fichier chargé
                 const title = document.getElementById('projectTitle');
                 if (title) {
@@ -448,11 +537,36 @@ function previewAnimation() {
     }, 200);
 }
 
-// Utilitaires
+// Utilitaires améliorés
 function rgbToHex(rgb) {
-    if (!rgb || rgb === 'white') return '#FFFFFF';
+    if (!rgb) return '#000000';
+    
+    // Si c'est déjà en format hex
+    if (rgb.startsWith('#')) return rgb.toUpperCase();
+    
+    // Gestion des couleurs nommées communes
+    const namedColors = {
+        'white': '#FFFFFF',
+        'black': '#000000',
+        'red': '#FF0000',
+        'green': '#008000',
+        'blue': '#0000FF',
+        'yellow': '#FFFF00',
+        'cyan': '#00FFFF',
+        'magenta': '#FF00FF'
+    };
+    
+    if (namedColors[rgb.toLowerCase()]) {
+        return namedColors[rgb.toLowerCase()];
+    }
+    
+    // Format rgb(r, g, b) ou rgba(r, g, b, a)
     const values = rgb.match(/\d+/g);
-    return `#${values.map(x => parseInt(x).toString(16).padStart(2, '0')).join('')}`;
+    if (values && values.length >= 3) {
+        return `#${values.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+    }
+    
+    return '#000000'; // Fallback
 }
 
 // Ajouter ces styles CSS directement dans le JavaScript
@@ -681,7 +795,8 @@ async function saveToServer() {
         const data = {
             name: fileName,
             frames: frames,
-            currentFrame: currentFrame
+            currentFrame: currentFrame,
+            customColors: customColors
         };
 
         const response = await fetch('/api/save', {
@@ -736,6 +851,13 @@ async function loadFromServer() {
 
         frames = data.frames;
         currentFrame = data.currentFrame;
+        
+        // Charger les couleurs personnalisées si elles existent
+        if (data.customColors) {
+            customColors = data.customColors;
+            saveCustomColors();
+            updateColorPalette();
+        }
         
         const title = document.getElementById('projectTitle');
         if (title) {
@@ -919,6 +1041,13 @@ async function loadFromServerMobile() {
 
                     frames = data.frames;
                     currentFrame = data.currentFrame;
+                    
+                    // Charger les couleurs personnalisées si elles existent
+                    if (data.customColors) {
+                        customColors = data.customColors;
+                        saveCustomColors();
+                        updateColorPalette();
+                    }
                     
                     const title = document.getElementById('projectTitle');
                     if (title) {
