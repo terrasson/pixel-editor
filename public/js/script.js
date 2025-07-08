@@ -239,9 +239,15 @@ async function showLocalProjects() {
             
             if (project.custom_colors || project.customColors) {
                 const colors = project.custom_colors || project.customColors;
-                customColors = typeof colors === 'string' ? JSON.parse(colors) : colors;
-                saveCustomColors();
-                updateColorPalette();
+                const projectColors = typeof colors === 'string' ? JSON.parse(colors) : colors;
+                
+                // Réintégrer les couleurs du projet avec les couleurs de base
+                customColors = []; // Vider d'abord
+                
+                // Ajouter les couleurs du projet qui ne sont pas des couleurs de base
+                projectColors.forEach(color => {
+                    addCustomColor(color); // Cette fonction vérifie déjà les doublons et exclut les couleurs de base
+                });
             }
             
             // Définir l'ID du projet actuel pour les futures sauvegardes
@@ -291,11 +297,22 @@ async function showLocalProjects() {
     });
 }
 
+function isPredefinedColor(color) {
+    const hexColor = color.startsWith('#') ? color : rgbToHex(color);
+    const defaultColors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    return defaultColors.includes(hexColor.toUpperCase());
+}
+
 function addCustomColor(color) {
     // Convertir en hex si nécessaire
     const hexColor = color.startsWith('#') ? color : rgbToHex(color);
     
-    // Ne pas ajouter si la couleur existe déjà
+    // Ne pas ajouter si c'est une couleur de base
+    if (isPredefinedColor(hexColor)) {
+        return;
+    }
+    
+    // Ne pas ajouter si la couleur existe déjà dans les personnalisées
     if (customColors.includes(hexColor)) {
         return;
     }
@@ -303,9 +320,10 @@ function addCustomColor(color) {
     // Ajouter la nouvelle couleur au début
     customColors.unshift(hexColor);
     
-    // Limiter le nombre de couleurs personnalisées
-    if (customColors.length > maxCustomColors) {
-        customColors = customColors.slice(0, maxCustomColors);
+    // Limiter le nombre de couleurs personnalisées (6 pour ne pas surcharger)
+    const maxPersonalizedColors = 6;
+    if (customColors.length > maxPersonalizedColors) {
+        customColors = customColors.slice(0, maxPersonalizedColors);
     }
     
     // Sauvegarder et mettre à jour l'affichage
@@ -320,12 +338,14 @@ function updateColorPalette() {
     // Vider la palette actuelle
     presetColors.innerHTML = '';
     
-    // Ajouter les couleurs personnalisées
-    customColors.forEach(color => {
+    // TOUJOURS afficher les couleurs de base d'abord
+    const defaultColors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    
+    defaultColors.forEach(color => {
         const btn = document.createElement('button');
-        btn.className = 'color-btn custom-color';
+        btn.className = 'color-btn default-color';
         btn.style.backgroundColor = color;
-        btn.title = `Couleur personnalisée: ${color}`;
+        btn.title = 'Couleur de base';
         btn.addEventListener('click', () => {
             currentColor = color;
             document.getElementById('colorPicker').value = color;
@@ -339,25 +359,27 @@ function updateColorPalette() {
         presetColors.appendChild(btn);
     });
     
-    // Ajouter les couleurs de base si il reste de la place
-    const defaultColors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
-    const remainingSlots = maxCustomColors - customColors.length;
-    
-    defaultColors.slice(0, remainingSlots).forEach(color => {
-        const btn = document.createElement('button');
-        btn.className = 'color-btn default-color';
-        btn.style.backgroundColor = color;
-        btn.addEventListener('click', () => {
-            currentColor = color;
-            document.getElementById('colorPicker').value = color;
-            isErasing = false;
-            const eraserBtn = document.getElementById('eraserBtn');
-            if (eraserBtn) {
-                eraserBtn.classList.remove('active');
-                document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
-            }
-        });
-        presetColors.appendChild(btn);
+    // Ajouter les couleurs personnalisées en plus (limitées à 6 pour ne pas surcharger)
+    const maxPersonalizedColors = 6;
+    customColors.slice(0, maxPersonalizedColors).forEach(color => {
+        // Ne pas ajouter si c'est déjà une couleur de base
+        if (!defaultColors.includes(color.toUpperCase())) {
+            const btn = document.createElement('button');
+            btn.className = 'color-btn custom-color';
+            btn.style.backgroundColor = color;
+            btn.title = `Couleur personnalisée: ${color}`;
+            btn.addEventListener('click', () => {
+                currentColor = color;
+                document.getElementById('colorPicker').value = color;
+                isErasing = false;
+                const eraserBtn = document.getElementById('eraserBtn');
+                if (eraserBtn) {
+                    eraserBtn.classList.remove('active');
+                    document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
+                }
+            });
+            presetColors.appendChild(btn);
+        }
     });
 }
 
@@ -365,10 +387,6 @@ function updateColorPalette() {
 function initColorPicker() {
     const colorPicker = document.getElementById('colorPicker');
     const eraserBtn = document.getElementById('eraserBtn');
-    
-    // Charger les couleurs personnalisées sauvegardées
-    loadCustomColors();
-    updateColorPalette();
     
     colorPicker.addEventListener('change', (e) => {
         currentColor = e.target.value;
@@ -1271,9 +1289,14 @@ async function loadFromServerMobile() {
                     
                     // Charger les couleurs personnalisées si elles existent
                     if (data.customColors) {
-                        customColors = data.customColors;
-                        saveCustomColors();
-                        updateColorPalette();
+                        // Réintégrer les couleurs du projet avec les couleurs de base
+                        const projectColors = data.customColors;
+                        customColors = []; // Vider d'abord
+                        
+                        // Ajouter les couleurs du projet qui ne sont pas des couleurs de base
+                        projectColors.forEach(color => {
+                            addCustomColor(color); // Cette fonction vérifie déjà les doublons
+                        });
                     }
                     
                     const title = document.getElementById('projectTitle');
@@ -1326,7 +1349,6 @@ function initEventListeners() {
     document.getElementById('menuToggle')?.addEventListener('click', toggleToolbar);
     
     // Initialiser les autres fonctionnalités
-    initColorPicker();
     initMobileFeatures();
 }
 
@@ -1337,10 +1359,15 @@ document.addEventListener('DOMContentLoaded', () => {
     initGrid();
     initEventListeners();
     
-    // Charger les données (Supabase + localStorage en fallback)
-    loadCustomColors();
-    loadSupabaseProjects().catch(() => loadAutoSaveProjects());
+    // Réinitialiser les couleurs personnalisées au démarrage pour toujours avoir les couleurs de base
+    customColors = [];
     updateColorPalette();
+    
+    // Initialiser le sélecteur de couleur après la palette
+    initColorPicker();
+    
+    // Charger les données (Supabase + localStorage en fallback)
+    loadSupabaseProjects().catch(() => loadAutoSaveProjects());
     
     // Nettoyage initial pour s'assurer qu'aucun élément indésirable n'existe
     cleanUpOutsideElements();
