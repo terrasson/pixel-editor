@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#007AFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0056B3;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="512" height="512" fill="url(#bg)" rx="102.4" ry="102.4"/>
+  
+  <!-- Pixels colorés -->
+  <rect x="51.2" y="76.8" width="76.8" height="76.8" fill="#FF6B6B" rx="10.24"/>
+  <rect x="204.8" y="25.6" width="61.44" height="61.44" fill="#4CD964" rx="10.24"/>
+  <rect x="358.4" y="102.4" width="66.56" height="66.56" fill="#FFD60A" rx="10.24"/>
+  <rect x="102.4" y="204.8" width="81.92" height="81.92" fill="#BF5AF2" rx="10.24"/>
+  <rect x="307.2" y="256" width="71.68" height="71.68" fill="#FF9F0A" rx="10.24"/>
+  <rect x="76.8" y="358.4" width="56.32" height="56.32" fill="#4DD0E1" rx="10.24"/>
+  
+  <!-- Particules brillantes -->
+  <circle cx="128" cy="128" r="5.12" fill="rgba(255,255,255,0.9)"/>
+  <circle cx="409.6" cy="179.2" r="4.096" fill="rgba(255,255,255,0.8)"/>
+  <circle cx="179.2" cy="409.6" r="6.144" fill="rgba(255,255,255,0.9)"/>
+</svg>
