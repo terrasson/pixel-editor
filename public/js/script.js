@@ -688,25 +688,55 @@ async function loadFromFile() {
 
 // Prévisualisation de l'animation
 function previewAnimation() {
+    // Sauvegarder la frame actuelle avant de commencer l'animation
+    saveCurrentFrame();
+    
     let frameIndex = 0;
+    let cycleCount = 0;
+    const totalCycles = 2; // Faire 2 cycles complets pour bien voir l'animation
+    
+    alert(`🎬 Prévisualisation de l'animation (${frames.length} frames)\n\nL'animation va jouer ${totalCycles} fois...`);
+    
     const interval = setInterval(() => {
-        // Nettoyer pendant l'animation
+        // Nettoyer les marqueurs pendant l'animation
         cleanUpMarkers();
+        
+        // Vérifier que la frame existe
+        if (!frames[frameIndex] || frames[frameIndex].length === 0) {
+            console.error(`Frame ${frameIndex} vide ou inexistante`);
+            frameIndex = (frameIndex + 1) % frames.length;
+            return;
+        }
         
         const pixels = document.querySelectorAll('.pixel');
         frames[frameIndex].forEach((pixel, i) => {
-            pixels[i].style.backgroundColor = pixel.isEmpty ? '#FFFFFF' : pixel.color;
-            // Ne pas montrer les points noirs pendant l'animation
-            pixels[i].classList.remove('empty');
+            if (pixels[i]) {
+                pixels[i].style.backgroundColor = pixel.isEmpty ? '#FFFFFF' : pixel.color;
+                pixels[i].classList.remove('empty');
+            }
         });
         
-        frameIndex = (frameIndex + 1) % frames.length;
+        console.log(`Affichage frame ${frameIndex + 1}/${frames.length} (cycle ${cycleCount + 1}/${totalCycles})`);
         
-        if (frameIndex === 0) {
-            clearInterval(interval);
-            loadFrame(currentFrame);
+        frameIndex++;
+        
+        // Si on a fini un cycle complet
+        if (frameIndex >= frames.length) {
+            frameIndex = 0;
+            cycleCount++;
+            
+            // Arrêter après le nombre de cycles souhaité
+            if (cycleCount >= totalCycles) {
+                clearInterval(interval);
+                
+                // Retourner à la frame courante
+                setTimeout(() => {
+                    loadFrame(currentFrame);
+                    alert('✅ Prévisualisation terminée !');
+                }, 300);
+            }
         }
-    }, 200);
+    }, 400); // Ralentir un peu pour mieux voir chaque frame
 }
 
 // Utilitaires améliorés
