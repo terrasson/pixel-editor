@@ -432,7 +432,12 @@ async function saveToFile() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        alert('Projet sauvegardé avec succès !');
+        // Message plus détaillé pour mobile
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const message = isMobile ? 
+            `✅ Projet sauvegardé !\n\n📱 Sur mobile :\n• Le fichier est dans vos Téléchargements\n• Ouvrez l'app "Fichiers" pour le retrouver\n• Nom du fichier : ${fileName}.json` :
+            'Projet sauvegardé avec succès !';
+        alert(message);
     } catch (err) {
         console.error('Erreur lors de la sauvegarde:', err);
         alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
@@ -478,6 +483,13 @@ function showSaveDialog() {
 }
 
 function loadFromFile() {
+    // Message d'aide pour mobile
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+        const userConfirm = confirm(`📂 Charger un projet\n\n📱 Sur mobile :\n• Ouvrez l'app "Fichiers"\n• Allez dans "Téléchargements"\n• Sélectionnez votre fichier .json\n\nContinuer ?`);
+        if (!userConfirm) return;
+    }
+    
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -506,7 +518,11 @@ function loadFromFile() {
                 updateFramesList();
                 loadFrame(currentFrame);
             } catch (error) {
-                alert('Erreur lors du chargement du fichier : ' + error.message);
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                const errorMsg = isMobile ? 
+                    `❌ Erreur de chargement\n\n📱 Vérifiez que :\n• Le fichier est bien un .json\n• Il vient de cette application\n• Il n'est pas corrompu\n\nErreur technique : ${error.message}` :
+                    'Erreur lors du chargement du fichier : ' + error.message;
+                alert(errorMsg);
             }
         };
         reader.readAsText(file);
