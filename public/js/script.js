@@ -547,7 +547,7 @@ function copyCurrentFrame() {
 function pasteFrame() {
     if (copiedFrame) {
         frames[currentFrame] = [...copiedFrame];
-        loadFrame(currentFrame);
+    loadFrame(currentFrame);
         
         // Activer le bouton coller
         const pasteBtn = document.getElementById('pasteFrameBtn');
@@ -952,7 +952,7 @@ function initEventListeners() {
     document.getElementById('clearBtn')?.addEventListener('click', clearAllFrames);
     document.getElementById('deleteFrameBtn')?.addEventListener('click', deleteCurrentFrame);
     document.getElementById('previewBtn')?.addEventListener('click', previewAnimation);
-    document.getElementById('saveBtn')?.addEventListener('click', showSaveDialog);
+    document.getElementById('saveBtn')?.addEventListener('click', saveToFile);
     document.getElementById('saveServerBtn')?.addEventListener('click', saveToServer);
     document.getElementById('loadBtn')?.addEventListener('click', loadFromFile);
     document.getElementById('loadServerBtn')?.addEventListener('click', () => {
