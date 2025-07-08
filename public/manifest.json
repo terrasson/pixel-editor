@@ -1,0 +1,32 @@
+{
+  "name": "Éditeur Pixel Art",
+  "short_name": "Pixel Art",
+  "description": "Créez et animez vos pixel arts directement sur votre téléphone",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#007AFF",
+  "background_color": "#ffffff",
+  "categories": ["graphics", "entertainment", "utilities"],
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+} 

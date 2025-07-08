@@ -21,11 +21,13 @@ html, body {
 .editor-container {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 60px); /* Réserver l'espace pour la bannière */
+    height: 100vh; /* Prendre tout l'écran */
     width: 100vw;
     background-color: white;
     position: relative;
-    overflow: hidden; /* Pas de scroll dans le container principal */
+    overflow: hidden;
+    padding-bottom: 0; /* Aucun padding */
+    margin-bottom: 0; /* Aucune marge */
 }
 
 /* Project info optimisé avec menu hamburger */
@@ -310,12 +312,15 @@ html, body {
 .frames-container {
     background-color: #f8f9fa;
     border-top: 1px solid #e0e0e0;
-    padding: 6px;
-    min-height: 90px;
-    max-height: 110px;
+    padding: 6px 6px 66px 6px; /* Padding bottom pour la bannière pub */
+    min-height: 120px;
+    max-height: 150px;
     overflow-y: auto;
-    flex-shrink: 0; /* Empêche la compression */
-    margin-top: auto; /* Pousse vers le bas */
+    flex-shrink: 0;
+    margin-top: auto;
+    margin-bottom: 0;
+    position: relative;
+    bottom: 0;
 }
 
 #addFrameBtn {
@@ -356,13 +361,14 @@ html, body {
     justify-content: center;
     color: #999;
     font-size: 0.8rem;
-    flex-shrink: 0;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 1;
+    z-index: 100; /* Très haut z-index pour passer par-dessus tout */
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    margin: 0;
+    padding: 0;
 }
 
 .ad-space::before {
@@ -888,12 +894,12 @@ html, body {
     }
     
     .editor-container {
-        height: calc(100vh - 50px);
+        height: 100vh; /* Toujours 100vh */
     }
     
     .frames-container {
-        max-height: 90px;
-        padding: 6px;
+        padding: 6px 6px 56px 6px; /* Ajuster pour bannière 50px */
+        max-height: 130px;
     }
 }
 
@@ -977,7 +983,7 @@ html, body {
     
     /* Ajustement spécial mobile pour éviter les chevauchements */
     .editor-container {
-        height: calc(100vh - 45px) !important;
+        height: 100vh !important;
     }
     
     .ad-space {
@@ -986,8 +992,8 @@ html, body {
     }
     
     .frames-container {
-        max-height: 85px !important;
-        padding: 5px !important;
+        padding: 5px 5px 51px 5px !important; /* Ajuster pour bannière 45px */
+        max-height: 120px !important;
     }
 }
 
@@ -1101,7 +1107,7 @@ html, body {
     
     /* Ajustement mode paysage pour éviter les chevauchements */
     .editor-container {
-        height: calc(100vh - 40px) !important;
+        height: 100vh !important;
     }
     
     .ad-space {
@@ -1110,8 +1116,8 @@ html, body {
     }
     
     .frames-container {
-        max-height: 75px !important;
-        padding: 3px !important;
+        padding: 3px 3px 46px 3px !important; /* Ajuster pour bannière 40px */
+        max-height: 100px !important;
     }
     
     .mobile-dialog-content {
@@ -1150,5 +1156,30 @@ html, body {
     to { 
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Optimisation pour l'app installée (mode standalone) */
+@media (display-mode: standalone) {
+    .project-info {
+        padding-top: 8px; /* Plus d'espace en haut pour compenser la barre de statut */
+    }
+    
+    .menu-hamburger {
+        top: calc(50% + 4px); /* Ajuster légèrement la position */
+    }
+}
+
+/* Optimisation pour iPhone avec encoche (safe-area) */
+@supports (padding: max(0px)) {
+    .editor-container {
+        padding-top: env(safe-area-inset-top);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+    
+    .ad-space {
+        padding-bottom: env(safe-area-inset-bottom);
+        height: calc(60px + env(safe-area-inset-bottom));
     }
 } 
