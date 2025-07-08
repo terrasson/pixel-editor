@@ -25,7 +25,7 @@ html, body {
     width: 100vw;
     background-color: white;
     position: relative;
-    overflow-y: auto;
+    overflow: hidden; /* Pas de scroll dans le container principal */
 }
 
 /* Project info optimisé avec menu hamburger */
@@ -311,12 +311,11 @@ html, body {
     background-color: #f8f9fa;
     border-top: 1px solid #e0e0e0;
     padding: 6px;
-    min-height: 80px;
-    max-height: 100px;
+    min-height: 90px;
+    max-height: 110px;
     overflow-y: auto;
     flex-shrink: 0; /* Empêche la compression */
-    position: relative;
-    z-index: 5; /* Au-dessus de la bannière */
+    margin-top: auto; /* Pousse vers le bas */
 }
 
 #addFrameBtn {
