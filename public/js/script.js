@@ -261,6 +261,9 @@ async function showLocalProjects() {
             updateFramesList();
             loadFrame(currentFrame);
             
+            // S'assurer que les miniatures sont correctement mises à jour
+            setTimeout(() => updateAllThumbnails(), 100);
+            
             dialog.remove();
             alert('✅ Projet chargé avec succès !');
         }
@@ -458,7 +461,21 @@ function updateCurrentFrameThumbnail() {
                 frameButton.replaceChild(newThumbnail, oldThumbnail);
             }
         }
-    }, 100); // 100ms de debounce
+    }, 50); // 50ms de debounce pour une meilleure réactivité
+}
+
+function updateAllThumbnails() {
+    // Mettre à jour toutes les miniatures
+    frames.forEach((frame, index) => {
+        const frameButton = document.querySelector(`[data-frame-index="${index}"]`);
+        if (frameButton) {
+            const oldThumbnail = frameButton.querySelector('.frame-thumbnail');
+            if (oldThumbnail) {
+                const newThumbnail = createFrameThumbnail(frame, index);
+                frameButton.replaceChild(newThumbnail, oldThumbnail);
+            }
+        }
+    });
 }
 
 function loadFrame(frameIndex) {
@@ -535,8 +552,12 @@ function createFrameThumbnail(frame, frameIndex) {
     const thumbnail = document.createElement('div');
     thumbnail.className = 'frame-thumbnail';
     
-    // Créer une mini-grille 8x8 pour représenter la frame 32x32
-    const thumbnailSize = 8;
+    // Adapter la résolution selon la taille de l'écran
+    let thumbnailSize = 16; // Par défaut 16x16
+    if (window.innerWidth <= 360 || (window.innerHeight <= 500 && window.matchMedia('(orientation: landscape)').matches)) {
+        thumbnailSize = 12; // 12x12 pour les petits écrans
+    }
+    
     const originalSize = 32;
     const ratio = originalSize / thumbnailSize;
     
@@ -545,15 +566,23 @@ function createFrameThumbnail(frame, frameIndex) {
             const pixel = document.createElement('div');
             pixel.className = 'thumbnail-pixel';
             
-            // Calculer quelle zone de l'image originale cette miniature représente
-            const originalRow = Math.floor(row * ratio);
-            const originalCol = Math.floor(col * ratio);
+            // Échantillonner chaque 2e pixel de la grille originale
+            const originalRow = row * ratio;
+            const originalCol = col * ratio;
             const originalIndex = originalRow * originalSize + originalCol;
             
             // Obtenir la couleur du pixel correspondant
             let color = '#FFFFFF'; // Blanc par défaut
-            if (frame && frame[originalIndex] && !frame[originalIndex].isEmpty) {
-                color = frame[originalIndex].color;
+            if (frame && frame[originalIndex]) {
+                if (!frame[originalIndex].isEmpty && frame[originalIndex].color) {
+                    // Convertir les couleurs RGB en hex si nécessaire
+                    color = frame[originalIndex].color;
+                    if (color.startsWith('rgb')) {
+                        color = rgbToHex(color);
+                    }
+                } else {
+                    color = '#FFFFFF'; // Blanc pour les pixels vides
+                }
             }
             
             pixel.style.backgroundColor = color;
@@ -561,7 +590,7 @@ function createFrameThumbnail(frame, frameIndex) {
         }
     }
     
-    // Ajouter le numéro de frame en overlay pour les frames vides
+    // Ajouter le numéro de frame en overlay pour les frames vides seulement
     if (!frame || frame.length === 0 || frame.every(p => !p || p.isEmpty)) {
         const frameNumber = document.createElement('div');
         frameNumber.className = 'frame-number';

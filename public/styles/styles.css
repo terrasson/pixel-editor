@@ -309,7 +309,7 @@ html, body {
     background-color: #f8f9fa;
     border-top: 1px solid #e0e0e0;
     padding: 6px;
-    max-height: 120px;
+    max-height: 100px;
     overflow-y: auto;
 }
 
@@ -367,14 +367,14 @@ html, body {
 }
 
 .frame-preview {
-    padding: 4px;
+    padding: 2px;
     background-color: white;
     border: 2px solid #ddd;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
     touch-action: manipulation;
-    min-width: 60px;
-    min-height: 60px;
+    min-width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -390,12 +390,12 @@ html, body {
 /* Styles pour les miniatures de frames */
 .frame-thumbnail {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    width: 48px;
-    height: 48px;
+    grid-template-columns: repeat(16, 1fr);
+    grid-template-rows: repeat(16, 1fr);
+    width: 36px;
+    height: 36px;
     border: 1px solid #ccc;
-    border-radius: 2px;
+    border-radius: 1px;
     overflow: hidden;
     position: relative;
     background: white;
@@ -888,6 +888,29 @@ html, body {
     }
 }
 
+/* Optimisation mobile générale */
+@media (max-width: 480px) {
+    .frames-container {
+        max-height: 85px;
+        padding: 4px;
+    }
+    
+    .frame-preview {
+        min-width: 40px;
+        min-height: 40px;
+        padding: 2px;
+    }
+    
+    .frame-thumbnail {
+        width: 34px;
+        height: 34px;
+    }
+    
+    #framesList {
+        gap: 3px;
+    }
+}
+
 /* Améliorations pour les très petits écrans */
 @media (max-width: 360px) {
     .toolbar {
@@ -919,45 +942,54 @@ html, body {
 
     /* Miniatures de frames plus petites sur petits écrans */
     .frame-preview {
-        min-width: 52px;
-        min-height: 52px;
-        padding: 3px;
+        min-width: 38px;
+        min-height: 38px;
+        padding: 2px;
     }
 
     .frame-thumbnail {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
+        grid-template-columns: repeat(12, 1fr);
+        grid-template-rows: repeat(12, 1fr);
     }
 
     .frame-number {
-        width: 14px;
-        height: 14px;
-        font-size: 0.6rem;
+        width: 12px;
+        height: 12px;
+        font-size: 0.55rem;
     }
 }
 
 /* Landscape mobile optimizations */
 @media (max-height: 500px) and (orientation: landscape) {
     .frames-container {
-        max-height: 100px;
-        padding: 6px;
+        max-height: 80px;
+        padding: 4px;
     }
     
     #framesList {
-        gap: 4px;
+        gap: 3px;
     }
     
     .frame-preview {
-        padding: 6px 10px;
-        font-size: 0.75rem;
-        min-height: 32px;
+        min-width: 36px;
+        min-height: 36px;
+        padding: 2px;
+    }
+    
+    .frame-thumbnail {
+        width: 30px;
+        height: 30px;
+        grid-template-columns: repeat(12, 1fr);
+        grid-template-rows: repeat(12, 1fr);
     }
     
     #addFrameBtn {
-        padding: 8px;
-        font-size: 0.8rem;
-        min-height: 32px;
-        margin-bottom: 6px;
+        padding: 6px;
+        font-size: 0.75rem;
+        min-height: 30px;
+        margin-bottom: 4px;
     }
     
     .mobile-dialog-content {
