@@ -25,6 +25,7 @@ html, body {
     width: 100vw;
     background-color: white;
     position: relative;
+    padding-bottom: 60px; /* Espace pour la bannière pub fixe */
 }
 
 /* Project info optimisé avec menu hamburger */
@@ -100,18 +101,18 @@ html, body {
 }
 
 .tools button {
-    padding: 8px 6px;
+    padding: 6px 4px;
     border: none;
-    border-radius: 6px;
+    border-radius: 4px;
     background-color: #007AFF;
     color: white;
     cursor: pointer;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 500;
     touch-action: manipulation;
     transition: all 0.1s ease;
-    min-height: 36px;
-    line-height: 1.2;
+    min-height: 30px;
+    line-height: 1.1;
 }
 
 .tools button:active {
@@ -154,7 +155,7 @@ html, body {
 
 /* Section secondaire pour couleurs et gomme */
 .tools-secondary {
-    padding: 6px;
+    padding: 4px;
     background-color: #f0f0f2;
     border-bottom: 1px solid #e0e0e0;
 }
@@ -164,30 +165,30 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
 #colorPicker {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
     border: 2px solid #ddd;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     outline: none;
 }
 
 .eraser-btn {
-    padding: 8px 12px;
+    padding: 6px 8px;
     border: 2px solid #ddd;
-    border-radius: 6px;
+    border-radius: 4px;
     background-color: white;
     color: #666;
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     font-weight: 500;
     transition: all 0.1s ease;
-    min-height: 36px;
+    min-height: 30px;
 }
 
 .eraser-btn:active, .eraser-btn.active {
@@ -199,16 +200,16 @@ html, body {
 
 .preset-colors {
     display: flex;
-    gap: 4px;
+    gap: 3px;
     flex-wrap: wrap;
     justify-content: center;
 }
 
 .color-btn {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     border: 2px solid #ccc;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
     transition: transform 0.1s ease;
 }
@@ -264,7 +265,7 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 6px;
+    padding: 4px;
     overflow: hidden;
     background-color: #fafafa;
     min-height: 200px;
@@ -308,8 +309,8 @@ html, body {
 .frames-container {
     background-color: #f8f9fa;
     border-top: 1px solid #e0e0e0;
-    padding: 6px;
-    max-height: 100px;
+    padding: 4px;
+    max-height: 85px;
     overflow-y: auto;
 }
 
@@ -351,6 +352,11 @@ html, body {
     color: #999;
     font-size: 0.8rem;
     flex-shrink: 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
 }
 
 .ad-space::before {
@@ -868,6 +874,22 @@ html, body {
     padding: 14px;
 }
 
+/* Optimisation globale pour tous les mobiles */
+@media (max-width: 768px) {
+    .ad-space {
+        height: 50px;
+        font-size: 0.7rem;
+    }
+    
+    .editor-container {
+        padding-bottom: 50px;
+    }
+    
+    .frames-container {
+        max-height: 80px;
+    }
+}
+
 /* Styles spécifiques pour les écrans tactiles */
 @media (pointer: coarse) {
     .pixel {
@@ -891,23 +913,69 @@ html, body {
 /* Optimisation mobile générale */
 @media (max-width: 480px) {
     .frames-container {
-        max-height: 85px;
-        padding: 4px;
+        max-height: 75px;
+        padding: 3px;
+        margin-bottom: 60px;
     }
     
     .frame-preview {
-        min-width: 40px;
-        min-height: 40px;
+        min-width: 38px;
+        min-height: 38px;
         padding: 2px;
     }
     
     .frame-thumbnail {
-        width: 34px;
-        height: 34px;
+        width: 32px;
+        height: 32px;
     }
     
     #framesList {
-        gap: 3px;
+        gap: 2px;
+    }
+    
+    /* Réduire encore plus les outils sur mobile */
+    .tools button {
+        padding: 4px 3px;
+        font-size: 0.6rem;
+        min-height: 26px;
+    }
+    
+    .color-btn {
+        width: 24px;
+        height: 24px;
+    }
+    
+    #colorPicker {
+        width: 26px;
+        height: 26px;
+    }
+    
+    .eraser-btn {
+        padding: 4px 6px;
+        font-size: 0.6rem;
+        min-height: 26px;
+    }
+    
+    .tools-secondary {
+        padding: 3px;
+    }
+    
+    .color-palette {
+        gap: 4px;
+    }
+    
+    .preset-colors {
+        gap: 2px;
+    }
+    
+    /* Ajustement spécial mobile pour éviter les chevauchements */
+    .editor-container {
+        padding-bottom: 45px;
+    }
+    
+    .ad-space {
+        height: 45px;
+        font-size: 0.65rem;
     }
 }
 
@@ -964,32 +1032,69 @@ html, body {
 /* Landscape mobile optimizations */
 @media (max-height: 500px) and (orientation: landscape) {
     .frames-container {
-        max-height: 80px;
-        padding: 4px;
+        max-height: 65px;
+        padding: 3px;
+        margin-bottom: 50px;
     }
     
     #framesList {
-        gap: 3px;
+        gap: 2px;
     }
     
     .frame-preview {
-        min-width: 36px;
-        min-height: 36px;
-        padding: 2px;
+        min-width: 32px;
+        min-height: 32px;
+        padding: 1px;
     }
     
     .frame-thumbnail {
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
         grid-template-columns: repeat(12, 1fr);
         grid-template-rows: repeat(12, 1fr);
     }
     
     #addFrameBtn {
-        padding: 6px;
-        font-size: 0.75rem;
-        min-height: 30px;
-        margin-bottom: 4px;
+        padding: 4px;
+        font-size: 0.7rem;
+        min-height: 26px;
+        margin-bottom: 3px;
+    }
+    
+    .tools button {
+        padding: 3px 2px;
+        font-size: 0.55rem;
+        min-height: 24px;
+    }
+    
+    .color-btn {
+        width: 22px;
+        height: 22px;
+    }
+    
+    #colorPicker {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .eraser-btn {
+        padding: 3px 4px;
+        font-size: 0.55rem;
+        min-height: 24px;
+    }
+    
+    .tools-secondary {
+        padding: 2px;
+    }
+    
+    /* Ajustement mode paysage pour éviter les chevauchements */
+    .editor-container {
+        padding-bottom: 40px;
+    }
+    
+    .ad-space {
+        height: 40px;
+        font-size: 0.6rem;
     }
     
     .mobile-dialog-content {
