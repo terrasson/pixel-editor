@@ -11,6 +11,10 @@ const maxCustomColors = 8; // Nombre maximum de couleurs personnalisées
 let autoSaveProjects = []; // Projets sauvegardés automatiquement en local
 const maxAutoSaveProjects = 10; // Nombre maximum de projets auto-sauvegardés
 
+// Variables pour l'animation
+let isAnimationPlaying = false;
+let animationInterval = null;
+
 // Initialisation de la grille
 function initGrid() {
     const grid = document.getElementById('pixelGrid');
@@ -423,6 +427,11 @@ function saveCurrentFrame() {
 function loadFrame(frameIndex) {
     if (!frames[frameIndex]) return;
     
+    // Arrêter l'animation si elle est en cours quand on change de frame manuellement
+    if (isAnimationPlaying) {
+        stopAnimation();
+    }
+    
     const pixels = document.querySelectorAll('.pixel');
     
     // Nettoyer tous les marqueurs existants de manière stricte
@@ -688,22 +697,40 @@ async function loadFromFile() {
 
 // Prévisualisation de l'animation
 function previewAnimation() {
-    // Sauvegarder la frame actuelle avant de commencer l'animation
+    const previewBtn = document.getElementById('previewBtn');
+    
+    if (isAnimationPlaying) {
+        // ARRÊTER l'animation
+        stopAnimation();
+    } else {
+        // DÉMARRER l'animation
+        startAnimation();
+    }
+}
+
+function startAnimation() {
+    if (frames.length <= 1) {
+        alert('Il faut au moins 2 frames pour faire une animation !');
+        return;
+    }
+    
+    // Sauvegarder la frame actuelle
     saveCurrentFrame();
     
+    isAnimationPlaying = true;
+    const previewBtn = document.getElementById('previewBtn');
+    previewBtn.innerHTML = '⏹️';
+    previewBtn.title = 'Arrêter l\'animation';
+    previewBtn.classList.add('playing');
+    
     let frameIndex = 0;
-    let cycleCount = 0;
-    const totalCycles = 2; // Faire 2 cycles complets pour bien voir l'animation
     
-    alert(`🎬 Prévisualisation de l'animation (${frames.length} frames)\n\nL'animation va jouer ${totalCycles} fois...`);
-    
-    const interval = setInterval(() => {
+    animationInterval = setInterval(() => {
         // Nettoyer les marqueurs pendant l'animation
         cleanUpMarkers();
         
         // Vérifier que la frame existe
         if (!frames[frameIndex] || frames[frameIndex].length === 0) {
-            console.error(`Frame ${frameIndex} vide ou inexistante`);
             frameIndex = (frameIndex + 1) % frames.length;
             return;
         }
@@ -716,27 +743,25 @@ function previewAnimation() {
             }
         });
         
-        console.log(`Affichage frame ${frameIndex + 1}/${frames.length} (cycle ${cycleCount + 1}/${totalCycles})`);
+        frameIndex = (frameIndex + 1) % frames.length;
         
-        frameIndex++;
-        
-        // Si on a fini un cycle complet
-        if (frameIndex >= frames.length) {
-            frameIndex = 0;
-            cycleCount++;
-            
-            // Arrêter après le nombre de cycles souhaité
-            if (cycleCount >= totalCycles) {
-                clearInterval(interval);
-                
-                // Retourner à la frame courante
-                setTimeout(() => {
-                    loadFrame(currentFrame);
-                    alert('✅ Prévisualisation terminée !');
-                }, 300);
-            }
-        }
-    }, 400); // Ralentir un peu pour mieux voir chaque frame
+    }, 300); // 300ms par frame pour une animation fluide
+}
+
+function stopAnimation() {
+    if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
+    
+    isAnimationPlaying = false;
+    const previewBtn = document.getElementById('previewBtn');
+    previewBtn.innerHTML = '▶️';
+    previewBtn.title = 'Lancer l\'animation';
+    previewBtn.classList.remove('playing');
+    
+    // Retourner à la frame de travail actuelle
+    loadFrame(currentFrame);
 }
 
 // Utilitaires améliorés
@@ -1328,4 +1353,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     updateFramesList();
     loadFrame(0);
+    
+    // Arrêter l'animation si l'utilisateur quitte la page
+    window.addEventListener('beforeunload', () => {
+        if (isAnimationPlaying) {
+            stopAnimation();
+        }
+    });
 });
