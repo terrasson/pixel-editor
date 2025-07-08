@@ -540,18 +540,19 @@ function reorderFrames(fromIndex, toIndex) {
 // Ajouter la fonction copyCurrentFrame
 function copyCurrentFrame() {
     copiedFrame = JSON.parse(JSON.stringify(frames[currentFrame]));
-    document.getElementById('pasteFrameBtn').disabled = false;
+    const pasteBtn = document.getElementById('pasteFrameBtn');
+    if (pasteBtn) {
+        pasteBtn.disabled = false;
+    }
+    console.log('Frame copiée !'); // Debug pour vérifier que ça fonctionne
 }
 
-// Ajouter la fonction pasteFrame
+// Fonction pour coller une frame
 function pasteFrame() {
     if (copiedFrame) {
         frames[currentFrame] = [...copiedFrame];
-    loadFrame(currentFrame);
-        
-        // Activer le bouton coller
-        const pasteBtn = document.getElementById('pasteFrameBtn');
-        if (pasteBtn) pasteBtn.disabled = false;
+        loadFrame(currentFrame);
+        updateFramesList();
     }
 }
 
@@ -987,6 +988,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Nettoyage initial pour s'assurer qu'aucun élément indésirable n'existe
     cleanUpOutsideElements();
+    
+    // Désactiver le bouton coller par défaut
+    const pasteBtn = document.getElementById('pasteFrameBtn');
+    if (pasteBtn) {
+        pasteBtn.disabled = true;
+    }
     
     updateFramesList();
     loadFrame(0);
