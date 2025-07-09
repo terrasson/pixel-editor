@@ -1313,7 +1313,16 @@ function showHelp() {
                     <strong>Sauvegarde:</strong> Vos couleurs personnalisées sont automatiquement sauvegardées avec vos projets
                 </div>
                 <div class="help-item">
-                    <strong>Partage facile:</strong> Glissez-déposez directement un fichier .pixelart reçu pour l'ouvrir
+                    <strong>Partage par lien:</strong> Option recommandée - Partage directe via URL, ouverture immédiate
+                </div>
+                <div class="help-item">
+                    <strong>Partage par fichier:</strong> Téléchargez en .json (standard) ou .txt (spécial iOS si .json grisé)
+                </div>
+                <div class="help-item">
+                    <strong>Import facile:</strong> Glissez-déposez directement un fichier reçu ou cliquez "⬆️ Charger"
+                </div>
+                <div class="help-item">
+                    <strong>Formats supportés:</strong> .json, .txt, .pixelart - Tous contiennent les mêmes données
                 </div>
                 <div class="help-item">
                     <strong>Collaboration:</strong> Partagez vos projets, récupérez ceux de vos amis et modifiez-les ensemble !
@@ -1338,10 +1347,10 @@ function showHelp() {
                     <strong>Sauvegarde:</strong> Base de données Supabase pour synchronisation multi-appareils
                 </div>
                 <div class="help-item">
-                    <strong>Format de partage:</strong> Fichiers .pixelart (JSON optimisé) avec signature de validation
+                    <strong>Format de partage:</strong> Fichiers .json (standard), .txt (iOS), .pixelart (legacy) - JSON optimisé avec signature
                 </div>
                 <div class="help-item">
-                    <strong>Import:</strong> Support drag & drop, Web Share API, et sélection de fichiers
+                    <strong>Import:</strong> Support drag & drop, Web Share API, sélection de fichiers (.json/.txt/.pixelart)
                 </div>
             </div>
         </div>
@@ -2018,9 +2027,9 @@ async function shareProject() {
         const jsonString = JSON.stringify(projectData, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
         
-        // Créer un nom de fichier unique
+        // Créer un nom de fichier unique (utiliser .json pour compatibilité iOS)
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        const fileName = `${projectData.name.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.pixelart`;
+        const fileName = `${projectData.name.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.json`;
         
         // Vérifier si Web Share API est supportée et si on peut partager des fichiers
         if (navigator.share && navigator.canShare) {
@@ -2050,7 +2059,7 @@ async function shareProject() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${projectData.name.replace(/[^a-zA-Z0-9]/g, '_')}.pixelart`;
+        a.download = `${projectData.name.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2077,8 +2086,13 @@ function showShareDialog(blob, fileName, projectData) {
                 </button>
                 
                 <button id="downloadShare" class="share-option">
-                    📥 Télécharger le fichier
-                    <small>Fichier .pixelart - Pour partage manuel</small>
+                    📥 Télécharger (.json)
+                    <small>Format standard - Compatible iOS/Android</small>
+                </button>
+                
+                <button id="downloadTxtShare" class="share-option">
+                    📄 Télécharger (.txt)
+                    <small>Spécial iOS - Si .json est grisé</small>
                 </button>
                 
                 <button id="emailShare" class="share-option">
@@ -2093,12 +2107,14 @@ function showShareDialog(blob, fileName, projectData) {
             </div>
             
             <div class="share-instructions">
-                <p><strong>💡 Recommandation iOS :</strong></p>
-                <p>Utilisez <strong>"🔗 Partager par lien"</strong> pour une ouverture directe dans l'app !</p>
+                <p><strong>💡 Guide iOS :</strong></p>
+                <p><strong>Option 1 (Recommandée) :</strong> "🔗 Partager par lien" pour ouverture directe</p>
+                <p><strong>Option 2 :</strong> Si les fichiers .json sont grisés, utilisez "📄 Télécharger (.txt)"</p>
                 <ol>
-                    <li>Cliquez sur "🔗 Partager par lien"</li>
-                    <li>Envoyez le lien via Messages, AirDrop, etc.</li>
-                    <li>Votre ami clique sur le lien → ouverture directe !</li>
+                    <li>Téléchargez le fichier (.json ou .txt)</li>
+                    <li>Dans l'app, cliquez "⬆️ Charger"</li>
+                    <li>Si le fichier est grisé, changez pour .txt</li>
+                    <li>Sélectionnez votre fichier</li>
                 </ol>
             </div>
         </div>
@@ -2143,12 +2159,29 @@ function showShareDialog(blob, fileName, projectData) {
         dialog.remove();
     });
     
-    // Télécharger le fichier
+    // Télécharger le fichier JSON
     dialog.querySelector('#downloadShare').addEventListener('click', () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        dialog.remove();
+    });
+    
+    // Télécharger en format .txt pour iOS
+    dialog.querySelector('#downloadTxtShare').addEventListener('click', () => {
+        const jsonString = JSON.stringify(projectData, null, 2);
+        const txtBlob = new Blob([jsonString], { type: 'text/plain' });
+        const txtFileName = fileName.replace('.json', '.txt');
+        
+        const url = URL.createObjectURL(txtBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = txtFileName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2306,11 +2339,16 @@ function initDragAndDrop() {
         if (files.length > 0) {
             const file = files[0];
             
-            // Vérifier que c'est un fichier JSON ou .pixelart
-            if (file.type === 'application/json' || file.name.endsWith('.pixelart') || file.name.endsWith('.json')) {
+            // Vérifier que c'est un fichier valide (plus permissif pour iOS)
+            if (file.type === 'application/json' || 
+                file.type === 'text/plain' || 
+                file.type === 'text/json' ||
+                file.name.endsWith('.json') || 
+                file.name.endsWith('.pixelart') || 
+                file.name.endsWith('.txt')) {
                 importSharedProject(file);
             } else {
-                alert('❌ Veuillez déposer un fichier .pixelart ou .json');
+                alert('❌ Veuillez déposer un fichier .json, .pixelart ou .txt');
             }
         }
     }
@@ -2362,7 +2400,8 @@ function showFileLoadDialog() {
     dialog.querySelector('#browseFiles').addEventListener('click', () => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.json,.pixelart';
+        // Plus permissif pour iOS - accepter tous les fichiers JSON et texte
+        input.accept = '.json,.txt,.pixelart,application/json,text/plain,text/json,*/*';
         
         input.onchange = async (e) => {
             const file = e.target.files[0];
@@ -2442,11 +2481,17 @@ function showFileLoadDialog() {
         if (files.length > 0) {
             const file = files[0];
             
-            if (file.type === 'application/json' || file.name.endsWith('.pixelart') || file.name.endsWith('.json')) {
+            // Plus permissif pour la compatibilité iOS
+            if (file.type === 'application/json' || 
+                file.type === 'text/plain' || 
+                file.type === 'text/json' ||
+                file.name.endsWith('.json') || 
+                file.name.endsWith('.pixelart') || 
+                file.name.endsWith('.txt')) {
                 await importSharedProject(file);
                 dialog.remove();
             } else {
-                alert('❌ Veuillez déposer un fichier .pixelart ou .json');
+                alert('❌ Veuillez déposer un fichier .json, .pixelart ou .txt');
             }
         }
     });
