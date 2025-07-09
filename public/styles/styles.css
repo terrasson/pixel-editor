@@ -180,6 +180,37 @@ html, body {
     outline: none;
 }
 
+.validate-color-btn {
+    padding: 6px 8px;
+    border: 2px solid #007AFF;
+    border-radius: 4px;
+    background-color: #007AFF;
+    color: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transition: all 0.1s ease;
+    min-height: 30px;
+    min-width: 30px;
+}
+
+.validate-color-btn:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.validate-color-btn:active {
+    transform: scale(0.95);
+}
+
+.validate-color-btn:disabled {
+    background-color: #ccc;
+    border-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .eraser-btn {
     padding: 6px 8px;
     border: 2px solid #ddd;

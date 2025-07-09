@@ -56,11 +56,6 @@ function draw(e) {
             // Mode dessin normal
             e.target.style.backgroundColor = currentColor;
             e.target.classList.remove('empty');
-            
-            // Ajouter la couleur à la palette personnalisée si ce n'est pas une couleur prédéfinie
-            if (!isPredefinedColor(currentColor)) {
-                addCustomColor(currentColor);
-            }
         }
         saveCurrentFrame();
     }
@@ -390,8 +385,13 @@ function updateColorPalette() {
 function initColorPicker() {
     const colorPicker = document.getElementById('colorPicker');
     const eraserBtn = document.getElementById('eraserBtn');
+    const validateBtn = document.getElementById('validateColorBtn');
     
-    colorPicker.addEventListener('change', (e) => {
+    let pendingColor = null; // Couleur en attente de validation
+    
+    // Quand la couleur change, on la marque comme en attente
+    colorPicker.addEventListener('input', (e) => {
+        pendingColor = e.target.value;
         currentColor = e.target.value;
         isErasing = false;
         if (eraserBtn) {
@@ -399,9 +399,34 @@ function initColorPicker() {
             document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
         }
         
-        // Ajouter automatiquement la couleur à la palette personnalisée
-        addCustomColor(currentColor);
+        // Activer le bouton de validation s'il y a une couleur en attente
+        if (validateBtn && !isPredefinedColor(pendingColor)) {
+            validateBtn.disabled = false;
+            validateBtn.title = `Valider la couleur ${pendingColor}`;
+        } else {
+            validateBtn.disabled = true;
+            validateBtn.title = 'Couleur déjà dans la palette';
+        }
     });
+    
+    // Valider la couleur avec le bouton
+    if (validateBtn) {
+        validateBtn.addEventListener('click', () => {
+            if (pendingColor && !isPredefinedColor(pendingColor)) {
+                addCustomColor(pendingColor);
+                pendingColor = null;
+                validateBtn.disabled = true;
+                validateBtn.title = 'Couleur ajoutée à la palette !';
+                setTimeout(() => {
+                    validateBtn.title = 'Valider une nouvelle couleur';
+                }, 1500);
+            }
+        });
+        
+        // Initialiser le bouton comme désactivé
+        validateBtn.disabled = true;
+        validateBtn.title = 'Choisissez une couleur puis validez';
+    }
 
     // Note: Les event listeners pour les boutons de couleur sont maintenant gérés dans updateColorPalette()
 }
