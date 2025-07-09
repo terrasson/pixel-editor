@@ -1280,6 +1280,37 @@ function showHelp() {
             </div>
 
             <div class="help-section">
+                <h3>🎬 Export Animation GIF</h3>
+                <div class="help-item">
+                    <strong>🎬 Export GIF:</strong> Créez des animations GIF pour un partage facile !
+                    <br>• Convertit vos frames en animation GIF
+                    <br>• Visible directement sans avoir besoin de l'éditeur
+                    <br>• Parfait pour réseaux sociaux, messages, emails
+                </div>
+                <div class="help-item">
+                    <strong>Options d'export:</strong>
+                    <br>• 📏 Taille : 128x128 à 1024x1024 pixels
+                    <br>• ⚡ Vitesse : De très rapide (0.1s) à très lent (1s)
+                    <br>• 🔄 Répétition : Infinie ou nombre limité
+                    <br>• ✨ Qualité : Maximale à rapide (impact sur taille fichier)
+                </div>
+                <div class="help-item">
+                    <strong>Utilisation:</strong>
+                    <br>• Bouton "🎬 Export GIF" dans la barre d'outils
+                    <br>• Ou option "🎬 Créer Animation GIF" dans le partage
+                    <br>• Configuration facile avec aperçu
+                    <br>• Téléchargement automatique du fichier .gif
+                </div>
+                <div class="help-item">
+                    <strong>Conseils GIF:</strong>
+                    <br>• Taille 256x256 : Bon compromis qualité/taille
+                    <br>• Vitesse 0.3s : Idéale pour la plupart des animations
+                    <br>• Répétition infinie : Standard pour les animations
+                    <br>• Qualité haute : Recommandée sauf contrainte de taille
+                </div>
+            </div>
+
+            <div class="help-section">
                 <h3>📱 Interface mobile</h3>
                 <div class="help-item">
                     <strong>Menu ☰:</strong> Cliquez pour afficher/masquer les outils sur mobile
@@ -1785,6 +1816,7 @@ function initEventListeners() {
     document.getElementById('loadBtn')?.addEventListener('click', loadFromFile);
     document.getElementById('loadLocalBtn')?.addEventListener('click', showLocalProjects);
     document.getElementById('shareProjectBtn')?.addEventListener('click', shareProject);
+    document.getElementById('exportGifBtn')?.addEventListener('click', exportToGif);
     document.getElementById('copyFrameBtn')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
     document.getElementById('helpBtn')?.addEventListener('click', showHelp);
@@ -2104,6 +2136,11 @@ function showShareDialog(blob, fileName, projectData) {
                     💬 Partager par message
                     <small>SMS/iMessage avec lien</small>
                 </button>
+                
+                <button id="gifExportShare" class="share-option">
+                    🎬 Créer Animation GIF
+                    <small>Partage visuel - Visible directement</small>
+                </button>
             </div>
             
             <div class="share-instructions">
@@ -2217,6 +2254,13 @@ Alternative : Le fichier "${fileName}" est aussi en pièce jointe si tu préfèr
         URL.revokeObjectURL(url);
         
         dialog.remove();
+    });
+    
+    // Créer et partager un GIF
+    dialog.querySelector('#gifExportShare').addEventListener('click', () => {
+        dialog.remove();
+        // Lancer l'export GIF depuis le partage
+        exportToGif();
     });
 }
 
@@ -2495,4 +2539,233 @@ function showFileLoadDialog() {
             }
         }
     });
+}
+
+// ========================================
+// EXPORT GIF ANIMÉ
+// ========================================
+
+// Exporter l'animation en GIF
+async function exportToGif() {
+    if (frames.length === 0) {
+        alert('❌ Aucune frame à exporter !');
+        return;
+    }
+    
+    // Sauvegarder la frame courante
+    saveCurrentFrame();
+    
+    // Interface de configuration du GIF
+    showGifExportDialog();
+}
+
+// Interface de configuration pour l'export GIF
+function showGifExportDialog() {
+    const exportContent = `
+        <div class="gif-export-content">
+            <h3>🎬 Export Animation GIF</h3>
+            <p>${frames.length} frame${frames.length > 1 ? 's' : ''} à exporter</p>
+            
+            <div class="gif-options">
+                <div class="gif-option">
+                    <label for="gifSize">📏 Taille du GIF :</label>
+                    <select id="gifSize">
+                        <option value="128">128x128 (Petit)</option>
+                        <option value="256" selected>256x256 (Moyen)</option>
+                        <option value="512">512x512 (Grand)</option>
+                        <option value="1024">1024x1024 (Très grand)</option>
+                    </select>
+                </div>
+                
+                <div class="gif-option">
+                    <label for="gifSpeed">⚡ Vitesse d'animation :</label>
+                    <select id="gifSpeed">
+                        <option value="100">Très rapide (0.1s)</option>
+                        <option value="200">Rapide (0.2s)</option>
+                        <option value="300" selected>Normal (0.3s)</option>
+                        <option value="500">Lent (0.5s)</option>
+                        <option value="1000">Très lent (1s)</option>
+                    </select>
+                </div>
+                
+                <div class="gif-option">
+                    <label for="gifLoop">🔄 Répétition :</label>
+                    <select id="gifLoop">
+                        <option value="0" selected>Infinie</option>
+                        <option value="1">1 fois</option>
+                        <option value="3">3 fois</option>
+                        <option value="5">5 fois</option>
+                    </select>
+                </div>
+                
+                <div class="gif-option">
+                    <label for="gifQuality">✨ Qualité :</label>
+                    <select id="gifQuality">
+                        <option value="1">Maximale (plus lent)</option>
+                        <option value="5" selected>Haute</option>
+                        <option value="10">Moyenne</option>
+                        <option value="20">Rapide (plus flou)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="gif-preview">
+                <p><strong>Aperçu :</strong> Animation ${frames.length} frames</p>
+                <div class="gif-preview-info">
+                    <small>💡 Un GIF sera créé avec votre animation pixel art pour un partage facile !</small>
+                </div>
+            </div>
+            
+            <div class="dialog-buttons">
+                <button id="createGifBtn" class="dialog-button">🎬 Créer le GIF</button>
+                <button id="cancelGifBtn" class="dialog-button secondary">Annuler</button>
+            </div>
+        </div>
+    `;
+    
+    const dialog = createMobileDialog('🎬 Export GIF', exportContent);
+    
+    // Créer le GIF
+    dialog.querySelector('#createGifBtn').addEventListener('click', async () => {
+        const size = parseInt(dialog.querySelector('#gifSize').value);
+        const speed = parseInt(dialog.querySelector('#gifSpeed').value);
+        const repeat = parseInt(dialog.querySelector('#gifLoop').value);
+        const quality = parseInt(dialog.querySelector('#gifQuality').value);
+        
+        dialog.remove();
+        await createAnimatedGif(size, speed, repeat, quality);
+    });
+    
+    // Annuler
+    dialog.querySelector('#cancelGifBtn').addEventListener('click', () => {
+        dialog.remove();
+    });
+}
+
+// Créer le GIF animé avec les paramètres choisis
+async function createAnimatedGif(size, frameDelay, repeat, quality) {
+    try {
+        // Message de progression
+        const progressDiv = document.createElement('div');
+        progressDiv.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 122, 255, 0.95); color: white; padding: 20px;
+            border-radius: 12px; text-align: center; z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        `;
+        progressDiv.innerHTML = `
+            <div style="font-size: 2rem; margin-bottom: 10px;">🎬</div>
+            <div style="font-size: 1.2rem; margin-bottom: 5px;">Création du GIF...</div>
+            <div id="progressText" style="font-size: 0.9rem; opacity: 0.8;">Initialisation...</div>
+        `;
+        document.body.appendChild(progressDiv);
+        
+        const progressText = progressDiv.querySelector('#progressText');
+        
+        // Initialiser gif.js
+        progressText.textContent = 'Configuration du générateur...';
+        const gif = new GIF({
+            workers: 2,
+            quality: quality,
+            width: size,
+            height: size,
+            repeat: repeat
+        });
+        
+        // Créer un canvas pour dessiner les frames
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        // Traiter chaque frame
+        for (let frameIndex = 0; frameIndex < frames.length; frameIndex++) {
+            progressText.textContent = `Frame ${frameIndex + 1}/${frames.length}...`;
+            
+            // Effacer le canvas
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Calculer la taille des pixels
+            const pixelSize = size / 32;
+            
+            // Dessiner la grille de pixels
+            const frame = frames[frameIndex];
+            for (let row = 0; row < 32; row++) {
+                for (let col = 0; col < 32; col++) {
+                    const pixelIndex = row * 32 + col;
+                    const pixelColor = frame[pixelIndex] || '#FFFFFF';
+                    
+                    if (pixelColor !== '#FFFFFF') {
+                        ctx.fillStyle = pixelColor;
+                        ctx.fillRect(
+                            col * pixelSize,
+                            row * pixelSize,
+                            pixelSize,
+                            pixelSize
+                        );
+                    }
+                }
+            }
+            
+            // Ajouter la frame au GIF
+            gif.addFrame(canvas, { delay: frameDelay });
+            
+            // Petite pause pour laisser l'UI respirer
+            await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        
+        progressText.textContent = 'Génération du fichier GIF...';
+        
+        // Générer le GIF
+        gif.on('finished', function(blob) {
+            // Masquer le message de progression
+            progressDiv.remove();
+            
+            // Télécharger le fichier GIF
+            const projectName = document.getElementById('projectTitle')?.textContent || 'animation';
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            const fileName = `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.gif`;
+            
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // Message de succès
+            setTimeout(() => {
+                alert(`✅ GIF créé avec succès !
+
+📁 Fichier : ${fileName}
+🎬 ${frames.length} frames
+📏 Taille : ${size}x${size}
+⚡ Vitesse : ${frameDelay}ms par frame
+
+Votre animation est prête à être partagée ! 🎉`);
+            }, 500);
+        });
+        
+        gif.on('progress', function(progress) {
+            const percent = Math.round(progress * 100);
+            progressText.textContent = `Génération... ${percent}%`;
+        });
+        
+        // Lancer la génération
+        gif.render();
+        
+    } catch (error) {
+        console.error('Erreur lors de la création du GIF:', error);
+        
+        // Masquer le message de progression
+        const progressDiv = document.querySelector('div[style*="position: fixed"]');
+        if (progressDiv) {
+            progressDiv.remove();
+        }
+        
+        alert(`❌ Erreur lors de la création du GIF: ${error.message}`);
+    }
 }

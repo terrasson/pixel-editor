@@ -1583,3 +1583,149 @@ body.drag-over .grid-container {
         height: calc(60px + env(safe-area-inset-bottom));
     }
 } 
+
+/* Styles pour l'export GIF */
+.gif-export-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.gif-export-content h3 {
+    color: #007AFF;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.gif-options {
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    text-align: left;
+}
+
+.gif-option {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.gif-option label {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.gif-option select {
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: white;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.gif-option select:focus {
+    outline: none;
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.gif-preview {
+    background: #f0f8ff;
+    border: 1px solid #007AFF;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.gif-preview p {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-weight: 500;
+}
+
+.gif-preview-info {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.gif-preview-info small {
+    display: block;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* Améliorer les boutons d'action */
+.dialog-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.dialog-button {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    background: linear-gradient(135deg, #007AFF, #0056b3);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+.dialog-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+}
+
+.dialog-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 122, 255, 0.3);
+}
+
+.dialog-button.secondary {
+    background: #f8f9fa;
+    color: #666;
+    border: 2px solid #e0e0e0;
+    box-shadow: none;
+}
+
+.dialog-button.secondary:hover {
+    background: #e9ecef;
+    border-color: #ced4da;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive pour mobile */
+@media (max-width: 480px) {
+    .gif-export-content {
+        padding: 15px;
+    }
+    
+    .gif-options {
+        gap: 12px;
+    }
+    
+    .gif-option select {
+        padding: 12px;
+        font-size: 1.1rem;
+    }
+    
+    .dialog-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .dialog-button {
+        min-height: 48px;
+        font-size: 1.1rem;
+    }
+} 
