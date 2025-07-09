@@ -2570,10 +2570,10 @@ function showGifExportDialog() {
                 <div class="gif-option">
                     <label for="gifSize">📏 Taille du GIF :</label>
                     <select id="gifSize">
-                        <option value="128">128x128 (Petit)</option>
-                        <option value="256" selected>256x256 (Moyen)</option>
-                        <option value="512">512x512 (Grand)</option>
-                        <option value="1024">1024x1024 (Très grand)</option>
+                        <option value="128" selected>128x128 (Petit - Rapide)</option>
+                        <option value="256">256x256 (Moyen)</option>
+                        <option value="512">512x512 (Grand - Plus lent)</option>
+                        <option value="1024">1024x1024 (Très grand - Très lent)</option>
                     </select>
                 </div>
                 
@@ -2601,10 +2601,10 @@ function showGifExportDialog() {
                 <div class="gif-option">
                     <label for="gifQuality">✨ Qualité :</label>
                     <select id="gifQuality">
-                        <option value="1">Maximale (plus lent)</option>
-                        <option value="5" selected>Haute</option>
-                        <option value="10">Moyenne</option>
-                        <option value="20">Rapide (plus flou)</option>
+                        <option value="1">Maximale (très lent)</option>
+                        <option value="5">Haute (lent)</option>
+                        <option value="10" selected>Moyenne (recommandé)</option>
+                        <option value="20">Rapide</option>
                     </select>
                 </div>
             </div>
@@ -2613,6 +2613,8 @@ function showGifExportDialog() {
                 <p><strong>Aperçu :</strong> Animation ${frames.length} frames</p>
                 <div class="gif-preview-info">
                     <small>💡 Un GIF sera créé avec votre animation pixel art pour un partage facile !</small>
+                    <br><small>⚡ Pour aller plus vite : choisissez taille 128x128 et qualité Rapide</small>
+                    <br><small>⏱️ Temps estimé : ${frames.length < 5 ? 'quelques secondes' : frames.length < 10 ? '10-30 secondes' : '30-60 secondes'}</small>
                 </div>
             </div>
             
@@ -2656,20 +2658,34 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
         progressDiv.innerHTML = `
             <div style="font-size: 2rem; margin-bottom: 10px;">🎬</div>
             <div style="font-size: 1.2rem; margin-bottom: 5px;">Création du GIF...</div>
-            <div id="progressText" style="font-size: 0.9rem; opacity: 0.8;">Initialisation...</div>
+            <div id="progressText" style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">Initialisation...</div>
+            <div style="background: rgba(255,255,255,0.3); border-radius: 10px; height: 8px; margin-bottom: 10px;">
+                <div id="progressBar" style="background: white; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s;"></div>
+            </div>
+            <button id="cancelGifBtn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Annuler</button>
         `;
         document.body.appendChild(progressDiv);
         
         const progressText = progressDiv.querySelector('#progressText');
+        const progressBar = progressDiv.querySelector('#progressBar');
+        let cancelled = false;
         
-        // Initialiser gif.js
+        // Bouton d'annulation
+        progressDiv.querySelector('#cancelGifBtn').addEventListener('click', () => {
+            cancelled = true;
+            progressDiv.remove();
+        });
+        
+        // Initialiser gif.js avec configuration optimisée
         progressText.textContent = 'Configuration du générateur...';
         const gif = new GIF({
-            workers: 2,
+            workers: 4, // Plus de workers pour aller plus vite
             quality: quality,
             width: size,
             height: size,
-            repeat: repeat
+            repeat: repeat,
+            workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js',
+            background: '#FFFFFF'
         });
         
         // Créer un canvas pour dessiner les frames
@@ -2678,44 +2694,64 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
         canvas.height = size;
         const ctx = canvas.getContext('2d');
         
-        // Traiter chaque frame
+        // Traiter chaque frame avec méthode optimisée
         for (let frameIndex = 0; frameIndex < frames.length; frameIndex++) {
-            progressText.textContent = `Frame ${frameIndex + 1}/${frames.length}...`;
+            // Vérifier si l'utilisateur a annulé
+            if (cancelled) return;
             
-            // Effacer le canvas
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, size, size);
+            const frameProgress = (frameIndex / frames.length * 50); // 50% pour la préparation
+            progressText.textContent = `Préparation frame ${frameIndex + 1}/${frames.length}...`;
+            progressBar.style.width = `${frameProgress}%`;
             
-            // Calculer la taille des pixels
-            const pixelSize = size / 32;
+            // Méthode optimisée : utiliser ImageData pour un rendu plus rapide
+            const imageData = ctx.createImageData(size, size);
+            const data = imageData.data;
             
-            // Dessiner la grille de pixels
+            // Calculer le rapport d'échelle
+            const scale = size / 32;
+            
+            // Remplir l'image avec les pixels
             const frame = frames[frameIndex];
-            for (let row = 0; row < 32; row++) {
-                for (let col = 0; col < 32; col++) {
-                    const pixelIndex = row * 32 + col;
+            
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    // Calculer les coordonnées de la grille 32x32
+                    const gridX = Math.floor(x / scale);
+                    const gridY = Math.floor(y / scale);
+                    const pixelIndex = gridY * 32 + gridX;
+                    
+                    // Obtenir la couleur du pixel
                     const pixelColor = frame[pixelIndex] || '#FFFFFF';
                     
-                    if (pixelColor !== '#FFFFFF') {
-                        ctx.fillStyle = pixelColor;
-                        ctx.fillRect(
-                            col * pixelSize,
-                            row * pixelSize,
-                            pixelSize,
-                            pixelSize
-                        );
-                    }
+                    // Convertir hex en RGB
+                    const r = parseInt(pixelColor.slice(1, 3), 16);
+                    const g = parseInt(pixelColor.slice(3, 5), 16);
+                    const b = parseInt(pixelColor.slice(5, 7), 16);
+                    
+                    // Mettre les valeurs dans ImageData
+                    const dataIndex = (y * size + x) * 4;
+                    data[dataIndex] = r;     // Rouge
+                    data[dataIndex + 1] = g; // Vert
+                    data[dataIndex + 2] = b; // Bleu
+                    data[dataIndex + 3] = 255; // Alpha
                 }
             }
             
-            // Ajouter la frame au GIF
-            gif.addFrame(canvas, { delay: frameDelay });
+            // Dessiner l'ImageData sur le canvas
+            ctx.putImageData(imageData, 0, 0);
             
-            // Petite pause pour laisser l'UI respirer
-            await new Promise(resolve => setTimeout(resolve, 10));
+            // Ajouter la frame au GIF
+            gif.addFrame(canvas, { delay: frameDelay, copy: true });
+            
+            // Pause plus courte pour l'UI
+            await new Promise(resolve => setTimeout(resolve, 1));
         }
         
+        // Vérifier si l'utilisateur a annulé avant la génération
+        if (cancelled) return;
+        
         progressText.textContent = 'Génération du fichier GIF...';
+        progressBar.style.width = '50%';
         
         // Générer le GIF
         gif.on('finished', function(blob) {
@@ -2751,7 +2787,9 @@ Votre animation est prête à être partagée ! 🎉`);
         
         gif.on('progress', function(progress) {
             const percent = Math.round(progress * 100);
+            const totalProgress = 50 + (progress * 50); // 50% préparation + 50% génération
             progressText.textContent = `Génération... ${percent}%`;
+            progressBar.style.width = `${totalProgress}%`;
         });
         
         // Lancer la génération
