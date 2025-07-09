@@ -1238,6 +1238,8 @@ function showHelp() {
                 </div>
                 <div class="help-item">
                     <strong>📂 Charger:</strong> Charge un fichier JSON depuis votre appareil
+                    <br>• Accepte les formats .json et .pixelart
+                    <br>• Compatible avec les projets partagés
                 </div>
                 <div class="help-item">
                     <strong>🌐 Mes projets:</strong> Liste de vos projets sauvegardés en ligne
@@ -1246,6 +1248,34 @@ function showHelp() {
                 </div>
                 <div class="help-item">
                     <strong>🗑️ Effacer tout:</strong> Remet la grille à zéro
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h3>📤 Partage de projets</h3>
+                <div class="help-item">
+                    <strong>📤 Partager:</strong> Partagez vos créations avec vos amis !
+                    <br>• Crée un fichier .pixelart optimisé
+                    <br>• Compatible avec tous les appareils
+                    <br>• Inclut toutes vos couleurs personnalisées
+                </div>
+                <div class="help-item">
+                    <strong>Options de partage:</strong>
+                    <br>• 📥 Téléchargement direct du fichier
+                    <br>• 📧 Partage par email avec instructions
+                    <br>• Compatible AirDrop, messages, etc.
+                </div>
+                <div class="help-item">
+                    <strong>Import facile:</strong>
+                    <br>• Glissez-déposez un fichier .pixelart sur l'écran
+                    <br>• Ou utilisez "📂 Charger" pour sélectionner
+                    <br>• Aperçu des détails avant import
+                </div>
+                <div class="help-item">
+                    <strong>Format de fichier:</strong> Les fichiers .pixelart contiennent tout :
+                    <br>• Toutes les frames de l'animation
+                    <br>• Couleurs personnalisées utilisées
+                    <br>• Métadonnées (nom, date de création)
                 </div>
             </div>
 
@@ -1282,6 +1312,12 @@ function showHelp() {
                 <div class="help-item">
                     <strong>Sauvegarde:</strong> Vos couleurs personnalisées sont automatiquement sauvegardées avec vos projets
                 </div>
+                <div class="help-item">
+                    <strong>Partage facile:</strong> Glissez-déposez directement un fichier .pixelart reçu pour l'ouvrir
+                </div>
+                <div class="help-item">
+                    <strong>Collaboration:</strong> Partagez vos projets, récupérez ceux de vos amis et modifiez-les ensemble !
+                </div>
             </div>
 
             <div class="help-section">
@@ -1300,6 +1336,12 @@ function showHelp() {
                 </div>
                 <div class="help-item">
                     <strong>Sauvegarde:</strong> Base de données Supabase pour synchronisation multi-appareils
+                </div>
+                <div class="help-item">
+                    <strong>Format de partage:</strong> Fichiers .pixelart (JSON optimisé) avec signature de validation
+                </div>
+                <div class="help-item">
+                    <strong>Import:</strong> Support drag & drop, Web Share API, et sélection de fichiers
                 </div>
             </div>
         </div>
@@ -1733,6 +1775,7 @@ function initEventListeners() {
     document.getElementById('saveBtn')?.addEventListener('click', saveToFile);
     document.getElementById('loadBtn')?.addEventListener('click', loadFromFile);
     document.getElementById('loadLocalBtn')?.addEventListener('click', showLocalProjects);
+    document.getElementById('shareProjectBtn')?.addEventListener('click', shareProject);
     document.getElementById('copyFrameBtn')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
     document.getElementById('helpBtn')?.addEventListener('click', showHelp);
@@ -1799,6 +1842,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // Gérer le drag & drop pour importer des projets
+    initDragAndDrop();
+    
     // Arrêter l'animation si l'utilisateur quitte la page
     window.addEventListener('beforeunload', () => {
         if (isAnimationPlaying) {
@@ -1806,3 +1852,312 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ========================================
+// SYSTÈME DE PARTAGE DE PROJETS
+// ========================================
+
+// Créer un fichier projet optimisé pour le partage
+function createShareableProject() {
+    // Sauvegarder la frame courante avant l'export
+    saveCurrentFrame();
+    
+    const projectData = {
+        // Métadonnées
+        name: document.getElementById('projectTitle')?.textContent || 'Pixel Art partagé',
+        version: '2.0',
+        type: 'pixel-art-project',
+        created: new Date().toISOString(),
+        author: 'Pixel Art Editor',
+        
+        // Données du projet
+        frames: frames,
+        currentFrame: currentFrame,
+        customColors: customColors,
+        
+        // Informations pour la compatibilité
+        gridSize: { width: 32, height: 32 },
+        totalFrames: frames.length,
+        
+        // Signature pour vérifier l'intégrité
+        signature: 'pixel-art-editor-v2'
+    };
+    
+    return projectData;
+}
+
+// Partager un projet via Web Share API ou fallback
+async function shareProject() {
+    try {
+        const projectData = createShareableProject();
+        const jsonString = JSON.stringify(projectData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        
+        // Créer un nom de fichier unique
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const fileName = `${projectData.name.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.pixelart`;
+        
+        // Vérifier si Web Share API est supportée et si on peut partager des fichiers
+        if (navigator.share && navigator.canShare) {
+            const file = new File([blob], fileName, { type: 'application/json' });
+            
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: `🎨 ${projectData.name} - Pixel Art`,
+                    text: `Découvre mon animation pixel art ! Ouvre ce fichier dans l'Éditeur Pixel Art pour la voir.`,
+                    files: [file]
+                });
+                return;
+            }
+        }
+        
+        // Fallback : téléchargement + options de partage
+        showShareDialog(blob, fileName, projectData);
+        
+    } catch (error) {
+        console.error('Erreur lors du partage:', error);
+        alert('❌ Erreur lors du partage. Le fichier va être téléchargé à la place.');
+        
+        // Fallback ultime : simple téléchargement
+        const projectData = createShareableProject();
+        const jsonString = JSON.stringify(projectData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${projectData.name.replace(/[^a-zA-Z0-9]/g, '_')}.pixelart`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+}
+
+// Interface de partage avec options
+function showShareDialog(blob, fileName, projectData) {
+    const shareContent = `
+        <div class="share-content">
+            <h3>📤 Partager "${projectData.name}"</h3>
+            <p>Votre projet est prêt à être partagé !</p>
+            
+            <div class="share-options">
+                <button id="downloadShare" class="share-option">
+                    📥 Télécharger le fichier
+                    <small>Enregistrer sur cet appareil</small>
+                </button>
+                
+                <button id="copyLinkShare" class="share-option" style="display: none;">
+                    🔗 Copier le lien
+                    <small>Partager via un lien</small>
+                </button>
+                
+                <button id="emailShare" class="share-option">
+                    📧 Partager par email
+                    <small>Ouvrir l'app email</small>
+                </button>
+            </div>
+            
+            <div class="share-instructions">
+                <p><strong>💡 Instructions :</strong></p>
+                <ol>
+                    <li>Téléchargez le fichier <code>.pixelart</code></li>
+                    <li>Partagez-le via message, email, AirDrop, etc.</li>
+                    <li>Votre ami peut l'ouvrir dans l'Éditeur Pixel Art</li>
+                </ol>
+            </div>
+        </div>
+    `;
+    
+    const dialog = createMobileDialog('📤 Partager le projet', shareContent);
+    
+    // Télécharger le fichier
+    dialog.querySelector('#downloadShare').addEventListener('click', () => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        dialog.remove();
+    });
+    
+    // Partager par email
+    dialog.querySelector('#emailShare').addEventListener('click', () => {
+        const subject = encodeURIComponent(`🎨 ${projectData.name} - Animation Pixel Art`);
+        const body = encodeURIComponent(`Salut !
+
+J'ai créé une animation pixel art avec l'Éditeur Pixel Art et je voulais la partager avec toi !
+
+📎 Le fichier "${fileName}" est en pièce jointe.
+
+Pour l'ouvrir :
+1. Ouvre l'Éditeur Pixel Art dans ton navigateur
+2. Clique sur "📂 Charger" 
+3. Sélectionne le fichier .pixelart
+
+Tu pourras voir l'animation et même la modifier !
+
+🎨 Amusez-vous bien !`);
+        
+        window.open(`mailto:?subject=${subject}&body=${body}`);
+        
+        // Également télécharger le fichier pour l'attacher
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        dialog.remove();
+    });
+}
+
+// Améliorer l'import pour accepter les projets partagés
+async function importSharedProject(file) {
+    try {
+        const text = await file.text();
+        let projectData;
+        
+        try {
+            projectData = JSON.parse(text);
+        } catch (e) {
+            throw new Error('Le fichier n\'est pas un projet valide.');
+        }
+        
+        // Vérifier que c'est bien un projet de pixel art
+        if (!projectData.signature || projectData.signature !== 'pixel-art-editor-v2') {
+            // Essayer le format ancien ou différent
+            if (!projectData.frames) {
+                throw new Error('Ce fichier ne contient pas de données de projet valides.');
+            }
+        }
+        
+        // Valider les données essentielles
+        if (!Array.isArray(projectData.frames) || projectData.frames.length === 0) {
+            throw new Error('Le projet ne contient pas de frames valides.');
+        }
+        
+        // Confirmation avant import
+        const projectName = projectData.name || 'Projet partagé';
+        const frameCount = projectData.frames.length;
+        const hasCustomColors = projectData.customColors && projectData.customColors.length > 0;
+        
+        const confirmMessage = `🎨 Importer "${projectName}" ?
+
+📊 Détails :
+• ${frameCount} frame${frameCount > 1 ? 's' : ''}
+• ${hasCustomColors ? projectData.customColors.length + ' couleurs personnalisées' : 'Couleurs de base seulement'}
+• Créé le ${projectData.created ? new Date(projectData.created).toLocaleDateString('fr-FR') : 'Date inconnue'}
+
+⚠️ Cela remplacera votre projet actuel.`;
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+        
+        // Importer le projet
+        frames = projectData.frames;
+        currentFrame = projectData.currentFrame || 0;
+        
+        // Limiter currentFrame au nombre de frames disponibles
+        if (currentFrame >= frames.length) {
+            currentFrame = frames.length - 1;
+        }
+        
+        // Importer les couleurs personnalisées
+        if (projectData.customColors && Array.isArray(projectData.customColors)) {
+            customColors = [];
+            projectData.customColors.forEach(color => {
+                addCustomColor(color);
+            });
+        }
+        
+        // Mettre à jour l'interface
+        const title = document.getElementById('projectTitle');
+        if (title) {
+            title.textContent = projectName;
+        }
+        
+        updateFramesList();
+        loadFrame(currentFrame);
+        
+        alert(`✅ Projet "${projectName}" importé avec succès !`);
+        
+    } catch (error) {
+        console.error('Erreur lors de l\'import:', error);
+        alert(`❌ Erreur lors de l'import : ${error.message}`);
+    }
+}
+
+// Drag & Drop pour importer facilement
+function initDragAndDrop() {
+    const gridContainer = document.querySelector('.grid-container');
+    const body = document.body;
+    
+    // Événements pour le drag & drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        body.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    // Feedback visuel
+    ['dragenter', 'dragover'].forEach(eventName => {
+        body.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        body.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight(e) {
+        body.classList.add('drag-over');
+    }
+    
+    function unhighlight(e) {
+        body.classList.remove('drag-over');
+    }
+    
+    // Gérer le drop
+    body.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            const file = files[0];
+            
+            // Vérifier que c'est un fichier JSON ou .pixelart
+            if (file.type === 'application/json' || file.name.endsWith('.pixelart') || file.name.endsWith('.json')) {
+                importSharedProject(file);
+            } else {
+                alert('❌ Veuillez déposer un fichier .pixelart ou .json');
+            }
+        }
+    }
+}
+
+// Améliorer la fonction de chargement existante
+async function loadFromFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,.pixelart';
+    
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            await importSharedProject(file);
+        }
+    };
+    
+    input.click();
+}
