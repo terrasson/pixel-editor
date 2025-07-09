@@ -2612,9 +2612,9 @@ function showGifExportDialog() {
             <div class="gif-preview">
                 <p><strong>Aperçu :</strong> Animation ${frames.length} frames</p>
                 <div class="gif-preview-info">
-                    <small>💡 Un GIF sera créé avec votre animation pixel art pour un partage facile !</small>
-                    <br><small>⚡ Pour aller plus vite : choisissez taille 128x128 et qualité Rapide</small>
-                    <br><small>⏱️ Temps estimé : ${frames.length < 5 ? 'quelques secondes' : frames.length < 10 ? '10-30 secondes' : '30-60 secondes'}</small>
+                    <small>🎬 Votre GIF sera créé directement dans l'application !</small>
+                    <br><small>⚡ Optimisé pour mobile - Sans workers pour éviter les blocages</small>
+                    <br><small>⏱️ Temps estimé : ${frames.length < 5 ? '5-15 secondes' : frames.length < 10 ? '15-30 secondes' : '30-45 secondes'}</small>
                 </div>
             </div>
             
@@ -2658,11 +2658,11 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
         progressDiv.innerHTML = `
             <div style="font-size: 2rem; margin-bottom: 10px;">🎬</div>
             <div style="font-size: 1.2rem; margin-bottom: 5px;">Création du GIF...</div>
-            <div id="progressText" style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">Initialisation...</div>
+            <div id="progressText" style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">Préparation...</div>
             <div style="background: rgba(255,255,255,0.3); border-radius: 10px; height: 8px; margin-bottom: 10px;">
                 <div id="progressBar" style="background: white; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s;"></div>
             </div>
-            <button id="cancelGifBtn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Annuler</button>
+            <button id="cancelExportBtn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Annuler</button>
         `;
         document.body.appendChild(progressDiv);
         
@@ -2671,20 +2671,22 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
         let cancelled = false;
         
         // Bouton d'annulation
-        progressDiv.querySelector('#cancelGifBtn').addEventListener('click', () => {
+        progressDiv.querySelector('#cancelExportBtn').addEventListener('click', () => {
             cancelled = true;
             progressDiv.remove();
         });
         
-        // Initialiser gif.js avec configuration optimisée
-        progressText.textContent = 'Configuration du générateur...';
+        // NOUVELLE APPROCHE: Essayons gif.js sans workers (plus simple pour mobile)
+        progressText.textContent = 'Initialisation GIF simplifiée...';
+        
         const gif = new GIF({
-            workers: 4, // Plus de workers pour aller plus vite
-            quality: quality,
+            workers: 0, // Pas de workers = plus compatible mobile
+            quality: Math.max(quality, 10), // Qualité minimum pour éviter les blocages
             width: size,
             height: size,
             repeat: repeat,
-            background: '#FFFFFF'
+            transparent: null,
+            dispose: 2 // Méthode de nettoyage frame
         });
         
         // Créer un canvas pour dessiner les frames
@@ -2693,74 +2695,57 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
         canvas.height = size;
         const ctx = canvas.getContext('2d');
         
-        // Traiter chaque frame avec méthode optimisée
+        // Créer chaque frame pour le GIF
         for (let frameIndex = 0; frameIndex < frames.length; frameIndex++) {
-            // Vérifier si l'utilisateur a annulé
             if (cancelled) return;
             
-            const frameProgress = (frameIndex / frames.length * 50); // 50% pour la préparation
-            progressText.textContent = `Préparation frame ${frameIndex + 1}/${frames.length}...`;
+            const frameProgress = (frameIndex / frames.length * 50); // 50% pour préparation
+            progressText.textContent = `Frame ${frameIndex + 1}/${frames.length}...`;
             progressBar.style.width = `${frameProgress}%`;
             
-            // Méthode optimisée : utiliser ImageData pour un rendu plus rapide
-            const imageData = ctx.createImageData(size, size);
-            const data = imageData.data;
+            // Effacer le canvas avec fond blanc
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, size, size);
             
-            // Calculer le rapport d'échelle
-            const scale = size / 32;
-            
-            // Remplir l'image avec les pixels
+            // Dessiner la grille de pixels (méthode simplifiée)
             const frame = frames[frameIndex];
+            const pixelSize = size / 32;
             
-            for (let y = 0; y < size; y++) {
-                for (let x = 0; x < size; x++) {
-                    // Calculer les coordonnées de la grille 32x32
-                    const gridX = Math.floor(x / scale);
-                    const gridY = Math.floor(y / scale);
-                    const pixelIndex = gridY * 32 + gridX;
-                    
-                    // Obtenir la couleur du pixel et s'assurer que c'est une chaîne
+            for (let row = 0; row < 32; row++) {
+                for (let col = 0; col < 32; col++) {
+                    const pixelIndex = row * 32 + col;
                     let pixelColor = frame[pixelIndex];
-                    if (!pixelColor || typeof pixelColor !== 'string' || !pixelColor.startsWith('#')) {
-                        pixelColor = '#FFFFFF';
+                    
+                    if (pixelColor && typeof pixelColor === 'string' && pixelColor !== '#FFFFFF') {
+                        ctx.fillStyle = pixelColor;
+                        ctx.fillRect(
+                            col * pixelSize,
+                            row * pixelSize,
+                            pixelSize,
+                            pixelSize
+                        );
                     }
-                    
-                    // Convertir hex en RGB
-                    const r = parseInt(pixelColor.slice(1, 3), 16) || 255;
-                    const g = parseInt(pixelColor.slice(3, 5), 16) || 255;
-                    const b = parseInt(pixelColor.slice(5, 7), 16) || 255;
-                    
-                    // Mettre les valeurs dans ImageData
-                    const dataIndex = (y * size + x) * 4;
-                    data[dataIndex] = r;     // Rouge
-                    data[dataIndex + 1] = g; // Vert
-                    data[dataIndex + 2] = b; // Bleu
-                    data[dataIndex + 3] = 255; // Alpha
                 }
             }
             
-            // Dessiner l'ImageData sur le canvas
-            ctx.putImageData(imageData, 0, 0);
-            
-            // Ajouter la frame au GIF
+            // Ajouter la frame au GIF (méthode simplifiée)
             gif.addFrame(canvas, { delay: frameDelay, copy: true });
             
-            // Pause plus courte pour l'UI
+            // Pause minimale pour éviter les blocages
             await new Promise(resolve => setTimeout(resolve, 1));
         }
         
-        // Vérifier si l'utilisateur a annulé avant la génération
         if (cancelled) return;
         
-        progressText.textContent = 'Génération du fichier GIF...';
+        // Générer le GIF final
+        progressText.textContent = 'Création du GIF final...';
         progressBar.style.width = '50%';
         
-        // Générer le GIF
+        // Configuration des événements gif.js
         gif.on('finished', function(blob) {
-            // Masquer le message de progression
             progressDiv.remove();
             
-            // Télécharger le fichier GIF
+            // Télécharger le GIF
             const projectName = document.getElementById('projectTitle')?.textContent || 'animation';
             const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
             const fileName = `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.gif`;
@@ -2776,36 +2761,37 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
             
             // Message de succès
             setTimeout(() => {
-                alert(`✅ GIF créé avec succès !
+                alert(`🎉 GIF créé avec succès !
 
-📁 Fichier : ${fileName}
-🎬 ${frames.length} frames
-📏 Taille : ${size}x${size}
-⚡ Vitesse : ${frameDelay}ms par frame
+📁 Fichier: ${fileName}
+🎬 ${frames.length} frames  
+📏 Taille: ${size}x${size}
+⚡ Vitesse: ${frameDelay}ms par frame
 
-Votre animation est prête à être partagée ! 🎉`);
+Votre animation GIF est prête ! 🎨`);
             }, 500);
         });
         
         gif.on('progress', function(progress) {
             const percent = Math.round(progress * 100);
-            const totalProgress = 50 + (progress * 50); // 50% préparation + 50% génération
-            progressText.textContent = `Génération... ${percent}%`;
+            const totalProgress = 50 + (progress * 50);
+            progressText.textContent = `Génération GIF... ${percent}%`;
             progressBar.style.width = `${totalProgress}%`;
         });
         
-        // Lancer la génération
+        // Lancer la génération (sans workers = plus stable)
         gif.render();
         
     } catch (error) {
-        console.error('Erreur lors de la création du GIF:', error);
+        console.error('Erreur lors de la création:', error);
         
-        // Masquer le message de progression
         const progressDiv = document.querySelector('div[style*="position: fixed"]');
         if (progressDiv) {
             progressDiv.remove();
         }
         
-        alert(`❌ Erreur lors de la création du GIF: ${error.message}`);
+        alert(`❌ Erreur: ${error.message}`);
     }
 }
+
+
