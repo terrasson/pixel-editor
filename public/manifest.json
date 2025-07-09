@@ -1,44 +1,64 @@
 {
   "name": "Éditeur Pixel Art",
-  "short_name": "Pixel Art",
-  "description": "Créez et animez vos pixel arts directement sur votre téléphone",
+  "short_name": "PixelArt",
+  "description": "Créez des animations pixel art et partagez-les avec vos amis !",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "theme_color": "#007AFF",
   "background_color": "#ffffff",
-  "categories": ["graphics", "entertainment", "utilities"],
+  "theme_color": "#007AFF",
+  "orientation": "any",
+  
   "icons": [
     {
-      "src": "favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-180.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-192.png",
+      "src": "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3e%3crect width='192' height='192' fill='%23007AFF'/%3e%3ctext x='96' y='120' font-family='Arial' font-size='80' font-weight='bold' text-anchor='middle' fill='white'%3e🎨%3c/text%3e%3c/svg%3e",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-192.svg",
-      "sizes": "192x192",
+      "src": "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3e%3crect width='512' height='512' fill='%23007AFF'/%3e%3ctext x='256' y='320' font-family='Arial' font-size='200' font-weight='bold' text-anchor='middle' fill='white'%3e🎨%3c/text%3e%3c/svg%3e",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
+  
+  "file_handlers": [
+    {
+      "action": "/",
+      "accept": {
+        "application/json": [".pixelart", ".json"],
+        "text/plain": [".pixelart"]
+      }
+    }
+  ],
+  
+  "share_target": {
+    "action": "/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": ["application/json", ".pixelart", ".json"]
+        }
+      ]
+    }
+  },
+  
+  "categories": ["entertainment", "games", "graphics"],
+  "lang": "fr",
+  
   "screenshots": [
     {
-      "src": "icon-192.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
+      "src": "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='540' height='720' viewBox='0 0 540 720'%3e%3crect width='540' height='720' fill='%23f0f0f0'/%3e%3ctext x='270' y='360' font-family='Arial' font-size='40' text-anchor='middle' fill='%23333'%3eÉditeur Pixel Art%3c/text%3e%3c/svg%3e",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
     }
   ]
 } 

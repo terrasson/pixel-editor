@@ -1845,6 +1845,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Gérer le drag & drop pour importer des projets
     initDragAndDrop();
     
+    // Initialiser la gestion des fichiers et URL partagées
+    initSharedContentHandling();
+    
     // Arrêter l'animation si l'utilisateur quitte la page
     window.addEventListener('beforeunload', () => {
         if (isAnimationPlaying) {
@@ -1852,6 +1855,128 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ========================================
+// GESTION DES CONTENUS PARTAGÉS (iOS/PWA)
+// ========================================
+
+// Initialiser la gestion des fichiers et projets partagés
+function initSharedContentHandling() {
+    // Vérifier les paramètres URL pour les projets partagés
+    checkURLForSharedProject();
+    
+    // Écouter les changements d'URL (navigation)
+    window.addEventListener('popstate', checkURLForSharedProject);
+    
+    // Gérer les fichiers envoyés via PWA Share Target API
+    handlePWAShareTarget();
+    
+    // Gérer les fichiers via File Handling API
+    handleFileHandlingAPI();
+}
+
+// Vérifier si un projet est partagé via URL
+function checkURLForSharedProject() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Format: ?project=base64EncodedData
+    const projectData = urlParams.get('project');
+    if (projectData) {
+        try {
+            const decodedData = atob(projectData);
+            const project = JSON.parse(decodedData);
+            
+            // Confirmer l'import du projet partagé
+            const confirmMessage = `🎨 Projet partagé détecté !
+
+"${project.name || 'Projet sans nom'}"
+${project.frames ? project.frames.length : 0} frame(s)
+
+Voulez-vous l'ouvrir ?`;
+
+            if (confirm(confirmMessage)) {
+                importProjectData(project);
+                
+                // Nettoyer l'URL pour éviter les re-imports
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+        } catch (error) {
+            console.error('Erreur lors du décodage du projet partagé:', error);
+        }
+    }
+}
+
+// Gérer PWA Share Target API (quand un fichier est partagé vers l'app)
+function handlePWAShareTarget() {
+    // Cette fonction sera appelée quand l'app reçoit des fichiers partagés
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data && event.data.type === 'SHARED_FILE') {
+                const file = event.data.file;
+                if (file && (file.name.endsWith('.pixelart') || file.name.endsWith('.json'))) {
+                    importSharedProject(file);
+                }
+            }
+        });
+    }
+}
+
+// Gérer File Handling API (association de fichiers)
+function handleFileHandlingAPI() {
+    if ('launchQueue' in window) {
+        window.launchQueue.setConsumer(launchParams => {
+            if (launchParams.files && launchParams.files.length > 0) {
+                const file = launchParams.files[0];
+                importSharedProject(file);
+            }
+        });
+    }
+}
+
+// Importer les données d'un projet (depuis URL ou fichier)
+function importProjectData(projectData) {
+    try {
+        // Valider les données
+        if (!projectData.frames || !Array.isArray(projectData.frames)) {
+            throw new Error('Données de projet invalides');
+        }
+        
+        // Importer le projet
+        frames = projectData.frames;
+        currentFrame = projectData.currentFrame || 0;
+        
+        if (currentFrame >= frames.length) {
+            currentFrame = 0;
+        }
+        
+        // Importer les couleurs personnalisées
+        if (projectData.customColors && Array.isArray(projectData.customColors)) {
+            customColors = [];
+            projectData.customColors.forEach(color => {
+                addCustomColor(color);
+            });
+        }
+        
+        // Mettre à jour l'interface
+        const title = document.getElementById('projectTitle');
+        if (title) {
+            title.textContent = projectData.name || 'Projet partagé';
+        }
+        
+        updateFramesList();
+        loadFrame(currentFrame);
+        
+        // Notification de succès
+        setTimeout(() => {
+            alert(`✅ Projet "${projectData.name || 'Projet partagé'}" ouvert !`);
+        }, 500);
+        
+    } catch (error) {
+        console.error('Erreur lors de l\'import:', error);
+        alert(`❌ Erreur lors de l'ouverture du projet partagé: ${error.message}`);
+    }
+}
 
 // ========================================
 // SYSTÈME DE PARTAGE DE PROJETS
@@ -1935,40 +2060,88 @@ async function shareProject() {
 
 // Interface de partage avec options
 function showShareDialog(blob, fileName, projectData) {
+    // Créer une URL de partage avec les données intégrées (pour iOS)
+    const compressedData = btoa(JSON.stringify(projectData));
+    const currentUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${currentUrl}?project=${encodeURIComponent(compressedData)}`;
+    
     const shareContent = `
         <div class="share-content">
             <h3>📤 Partager "${projectData.name}"</h3>
-            <p>Votre projet est prêt à être partagé !</p>
+            <p>Choisissez votre méthode de partage :</p>
             
             <div class="share-options">
-                <button id="downloadShare" class="share-option">
-                    📥 Télécharger le fichier
-                    <small>Enregistrer sur cet appareil</small>
+                <button id="linkShare" class="share-option">
+                    🔗 Partager par lien
+                    <small>Lien direct - Fonctionne sur tous les appareils</small>
                 </button>
                 
-                <button id="copyLinkShare" class="share-option" style="display: none;">
-                    🔗 Copier le lien
-                    <small>Partager via un lien</small>
+                <button id="downloadShare" class="share-option">
+                    📥 Télécharger le fichier
+                    <small>Fichier .pixelart - Pour partage manuel</small>
                 </button>
                 
                 <button id="emailShare" class="share-option">
                     📧 Partager par email
-                    <small>Ouvrir l'app email</small>
+                    <small>Email avec lien et fichier</small>
+                </button>
+                
+                <button id="messageShare" class="share-option">
+                    💬 Partager par message
+                    <small>SMS/iMessage avec lien</small>
                 </button>
             </div>
             
             <div class="share-instructions">
-                <p><strong>💡 Instructions :</strong></p>
+                <p><strong>💡 Recommandation iOS :</strong></p>
+                <p>Utilisez <strong>"🔗 Partager par lien"</strong> pour une ouverture directe dans l'app !</p>
                 <ol>
-                    <li>Téléchargez le fichier <code>.pixelart</code></li>
-                    <li>Partagez-le via message, email, AirDrop, etc.</li>
-                    <li>Votre ami peut l'ouvrir dans l'Éditeur Pixel Art</li>
+                    <li>Cliquez sur "🔗 Partager par lien"</li>
+                    <li>Envoyez le lien via Messages, AirDrop, etc.</li>
+                    <li>Votre ami clique sur le lien → ouverture directe !</li>
                 </ol>
             </div>
         </div>
     `;
     
     const dialog = createMobileDialog('📤 Partager le projet', shareContent);
+    
+    // Partager par lien (recommandé pour iOS)
+    dialog.querySelector('#linkShare').addEventListener('click', async () => {
+        try {
+            if (navigator.share) {
+                // Utiliser l'API de partage native (iOS/Android)
+                await navigator.share({
+                    title: `🎨 ${projectData.name} - Pixel Art`,
+                    text: `Découvre mon animation pixel art ! Clique sur le lien pour l'ouvrir directement dans l'Éditeur Pixel Art.`,
+                    url: shareUrl
+                });
+            } else {
+                // Fallback : copier le lien
+                await navigator.clipboard.writeText(shareUrl);
+                alert('🔗 Lien copié dans le presse-papier !\n\nCollez-le dans un message, email, etc.');
+            }
+            dialog.remove();
+        } catch (error) {
+            // Si le partage échoue, copier dans le presse-papier
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('🔗 Lien copié dans le presse-papier !');
+                dialog.remove();
+            } catch (clipboardError) {
+                // Afficher le lien pour copie manuelle
+                prompt('Copiez ce lien pour le partager:', shareUrl);
+                dialog.remove();
+            }
+        }
+    });
+    
+    // Partager par message
+    dialog.querySelector('#messageShare').addEventListener('click', () => {
+        const messageText = encodeURIComponent(`🎨 Regarde mon animation pixel art "${projectData.name}" ! Clique ici pour l'ouvrir : ${shareUrl}`);
+        window.open(`sms:?&body=${messageText}`);
+        dialog.remove();
+    });
     
     // Télécharger le fichier
     dialog.querySelector('#downloadShare').addEventListener('click', () => {
@@ -1990,14 +2163,11 @@ function showShareDialog(blob, fileName, projectData) {
 
 J'ai créé une animation pixel art avec l'Éditeur Pixel Art et je voulais la partager avec toi !
 
-📎 Le fichier "${fileName}" est en pièce jointe.
+🔗 Lien direct : ${shareUrl}
 
-Pour l'ouvrir :
-1. Ouvre l'Éditeur Pixel Art dans ton navigateur
-2. Clique sur "📂 Charger" 
-3. Sélectionne le fichier .pixelart
+Clique sur le lien ci-dessus pour ouvrir directement le projet dans l'Éditeur Pixel Art !
 
-Tu pourras voir l'animation et même la modifier !
+Alternative : Le fichier "${fileName}" est aussi en pièce jointe si tu préfères le télécharger.
 
 🎨 Amusez-vous bien !`);
         
@@ -2148,16 +2318,136 @@ function initDragAndDrop() {
 
 // Améliorer la fonction de chargement existante
 async function loadFromFile() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,.pixelart';
+    // Afficher un dialogue avec options pour iOS
+    showFileLoadDialog();
+}
+
+// Interface améliorée pour charger des fichiers (iOS friendly)
+function showFileLoadDialog() {
+    const loadContent = `
+        <div class="load-content">
+            <h3>📂 Charger un projet</h3>
+            <p>Comment souhaitez-vous ouvrir votre projet ?</p>
+            
+            <div class="load-options">
+                <button id="browseFiles" class="load-option">
+                    📁 Parcourir les fichiers
+                    <small>Sélectionner un fichier .pixelart depuis votre appareil</small>
+                </button>
+                
+                <button id="pasteProject" class="load-option">
+                    📋 Coller depuis le presse-papier
+                    <small>Si vous avez copié un lien de projet</small>
+                </button>
+                
+                <div class="drop-zone" id="dropZoneLoad">
+                    📤 Ou glissez-déposez un fichier .pixelart ici
+                </div>
+            </div>
+            
+            <div class="load-instructions">
+                <p><strong>💡 Pour iOS :</strong></p>
+                <ul>
+                    <li><strong>Fichiers reçus :</strong> Utilisez "Parcourir les fichiers" pour accéder à vos téléchargements</li>
+                    <li><strong>Liens partagés :</strong> Copiez le lien puis utilisez "Coller depuis le presse-papier"</li>
+                    <li><strong>AirDrop :</strong> Les fichiers reçus via AirDrop vont dans "Fichiers" → "Téléchargements"</li>
+                </ul>
+            </div>
+        </div>
+    `;
     
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            await importSharedProject(file);
+    const dialog = createMobileDialog('📂 Charger un projet', loadContent);
+    
+    // Parcourir les fichiers (méthode classique)
+    dialog.querySelector('#browseFiles').addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,.pixelart';
+        
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                await importSharedProject(file);
+                dialog.remove();
+            }
+        };
+        
+        input.click();
+    });
+    
+    // Coller depuis le presse-papier
+    dialog.querySelector('#pasteProject').addEventListener('click', async () => {
+        try {
+            const clipboardText = await navigator.clipboard.readText();
+            
+            if (clipboardText.includes('?project=')) {
+                // C'est un lien de projet
+                const url = new URL(clipboardText);
+                const projectData = url.searchParams.get('project');
+                
+                if (projectData) {
+                    const decodedData = atob(decodeURIComponent(projectData));
+                    const project = JSON.parse(decodedData);
+                    
+                    await importProjectData(project);
+                    dialog.remove();
+                    return;
+                }
+            }
+            
+            // Essayer de parser comme JSON direct
+            try {
+                const project = JSON.parse(clipboardText);
+                if (project.frames) {
+                    await importProjectData(project);
+                    dialog.remove();
+                    return;
+                }
+            } catch (e) {
+                // Pas du JSON valide
+            }
+            
+            alert('❌ Le contenu du presse-papier ne semble pas être un projet valide.\n\nAssurez-vous d\'avoir copié un lien de projet ou des données JSON.');
+            
+        } catch (error) {
+            alert('❌ Impossible d\'accéder au presse-papier.\n\nVeuillez utiliser "Parcourir les fichiers" à la place.');
         }
-    };
+    });
     
-    input.click();
+    // Zone de drop dans le dialogue
+    const dropZone = dialog.querySelector('#dropZoneLoad');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.add('drag-active');
+        });
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.remove('drag-active');
+        });
+    });
+    
+    dropZone.addEventListener('drop', async (e) => {
+        const files = e.dataTransfer.files;
+        
+        if (files.length > 0) {
+            const file = files[0];
+            
+            if (file.type === 'application/json' || file.name.endsWith('.pixelart') || file.name.endsWith('.json')) {
+                await importSharedProject(file);
+                dialog.remove();
+            } else {
+                alert('❌ Veuillez déposer un fichier .pixelart ou .json');
+            }
+        }
+    });
 }
