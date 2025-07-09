@@ -15,6 +15,12 @@ const maxAutoSaveProjects = 10; // Nombre maximum de projets auto-sauvegardés
 let isAnimationPlaying = false;
 let animationInterval = null;
 
+// Variables pour l'historique undo/redo
+let history = []; // Historique des états de la frame courante
+let historyIndex = -1; // Index actuel dans l'historique
+const maxHistorySize = 50; // Nombre maximum d'étapes dans l'historique
+let hasDrawnInCurrentAction = false; // Pour éviter les sauvegardes multiples pendant une action
+
 // Initialisation de la grille
 function initGrid() {
     const grid = document.getElementById('pixelGrid');
@@ -32,6 +38,11 @@ function initGrid() {
 
 // Fonctions de dessin
 function startDrawing(e) {
+    // Sauvegarder l'état avant de commencer à dessiner (seulement si pas déjà fait)
+    if (!hasDrawnInCurrentAction) {
+        saveToHistory();
+        hasDrawnInCurrentAction = true;
+    }
     isDrawing = true;
     draw(e);
 }
@@ -63,6 +74,7 @@ function draw(e) {
 
 function stopDrawing() {
     isDrawing = false;
+    hasDrawnInCurrentAction = false; // Réinitialiser pour la prochaine action
 }
 
 // Gestion des couleurs
@@ -431,6 +443,112 @@ function initColorPicker() {
     // Note: Les event listeners pour les boutons de couleur sont maintenant gérés dans updateColorPalette()
 }
 
+// ========================================
+// SYSTÈME UNDO/REDO
+// ========================================
+
+// Sauvegarder l'état actuel dans l'historique
+function saveToHistory() {
+    const pixels = document.querySelectorAll('.pixel');
+    const currentState = Array.from(pixels).map(pixel => ({
+        color: pixel.style.backgroundColor || '#FFFFFF',
+        isEmpty: pixel.classList.contains('empty')
+    }));
+    
+    // Supprimer les états futurs si on est au milieu de l'historique
+    if (historyIndex < history.length - 1) {
+        history = history.slice(0, historyIndex + 1);
+    }
+    
+    // Ajouter le nouvel état
+    history.push(currentState);
+    historyIndex++;
+    
+    // Limiter la taille de l'historique
+    if (history.length > maxHistorySize) {
+        history = history.slice(-maxHistorySize);
+        historyIndex = history.length - 1;
+    }
+    
+    updateUndoRedoButtons();
+}
+
+// Restaurer un état depuis l'historique
+function restoreFromHistory(state) {
+    const pixels = document.querySelectorAll('.pixel');
+    
+    state.forEach((pixelData, i) => {
+        if (pixels[i]) {
+            pixels[i].style.backgroundColor = pixelData.color;
+            if (pixelData.isEmpty) {
+                pixels[i].classList.add('empty');
+            } else {
+                pixels[i].classList.remove('empty');
+            }
+        }
+    });
+    
+    // Sauvegarder la frame courante avec le nouvel état
+    saveCurrentFrame();
+}
+
+// Fonction Undo (annuler)
+function undo() {
+    if (historyIndex > 0) {
+        historyIndex--;
+        restoreFromHistory(history[historyIndex]);
+        updateUndoRedoButtons();
+    }
+}
+
+// Fonction Redo (rétablir)
+function redo() {
+    if (historyIndex < history.length - 1) {
+        historyIndex++;
+        restoreFromHistory(history[historyIndex]);
+        updateUndoRedoButtons();
+    }
+}
+
+// Mettre à jour l'état des boutons undo/redo
+function updateUndoRedoButtons() {
+    const undoBtn = document.getElementById('undoBtn');
+    const redoBtn = document.getElementById('redoBtn');
+    
+    if (undoBtn) {
+        undoBtn.disabled = historyIndex <= 0;
+        undoBtn.title = historyIndex <= 0 ? 'Rien à annuler' : `Annuler (${historyIndex} actions disponibles)`;
+    }
+    
+    if (redoBtn) {
+        redoBtn.disabled = historyIndex >= history.length - 1;
+        redoBtn.title = historyIndex >= history.length - 1 ? 'Rien à rétablir' : `Rétablir (${history.length - historyIndex - 1} actions disponibles)`;
+    }
+}
+
+// Initialiser l'historique avec l'état vide
+function initHistory() {
+    history = [];
+    historyIndex = -1;
+    
+    // Sauvegarder l'état initial (grille vide)
+    saveToHistory();
+    
+    // Configurer les event listeners pour les boutons
+    const undoBtn = document.getElementById('undoBtn');
+    const redoBtn = document.getElementById('redoBtn');
+    
+    if (undoBtn) {
+        undoBtn.addEventListener('click', undo);
+    }
+    
+    if (redoBtn) {
+        redoBtn.addEventListener('click', redo);
+    }
+    
+    updateUndoRedoButtons();
+}
+
 // Fonctions de nettoyage pour éviter les débordements
 function cleanUpMarkers() {
     // Supprimer tous les marqueurs existants
@@ -511,6 +629,11 @@ function loadFrame(frameIndex) {
         stopAnimation();
     }
     
+    // Réinitialiser l'historique pour la nouvelle frame
+    history = [];
+    historyIndex = -1;
+    hasDrawnInCurrentAction = false;
+    
     const pixels = document.querySelectorAll('.pixel');
     
     // Nettoyer tous les marqueurs existants de manière stricte
@@ -564,6 +687,11 @@ function loadFrame(frameIndex) {
     
     currentFrame = frameIndex;
     updateFramesList();
+    
+    // Sauvegarder l'état initial de la nouvelle frame dans l'historique
+    setTimeout(() => {
+        saveToHistory();
+    }, 10);
 }
 
 function addFrame() {
@@ -1034,6 +1162,157 @@ function pasteFrame() {
     }
 }
 
+// Fonction pour afficher l'aide complète
+function showHelp() {
+    const helpContent = `
+        <div class="help-content">
+            <h2>🎨 Guide d'utilisation - Éditeur Pixel Art</h2>
+            
+            <div class="help-section">
+                <h3>🖌️ Outils de dessin</h3>
+                <div class="help-item">
+                    <strong>Sélecteur de couleur:</strong> Choisissez votre couleur avec le nuancier coloré
+                </div>
+                <div class="help-item">
+                    <strong>Bouton ✓ (Valider):</strong> Après avoir choisi une couleur, cliquez sur ✓ pour l'ajouter à votre palette personnalisée
+                </div>
+                <div class="help-item">
+                    <strong>Gomme:</strong> Cliquez sur "Gomme" pour effacer des pixels (les rend blancs)
+                </div>
+                <div class="help-item">
+                    <strong>Palette de couleurs:</strong> 
+                    <br>• Couleurs de base (8 couleurs prédéfinies)
+                    <br>• Couleurs personnalisées (marquées avec ★, jusqu'à 6 couleurs)
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h3>↶↷ Annuler / Rétablir</h3>
+                <div class="help-item">
+                    <strong>Bouton ↶ (Annuler):</strong> Revient en arrière sur votre dernière action de dessin
+                </div>
+                <div class="help-item">
+                    <strong>Bouton ↷ (Rétablir):</strong> Revient en avant si vous êtes revenu trop loin en arrière
+                </div>
+                <div class="help-item">
+                    <strong>Raccourcis clavier:</strong>
+                    <br>• <kbd>Ctrl+Z</kbd> = Annuler
+                    <br>• <kbd>Ctrl+Y</kbd> ou <kbd>Ctrl+Shift+Z</kbd> = Rétablir
+                </div>
+                <div class="help-item">
+                    <strong>Historique:</strong> Jusqu'à 50 actions mémorisées par frame
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h3>🎬 Système de Frames (Animation)</h3>
+                <div class="help-item">
+                    <strong>+ Nouvelle Frame:</strong> Ajoute une frame vide pour créer une animation
+                </div>
+                <div class="help-item">
+                    <strong>Miniatures:</strong> Cliquez sur une miniature pour changer de frame
+                </div>
+                <div class="help-item">
+                    <strong>Indicateurs visuels:</strong>
+                    <br>• ○ = Pixels de la frame précédente (référence)
+                    <br>• ○○ = Pixels de la frame suivante (aperçu)
+                </div>
+                <div class="help-item">
+                    <strong>Bouton ▶️:</strong> Lance l'animation / ⏹️ pour l'arrêter
+                </div>
+                <div class="help-item">
+                    <strong>Supprimer Frame:</strong> Supprime la frame actuelle (minimum 1 frame)
+                </div>
+                <div class="help-item">
+                    <strong>Copier/Coller:</strong> Dupliquez une frame pour créer des variations
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h3>💾 Sauvegarde et chargement</h3>
+                <div class="help-item">
+                    <strong>💾 Sauvegarder:</strong> Sauve votre projet sur Supabase (cloud)
+                    <br>• Frames et position actuelle
+                    <br>• Couleurs personnalisées
+                    <br>• Accessible depuis tous vos appareils
+                </div>
+                <div class="help-item">
+                    <strong>📂 Charger:</strong> Charge un fichier JSON depuis votre appareil
+                </div>
+                <div class="help-item">
+                    <strong>🌐 Mes projets:</strong> Liste de vos projets sauvegardés en ligne
+                    <br>• Synchronisés entre appareils
+                    <br>• Sauvegarde automatique des couleurs personnalisées
+                </div>
+                <div class="help-item">
+                    <strong>🗑️ Effacer tout:</strong> Remet la grille à zéro
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h3>📱 Interface mobile</h3>
+                <div class="help-item">
+                    <strong>Menu ☰:</strong> Cliquez pour afficher/masquer les outils sur mobile
+                </div>
+                <div class="help-item">
+                    <strong>Dessin tactile:</strong> Dessinez directement avec votre doigt
+                </div>
+                <div class="help-item">
+                    <strong>Interface adaptative:</strong> S'adapte automatiquement à votre écran
+                </div>
+                <div class="help-item">
+                    <strong>Rotation:</strong> Fonctionne en mode portrait et paysage
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h3>💡 Conseils d'utilisation</h3>
+                <div class="help-item">
+                    <strong>Couleurs personnalisées:</strong> Choisissez d'abord votre couleur, puis validez avec ✓ pour l'ajouter
+                </div>
+                <div class="help-item">
+                    <strong>Animation fluide:</strong> Créez plusieurs frames avec de légères variations
+                </div>
+                <div class="help-item">
+                    <strong>Erreurs de dessin:</strong> Utilisez Ctrl+Z ou le bouton ↶ pour corriger rapidement
+                </div>
+                <div class="help-item">
+                    <strong>Changement de frame:</strong> L'historique undo/redo se réinitialise à chaque frame
+                </div>
+                <div class="help-item">
+                    <strong>Sauvegarde:</strong> Vos couleurs personnalisées sont automatiquement sauvegardées avec vos projets
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h3>🔧 Informations techniques</h3>
+                <div class="help-item">
+                    <strong>Grille:</strong> 32×32 pixels (1024 pixels total)
+                </div>
+                <div class="help-item">
+                    <strong>Couleurs personnalisées:</strong> Maximum 6 couleurs en plus des 8 de base
+                </div>
+                <div class="help-item">
+                    <strong>Historique:</strong> 50 actions mémorisées par frame
+                </div>
+                <div class="help-item">
+                    <strong>Animation:</strong> 300ms par frame (environ 3.3 FPS)
+                </div>
+                <div class="help-item">
+                    <strong>Sauvegarde:</strong> Base de données Supabase pour synchronisation multi-appareils
+                </div>
+            </div>
+        </div>
+    `;
+
+    const dialog = createMobileDialog('🎨 Guide d\'utilisation', helpContent);
+    
+    // Ajouter des styles spécifiques à l'aide
+    dialog.querySelector('.mobile-dialog-content').style.maxWidth = '600px';
+    dialog.querySelector('.mobile-dialog-content').style.maxHeight = '80vh';
+    dialog.querySelector('.mobile-dialog-body').style.overflow = 'auto';
+}
+
 // Ajouter la fonction pour afficher les crédits
 function showCredits() {
     const modal = document.createElement('div');
@@ -1456,6 +1735,7 @@ function initEventListeners() {
     document.getElementById('loadLocalBtn')?.addEventListener('click', showLocalProjects);
     document.getElementById('copyFrameBtn')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
+    document.getElementById('helpBtn')?.addEventListener('click', showHelp);
     document.getElementById('creditsBtn')?.addEventListener('click', showCredits);
     
     // Bouton nouvelle frame
@@ -1485,6 +1765,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialiser le sélecteur de couleur après la palette
     initColorPicker();
     
+    // Initialiser l'historique undo/redo
+    initHistory();
+    
     // Charger les données (Supabase + localStorage en fallback)
     loadSupabaseProjects().catch(() => loadAutoSaveProjects());
     
@@ -1499,6 +1782,22 @@ document.addEventListener('DOMContentLoaded', () => {
     
     updateFramesList();
     loadFrame(0);
+    
+    // Raccourcis clavier pour undo/redo
+    document.addEventListener('keydown', (e) => {
+        // Éviter d'interférer avec les champs de saisie
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        
+        if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+            e.preventDefault();
+            undo();
+        } else if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+            e.preventDefault();
+            redo();
+        }
+    });
     
     // Arrêter l'animation si l'utilisateur quitte la page
     window.addEventListener('beforeunload', () => {
