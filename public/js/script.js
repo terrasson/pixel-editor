@@ -2720,13 +2720,16 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
                     const gridY = Math.floor(y / scale);
                     const pixelIndex = gridY * 32 + gridX;
                     
-                    // Obtenir la couleur du pixel
-                    const pixelColor = frame[pixelIndex] || '#FFFFFF';
+                    // Obtenir la couleur du pixel et s'assurer que c'est une chaîne
+                    let pixelColor = frame[pixelIndex];
+                    if (!pixelColor || typeof pixelColor !== 'string' || !pixelColor.startsWith('#')) {
+                        pixelColor = '#FFFFFF';
+                    }
                     
                     // Convertir hex en RGB
-                    const r = parseInt(pixelColor.slice(1, 3), 16);
-                    const g = parseInt(pixelColor.slice(3, 5), 16);
-                    const b = parseInt(pixelColor.slice(5, 7), 16);
+                    const r = parseInt(pixelColor.slice(1, 3), 16) || 255;
+                    const g = parseInt(pixelColor.slice(3, 5), 16) || 255;
+                    const b = parseInt(pixelColor.slice(5, 7), 16) || 255;
                     
                     // Mettre les valeurs dans ImageData
                     const dataIndex = (y * size + x) * 4;
