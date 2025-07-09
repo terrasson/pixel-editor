@@ -2646,152 +2646,309 @@ function showGifExportDialog() {
 
 // Créer le GIF animé avec les paramètres choisis
 async function createAnimatedGif(size, frameDelay, repeat, quality) {
+    // Message de progression
+    const progressDiv = document.createElement('div');
+    progressDiv.style.cssText = `
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        background: rgba(0, 122, 255, 0.95); color: white; padding: 20px;
+        border-radius: 12px; text-align: center; z-index: 10000;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    `;
+    progressDiv.innerHTML = `
+        <div style="font-size: 2rem; margin-bottom: 10px;">🎬</div>
+        <div style="font-size: 1.2rem; margin-bottom: 5px;">Création du GIF...</div>
+        <div id="progressText" style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">Préparation...</div>
+        <div style="background: rgba(255,255,255,0.3); border-radius: 10px; height: 8px; margin-bottom: 10px;">
+            <div id="progressBar" style="background: white; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s;"></div>
+        </div>
+        <button id="cancelExportBtn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Annuler</button>
+    `;
+    document.body.appendChild(progressDiv);
+    
+    const progressText = progressDiv.querySelector('#progressText');
+    const progressBar = progressDiv.querySelector('#progressBar');
+    let cancelled = false;
+    
+    // Bouton d'annulation
+    progressDiv.querySelector('#cancelExportBtn').addEventListener('click', () => {
+        cancelled = true;
+        progressDiv.remove();
+    });
+
     try {
-        // Message de progression
-        const progressDiv = document.createElement('div');
-        progressDiv.style.cssText = `
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0, 122, 255, 0.95); color: white; padding: 20px;
-            border-radius: 12px; text-align: center; z-index: 10000;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-        `;
-        progressDiv.innerHTML = `
-            <div style="font-size: 2rem; margin-bottom: 10px;">🎬</div>
-            <div style="font-size: 1.2rem; margin-bottom: 5px;">Création du GIF...</div>
-            <div id="progressText" style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">Préparation...</div>
-            <div style="background: rgba(255,255,255,0.3); border-radius: 10px; height: 8px; margin-bottom: 10px;">
-                <div id="progressBar" style="background: white; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s;"></div>
-            </div>
-            <button id="cancelExportBtn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Annuler</button>
-        `;
-        document.body.appendChild(progressDiv);
+        // 🚀 TENTATIVE 1 : UTILISER SUPABASE EDGE FUNCTION
+        progressText.textContent = 'Envoi vers serveur Supabase...';
+        progressBar.style.width = '20%';
         
-        const progressText = progressDiv.querySelector('#progressText');
-        const progressBar = progressDiv.querySelector('#progressBar');
-        let cancelled = false;
+        const gifBlob = await createGifWithSupabase(frames, { size, frameDelay, repeat, quality });
         
-        // Bouton d'annulation
-        progressDiv.querySelector('#cancelExportBtn').addEventListener('click', () => {
-            cancelled = true;
+        if (gifBlob && !cancelled) {
             progressDiv.remove();
-        });
-        
-        // NOUVELLE APPROCHE: Essayons gif.js sans workers (plus simple pour mobile)
-        progressText.textContent = 'Initialisation GIF simplifiée...';
-        
-        const gif = new GIF({
-            workers: 0, // Pas de workers = plus compatible mobile
-            quality: Math.max(quality, 10), // Qualité minimum pour éviter les blocages
-            width: size,
-            height: size,
-            repeat: repeat,
-            transparent: null,
-            dispose: 2 // Méthode de nettoyage frame
-        });
-        
-        // Créer un canvas pour dessiner les frames
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        
-        // Créer chaque frame pour le GIF
-        for (let frameIndex = 0; frameIndex < frames.length; frameIndex++) {
-            if (cancelled) return;
-            
-            const frameProgress = (frameIndex / frames.length * 50); // 50% pour préparation
-            progressText.textContent = `Frame ${frameIndex + 1}/${frames.length}...`;
-            progressBar.style.width = `${frameProgress}%`;
-            
-            // Effacer le canvas avec fond blanc
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, size, size);
-            
-            // Dessiner la grille de pixels (méthode simplifiée)
-            const frame = frames[frameIndex];
-            const pixelSize = size / 32;
-            
-            for (let row = 0; row < 32; row++) {
-                for (let col = 0; col < 32; col++) {
-                    const pixelIndex = row * 32 + col;
-                    let pixelColor = frame[pixelIndex];
-                    
-                    if (pixelColor && typeof pixelColor === 'string' && pixelColor !== '#FFFFFF') {
-                        ctx.fillStyle = pixelColor;
-                        ctx.fillRect(
-                            col * pixelSize,
-                            row * pixelSize,
-                            pixelSize,
-                            pixelSize
-                        );
-                    }
-                }
-            }
-            
-            // Ajouter la frame au GIF (méthode simplifiée)
-            gif.addFrame(canvas, { delay: frameDelay, copy: true });
-            
-            // Pause minimale pour éviter les blocages
-            await new Promise(resolve => setTimeout(resolve, 1));
+            downloadGif(gifBlob, size, frameDelay);
+            return;
         }
         
-        if (cancelled) return;
+    } catch (supabaseError) {
+        console.warn('🔄 Supabase Edge Function échouée, fallback vers gif.js:', supabaseError);
         
-        // Générer le GIF final
-        progressText.textContent = 'Création du GIF final...';
-        progressBar.style.width = '50%';
+        // Si Supabase échoue, on essaie gif.js en fallback
+        progressText.textContent = 'Serveur indisponible, traitement local...';
+        progressBar.style.width = '10%';
         
-        // Configuration des événements gif.js
-        gif.on('finished', function(blob) {
+        try {
+            await createGifWithGifJS(frames, { size, frameDelay, repeat, quality }, progressText, progressBar, cancelled);
+            if (!cancelled) {
+                progressDiv.remove();
+            }
+        } catch (gifJsError) {
+            console.error('❌ Échec complet gif.js et Supabase:', gifJsError);
             progressDiv.remove();
+            alert(`❌ Erreur lors de la création du GIF :
             
-            // Télécharger le GIF
-            const projectName = document.getElementById('projectTitle')?.textContent || 'animation';
-            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-            const fileName = `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.gif`;
-            
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            // Message de succès
-            setTimeout(() => {
-                alert(`🎉 GIF créé avec succès !
+🌐 Serveur : ${supabaseError.message}
+💻 Local : ${gifJsError.message}
+
+Veuillez réessayer plus tard.`);
+        }
+    }
+}
+
+// ========================================
+// FONCTIONS EXPORT GIF AVEC SUPABASE
+// ========================================
+
+// Créer un GIF via Supabase Edge Function
+async function createGifWithSupabase(frames, config) {
+    try {
+        console.log('🚀 Appel Supabase Edge Function pour création GIF');
+        
+        // Préparer les données pour l'Edge Function
+        const payload = {
+            frames: frames,
+            config: config
+        };
+        
+        // Vérifier si supabase est configuré
+        if (typeof supabase === 'undefined') {
+            throw new Error('Supabase non configuré');
+        }
+        
+        // Appeler l'Edge Function
+        const { data, error } = await supabase.functions.invoke('create-gif', {
+            body: payload,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (error) {
+            console.error('❌ Erreur Supabase Edge Function:', error);
+            throw new Error(`Erreur serveur: ${error.message}`);
+        }
+        
+        // Convertir la réponse en Blob
+        const gifBlob = new Blob([data], { type: 'image/gif' });
+        console.log('✅ GIF créé via Supabase:', { size: gifBlob.size });
+        
+        return gifBlob;
+        
+    } catch (error) {
+        console.error('❌ Échec création GIF Supabase:', error);
+        throw error;
+    }
+}
+
+// Télécharger le GIF généré
+function downloadGif(gifBlob, size, frameDelay) {
+    try {
+        // Générer nom de fichier
+        const projectName = document.getElementById('projectTitle')?.textContent || 'animation';
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const fileName = `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.gif`;
+        
+        // Créer lien de téléchargement
+        const url = URL.createObjectURL(gifBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Message de succès
+        setTimeout(() => {
+            alert(`🎉 GIF créé avec succès via serveur !
 
 📁 Fichier: ${fileName}
 🎬 ${frames.length} frames  
 📏 Taille: ${size}x${size}
 ⚡ Vitesse: ${frameDelay}ms par frame
+🚀 Traité par serveur Supabase
 
 Votre animation GIF est prête ! 🎨`);
-            }, 500);
-        });
-        
-        gif.on('progress', function(progress) {
-            const percent = Math.round(progress * 100);
-            const totalProgress = 50 + (progress * 50);
-            progressText.textContent = `Génération GIF... ${percent}%`;
-            progressBar.style.width = `${totalProgress}%`;
-        });
-        
-        // Lancer la génération (sans workers = plus stable)
-        gif.render();
+        }, 500);
         
     } catch (error) {
-        console.error('Erreur lors de la création:', error);
-        
-        const progressDiv = document.querySelector('div[style*="position: fixed"]');
-        if (progressDiv) {
-            progressDiv.remove();
-        }
-        
-        alert(`❌ Erreur: ${error.message}`);
+        console.error('❌ Erreur téléchargement:', error);
+        alert('❌ Erreur lors du téléchargement du GIF');
     }
+}
+
+// Créer un GIF avec gif.js (fallback)
+async function createGifWithGifJS(frames, config, progressText, progressBar, cancelled) {
+    return new Promise((resolve, reject) => {
+        try {
+            const { size, frameDelay, repeat, quality } = config;
+            
+            // Vérifier que gif.js est bien chargé
+            if (typeof GIF === 'undefined') {
+                reject(new Error('Bibliothèque GIF.js non chargée'));
+                return;
+            }
+            
+            console.log('🎬 Fallback vers gif.js:', { size, frameDelay, repeat, quality, frameCount: frames.length });
+            progressText.textContent = 'Initialisation GIF local...';
+            
+            let gif;
+            try {
+                gif = new GIF({
+                    workers: 0, // Pas de workers pour mobile
+                    quality: Math.max(quality, 10),
+                    width: size,
+                    height: size,
+                    repeat: repeat
+                });
+                
+                console.log('✅ GIF object créé:', gif);
+            } catch (error) {
+                reject(new Error(`Erreur initialisation: ${error.message}`));
+                return;
+            }
+            
+            // Créer un canvas pour dessiner les frames
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Créer chaque frame pour le GIF
+            for (let frameIndex = 0; frameIndex < frames.length; frameIndex++) {
+                if (cancelled) {
+                    reject(new Error('Opération annulée'));
+                    return;
+                }
+                
+                const frameProgress = (frameIndex / frames.length * 50); // 50% pour préparation
+                progressText.textContent = `Frame locale ${frameIndex + 1}/${frames.length}...`;
+                progressBar.style.width = `${10 + frameProgress}%`;
+                
+                // Effacer le canvas avec fond blanc
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, size, size);
+                
+                // Dessiner la grille de pixels
+                const frame = frames[frameIndex];
+                const pixelSize = size / 32;
+                
+                for (let row = 0; row < 32; row++) {
+                    for (let col = 0; col < 32; col++) {
+                        const pixelIndex = row * 32 + col;
+                        let pixelColor = frame[pixelIndex];
+                        
+                        if (pixelColor && typeof pixelColor === 'string' && pixelColor !== '#FFFFFF') {
+                            ctx.fillStyle = pixelColor;
+                            ctx.fillRect(
+                                col * pixelSize,
+                                row * pixelSize,
+                                pixelSize,
+                                pixelSize
+                            );
+                        }
+                    }
+                }
+                
+                // Ajouter la frame au GIF
+                console.log(`📸 Ajout frame locale ${frameIndex + 1}/${frames.length}`);
+                gif.addFrame(canvas, { delay: frameDelay, copy: true });
+            }
+            
+            if (cancelled) {
+                reject(new Error('Opération annulée'));
+                return;
+            }
+            
+            // Générer le GIF final
+            progressText.textContent = 'Création GIF local final...';
+            progressBar.style.width = '60%';
+            
+            // Configuration des événements gif.js
+            console.log('🔧 Configuration des événements GIF locaux...');
+            
+            gif.on('finished', function(blob) {
+                console.log('🎉 GIF local terminé!', { size: blob.size, type: blob.type });
+                
+                // Télécharger le GIF (version fallback)
+                const projectName = document.getElementById('projectTitle')?.textContent || 'animation';
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+                const fileName = `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}_local.gif`;
+                
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Message de succès fallback
+                setTimeout(() => {
+                    alert(`🎉 GIF créé en mode local !
+
+📁 Fichier: ${fileName}
+🎬 ${frames.length} frames  
+📏 Taille: ${size}x${size}
+⚡ Vitesse: ${frameDelay}ms par frame
+💻 Traité localement (fallback)
+
+Votre animation GIF est prête ! 🎨`);
+                }, 500);
+                
+                resolve(blob);
+            });
+            
+            gif.on('progress', function(progress) {
+                const percent = Math.round(progress * 100);
+                const totalProgress = 60 + (progress * 40);
+                console.log(`📊 Progression locale: ${percent}% (total: ${totalProgress}%)`);
+                progressText.textContent = `Génération GIF local... ${percent}%`;
+                progressBar.style.width = `${totalProgress}%`;
+            });
+            
+            gif.on('start', function() {
+                console.log('🚀 Début génération GIF locale');
+            });
+            
+            gif.on('abort', function() {
+                console.log('❌ GIF génération locale annulée');
+                reject(new Error('Génération locale annulée'));
+            });
+            
+            gif.on('error', function(error) {
+                console.error('❌ Erreur gif.js:', error);
+                reject(new Error(`Erreur gif.js: ${error.message || 'Erreur inconnue'}`));
+            });
+            
+            // Lancer la génération
+            console.log('🎬 Lancement gif.render() local...');
+            gif.render();
+            
+        } catch (error) {
+            console.error('❌ Erreur dans createGifWithGifJS:', error);
+            reject(error);
+        }
+    });
 }
 
 
