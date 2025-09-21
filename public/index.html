@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- App mobile settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Pixel Art">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Pixel Art">
+    
+    <!-- Theme colors -->
+    <meta name="theme-color" content="#007AFF">
+    <meta name="msapplication-TileColor" content="#007AFF">
+    
+    <title>Éditeur Pixel Art</title>
+    
+    <!-- Favicons et icônes -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    
+      <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+    
+    <!-- Android/Chrome icons -->
+    <link rel="icon" type="image/svg+xml" sizes="192x192" href="icon-192.svg">
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Bibliothèque pour générer des GIF animés -->
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+    
+    <!-- Meta tags pour le support des fichiers -->
+    <meta name="file-handlers" content="application/json:.pixelart,.json">
+    
+    <!-- Meta tags pour le partage social -->
+    <meta property="og:title" content="Éditeur Pixel Art">
+    <meta property="og:description" content="Créez des animations pixel art et partagez-les avec vos amis !">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630'%3e%3crect width='1200' height='630' fill='%23007AFF'/%3e%3ctext x='600' y='350' font-family='Arial' font-size='80' font-weight='bold' text-anchor='middle' fill='white'%3eÉditeur Pixel Art 🎨%3c/text%3e%3c/svg%3e">
+    
+    <link rel="stylesheet" href="styles/styles.css">
+</head>
+<body>
+    <div class="editor-container">
+        <div class="project-info">
+            <button id="menuToggle" class="menu-hamburger">☰</button>
+            <h2 id="projectTitle">Nouveau projet</h2>
+        </div>
+        
+        <div class="toolbar">
+            <div class="tools">
+                <button id="clearBtn">Effacer tout</button>
+                <button id="deleteFrameBtn">Supprimer la frame</button>
+                <button id="previewBtn" title="Lancer/Arrêter l'animation">▶️</button>
+                <button id="saveBtn">💾 Sauvegarder</button>
+                <button id="loadBtn">📂 Charger</button>
+                <button id="loadLocalBtn">🌐 Mes projets</button>
+                <button id="shareProjectBtn">📤 Partager</button>
+                <button id="exportGifBtn">🎬 Export GIF</button>
+                <button id="copyFrameBtn">Copier la frame</button>
+                <button id="pasteFrameBtn">Coller la frame</button>
+                <button id="helpBtn">❓ Aide</button>
+                <button id="creditsBtn">Crédits</button>
+            </div>
+        </div>
+
+        <div class="tools-secondary">
+            <div class="color-palette">
+                <input type="color" id="colorPicker" value="#000000">
+                <button id="validateColorBtn" class="validate-color-btn">✓</button>
+                <button id="eraserBtn" class="eraser-btn">Gomme</button>
+                <button id="undoBtn" class="undo-redo-btn" title="Annuler (←)">↶</button>
+                <button id="redoBtn" class="undo-redo-btn" title="Rétablir (→)">↷</button>
+                <div class="preset-colors">
+                    <button class="color-btn" style="background-color: #000000"></button>
+                    <button class="color-btn" style="background-color: #FFFFFF"></button>
+                    <button class="color-btn" style="background-color: #FF0000"></button>
+                    <button class="color-btn" style="background-color: #00FF00"></button>
+                    <button class="color-btn" style="background-color: #0000FF"></button>
+                    <button class="color-btn" style="background-color: #FFFF00"></button>
+                    <button class="color-btn" style="background-color: #FF00FF"></button>
+                    <button class="color-btn" style="background-color: #00FFFF"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-container">
+            <div id="pixelGrid"></div>
+        </div>
+
+        <div class="frames-container">
+            <button id="addFrameBtn">+ Nouvelle Frame</button>
+            <div id="framesList"></div>
+        </div>
+    </div>
+
+    <!-- Espace réservé pour la publicité future -->
+    <div class="ad-space"></div>
+
+    <script src="js/supabase-config.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
