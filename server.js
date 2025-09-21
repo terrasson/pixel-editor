@@ -7,6 +7,11 @@ const port = process.env.PORT || 3000;
 app.use(express.static('public'));
 app.use(express.json());
 
+// Route pour servir index.html à la racine
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Créer le dossier de sauvegarde s'il n'existe pas (seulement en local)
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
 const savesDir = path.join(__dirname, 'pixel-art-saves');
