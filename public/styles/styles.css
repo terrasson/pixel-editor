@@ -5,14 +5,12 @@ html, body {
     width: 100%;
     height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, 
-        #667eea 0%, 
-        #764ba2 25%, 
-        #f093fb 50%, 
-        #f5576c 75%, 
-        #4facfe 100%);
-    background-size: 400% 400%;
-    animation: liquidBackground 15s ease infinite;
+    background: linear-gradient(180deg, 
+        #4a90e2 0%, 
+        #7b68ee 25%, 
+        #9966cc 50%, 
+        #ba55d3 75%, 
+        #da70d6 100%);
     overflow: hidden;
     touch-action: manipulation;
     user-select: none;
@@ -20,28 +18,6 @@ html, body {
     -webkit-tap-highlight-color: transparent;
 }
 
-@keyframes liquidBackground {
-    0% { 
-        background-position: 0% 50%;
-        filter: hue-rotate(0deg) saturate(100%);
-    }
-    25% { 
-        background-position: 100% 0%;
-        filter: hue-rotate(90deg) saturate(110%);
-    }
-    50% { 
-        background-position: 100% 50%;
-        filter: hue-rotate(180deg) saturate(120%);
-    }
-    75% { 
-        background-position: 0% 100%;
-        filter: hue-rotate(270deg) saturate(110%);
-    }
-    100% { 
-        background-position: 0% 50%;
-        filter: hue-rotate(360deg) saturate(100%);
-    }
-}
 
 *, *:before, *:after {
     box-sizing: border-box;
