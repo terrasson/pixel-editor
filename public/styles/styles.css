@@ -153,10 +153,15 @@ body::before {
     height: 2px;
     background: white;
     transform: translate(-50%, -50%);
+    transform-origin: center center;
+    -webkit-transform: translate(-50%, -50%);
+    -webkit-transform-origin: center center;
     box-shadow: 
         0 -6px 0 white,
         0 6px 0 white;
     transition: all 0.3s ease;
+    margin: 0;
+    padding: 0;
 }
 
 /* Style quand le menu est ouvert (croix) */
@@ -164,6 +169,9 @@ body::before {
     background: white;
     box-shadow: none;
     transform: translate(-50%, -50%) rotate(45deg);
+    -webkit-transform: translate(-50%, -50%) rotate(45deg);
+    transform-origin: center center;
+    -webkit-transform-origin: center center;
 }
 
 .menu-hamburger.open::after {
@@ -175,6 +183,11 @@ body::before {
     height: 2px;
     background: white;
     transform: translate(-50%, -50%) rotate(-45deg);
+    -webkit-transform: translate(-50%, -50%) rotate(-45deg);
+    transform-origin: center center;
+    -webkit-transform-origin: center center;
+    margin: 0;
+    padding: 0;
 }
 
 .menu-hamburger:hover, .menu-hamburger:active {
@@ -1666,6 +1679,25 @@ body.drag-over .grid-container {
         width: 16px;
     }
     
+    /* Correction supplémentaire pour iOS mobile */
+    @supports (-webkit-touch-callout: none) {
+        .menu-hamburger {
+            border: none !important;
+            outline: none !important;
+        }
+        
+        .menu-hamburger::before {
+            top: calc(50% - 0.5px);
+            left: calc(50% - 0.5px);
+            position: absolute !important;
+        }
+        
+        .menu-hamburger.open::after {
+            top: calc(50% - 0.5px);
+            left: calc(50% - 0.5px);
+        }
+    }
+    
     .toolbar {
         margin: 4px;
     }
@@ -1962,6 +1994,30 @@ body.drag-over .grid-container {
     .ad-space {
         padding-bottom: env(safe-area-inset-bottom);
         height: calc(60px + env(safe-area-inset-bottom));
+    }
+}
+
+/* Correction spécifique pour Safari iOS - problème d'alignement */
+@supports (-webkit-touch-callout: none) {
+    .menu-hamburger::before {
+        top: calc(50% - 1px); /* Ajustement fin pour iOS */
+        left: calc(50% - 1px);
+        transform: translate(-50%, -50%);
+        -webkit-transform: translate(-50%, -50%);
+        will-change: transform;
+    }
+    
+    .menu-hamburger.open::before {
+        transform: translate(-50%, -50%) rotate(45deg);
+        -webkit-transform: translate(-50%, -50%) rotate(45deg);
+    }
+    
+    .menu-hamburger.open::after {
+        top: calc(50% - 1px);
+        left: calc(50% - 1px);
+        transform: translate(-50%, -50%) rotate(-45deg);
+        -webkit-transform: translate(-50%, -50%) rotate(-45deg);
+        will-change: transform;
     }
 } 
 
