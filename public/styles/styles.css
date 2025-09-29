@@ -127,7 +127,7 @@ body::before {
     -webkit-backdrop-filter: blur(10px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
-    font-size: 1.2rem;
+    font-size: 0; /* Masquer le texte */
     width: 44px;
     height: 44px;
     border-radius: 22px;
@@ -135,15 +135,41 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: center;
-    line-height: 1;
-    font-family: system-ui, -apple-system, sans-serif;
-    vertical-align: middle;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: 
         0 4px 16px rgba(0, 0, 0, 0.1),
         0 2px 8px rgba(0, 0, 0, 0.05),
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
     z-index: 10;
+}
+
+/* Créer les icônes avec du CSS pur pour un alignement parfait */
+.menu-hamburger::before {
+    content: '';
+    position: relative;
+    width: 18px;
+    height: 2px;
+    background: white;
+    box-shadow: 
+        0 -6px 0 white,
+        0 6px 0 white;
+    transition: all 0.3s ease;
+}
+
+/* Style quand le menu est ouvert (croix) */
+.menu-hamburger.open::before {
+    background: transparent;
+    box-shadow: none;
+    transform: rotate(45deg);
+}
+
+.menu-hamburger.open::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 2px;
+    background: white;
+    transform: rotate(-45deg);
 }
 
 .menu-hamburger:hover, .menu-hamburger:active {
@@ -156,19 +182,6 @@ body::before {
         inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-/* Assurer un centrage parfait pour les icônes du menu */
-.menu-hamburger::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-}
 
 .project-info h2 {
     font-size: 1.1rem;
@@ -1634,15 +1647,14 @@ body.drag-over .grid-container {
         width: 40px;
         height: 40px;
         border-radius: 20px;
-        font-size: 1.1rem;
-        line-height: 1;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center;
-        padding: 0;
-        margin: 0;
-        box-sizing: border-box;
+    }
+    
+    .menu-hamburger::before {
+        width: 16px;
+        height: 2px;
+        box-shadow: 
+            0 -5px 0 white,
+            0 5px 0 white;
     }
     
     .toolbar {
