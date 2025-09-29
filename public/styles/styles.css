@@ -135,6 +135,9 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
+    font-family: system-ui, -apple-system, sans-serif;
+    vertical-align: middle;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: 
         0 4px 16px rgba(0, 0, 0, 0.1),
@@ -151,6 +154,20 @@ body::before {
         0 8px 24px rgba(103, 126, 234, 0.3),
         0 4px 12px rgba(118, 75, 162, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Assurer un centrage parfait pour les icônes du menu */
+.menu-hamburger::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
 }
 
 .project-info h2 {
@@ -1610,6 +1627,22 @@ body.drag-over .grid-container {
     .project-info {
         margin: 4px;
         padding: 8px 12px;
+    }
+    
+    .menu-hamburger {
+        left: 12px;
+        width: 40px;
+        height: 40px;
+        border-radius: 20px;
+        font-size: 1.1rem;
+        line-height: 1;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center;
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
     }
     
     .toolbar {
