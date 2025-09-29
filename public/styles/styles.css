@@ -1347,17 +1347,17 @@ body.drag-over .grid-container {
     }
 }
 
-/* DESKTOP LAYOUT - Interface horizontale pour maximiser la grille */
+/* DESKTOP LAYOUT - Sidebar outils+couleurs | Centre grille | Frames droite */
 @media (min-width: 1024px) {
     .editor-container {
         display: grid;
-        grid-template-columns: 240px 1fr 180px; /* Sidebar gauche plus large | Centre | Sidebar droite */
+        grid-template-columns: 260px 1fr 180px; /* Sidebar tools+colors | Centre | Frames */
         grid-template-rows: auto 1fr;
         grid-template-areas: 
-            "left-sidebar center-header right-sidebar"
-            "left-sidebar center-grid right-sidebar";
+            "tools-sidebar center-header frames-sidebar"
+            "tools-sidebar center-grid frames-sidebar";
         padding: 8px;
-        max-width: 1400px;
+        max-width: 1600px;
         margin: 0 auto;
         height: 100vh;
         gap: 8px;
@@ -1365,38 +1365,37 @@ body.drag-over .grid-container {
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
     }
     
-    /* Header centré AVEC titre visible */
+    /* Header centré */
     .project-info {
         grid-area: center-header;
-        padding: 12px 16px;
+        padding: 8px 16px;
         margin: 0;
         justify-content: center;
         background: rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(15px) saturate(200%);
         -webkit-backdrop-filter: blur(15px) saturate(200%);
         border: 1px solid rgba(255, 255, 255, 0.25);
-        border-radius: 16px;
+        border-radius: 12px;
         display: flex !important;
         align-items: center;
     }
     
     .menu-hamburger {
-        display: none; /* Caché sur desktop - pas besoin */
+        display: none; /* Caché sur desktop */
     }
     
     .project-info h2 {
         text-align: center;
         margin: 0;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         color: rgba(255, 255, 255, 0.95);
         font-weight: 600;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        display: block !important;
     }
     
-    /* Sidebar gauche - Outils + Couleurs verticaux */
+    /* SIDEBAR GAUCHE - Outils + Couleurs combinés */
     .toolbar {
-        grid-area: left-sidebar;
+        grid-area: tools-sidebar;
         display: flex !important;
         flex-direction: column;
         padding: 12px;
@@ -1407,35 +1406,58 @@ body.drag-over .grid-container {
         overflow-y: auto;
         height: 100%;
         border-radius: 16px;
-        gap: 0; /* Pas d'espace entre toolbar et tools-secondary */
+        gap: 12px;
+    }
+    
+    /* Zone grille centrale */
+    .grid-container {
+        grid-area: center-grid;
+        padding: 8px;
+        margin: 0;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* SIDEBAR DROITE - Frames */
+    .frames-container {
+        grid-area: frames-sidebar;
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        margin: 0;
+        max-height: none;
+        height: 100%;
+        overflow-y: auto;
+        border-radius: 16px;
     }
     
     .tools {
         display: grid;
-        grid-template-columns: 1fr 1fr; /* 2 colonnes pour compacter */
-        gap: 6px;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
         margin-bottom: 12px;
     }
     
     .tools button {
         padding: 6px 4px;
         text-align: center;
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         white-space: normal;
-        min-height: 34px;
+        min-height: 32px;
         word-wrap: break-word;
-        line-height: 1.1;
+        line-height: 1;
         overflow: hidden;
         text-overflow: ellipsis;
     }
     
-    /* Section couleurs dans la sidebar gauche */
     .tools-secondary {
-        /* Plus de grid-area - intégré dans la sidebar gauche */
-        padding: 12px;
-        margin: 8px 0 0 0;
-        border-radius: 12px;
-        order: 2; /* Après les outils */
+        padding: 8px;
+        margin: 0;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        flex-shrink: 0;
     }
     
     .color-palette {
@@ -1543,12 +1565,12 @@ body.drag-over .grid-container {
         margin: 0 auto;
     }
     
-    /* Grille MAXIMISÉE avec sidebar optimisée */
+    /* Grille ÉNORME avec sidebars optimisées */
     #pixelGrid {
         --cell-size: min(
-            calc((100vw - 440px - 4px - 31px) / 32), /* Largeur - sidebars (240+180) */
-            calc((100vh - 160px - 4px - 31px) / 32), /* Hauteur - header compact + pub */
-            18px
+            calc((100vw - 460px - 4px - 31px) / 32), /* Largeur - sidebars (260+180) */
+            calc((100vh - 120px - 4px - 31px) / 32), /* Hauteur - header minimal + pub */
+            20px
         ) !important;
         
         width: calc(var(--cell-size) * 32 + 31px + 4px) !important;
