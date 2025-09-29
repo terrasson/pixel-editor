@@ -176,8 +176,10 @@ function autoSaveProjectLocal(name) {
 }
 
 async function showLocalProjects() {
+    console.log('🔍 showLocalProjects appelée');
     // Charger uniquement depuis localStorage (simple et fiable)
     loadAutoSaveProjects();
+    console.log('📱 Projets trouvés:', autoSaveProjects.length);
     
     if (autoSaveProjects.length === 0) {
         alert('📱 Aucun projet trouvé.\n\nCommencez à dessiner et vos projets seront automatiquement sauvegardés en ligne ! 🌐');
@@ -2411,6 +2413,7 @@ function initDragAndDrop() {
 
 // Améliorer la fonction de chargement existante
 async function loadFromFile() {
+    console.log('🔍 loadFromFile appelée');
     // Afficher un dialogue avec options pour iOS
     showFileLoadDialog();
 }
