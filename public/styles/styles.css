@@ -1565,24 +1565,41 @@ body.drag-over .grid-container {
         margin: 0 auto;
     }
     
-    /* Grille ÉNORME avec sidebars optimisées */
+    /* GRILLE 32×32 VRAIMENT MASSIVE */
     #pixelGrid {
         --cell-size: min(
-            calc((100vw - 460px - 4px - 31px) / 32), /* Largeur - sidebars (260+180) */
-            calc((100vh - 120px - 4px - 31px) / 32), /* Hauteur - header minimal + pub */
-            20px
+            calc((100vw - 480px) / 32), /* Largeur - sidebars - gaps */
+            calc((100vh - 100px) / 32), /* Hauteur - header minimal */
+            22px  /* Cellules plus grandes */
         ) !important;
         
-        width: calc(var(--cell-size) * 32 + 31px + 4px) !important;
-        height: calc(var(--cell-size) * 32 + 31px + 4px) !important;
+        width: calc(var(--cell-size) * 32) !important;
+        height: calc(var(--cell-size) * 32) !important;
         
-        border-radius: 4px !important;
+        /* FORCER 32×32 avec CSS Grid */
+        display: grid !important;
+        grid-template-columns: repeat(32, var(--cell-size)) !important;
+        grid-template-rows: repeat(32, var(--cell-size)) !important;
+        gap: 0 !important;
         
-        /* Contraintes ajustées pour éviter coupure */
-        min-width: calc(12px * 32 + 31px + 4px) !important;
-        min-height: calc(12px * 32 + 31px + 4px) !important;
-        max-width: calc(22px * 32 + 31px + 4px) !important;
-        max-height: calc(22px * 32 + 31px + 4px) !important;
+        border: 2px solid rgba(255, 255, 255, 0.4) !important;
+        border-radius: 6px !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+        
+        /* Contraintes pour écrans desktop */
+        min-width: calc(18px * 32) !important;
+        min-height: calc(18px * 32) !important;
+        max-width: calc(22px * 32) !important;
+        max-height: calc(22px * 32) !important;
+    }
+    
+    /* PIXELS parfaitement alignés */
+    .pixel {
+        width: var(--cell-size) !important;
+        height: var(--cell-size) !important;
+        border: 0.5px solid rgba(0, 0, 0, 0.08) !important;
+        box-sizing: border-box !important;
     }
 }
 
