@@ -176,13 +176,8 @@ function autoSaveProjectLocal(name) {
 }
 
 async function showLocalProjects() {
-    try {
-        // Charger depuis Supabase d'abord
-        await loadSupabaseProjects();
-    } catch (error) {
-        // Si Supabase échoue, utiliser localStorage
-        loadAutoSaveProjects();
-    }
+    // Charger uniquement depuis localStorage (simple et fiable)
+    loadAutoSaveProjects();
     
     if (autoSaveProjects.length === 0) {
         alert('📱 Aucun projet trouvé.\n\nCommencez à dessiner et vos projets seront automatiquement sauvegardés en ligne ! 🌐');
@@ -902,7 +897,23 @@ async function saveToFile() {
         };
 
         // Sauvegarder localement (localStorage) - plus fiable
-        autoSaveProjectLocal(projectName);
+        try {
+            autoSaveProjectLocal(projectName);
+        } catch (saveError) {
+            console.error('Erreur localStorage:', saveError);
+            // Plan B : Téléchargement direct du fichier
+            const blob = new Blob([JSON.stringify(projectData, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${projectName}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('✅ Projet téléchargé en fichier !');
+            return;
+        }
         
         // Mettre à jour le titre du projet
         const titleElement = document.getElementById('projectTitle');
@@ -954,11 +965,6 @@ function showSaveDialog() {
 
         input.focus();
     });
-}
-
-async function loadFromFile() {
-    // Afficher un dialogue avec options pour iOS
-    showFileLoadDialog();
 }
 
 // Prévisualisation de l'animation
