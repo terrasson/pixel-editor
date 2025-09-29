@@ -105,13 +105,13 @@ body::before {
     align-items: center;
     justify-content: center;
     position: relative;
-    padding: 12px 16px;
+    padding: 8px 12px; /* Réduit pour desktop */
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(15px) saturate(200%);
     -webkit-backdrop-filter: blur(15px) saturate(200%);
     border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 20px;
-    margin: 6px;
+    border-radius: 16px;
+    margin: 4px;
     box-shadow: 
         0 4px 16px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.4);
@@ -342,13 +342,13 @@ body::before {
 
 /* Section secondaire pour couleurs et gomme - Liquid Glass */
 .tools-secondary {
-    padding: 12px;
+    padding: 8px;
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 20px;
-    margin: 6px;
+    border-radius: 16px;
+    margin: 4px;
     box-shadow: 
         0 4px 16px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -553,16 +553,16 @@ body::before {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 12px;
+    padding: 8px;
     overflow: hidden;
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(15px) saturate(150%);
     -webkit-backdrop-filter: blur(15px) saturate(150%);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    margin: 6px;
+    border-radius: 16px;
+    margin: 4px;
     min-height: 200px;
-    max-height: calc(100vh - 300px);
+    max-height: calc(100vh - 260px); /* Réduit pour desktop */
     box-shadow: 
         0 4px 20px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -578,15 +578,15 @@ body::before {
     backdrop-filter: blur(10px) saturate(120%);
     -webkit-backdrop-filter: blur(10px) saturate(120%);
     border: 2px solid rgba(255, 255, 255, 0.25);
-    border-radius: 20px;
+    border-radius: 8px; /* Coins moins arrondis pour récupérer les pixels d'angle */
     aspect-ratio: 1 / 1;
     position: relative;
     margin: 0 auto;
     
     /* Calcul EXACT pour 32x32 cases - formule: (taille_case * 32) + (gap * 31) + border */
     --cell-size: min(
-        calc((100vw - 40px - 4px - 31px) / 32),
-        calc((100vh - 220px - 4px - 31px) / 32),
+        calc((100vw - 30px - 4px - 31px) / 32),
+        calc((100vh - 180px - 4px - 31px) / 32),
         17px
     );
     
@@ -596,8 +596,8 @@ body::before {
     /* Contraintes absolues pour éviter les déformations */
     min-width: calc(8px * 32 + 31px + 4px); /* Minimum 8px par case */
     min-height: calc(8px * 32 + 31px + 4px);
-    max-width: calc(20px * 32 + 31px + 4px); /* Maximum 20px par case */
-    max-height: calc(20px * 32 + 31px + 4px);
+    max-width: calc(25px * 32 + 31px + 4px); /* Maximum augmenté pour desktop */
+    max-height: calc(25px * 32 + 31px + 4px);
     
     box-shadow: 
         0 8px 32px rgba(0, 0, 0, 0.15),
@@ -1337,7 +1337,7 @@ body.drag-over .grid-container {
 /* Tablettes en paysage et écrans moyens */
 @media (min-width: 1024px) {
     .editor-container {
-        padding: 16px;
+        padding: 8px; /* Réduit */
         max-width: 1200px;
         margin: 0 auto;
         height: 100vh;
@@ -1345,32 +1345,44 @@ body.drag-over .grid-container {
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
     }
     
+    .project-info {
+        padding: 6px 10px; /* Plus compact */
+        margin: 2px;
+    }
+    
     .toolbar {
-        background-color: #f8f9fa;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        margin-bottom: 16px;
+        margin: 2px; /* Réduit */
+        padding: 8px; /* Réduit */
+    }
+    
+    .tools-secondary {
+        padding: 6px; /* Plus compact */
+        margin: 2px;
+    }
+    
+    .grid-container {
+        padding: 6px; /* Réduit */
+        margin: 2px;
+        max-height: calc(100vh - 200px); /* Plus d'espace pour la grille */
     }
     
     .frames-container {
         border: 1px solid #e0e0e0;
         border-radius: 8px;
-        margin-top: 16px;
-        max-height: 180px;
+        margin: 2px 2px 16px 2px; /* Réduit */
+        max-height: 120px; /* Plus compact */
+        padding: 8px; /* Réduit */
     }
     
     #pixelGrid {
-        /* Écrans moyens - Plus d'espace disponible */
-        width: min(
-            calc(100vw - 30px),      
-            calc(100vh - 180px),     
-            500px                    
+        /* Desktop - GARANTIE 32x32 avec plus d'espace vertical récupéré */
+        --cell-size: min(
+            calc((100vw - 24px - 4px - 31px) / 32),
+            calc((100vh - 140px - 4px - 31px) / 32), /* Hauteur UI réduite */
+            20px /* Plus gros sur desktop */
         );
-        height: min(
-            calc(100vw - 30px),      
-            calc(100vh - 180px),     
-            500px                    
-        );
+        
+        border-radius: 4px; /* Coins très peu arrondis pour récupérer tous les pixels */
     }
 }
 
@@ -1386,17 +1398,14 @@ body.drag-over .grid-container {
     }
     
     #pixelGrid {
-        /* Grands écrans - Grille optimisée */
-        width: min(
-            calc(100vw - 20px),      
-            calc(100vh - 160px),     
-            650px                    
+        /* Grands écrans - GARANTIE 32x32 avec pixels plus gros */
+        --cell-size: min(
+            calc((100vw - 20px - 4px - 31px) / 32),      
+            calc((100vh - 120px - 4px - 31px) / 32), /* UI très compact */    
+            25px /* Pixels encore plus gros sur grands écrans */                 
         );
-        height: min(
-            calc(100vw - 20px),      
-            calc(100vh - 160px),     
-            650px                    
-        );
+        
+        border-radius: 2px; /* Presque carrés pour récupérer tous les pixels */
     }
 }
 
