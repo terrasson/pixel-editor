@@ -586,8 +586,8 @@ body::before {
     /* Calcul EXACT pour 32x32 cases - formule: (taille_case * 32) + (gap * 31) + border */
     --cell-size: min(
         calc((100vw - 30px - 4px - 31px) / 32),
-        calc((100vh - 180px - 4px - 31px) / 32),
-        17px
+        calc((100vh - 120px - 4px - 31px) / 32), /* Beaucoup moins d'espace UI */
+        15px
     );
     
     width: calc(var(--cell-size) * 32 + 31px + 4px);
@@ -1332,6 +1332,19 @@ body.drag-over .grid-container {
     .frames-container {
         max-height: 160px;
     }
+    
+    /* Force grille visible sur tablettes */
+    #pixelGrid {
+        --cell-size: min(
+            calc((100vw - 20px - 4px - 31px) / 32),
+            calc((100vh - 100px - 4px - 31px) / 32),
+            16px
+        ) !important;
+        
+        width: calc(var(--cell-size) * 32 + 31px + 4px) !important;
+        height: calc(var(--cell-size) * 32 + 31px + 4px) !important;
+        border-radius: 4px !important;
+    }
 }
 
 /* Tablettes en paysage et écrans moyens */
@@ -1361,9 +1374,10 @@ body.drag-over .grid-container {
     }
     
     .grid-container {
-        padding: 6px; /* Réduit */
-        margin: 2px;
-        max-height: calc(100vh - 200px); /* Plus d'espace pour la grille */
+        padding: 2px !important; /* Ultra réduit */
+        margin: 1px !important;
+        max-height: calc(100vh - 120px) !important; /* Maximum d'espace pour la grille */
+        min-height: 400px !important; /* Force hauteur minimale */
     }
     
     .frames-container {
@@ -1375,14 +1389,25 @@ body.drag-over .grid-container {
     }
     
     #pixelGrid {
-        /* Desktop - GARANTIE 32x32 avec plus d'espace vertical récupéré */
+        /* Desktop - FORCE taille grille pour garantir 32x32 visible */
         --cell-size: min(
-            calc((100vw - 24px - 4px - 31px) / 32),
-            calc((100vh - 140px - 4px - 31px) / 32), /* Hauteur UI réduite */
-            20px /* Plus gros sur desktop */
-        );
+            calc((100vw - 20px - 4px - 31px) / 32),
+            calc((100vh - 80px - 4px - 31px) / 32), /* UI TRÈS compacte */
+            18px /* Taille forcée desktop */
+        ) !important;
         
-        border-radius: 4px; /* Coins très peu arrondis pour récupérer tous les pixels */
+        /* Force les dimensions calculées */
+        width: calc(var(--cell-size) * 32 + 31px + 4px) !important;
+        height: calc(var(--cell-size) * 32 + 31px + 4px) !important;
+        
+        /* Coins carrés pour récupérer tous les pixels */
+        border-radius: 2px !important;
+        
+        /* Contraintes pour desktop */
+        min-width: calc(12px * 32 + 31px + 4px) !important;
+        min-height: calc(12px * 32 + 31px + 4px) !important;
+        max-width: calc(22px * 32 + 31px + 4px) !important;
+        max-height: calc(22px * 32 + 31px + 4px) !important;
     }
 }
 
@@ -1398,14 +1423,19 @@ body.drag-over .grid-container {
     }
     
     #pixelGrid {
-        /* Grands écrans - GARANTIE 32x32 avec pixels plus gros */
+        /* Grands écrans - FORCE grille encore plus visible */
         --cell-size: min(
             calc((100vw - 20px - 4px - 31px) / 32),      
-            calc((100vh - 120px - 4px - 31px) / 32), /* UI très compact */    
-            25px /* Pixels encore plus gros sur grands écrans */                 
-        );
+            calc((100vh - 60px - 4px - 31px) / 32), /* UI ultra compact */    
+            22px /* Gros pixels sur grands écrans */                 
+        ) !important;
         
-        border-radius: 2px; /* Presque carrés pour récupérer tous les pixels */
+        width: calc(var(--cell-size) * 32 + 31px + 4px) !important;
+        height: calc(var(--cell-size) * 32 + 31px + 4px) !important;
+        border-radius: 1px !important; /* Quasi carrés */
+        
+        max-width: calc(25px * 32 + 31px + 4px) !important;
+        max-height: calc(25px * 32 + 31px + 4px) !important;
     }
 }
 
