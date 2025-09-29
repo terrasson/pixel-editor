@@ -66,6 +66,7 @@ body::before {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    height: 100dvh; /* Hauteur dynamique pour mobile */
     width: 100vw;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(20px) saturate(180%);
@@ -74,8 +75,8 @@ body::before {
     border-radius: 24px;
     position: relative;
     overflow: hidden;
-    padding: 8px;
-    margin: 8px;
+    padding: 4px;
+    margin: 0;
     box-shadow: 
         0 8px 32px rgba(0, 0, 0, 0.1),
         0 2px 8px rgba(0, 0, 0, 0.05),
@@ -534,13 +535,13 @@ body::before {
     
     /* Calcul intelligent pour garantir 32x32 carreaux complets */
     width: min(
-        calc(100vw - 60px),
-        calc(100vh - 220px),
+        calc(100vw - 20px),
+        calc(100vh - 180px),
         580px
     );
     height: min(
-        calc(100vw - 60px),
-        calc(100vh - 220px),
+        calc(100vw - 20px),
+        calc(100vh - 180px),
         580px
     );
     
@@ -1419,14 +1420,14 @@ body.drag-over .grid-container {
     #pixelGrid {
         /* Petits écrans - Grille compacte mais complète */
         width: min(
-            calc(100vw - 20px),      
-            calc(100vh - 250px),     
-            280px                    
+            calc(100vw - 16px),      
+            calc(100vh - 200px),     
+            300px                    
         );
         height: min(
-            calc(100vw - 20px),      
-            calc(100vh - 250px),     
-            280px                    
+            calc(100vw - 16px),      
+            calc(100vh - 200px),     
+            300px                    
         );
     }
 }
@@ -1594,12 +1595,35 @@ body.drag-over .grid-container {
     
     .editor-container {
         height: 100vh; /* Toujours 100vh */
+        height: 100dvh; /* Hauteur dynamique pour mobile */
+        margin: 0;
+        padding: 2px;
+        border-radius: 16px;
     }
     
     .frames-container {
-        margin: 6px 6px 70px 6px; /* Ajuster pour bannière 60px */
+        margin: 4px 4px 65px 4px; /* Ajuster pour bannière 60px */
         max-height: 140px;
         padding: 12px;
+    }
+    
+    .project-info {
+        margin: 4px;
+        padding: 8px 12px;
+    }
+    
+    .toolbar {
+        margin: 4px;
+    }
+    
+    .tools-secondary {
+        margin: 4px;
+        padding: 8px;
+    }
+    
+    .grid-container {
+        margin: 4px;
+        padding: 8px;
     }
 }
 
@@ -1875,9 +1899,10 @@ body.drag-over .grid-container {
 /* Optimisation pour iPhone avec encoche (safe-area) */
 @supports (padding: max(0px)) {
     .editor-container {
-        padding-top: env(safe-area-inset-top);
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
+        padding-top: max(4px, env(safe-area-inset-top));
+        padding-left: max(4px, env(safe-area-inset-left));
+        padding-right: max(4px, env(safe-area-inset-right));
+        padding-bottom: max(4px, env(safe-area-inset-bottom));
     }
     
     .ad-space {
