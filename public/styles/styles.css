@@ -146,10 +146,13 @@ body::before {
 /* Créer les icônes avec du CSS pur pour un alignement parfait */
 .menu-hamburger::before {
     content: '';
-    position: relative;
+    position: absolute;
+    top: 50%;
+    left: 50%;
     width: 18px;
     height: 2px;
     background: white;
+    transform: translate(-50%, -50%);
     box-shadow: 
         0 -6px 0 white,
         0 6px 0 white;
@@ -158,18 +161,20 @@ body::before {
 
 /* Style quand le menu est ouvert (croix) */
 .menu-hamburger.open::before {
-    background: transparent;
+    background: white;
     box-shadow: none;
-    transform: rotate(45deg);
+    transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .menu-hamburger.open::after {
     content: '';
     position: absolute;
+    top: 50%;
+    left: 50%;
     width: 18px;
     height: 2px;
     background: white;
-    transform: rotate(-45deg);
+    transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .menu-hamburger:hover, .menu-hamburger:active {
@@ -1655,6 +1660,10 @@ body.drag-over .grid-container {
         box-shadow: 
             0 -5px 0 white,
             0 5px 0 white;
+    }
+    
+    .menu-hamburger.open::after {
+        width: 16px;
     }
     
     .toolbar {
