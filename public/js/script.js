@@ -1797,6 +1797,20 @@ function initEventListeners() {
     // Menu hamburger
     document.getElementById('menuToggle')?.addEventListener('click', toggleToolbar);
     
+    // Event listeners pour les boutons desktop dans sidebar
+    document.getElementById('previewBtn2')?.addEventListener('click', () => {
+        document.getElementById('previewBtn')?.click();
+    });
+    document.getElementById('clearBtn2')?.addEventListener('click', () => {
+        document.getElementById('clearBtn')?.click();
+    });
+    document.getElementById('saveBtn2')?.addEventListener('click', () => {
+        document.getElementById('saveBtn')?.click();
+    });
+    document.getElementById('exportGifBtn2')?.addEventListener('click', () => {
+        document.getElementById('exportGifBtn')?.click();
+    });
+    
     // Initialiser les autres fonctionnalités
     initMobileFeatures();
 }

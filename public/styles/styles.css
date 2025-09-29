@@ -1,4 +1,10 @@
 /* CSS Reset et base - Liquid Glass iOS 26 */
+
+/* Cacher extra-tools sur mobile par défaut */
+.extra-tools {
+    display: none;
+}
+
 html, body {
     margin: 0;
     padding: 0;
@@ -1347,30 +1353,31 @@ body.drag-over .grid-container {
     }
 }
 
-/* DESKTOP LAYOUT UNIQUEMENT - Sidebar outils+couleurs | Centre grille | Frames droite */
+/* DESKTOP LAYOUT SELON VOS SPECS - Nuancier gauche | Grille centre | Frames droite */
 @media (min-width: 1024px) {
     .editor-container {
         display: grid;
-        grid-template-columns: 260px 1fr 180px; /* Sidebar tools+colors | Centre | Frames */
-        grid-template-rows: auto 1fr;
+        grid-template-columns: 220px 1fr 180px; /* Nuancier | Grille MASSIVE | Frames */
+        grid-template-rows: auto 1fr auto;
         grid-template-areas: 
-            "tools-sidebar center-header frames-sidebar"
-            "tools-sidebar center-grid frames-sidebar";
+            "left-tools center-header right-frames"
+            "left-tools center-grid right-frames"
+            "pub-area pub-area pub-area";
         padding: 8px;
-        max-width: 1600px;
+        max-width: 1800px;
         margin: 0 auto;
-        height: 100vh;
-        gap: 8px;
+        min-height: 100vh;
+        gap: 10px;
         border-radius: 8px;
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
     }
     
     /* MOBILE/iOS garde son layout normal - on force UNIQUEMENT sur desktop */
     
-    /* Header centré */
+    /* TITRE centré en haut */
     .project-info {
         grid-area: center-header;
-        padding: 8px 16px;
+        padding: 12px 16px;
         margin: 0;
         justify-content: center;
         background: rgba(255, 255, 255, 0.15);
@@ -1389,29 +1396,35 @@ body.drag-over .grid-container {
     .project-info h2 {
         text-align: center;
         margin: 0;
-        font-size: 1.1rem;
+        font-size: 1.3rem;
         color: rgba(255, 255, 255, 0.95);
         font-weight: 600;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
     
-    /* SIDEBAR GAUCHE - Outils + Couleurs combinés */
-    .toolbar {
-        grid-area: tools-sidebar;
+    /* SIDEBAR GAUCHE - tools-secondary devient la sidebar principale */
+    .tools-secondary {
+        grid-area: left-tools;
         display: flex !important;
         flex-direction: column;
         padding: 12px;
         margin: 0;
-        max-height: none;
-        opacity: 1;
-        transform: none;
-        overflow-y: auto;
-        height: 100%;
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 16px;
-        gap: 12px;
+        height: 100%;
+        overflow-y: auto;
+        gap: 16px;
     }
     
-    /* Zone grille centrale */
+    /* Toolbar cachée sur desktop - intégrée dans tools-secondary */
+    .toolbar {
+        display: none !important;
+    }
+    
+    /* Zone grille centrale ÉNORME */
     .grid-container {
         grid-area: center-grid;
         padding: 8px;
@@ -1420,19 +1433,77 @@ body.drag-over .grid-container {
         display: flex;
         align-items: center;
         justify-content: center;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
     }
     
     /* SIDEBAR DROITE - Frames */
     .frames-container {
-        grid-area: frames-sidebar;
+        grid-area: right-frames;
         display: flex;
         flex-direction: column;
         padding: 12px;
         margin: 0;
-        max-height: none;
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
         height: 100%;
         overflow-y: auto;
-        border-radius: 16px;
+        gap: 8px;
+    }
+    
+    /* Zone pub en bas */
+    .ad-space {
+        grid-area: pub-area;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.9rem;
+    }
+    
+    /* Boutons supplémentaires à ajouter dans tools-secondary */
+    .extra-tools {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    
+    .extra-tools button {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        color: rgba(255, 255, 255, 0.9);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+    }
+    
+    .extra-tools button:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-1px);
+    }
+    
+    /* Rendre visible les boutons toolbar dans tools-secondary sur desktop */
+    .tools-secondary::after {
+        content: '';
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 16px;
+    }
+    
+    /* Extra-tools visible seulement sur desktop */
+    .extra-tools {
+        display: flex;
     }
     
     .tools {
@@ -1569,27 +1640,27 @@ body.drag-over .grid-container {
         margin: 0 auto;
     }
     
-    /* GRILLE 32×32 MASSIVE - DESKTOP UNIQUEMENT */
+    /* GRILLE 32×32 ÉNORME - Tout l'espace central */
     #pixelGrid {
         --cell-size: min(
-            calc((100vw - 480px) / 32), /* Largeur - sidebars - gaps */
-            calc((100vh - 100px) / 32), /* Hauteur - header minimal */
-            22px  /* Cellules plus grandes */
+            calc((100vw - 430px) / 32), /* Largeur - sidebars (220+180) - gaps */
+            calc((100vh - 180px) / 32), /* Hauteur - header - pub - gaps */
+            26px  /* Cellules ÉNORMES */
         ) !important;
         
         width: calc(var(--cell-size) * 32) !important;
         height: calc(var(--cell-size) * 32) !important;
         
         border: 2px solid rgba(255, 255, 255, 0.4) !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         background: rgba(255, 255, 255, 0.98) !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
         
-        /* Contraintes pour écrans desktop */
-        min-width: calc(18px * 32) !important;
-        min-height: calc(18px * 32) !important;
-        max-width: calc(22px * 32) !important;
-        max-height: calc(22px * 32) !important;
+        /* Contraintes généreuses pour desktop */
+        min-width: calc(16px * 32) !important;
+        min-height: calc(16px * 32) !important;
+        max-width: calc(26px * 32) !important;
+        max-height: calc(26px * 32) !important;
     }
 }
 
