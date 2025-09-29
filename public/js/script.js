@@ -894,14 +894,15 @@ async function saveToFile() {
 
         const projectData = {
             name: projectName,
-            frames: JSON.stringify(frames),
-            current_frame: currentFrame,
-            custom_colors: JSON.stringify(customColors),
-            device_info: navigator.userAgent.substring(0, 100)
+            frames: frames,
+            currentFrame: currentFrame,
+            customColors: customColors,
+            created: new Date().toISOString(),
+            version: '2.0'
         };
 
-        // Sauvegarder sur Supabase
-        await saveToSupabase(projectData);
+        // Sauvegarder localement (localStorage) - plus fiable
+        autoSaveProjectLocal(projectName);
         
         // Mettre à jour le titre du projet
         const titleElement = document.getElementById('projectTitle');
@@ -909,11 +910,11 @@ async function saveToFile() {
             titleElement.textContent = projectName;
         }
         
-        alert('✅ Projet sauvegardé sur Supabase !');
+        alert('✅ Projet sauvegardé localement !');
         
     } catch (err) {
         console.error('Erreur lors de la sauvegarde:', err);
-        alert('❌ Erreur lors de la sauvegarde. Vérifiez votre configuration Supabase.');
+        alert('❌ Erreur lors de la sauvegarde.');
     }
 }
 
@@ -956,8 +957,8 @@ function showSaveDialog() {
 }
 
 async function loadFromFile() {
-    // Chargement direct depuis Supabase - même fonction que "Mes projets"
-    await showLocalProjects();
+    // Afficher un dialogue avec options pour iOS
+    showFileLoadDialog();
 }
 
 // Prévisualisation de l'animation
