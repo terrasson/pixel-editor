@@ -1347,7 +1347,7 @@ body.drag-over .grid-container {
     }
 }
 
-/* DESKTOP LAYOUT - Sidebar outils+couleurs | Centre grille | Frames droite */
+/* DESKTOP LAYOUT UNIQUEMENT - Sidebar outils+couleurs | Centre grille | Frames droite */
 @media (min-width: 1024px) {
     .editor-container {
         display: grid;
@@ -1364,6 +1364,8 @@ body.drag-over .grid-container {
         border-radius: 8px;
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
     }
+    
+    /* MOBILE/iOS garde son layout normal - on force UNIQUEMENT sur desktop */
     
     /* Header centré */
     .project-info {
@@ -1452,12 +1454,14 @@ body.drag-over .grid-container {
         text-overflow: ellipsis;
     }
     
+    /* Couleurs intégrées dans la toolbar sur desktop */
     .tools-secondary {
         padding: 8px;
         margin: 0;
         border-radius: 8px;
         background: rgba(255, 255, 255, 0.05);
         flex-shrink: 0;
+        /* Sur desktop, c'est dans la toolbar donc pas besoin de grid-area */
     }
     
     .color-palette {
@@ -1565,7 +1569,7 @@ body.drag-over .grid-container {
         margin: 0 auto;
     }
     
-    /* GRILLE 32×32 VRAIMENT MASSIVE */
+    /* GRILLE 32×32 MASSIVE - DESKTOP UNIQUEMENT */
     #pixelGrid {
         --cell-size: min(
             calc((100vw - 480px) / 32), /* Largeur - sidebars - gaps */
@@ -1575,12 +1579,6 @@ body.drag-over .grid-container {
         
         width: calc(var(--cell-size) * 32) !important;
         height: calc(var(--cell-size) * 32) !important;
-        
-        /* FORCER 32×32 avec CSS Grid */
-        display: grid !important;
-        grid-template-columns: repeat(32, var(--cell-size)) !important;
-        grid-template-rows: repeat(32, var(--cell-size)) !important;
-        gap: 0 !important;
         
         border: 2px solid rgba(255, 255, 255, 0.4) !important;
         border-radius: 6px !important;
@@ -1592,14 +1590,6 @@ body.drag-over .grid-container {
         min-height: calc(18px * 32) !important;
         max-width: calc(22px * 32) !important;
         max-height: calc(22px * 32) !important;
-    }
-    
-    /* PIXELS parfaitement alignés */
-    .pixel {
-        width: var(--cell-size) !important;
-        height: var(--cell-size) !important;
-        border: 0.5px solid rgba(0, 0, 0, 0.08) !important;
-        box-sizing: border-box !important;
     }
 }
 

@@ -47,13 +47,11 @@
 </head>
 <body>
     <div class="editor-container">
-        <!-- MOBILE : Header avec hamburger -->
         <div class="project-info">
             <button id="menuToggle" class="menu-hamburger" title="Afficher les outils"></button>
             <h2 id="projectTitle">Nouveau projet</h2>
         </div>
         
-        <!-- SIDEBAR GAUCHE : Outils + Couleurs COMBINÉS -->
         <div class="toolbar">
             <div class="tools">
                 <button id="clearBtn">Effacer tout</button>
@@ -69,44 +67,41 @@
                 <button id="helpBtn">❓ Aide</button>
                 <button id="creditsBtn">Crédits</button>
             </div>
-            
-            <!-- COULEURS dans la même sidebar -->
-            <div class="tools-secondary">
-                <div class="color-palette">
-                    <!-- Ligne 1 : Color picker + Validate -->
-                    <div class="color-picker-row">
-                        <input type="color" id="colorPicker" value="#000000">
-                        <button id="validateColorBtn" class="validate-color-btn">✓</button>
-                    </div>
-                    
-                    <!-- Ligne 2 : Gomme + Undo + Redo -->
-                    <div class="tools-row">
-                        <button id="eraserBtn" class="eraser-btn">Gomme</button>
-                        <button id="undoBtn" class="undo-redo-btn" title="Annuler (←)">↶</button>
-                        <button id="redoBtn" class="undo-redo-btn" title="Rétablir (→)">↷</button>
-                    </div>
-                    
-                    <!-- Couleurs preset en grille compacte -->
-                    <div class="preset-colors">
-                        <button class="color-btn" style="background-color: #000000"></button>
-                        <button class="color-btn" style="background-color: #FFFFFF"></button>
-                        <button class="color-btn" style="background-color: #FF0000"></button>
-                        <button class="color-btn" style="background-color: #00FF00"></button>
-                        <button class="color-btn" style="background-color: #0000FF"></button>
-                        <button class="color-btn" style="background-color: #FFFF00"></button>
-                        <button class="color-btn" style="background-color: #FF00FF"></button>
-                        <button class="color-btn" style="background-color: #00FFFF"></button>
-                    </div>
+        </div>
+
+        <div class="tools-secondary">
+            <div class="color-palette">
+                <!-- Ligne 1 : Color picker + Validate -->
+                <div class="color-picker-row">
+                    <input type="color" id="colorPicker" value="#000000">
+                    <button id="validateColorBtn" class="validate-color-btn">✓</button>
+                </div>
+                
+                <!-- Ligne 2 : Gomme + Undo + Redo -->
+                <div class="tools-row">
+                    <button id="eraserBtn" class="eraser-btn">Gomme</button>
+                    <button id="undoBtn" class="undo-redo-btn" title="Annuler (←)">↶</button>
+                    <button id="redoBtn" class="undo-redo-btn" title="Rétablir (→)">↷</button>
+                </div>
+                
+                <!-- Couleurs preset en grille compacte -->
+                <div class="preset-colors">
+                    <button class="color-btn" style="background-color: #000000"></button>
+                    <button class="color-btn" style="background-color: #FFFFFF"></button>
+                    <button class="color-btn" style="background-color: #FF0000"></button>
+                    <button class="color-btn" style="background-color: #00FF00"></button>
+                    <button class="color-btn" style="background-color: #0000FF"></button>
+                    <button class="color-btn" style="background-color: #FFFF00"></button>
+                    <button class="color-btn" style="background-color: #FF00FF"></button>
+                    <button class="color-btn" style="background-color: #00FFFF"></button>
                 </div>
             </div>
         </div>
 
-        <!-- CENTRE : Grille ÉNORME -->
         <div class="grid-container">
             <div id="pixelGrid"></div>
         </div>
 
-        <!-- DROITE : Frames -->
         <div class="frames-container">
             <button id="addFrameBtn">+ Nouvelle Frame</button>
             <div id="framesList"></div>
