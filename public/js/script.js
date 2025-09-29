@@ -1797,18 +1797,42 @@ function initEventListeners() {
     // Menu hamburger
     document.getElementById('menuToggle')?.addEventListener('click', toggleToolbar);
     
-    // Event listeners pour les boutons desktop dans sidebar
+    // Event listeners pour TOUS les boutons desktop dans sidebar
     document.getElementById('previewBtn2')?.addEventListener('click', () => {
         document.getElementById('previewBtn')?.click();
     });
     document.getElementById('clearBtn2')?.addEventListener('click', () => {
         document.getElementById('clearBtn')?.click();
     });
+    document.getElementById('deleteFrameBtn2')?.addEventListener('click', () => {
+        document.getElementById('deleteFrameBtn')?.click();
+    });
     document.getElementById('saveBtn2')?.addEventListener('click', () => {
         document.getElementById('saveBtn')?.click();
     });
+    document.getElementById('loadBtn2')?.addEventListener('click', () => {
+        document.getElementById('loadBtn')?.click();
+    });
+    document.getElementById('loadLocalBtn2')?.addEventListener('click', () => {
+        document.getElementById('loadLocalBtn')?.click();
+    });
+    document.getElementById('shareProjectBtn2')?.addEventListener('click', () => {
+        document.getElementById('shareProjectBtn')?.click();
+    });
     document.getElementById('exportGifBtn2')?.addEventListener('click', () => {
         document.getElementById('exportGifBtn')?.click();
+    });
+    document.getElementById('copyFrameBtn2')?.addEventListener('click', () => {
+        document.getElementById('copyFrameBtn')?.click();
+    });
+    document.getElementById('pasteFrameBtn2')?.addEventListener('click', () => {
+        document.getElementById('pasteFrameBtn')?.click();
+    });
+    document.getElementById('helpBtn2')?.addEventListener('click', () => {
+        document.getElementById('helpBtn')?.click();
+    });
+    document.getElementById('creditsBtn2')?.addEventListener('click', () => {
+        document.getElementById('creditsBtn')?.click();
     });
     
     // Initialiser les autres fonctionnalités
