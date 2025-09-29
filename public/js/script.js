@@ -1061,28 +1061,9 @@ function rgbToHex(rgb) {
     return '#000000'; // Fallback
 }
 
-// Ajouter ces styles CSS directement dans le JavaScript
+// Styles pour les marqueurs de pixels (le reste est géré par le CSS principal)
 const styleSheet = document.createElement('style');
 styleSheet.textContent = `
-#pixelGrid {
-    position: relative;
-    display: grid;
-    grid-template-columns: repeat(32, 18px);
-    grid-template-rows: repeat(32, 18px);
-    gap: 1px;
-    background-color: #ddd;
-    padding: 1px;
-    border: 1px solid #999;
-}
-
-.pixel {
-    width: 100%;
-    height: 100%;
-    background-color: white;
-    position: relative;
-    border: none;
-}
-
 .previous-pixel-marker {
     position: absolute;
     width: 4px;
@@ -1679,23 +1660,8 @@ function toggleToolbar() {
     }
 }
 
-function adjustForOrientation() {
-    // Ajuster la grille selon l'orientation
-    const grid = document.getElementById('pixelGrid');
-    const container = document.querySelector('.grid-container');
-    
-    if (window.innerHeight < window.innerWidth) {
-        // Mode paysage - optimiser pour la largeur
-        const maxSize = Math.min(window.innerHeight * 0.7, window.innerWidth * 0.6);
-        grid.style.maxWidth = `${maxSize}px`;
-        grid.style.maxHeight = `${maxSize}px`;
-    } else {
-        // Mode portrait - optimiser pour la hauteur
-        const maxSize = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.5);
-        grid.style.maxWidth = `${maxSize}px`;
-        grid.style.maxHeight = `${maxSize}px`;
-    }
-}
+// Note: L'ajustement de la grille est maintenant géré entièrement par CSS 
+// avec des CSS variables pour garantir exactement 32x32 cases sur toutes plateformes
 
 // Améliorer les dialogues pour mobile
 function createMobileDialog(title, content) {
