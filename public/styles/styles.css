@@ -585,8 +585,8 @@ body::before {
     
     /* Calcul EXACT pour 32x32 cases - formule: (taille_case * 32) + (gap * 31) + border */
     --cell-size: min(
-        calc((100vw - 30px - 4px - 31px) / 32),
-        calc((100vh - 120px - 4px - 31px) / 32), /* Beaucoup moins d'espace UI */
+        calc((100vw - 20px - 4px - 31px) / 32),
+        calc((100vh - 140px - 4px - 31px) / 32), /* Plus d'espace pour éviter coupure iOS */
         15px
     );
     
@@ -1347,95 +1347,202 @@ body.drag-over .grid-container {
     }
 }
 
-/* Tablettes en paysage et écrans moyens */
+/* DESKTOP LAYOUT - Interface horizontale pour maximiser la grille */
 @media (min-width: 1024px) {
     .editor-container {
-        padding: 8px; /* Réduit */
-        max-width: 1200px;
+        display: grid;
+        grid-template-columns: 200px 1fr 180px; /* Sidebar gauche | Centre | Sidebar droite */
+        grid-template-rows: auto 1fr;
+        grid-template-areas: 
+            "left-sidebar center-header right-sidebar"
+            "left-sidebar center-grid right-sidebar";
+        padding: 8px;
+        max-width: 1400px;
         margin: 0 auto;
         height: 100vh;
+        gap: 8px;
         border-radius: 8px;
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
     }
     
+    /* Header centré (titre + couleurs) */
     .project-info {
-        padding: 6px 10px; /* Plus compact */
-        margin: 2px;
+        grid-area: center-header;
+        padding: 8px 16px;
+        margin: 0;
+        justify-content: center;
     }
     
+    .menu-hamburger {
+        display: none; /* Caché sur desktop - pas besoin */
+    }
+    
+    .project-info h2 {
+        text-align: center;
+        margin: 0;
+    }
+    
+    /* Sidebar gauche - Outils verticaux */
     .toolbar {
-        margin: 2px; /* Réduit */
-        padding: 8px; /* Réduit */
+        grid-area: left-sidebar;
+        display: flex !important;
+        flex-direction: column;
+        padding: 12px;
+        margin: 0;
+        max-height: none;
+        opacity: 1;
+        transform: none;
+        overflow-y: auto;
+        height: 100%;
+        border-radius: 16px;
     }
     
+    .tools {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        grid-template-columns: none;
+    }
+    
+    .tools button {
+        width: 100%;
+        padding: 12px 8px;
+        text-align: left;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        min-height: 44px;
+    }
+    
+    /* Section couleurs sous le header */
     .tools-secondary {
-        padding: 6px; /* Plus compact */
-        margin: 2px;
+        grid-area: center-header;
+        align-self: end;
+        padding: 8px;
+        margin: 4px 0 0 0;
+        border-radius: 12px;
     }
     
+    .color-palette {
+        justify-content: center;
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+    
+    /* Zone centrale - Grille maximisée */
     .grid-container {
-        padding: 2px !important; /* Ultra réduit */
-        margin: 1px !important;
-        max-height: calc(100vh - 120px) !important; /* Maximum d'espace pour la grille */
-        min-height: 400px !important; /* Force hauteur minimale */
+        grid-area: center-grid;
+        padding: 8px;
+        margin: 0;
+        max-height: none !important;
+        height: 100% !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
+    /* Sidebar droite - Frames verticales */
     .frames-container {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        margin: 2px 2px 16px 2px; /* Réduit */
-        max-height: 120px; /* Plus compact */
-        padding: 8px; /* Réduit */
+        grid-area: right-sidebar;
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        margin: 0;
+        max-height: none;
+        height: 100%;
+        overflow-y: auto;
+        border-radius: 16px;
     }
     
+    #addFrameBtn {
+        margin-bottom: 12px;
+        width: 100%;
+    }
+    
+    #framesList {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        overflow-y: auto;
+        flex: 1;
+    }
+    
+    .frame-container {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .frame-preview {
+        width: 100%;
+        max-width: 120px;
+        min-height: 60px;
+        padding: 8px;
+    }
+    
+    .frame-thumbnail {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto;
+    }
+    
+    /* Grille MAXIMISÉE avec toute la hauteur disponible */
     #pixelGrid {
-        /* Desktop - FORCE taille grille pour garantir 32x32 visible */
         --cell-size: min(
-            calc((100vw - 20px - 4px - 31px) / 32),
-            calc((100vh - 80px - 4px - 31px) / 32), /* UI TRÈS compacte */
-            18px /* Taille forcée desktop */
+            calc((100vw - 420px - 4px - 31px) / 32), /* Largeur - sidebars */
+            calc((100vh - 120px - 4px - 31px) / 32), /* Hauteur - header minimal */
+            20px
         ) !important;
         
-        /* Force les dimensions calculées */
         width: calc(var(--cell-size) * 32 + 31px + 4px) !important;
         height: calc(var(--cell-size) * 32 + 31px + 4px) !important;
         
-        /* Coins carrés pour récupérer tous les pixels */
-        border-radius: 2px !important;
+        border-radius: 4px !important;
         
-        /* Contraintes pour desktop */
-        min-width: calc(12px * 32 + 31px + 4px) !important;
-        min-height: calc(12px * 32 + 31px + 4px) !important;
-        max-width: calc(22px * 32 + 31px + 4px) !important;
-        max-height: calc(22px * 32 + 31px + 4px) !important;
+        /* Grandes contraintes desktop */
+        min-width: calc(15px * 32 + 31px + 4px) !important;
+        min-height: calc(15px * 32 + 31px + 4px) !important;
+        max-width: calc(25px * 32 + 31px + 4px) !important;
+        max-height: calc(25px * 32 + 31px + 4px) !important;
     }
 }
 
-/* Grands écrans */
+/* Grands écrans - Layout horizontal optimisé */
 @media (min-width: 1440px) {
     .editor-container {
-        max-width: 1400px;
+        max-width: 1600px;
+        grid-template-columns: 220px 1fr 200px; /* Sidebars plus larges */
+        gap: 12px;
     }
     
     .tools button {
         font-size: 1rem;
-        padding: 12px 20px;
+        padding: 14px 12px;
+    }
+    
+    .frame-thumbnail {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .frame-preview {
+        max-width: 140px;
+        min-height: 80px;
     }
     
     #pixelGrid {
-        /* Grands écrans - FORCE grille encore plus visible */
+        /* Grands écrans - Grille ÉNORME avec layout horizontal */
         --cell-size: min(
-            calc((100vw - 20px - 4px - 31px) / 32),      
-            calc((100vh - 60px - 4px - 31px) / 32), /* UI ultra compact */    
-            22px /* Gros pixels sur grands écrans */                 
+            calc((100vw - 460px - 4px - 31px) / 32), /* Largeur - sidebars larges */
+            calc((100vh - 100px - 4px - 31px) / 32), /* Hauteur - header minimal */
+            25px /* Très gros pixels */
         ) !important;
         
         width: calc(var(--cell-size) * 32 + 31px + 4px) !important;
         height: calc(var(--cell-size) * 32 + 31px + 4px) !important;
-        border-radius: 1px !important; /* Quasi carrés */
+        border-radius: 2px !important;
         
-        max-width: calc(25px * 32 + 31px + 4px) !important;
-        max-height: calc(25px * 32 + 31px + 4px) !important;
+        max-width: calc(30px * 32 + 31px + 4px) !important;
+        max-height: calc(30px * 32 + 31px + 4px) !important;
     }
 }
 
@@ -1685,7 +1792,7 @@ body.drag-over .grid-container {
     }
     
     .frames-container {
-        margin: 4px 4px 65px 4px; /* Ajuster pour bannière 60px */
+        margin: 4px 4px 70px 4px; /* Plus de marge pour éviter coupure iOS */
         max-height: 140px;
         padding: 12px;
     }
