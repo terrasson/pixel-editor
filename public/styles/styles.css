@@ -1365,12 +1365,19 @@ body.drag-over .grid-container {
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
     }
     
-    /* Header centré (titre + couleurs) */
+    /* Header centré AVEC titre visible */
     .project-info {
         grid-area: center-header;
-        padding: 8px 16px;
+        padding: 12px 16px;
         margin: 0;
         justify-content: center;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(15px) saturate(200%);
+        -webkit-backdrop-filter: blur(15px) saturate(200%);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 16px;
+        display: flex !important;
+        align-items: center;
     }
     
     .menu-hamburger {
@@ -1380,9 +1387,14 @@ body.drag-over .grid-container {
     .project-info h2 {
         text-align: center;
         margin: 0;
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.95);
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        display: block !important;
     }
     
-    /* Sidebar gauche - Outils verticaux */
+    /* Sidebar gauche - Outils + Couleurs verticaux */
     .toolbar {
         grid-area: left-sidebar;
         display: flex !important;
@@ -1395,6 +1407,7 @@ body.drag-over .grid-container {
         overflow-y: auto;
         height: 100%;
         border-radius: 16px;
+        gap: 0; /* Pas d'espace entre toolbar et tools-secondary */
     }
     
     .tools {
@@ -1413,19 +1426,43 @@ body.drag-over .grid-container {
         min-height: 44px;
     }
     
-    /* Section couleurs sous le header */
+    /* Section couleurs dans la sidebar gauche */
     .tools-secondary {
-        grid-area: center-header;
-        align-self: end;
-        padding: 8px;
-        margin: 4px 0 0 0;
+        /* Plus de grid-area - intégré dans la sidebar gauche */
+        padding: 12px;
+        margin: 8px 0 0 0;
         border-radius: 12px;
+        order: 2; /* Après les outils */
     }
     
     .color-palette {
-        justify-content: center;
-        flex-wrap: nowrap;
-        gap: 6px;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    /* Rangée du haut : Color picker + Validate + Gomme + Undo/Redo */
+    .color-palette > :not(.preset-colors) {
+        margin-bottom: 4px;
+    }
+    
+    #colorPicker, .validate-color-btn, .eraser-btn, .undo-redo-btn {
+        width: 40px;
+        height: 40px;
+        margin: 2px;
+    }
+    
+    .preset-colors {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr); /* 4 colonnes pour sidebar plus large */
+        gap: 4px;
+        justify-items: center;
+        width: 100%;
+    }
+    
+    .color-btn {
+        width: 36px;
+        height: 36px;
     }
     
     /* Zone centrale - Grille maximisée */
@@ -1485,12 +1522,12 @@ body.drag-over .grid-container {
         margin: 0 auto;
     }
     
-    /* Grille MAXIMISÉE avec toute la hauteur disponible */
+    /* Grille MAXIMISÉE avec header compact + pub */
     #pixelGrid {
         --cell-size: min(
             calc((100vw - 420px - 4px - 31px) / 32), /* Largeur - sidebars */
-            calc((100vh - 120px - 4px - 31px) / 32), /* Hauteur - header minimal */
-            20px
+            calc((100vh - 160px - 4px - 31px) / 32), /* Hauteur - header compact + pub */
+            19px
         ) !important;
         
         width: calc(var(--cell-size) * 32 + 31px + 4px) !important;
@@ -1498,11 +1535,11 @@ body.drag-over .grid-container {
         
         border-radius: 4px !important;
         
-        /* Grandes contraintes desktop */
-        min-width: calc(15px * 32 + 31px + 4px) !important;
-        min-height: calc(15px * 32 + 31px + 4px) !important;
-        max-width: calc(25px * 32 + 31px + 4px) !important;
-        max-height: calc(25px * 32 + 31px + 4px) !important;
+        /* Contraintes ajustées pour éviter coupure */
+        min-width: calc(12px * 32 + 31px + 4px) !important;
+        min-height: calc(12px * 32 + 31px + 4px) !important;
+        max-width: calc(22px * 32 + 31px + 4px) !important;
+        max-height: calc(22px * 32 + 31px + 4px) !important;
     }
 }
 
@@ -1530,11 +1567,11 @@ body.drag-over .grid-container {
     }
     
     #pixelGrid {
-        /* Grands écrans - Grille ÉNORME avec layout horizontal */
+        /* Grands écrans - Grille ÉNORME avec nuancier à gauche */
         --cell-size: min(
             calc((100vw - 460px - 4px - 31px) / 32), /* Largeur - sidebars larges */
-            calc((100vh - 100px - 4px - 31px) / 32), /* Hauteur - header minimal */
-            25px /* Très gros pixels */
+            calc((100vh - 140px - 4px - 31px) / 32), /* Hauteur - header + pub */
+            23px /* Gros pixels */
         ) !important;
         
         width: calc(var(--cell-size) * 32 + 31px + 4px) !important;
