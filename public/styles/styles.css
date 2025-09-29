@@ -1351,7 +1351,7 @@ body.drag-over .grid-container {
 @media (min-width: 1024px) {
     .editor-container {
         display: grid;
-        grid-template-columns: 200px 1fr 180px; /* Sidebar gauche | Centre | Sidebar droite */
+        grid-template-columns: 240px 1fr 180px; /* Sidebar gauche plus large | Centre | Sidebar droite */
         grid-template-rows: auto 1fr;
         grid-template-areas: 
             "left-sidebar center-header right-sidebar"
@@ -1411,19 +1411,22 @@ body.drag-over .grid-container {
     }
     
     .tools {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        grid-template-columns: none;
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2 colonnes pour compacter */
+        gap: 6px;
+        margin-bottom: 12px;
     }
     
     .tools button {
-        width: 100%;
-        padding: 12px 8px;
-        text-align: left;
-        font-size: 0.85rem;
-        white-space: nowrap;
-        min-height: 44px;
+        padding: 6px 4px;
+        text-align: center;
+        font-size: 0.7rem;
+        white-space: normal;
+        min-height: 34px;
+        word-wrap: break-word;
+        line-height: 1.1;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     /* Section couleurs dans la sidebar gauche */
@@ -1436,33 +1439,51 @@ body.drag-over .grid-container {
     }
     
     .color-palette {
+        display: flex;
         flex-direction: column;
+        gap: 8px;
+    }
+    
+    /* Ligne 1 : Color picker + Validate */
+    .color-picker-row {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
         align-items: center;
-        gap: 12px;
     }
     
-    /* Rangée du haut : Color picker + Validate + Gomme + Undo/Redo */
-    .color-palette > :not(.preset-colors) {
-        margin-bottom: 4px;
+    /* Ligne 2 : Gomme + Undo + Redo */
+    .tools-row {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
     }
     
-    #colorPicker, .validate-color-btn, .eraser-btn, .undo-redo-btn {
-        width: 40px;
-        height: 40px;
-        margin: 2px;
+    #colorPicker {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .validate-color-btn, .eraser-btn, .undo-redo-btn {
+        width: 32px;
+        height: 32px;
+        padding: 4px;
+        font-size: 0.8rem;
+        margin: 0;
     }
     
     .preset-colors {
         display: grid;
-        grid-template-columns: repeat(4, 1fr); /* 4 colonnes pour sidebar plus large */
-        gap: 4px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 3px;
         justify-items: center;
-        width: 100%;
+        margin-top: 8px;
     }
     
     .color-btn {
-        width: 36px;
-        height: 36px;
+        width: 28px;
+        height: 28px;
+        border-radius: 14px;
     }
     
     /* Zone centrale - Grille maximisée */
@@ -1522,12 +1543,12 @@ body.drag-over .grid-container {
         margin: 0 auto;
     }
     
-    /* Grille MAXIMISÉE avec header compact + pub */
+    /* Grille MAXIMISÉE avec sidebar optimisée */
     #pixelGrid {
         --cell-size: min(
-            calc((100vw - 420px - 4px - 31px) / 32), /* Largeur - sidebars */
+            calc((100vw - 440px - 4px - 31px) / 32), /* Largeur - sidebars (240+180) */
             calc((100vh - 160px - 4px - 31px) / 32), /* Hauteur - header compact + pub */
-            19px
+            18px
         ) !important;
         
         width: calc(var(--cell-size) * 32 + 31px + 4px) !important;
@@ -1547,13 +1568,14 @@ body.drag-over .grid-container {
 @media (min-width: 1440px) {
     .editor-container {
         max-width: 1600px;
-        grid-template-columns: 220px 1fr 200px; /* Sidebars plus larges */
+        grid-template-columns: 260px 1fr 200px; /* Sidebar gauche encore plus large */
         gap: 12px;
     }
     
     .tools button {
-        font-size: 1rem;
-        padding: 14px 12px;
+        font-size: 0.8rem;
+        padding: 8px 6px;
+        min-height: 36px;
     }
     
     .frame-thumbnail {
@@ -1567,11 +1589,11 @@ body.drag-over .grid-container {
     }
     
     #pixelGrid {
-        /* Grands écrans - Grille ÉNORME avec nuancier à gauche */
+        /* Grands écrans - Grille ÉNORME avec sidebar optimisée */
         --cell-size: min(
-            calc((100vw - 460px - 4px - 31px) / 32), /* Largeur - sidebars larges */
+            calc((100vw - 480px - 4px - 31px) / 32), /* Largeur - sidebars (260+200) */
             calc((100vh - 140px - 4px - 31px) / 32), /* Hauteur - header + pub */
-            23px /* Gros pixels */
+            21px /* Gros pixels ajustés */
         ) !important;
         
         width: calc(var(--cell-size) * 32 + 31px + 4px) !important;

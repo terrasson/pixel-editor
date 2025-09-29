@@ -71,11 +71,20 @@
 
         <div class="tools-secondary">
             <div class="color-palette">
-                <input type="color" id="colorPicker" value="#000000">
-                <button id="validateColorBtn" class="validate-color-btn">✓</button>
-                <button id="eraserBtn" class="eraser-btn">Gomme</button>
-                <button id="undoBtn" class="undo-redo-btn" title="Annuler (←)">↶</button>
-                <button id="redoBtn" class="undo-redo-btn" title="Rétablir (→)">↷</button>
+                <!-- Ligne 1 : Color picker + Validate -->
+                <div class="color-picker-row">
+                    <input type="color" id="colorPicker" value="#000000">
+                    <button id="validateColorBtn" class="validate-color-btn">✓</button>
+                </div>
+                
+                <!-- Ligne 2 : Gomme + Undo + Redo -->
+                <div class="tools-row">
+                    <button id="eraserBtn" class="eraser-btn">Gomme</button>
+                    <button id="undoBtn" class="undo-redo-btn" title="Annuler (←)">↶</button>
+                    <button id="redoBtn" class="undo-redo-btn" title="Rétablir (→)">↷</button>
+                </div>
+                
+                <!-- Couleurs preset en grille compacte -->
                 <div class="preset-colors">
                     <button class="color-btn" style="background-color: #000000"></button>
                     <button class="color-btn" style="background-color: #FFFFFF"></button>
