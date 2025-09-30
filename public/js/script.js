@@ -583,24 +583,10 @@ function cleanUpOutsideElements() {
 // Gestion des frames
 function saveCurrentFrame() {
     const pixels = document.querySelectorAll('.pixel');
-    const frameData = Array.from(pixels).map((pixel, index) => {
-        const color = pixel.style.backgroundColor || '#FFFFFF';
-        const isEmpty = pixel.classList.contains('empty');
-        
-        // Debug: log des pixels colorés
-        if (!isEmpty && color !== '#FFFFFF' && color !== '#ffffff') {
-            console.log('💾 Pixel sauvegardé:', index, 'couleur:', color, 'isEmpty:', isEmpty);
-        }
-        
-        return {
-            color: color,
-            isEmpty: isEmpty
-        };
-    });
-    
-    const coloredPixels = frameData.filter(p => !p.isEmpty && p.color !== '#FFFFFF' && p.color !== '#ffffff');
-    console.log('💾 Frame sauvegardée:', frameData.length, 'pixels total,', coloredPixels.length, 'colorés');
-    
+    const frameData = Array.from(pixels).map(pixel => ({
+        color: pixel.style.backgroundColor || '#FFFFFF',
+        isEmpty: pixel.classList.contains('empty')
+    }));
     frames[currentFrame] = frameData;
     
     // Mettre à jour seulement la miniature de la frame actuelle (avec debounce)
@@ -611,20 +597,14 @@ function updateCurrentFrameThumbnail() {
     // Debounce pour éviter trop d'appels
     clearTimeout(window.thumbnailUpdateTimer);
     window.thumbnailUpdateTimer = setTimeout(() => {
-        console.log('🖼️ Mise à jour miniature frame', currentFrame, 'Data:', frames[currentFrame]?.length, 'pixels');
         const frameButton = document.querySelector(`[data-frame-index="${currentFrame}"]`);
         if (frameButton) {
             // Remplacer la miniature existante
             const oldThumbnail = frameButton.querySelector('.frame-thumbnail');
             if (oldThumbnail) {
                 const newThumbnail = createFrameThumbnail(frames[currentFrame], currentFrame);
-                console.log('🔄 Miniature créée, pixels enfants:', newThumbnail.children.length);
                 frameButton.replaceChild(newThumbnail, oldThumbnail);
-            } else {
-                console.log('❌ Pas de miniature existante trouvée');
             }
-        } else {
-            console.log('❌ Pas de bouton frame trouvé pour index', currentFrame);
         }
     }, 50); // 50ms de debounce pour une meilleure réactivité
 }
@@ -762,11 +742,6 @@ function createFrameThumbnail(frame, frameIndex) {
             
             pixel.style.backgroundColor = color;
             thumbnail.appendChild(pixel);
-            
-            // Debug: log des couleurs non-blanches
-            if (color !== '#FFFFFF' && color !== '#ffffff') {
-                console.log('🎨 Pixel coloré:', row, col, 'couleur:', color);
-            }
         }
     }
     
@@ -1070,18 +1045,10 @@ function stopAnimation() {
 
 // Utilitaires améliorés
 function rgbToHex(rgb) {
-    console.log('🔄 Conversion couleur:', rgb);
-    
-    if (!rgb) {
-        console.log('❌ Couleur vide, retour #000000');
-        return '#000000';
-    }
+    if (!rgb) return '#000000';
     
     // Si c'est déjà en format hex
-    if (rgb.startsWith('#')) {
-        console.log('✅ Déjà hex:', rgb);
-        return rgb.toUpperCase();
-    }
+    if (rgb.startsWith('#')) return rgb.toUpperCase();
     
     // Gestion des couleurs nommées communes
     const namedColors = {
@@ -1096,19 +1063,15 @@ function rgbToHex(rgb) {
     };
     
     if (namedColors[rgb.toLowerCase()]) {
-        console.log('✅ Couleur nommée:', rgb, '→', namedColors[rgb.toLowerCase()]);
         return namedColors[rgb.toLowerCase()];
     }
     
     // Format rgb(r, g, b) ou rgba(r, g, b, a)
     const values = rgb.match(/\d+/g);
     if (values && values.length >= 3) {
-        const hex = `#${values.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
-        console.log('✅ RGB converti:', rgb, '→', hex);
-        return hex;
+        return `#${values.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
     }
     
-    console.log('❌ Conversion échouée, retour #000000');
     return '#000000'; // Fallback
 }
 
