@@ -597,14 +597,20 @@ function updateCurrentFrameThumbnail() {
     // Debounce pour éviter trop d'appels
     clearTimeout(window.thumbnailUpdateTimer);
     window.thumbnailUpdateTimer = setTimeout(() => {
+        console.log('🖼️ Mise à jour miniature frame', currentFrame, 'Data:', frames[currentFrame]?.length, 'pixels');
         const frameButton = document.querySelector(`[data-frame-index="${currentFrame}"]`);
         if (frameButton) {
             // Remplacer la miniature existante
             const oldThumbnail = frameButton.querySelector('.frame-thumbnail');
             if (oldThumbnail) {
                 const newThumbnail = createFrameThumbnail(frames[currentFrame], currentFrame);
+                console.log('🔄 Miniature créée, pixels enfants:', newThumbnail.children.length);
                 frameButton.replaceChild(newThumbnail, oldThumbnail);
+            } else {
+                console.log('❌ Pas de miniature existante trouvée');
             }
+        } else {
+            console.log('❌ Pas de bouton frame trouvé pour index', currentFrame);
         }
     }, 50); // 50ms de debounce pour une meilleure réactivité
 }
