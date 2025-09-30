@@ -200,13 +200,18 @@ async function showLocalProjects() {
     }).join('');
 
     const dialog = createMobileDialog('🌐 Mes projets', `
+        <div style="margin-bottom: 12px; padding: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+            <p style="margin: 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.8);">
+                👆 <strong>Cliquez sur un projet</strong> pour le sélectionner, puis utilisez les boutons ci-dessous.
+            </p>
+        </div>
         <div class="projects-list">
             ${projectsList}
         </div>
-        <div style="margin-top: 10px; display: flex; gap: 8px;">
-            <button id="loadLocalProject" class="dialog-button" disabled>Charger</button>
-            <button id="deleteLocalProject" class="dialog-button secondary" disabled>Supprimer</button>
-            <button id="cancelLocalLoad" class="dialog-button secondary">Fermer</button>
+        <div style="margin-top: 16px; display: flex; gap: 8px;">
+            <button id="loadLocalProject" class="dialog-button" disabled>📂 Charger</button>
+            <button id="deleteLocalProject" class="dialog-button secondary" disabled>🗑️ Supprimer</button>
+            <button id="cancelLocalLoad" class="dialog-button secondary">❌ Fermer</button>
         </div>
     `);
 
