@@ -583,10 +583,24 @@ function cleanUpOutsideElements() {
 // Gestion des frames
 function saveCurrentFrame() {
     const pixels = document.querySelectorAll('.pixel');
-    const frameData = Array.from(pixels).map(pixel => ({
-        color: pixel.style.backgroundColor || '#FFFFFF',
-        isEmpty: pixel.classList.contains('empty')
-    }));
+    const frameData = Array.from(pixels).map((pixel, index) => {
+        const color = pixel.style.backgroundColor || '#FFFFFF';
+        const isEmpty = pixel.classList.contains('empty');
+        
+        // Debug: log des pixels colorés
+        if (!isEmpty && color !== '#FFFFFF' && color !== '#ffffff') {
+            console.log('💾 Pixel sauvegardé:', index, 'couleur:', color, 'isEmpty:', isEmpty);
+        }
+        
+        return {
+            color: color,
+            isEmpty: isEmpty
+        };
+    });
+    
+    const coloredPixels = frameData.filter(p => !p.isEmpty && p.color !== '#FFFFFF' && p.color !== '#ffffff');
+    console.log('💾 Frame sauvegardée:', frameData.length, 'pixels total,', coloredPixels.length, 'colorés');
+    
     frames[currentFrame] = frameData;
     
     // Mettre à jour seulement la miniature de la frame actuelle (avec debounce)
