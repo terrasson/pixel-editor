@@ -707,10 +707,10 @@ function createFrameThumbnail(frame, frameIndex) {
     const thumbnail = document.createElement('div');
     thumbnail.className = 'frame-thumbnail';
     
-    // Adapter la résolution selon la taille de l'écran
-    let thumbnailSize = 16; // Par défaut 16x16
+    // Utiliser 16x16 pour desktop et mobile (cohérence avec CSS)
+    let thumbnailSize = 16; // 16x16 partout pour correspondre au CSS
     if (window.innerWidth <= 360 || (window.innerHeight <= 500 && window.matchMedia('(orientation: landscape)').matches)) {
-        thumbnailSize = 12; // 12x12 pour les petits écrans
+        thumbnailSize = 16; // Garder 16x16 même sur petits écrans pour cohérence
     }
     
     const originalSize = 32;
