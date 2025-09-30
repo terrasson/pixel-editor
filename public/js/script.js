@@ -748,6 +748,11 @@ function createFrameThumbnail(frame, frameIndex) {
             
             pixel.style.backgroundColor = color;
             thumbnail.appendChild(pixel);
+            
+            // Debug: log des couleurs non-blanches
+            if (color !== '#FFFFFF' && color !== '#ffffff') {
+                console.log('🎨 Pixel coloré:', row, col, 'couleur:', color);
+            }
         }
     }
     
