@@ -1056,10 +1056,18 @@ function stopAnimation() {
 
 // Utilitaires améliorés
 function rgbToHex(rgb) {
-    if (!rgb) return '#000000';
+    console.log('🔄 Conversion couleur:', rgb);
+    
+    if (!rgb) {
+        console.log('❌ Couleur vide, retour #000000');
+        return '#000000';
+    }
     
     // Si c'est déjà en format hex
-    if (rgb.startsWith('#')) return rgb.toUpperCase();
+    if (rgb.startsWith('#')) {
+        console.log('✅ Déjà hex:', rgb);
+        return rgb.toUpperCase();
+    }
     
     // Gestion des couleurs nommées communes
     const namedColors = {
@@ -1074,15 +1082,19 @@ function rgbToHex(rgb) {
     };
     
     if (namedColors[rgb.toLowerCase()]) {
+        console.log('✅ Couleur nommée:', rgb, '→', namedColors[rgb.toLowerCase()]);
         return namedColors[rgb.toLowerCase()];
     }
     
     // Format rgb(r, g, b) ou rgba(r, g, b, a)
     const values = rgb.match(/\d+/g);
     if (values && values.length >= 3) {
-        return `#${values.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+        const hex = `#${values.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+        console.log('✅ RGB converti:', rgb, '→', hex);
+        return hex;
     }
     
+    console.log('❌ Conversion échouée, retour #000000');
     return '#000000'; // Fallback
 }
 
