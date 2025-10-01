@@ -11,6 +11,7 @@ html, body {
     width: 100%;
     height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* Fond avec fallback pour navigateurs ne supportant pas backdrop-filter */
     background: linear-gradient(180deg, 
         #4a90e2 0%, 
         #7b68ee 25%, 
@@ -22,6 +23,8 @@ html, body {
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
+    /* Support des safe areas iOS (notch, barres système) */
+    padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
 }
 
 
@@ -71,23 +74,40 @@ body::before {
 .editor-container {
     display: flex;
     flex-direction: column;
+    /* Hauteur dynamique avec support multiple navigateurs */
     height: 100vh;
-    height: 100dvh; /* Hauteur dynamique pour mobile */
+    height: -webkit-fill-available; /* Safari iOS */
+    height: 100dvh; /* Navigateurs modernes */
     width: 100vw;
-    background: rgba(255, 255, 255, 0.1);
+    width: -webkit-fill-available;
+    /* Fallback avec couleur opaque pour navigateurs sans backdrop-filter */
+    background: rgba(240, 240, 255, 0.95);
+    /* Backdrop-filter avec préfixes pour compatibilité */
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
+    /* Amélioration avec @supports pour navigateurs modernes */
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 24px;
     position: relative;
     overflow: hidden;
-    padding: 4px;
+    /* Safe areas iOS pour ne pas être caché par les encoches */
+    padding: max(4px, env(safe-area-inset-top, 4px)) 
+             max(4px, env(safe-area-inset-right, 4px)) 
+             max(4px, env(safe-area-inset-bottom, 4px)) 
+             max(4px, env(safe-area-inset-left, 4px));
     margin: 0;
     box-shadow: 
         0 8px 32px rgba(0, 0, 0, 0.1),
         0 2px 8px rgba(0, 0, 0, 0.05),
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
     animation: containerGlow 3s ease-in-out infinite alternate;
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .editor-container {
+        background: rgba(255, 255, 255, 0.1);
+    }
 }
 
 @keyframes containerGlow {
@@ -112,7 +132,8 @@ body::before {
     justify-content: center;
     position: relative;
     padding: 8px 12px; /* Réduit pour desktop */
-    background: rgba(255, 255, 255, 0.15);
+    /* Fallback pour navigateurs sans backdrop-filter */
+    background: rgba(240, 240, 255, 0.95);
     backdrop-filter: blur(15px) saturate(200%);
     -webkit-backdrop-filter: blur(15px) saturate(200%);
     border: 1px solid rgba(255, 255, 255, 0.25);
@@ -121,6 +142,13 @@ body::before {
     box-shadow: 
         0 4px 16px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(15px)) or (-webkit-backdrop-filter: blur(15px)) {
+    .project-info {
+        background: rgba(255, 255, 255, 0.15);
+    }
 }
 
 .menu-hamburger {
@@ -349,7 +377,8 @@ body::before {
 /* Section secondaire pour couleurs et gomme - Liquid Glass */
 .tools-secondary {
     padding: 8px;
-    background: rgba(255, 255, 255, 0.08);
+    /* Fallback pour navigateurs sans backdrop-filter */
+    background: rgba(235, 235, 250, 0.98);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -358,6 +387,13 @@ body::before {
     box-shadow: 
         0 4px 16px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .tools-secondary {
+        background: rgba(255, 255, 255, 0.08);
+    }
 }
 
 /* Palette de couleurs compacte */
@@ -580,7 +616,8 @@ body::before {
     grid-template-columns: repeat(32, 1fr);
     grid-template-rows: repeat(32, 1fr);
     gap: 1px;
-    background: rgba(255, 255, 255, 0.15);
+    /* Fallback pour navigateurs sans backdrop-filter */
+    background: rgba(245, 245, 255, 0.98);
     backdrop-filter: blur(10px) saturate(120%);
     -webkit-backdrop-filter: blur(10px) saturate(120%);
     border: 2px solid rgba(255, 255, 255, 0.25);
@@ -589,11 +626,15 @@ body::before {
     position: relative;
     margin: 0 auto;
     
-    /* Calcul EXACT pour 32x32 cases - formule: (taille_case * 32) + (gap * 31) + border */
-    --cell-size: min(
-        calc((100vw - 20px - 4px - 31px) / 32),
-        calc((100vh - 140px - 4px - 31px) / 32), /* Plus d'espace pour éviter coupure iOS */
-        15px
+    /* Calcul EXACT pour 32x32 cases avec clamp() pour plus de stabilité
+       formule: (taille_case * 32) + (gap * 31) + border */
+    --cell-size: clamp(
+        8px,  /* Minimum absolu pour lisibilité */
+        min(
+            calc((100vw - max(20px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
+            calc((100vh - max(140px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+        ),
+        15px  /* Maximum pour mobile standard */
     );
     
     width: calc(var(--cell-size) * 32 + 31px + 4px);
@@ -602,8 +643,8 @@ body::before {
     /* Contraintes absolues pour éviter les déformations */
     min-width: calc(8px * 32 + 31px + 4px); /* Minimum 8px par case */
     min-height: calc(8px * 32 + 31px + 4px);
-    max-width: calc(25px * 32 + 31px + 4px); /* Maximum augmenté pour desktop */
-    max-height: calc(25px * 32 + 31px + 4px);
+    max-width: calc(15px * 32 + 31px + 4px); /* Maximum pour mobile */
+    max-height: calc(15px * 32 + 31px + 4px);
     
     box-shadow: 
         0 8px 32px rgba(0, 0, 0, 0.15),
@@ -611,6 +652,13 @@ body::before {
         inset 0 2px 0 rgba(255, 255, 255, 0.2);
     overflow: hidden;
     transition: all 0.3s ease;
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
+    #pixelGrid {
+        background: rgba(255, 255, 255, 0.15);
+    }
 }
 
 #pixelGrid:hover {
@@ -635,13 +683,15 @@ body::before {
 
 /* Container de frames optimisé - Liquid Glass */
 .frames-container {
-    background: rgba(255, 255, 255, 0.1);
+    /* Fallback pour navigateurs sans backdrop-filter */
+    background: rgba(240, 240, 255, 0.95);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 20px;
     padding: 12px;
-    margin: 6px 6px 80px 6px; /* Marge bottom pour éviter la bannière pub */
+    /* Marge bottom adaptative pour bannière pub + safe area */
+    margin: 6px 6px calc(80px + env(safe-area-inset-bottom, 0px)) 6px;
     min-height: 120px;
     max-height: 160px;
     overflow-y: auto;
@@ -651,6 +701,13 @@ body::before {
     box-shadow: 
         0 4px 16px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .frames-container {
+        background: rgba(255, 255, 255, 0.1);
+    }
 }
 
 /* Styles pour l'aide */
@@ -979,7 +1036,8 @@ body.drag-over .grid-container {
 /* Espace publicitaire réservé - Liquid Glass */
 .ad-space {
     height: 72px;
-    background: rgba(255, 255, 255, 0.08);
+    /* Fallback pour navigateurs sans backdrop-filter */
+    background: rgba(240, 240, 255, 0.95);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -991,9 +1049,10 @@ body.drag-over .grid-container {
     font-size: 0.8rem;
     font-weight: 500;
     position: fixed;
-    bottom: 0;
-    left: 8px;
-    right: 8px;
+    /* Respect des safe areas iOS en bas */
+    bottom: env(safe-area-inset-bottom, 0);
+    left: max(8px, env(safe-area-inset-left, 8px));
+    right: max(8px, env(safe-area-inset-right, 8px));
     z-index: 50; /* Réduire le z-index pour éviter les conflits */
     box-shadow: 
         0 -4px 16px rgba(0, 0, 0, 0.15),
@@ -1001,6 +1060,13 @@ body.drag-over .grid-container {
     margin: 0;
     padding: 0;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .ad-space {
+        background: rgba(255, 255, 255, 0.08);
+    }
 }
 
 .ad-space::before {
@@ -1313,10 +1379,124 @@ body.drag-over .grid-container {
     touch-action: manipulation;
 }
 
-/* Media queries pour différentes tailles d'écran */
+/* ===================================================================
+   MEDIA QUERIES POUR DIFFÉRENTES TAILLES D'ÉCRAN
+   =================================================================== */
 
-/* Tablettes en portrait */
-@media (min-width: 768px) and (orientation: portrait) {
+/* Très petits téléphones (iPhone SE 1st gen, etc.) */
+@media screen and (max-width: 374px) {
+    .project-info h2 {
+        font-size: 0.95rem;
+    }
+    
+    .tools button {
+        font-size: 0.65rem;
+        padding: 8px 10px;
+        min-height: 36px;
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            6px,  /* Plus petit minimum pour très petits écrans */
+            min(
+                calc((100vw - max(16px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
+                calc((100vh - max(160px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+            ),
+            12px
+        );
+        min-width: calc(6px * 32 + 31px + 4px);
+        min-height: calc(6px * 32 + 31px + 4px);
+        max-width: calc(12px * 32 + 31px + 4px);
+        max-height: calc(12px * 32 + 31px + 4px);
+    }
+    
+    .color-btn {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .frames-container {
+        max-height: 100px;
+        margin-bottom: 60px;
+    }
+}
+
+/* Petits téléphones (iPhone SE 2nd gen, iPhone 12 mini) */
+@media screen and (min-width: 375px) and (max-width: 413px) {
+    .project-info h2 {
+        font-size: 1rem;
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            7px,
+            min(
+                calc((100vw - max(18px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
+                calc((100vh - max(150px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+            ),
+            13px
+        );
+        max-width: calc(13px * 32 + 31px + 4px);
+        max-height: calc(13px * 32 + 31px + 4px);
+    }
+}
+
+/* Téléphones moyens/grands (iPhone 12, 13, 14, Galaxy S21, etc.) */
+@media screen and (min-width: 414px) and (max-width: 479px) {
+    .project-info h2 {
+        font-size: 1.15rem;
+    }
+    
+    .tools button {
+        font-size: 0.8rem;
+        padding: 11px 13px;
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            8px,
+            min(
+                calc((100vw - max(20px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
+                calc((100vh - max(145px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+            ),
+            14px
+        );
+        max-width: calc(14px * 32 + 31px + 4px);
+        max-height: calc(14px * 32 + 31px + 4px);
+    }
+}
+
+/* Grands téléphones (iPhone Pro Max, Galaxy Note, etc.) */
+@media screen and (min-width: 480px) and (max-width: 767px) {
+    .project-info h2 {
+        font-size: 1.2rem;
+    }
+    
+    .tools button {
+        font-size: 0.85rem;
+        padding: 12px 14px;
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            9px,
+            min(
+                calc((100vw - max(24px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
+                calc((100vh - max(140px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+            ),
+            16px
+        );
+        max-width: calc(16px * 32 + 31px + 4px);
+        max-height: calc(16px * 32 + 31px + 4px);
+    }
+    
+    .frames-container {
+        max-height: 140px;
+    }
+}
+
+/* Tablettes en portrait (iPad, Galaxy Tab) */
+@media screen and (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
     .toolbar {
         flex-direction: row;
         align-items: center;
@@ -1339,17 +1519,65 @@ body.drag-over .grid-container {
         max-height: 160px;
     }
     
-    /* Force grille visible sur tablettes */
+    /* Grille plus grande sur tablettes */
     #pixelGrid {
-        --cell-size: min(
-            calc((100vw - 20px - 4px - 31px) / 32),
-            calc((100vh - 100px - 4px - 31px) / 32),
-            16px
-        ) !important;
+        --cell-size: clamp(
+            12px,
+            min(
+                calc((100vw - 32px - 4px - 31px) / 32),
+                calc((100vh - 120px - 4px - 31px) / 32)
+            ),
+            20px
+        );
         
-        width: calc(var(--cell-size) * 32 + 31px + 4px) !important;
-        height: calc(var(--cell-size) * 32 + 31px + 4px) !important;
-        border-radius: 4px !important;
+        width: calc(var(--cell-size) * 32 + 31px + 4px);
+        height: calc(var(--cell-size) * 32 + 31px + 4px);
+        max-width: calc(20px * 32 + 31px + 4px);
+        max-height: calc(20px * 32 + 31px + 4px);
+        border-radius: 4px;
+    }
+    
+    .project-info h2 {
+        font-size: 1.4rem;
+    }
+}
+
+/* Tablettes en paysage */
+@media screen and (min-width: 768px) and (max-width: 1023px) and (orientation: landscape) {
+    .grid-container {
+        max-height: calc(100vh - 200px);
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            10px,
+            min(
+                calc((100vw - 32px - 4px - 31px) / 32),
+                calc((100vh - 160px - 4px - 31px) / 32)
+            ),
+            18px
+        );
+        max-width: calc(18px * 32 + 31px + 4px);
+        max-height: calc(18px * 32 + 31px + 4px);
+    }
+    
+    .frames-container {
+        max-height: 120px;
+    }
+}
+
+/* Optimisations spécifiques iOS Safari */
+@supports (-webkit-touch-callout: none) {
+    /* Fix pour la barre d'URL qui apparaît/disparaît sur iOS */
+    .editor-container {
+        height: 100vh;
+        height: -webkit-fill-available;
+    }
+    
+    .grid-container {
+        /* Ajustement pour iOS Safari qui calcule mal parfois */
+        max-height: calc(100vh - 280px);
+        max-height: calc(-webkit-fill-available - 280px);
     }
 }
 
