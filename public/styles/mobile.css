@@ -1,129 +1,1703 @@
-/* ================================
-   GLOBAL RESET & ROOT VARIABLES
-================================ */
-* {
+/* CSS Reset et base - Liquid Glass iOS 26 */
+
+/* Cacher extra-tools sur mobile par défaut */
+.extra-tools {
+    display: none;
+}
+
+html, body {
     margin: 0;
     padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* Fond avec fallback pour navigateurs ne supportant pas backdrop-filter */
+    background: linear-gradient(180deg, 
+        #4a90e2 0%, 
+        #7b68ee 25%, 
+        #9966cc 50%, 
+        #ba55d3 75%, 
+        #da70d6 100%);
+    overflow: hidden;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    /* Support des safe areas iOS (notch, barres système) */
+    padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+}
+
+
+*, *:before, *:after {
     box-sizing: border-box;
-  }
-  
-  :root {
-    --vh: 100%;
-  }
-  
-  @supports (height: 100dvh) {
-    :root {
-      --vh: 100dvh; /* navigateurs modernes */
+}
+
+/* Particules flottantes pour effet liquid glass */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 20%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.08) 0%, transparent 25%),
+        radial-gradient(circle at 40% 60%, rgba(103, 126, 234, 0.06) 0%, transparent 30%),
+        radial-gradient(circle at 70% 30%, rgba(118, 75, 162, 0.04) 0%, transparent 35%),
+        radial-gradient(circle at 20% 80%, rgba(240, 147, 251, 0.05) 0%, transparent 20%);
+    animation: particlesFloat 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+
+@keyframes particlesFloat {
+    0%, 100% {
+        transform: translateY(0px) translateX(0px) scale(1);
+        opacity: 0.8;
     }
-  }
-  
-  /* ================================
-     CONTAINER PRINCIPAL
-  ================================ */
-  .editor-container {
-    height: var(--vh);
-    min-height: -webkit-fill-available; /* fallback Safari iOS */
+    25% {
+        transform: translateY(-20px) translateX(10px) scale(1.1);
+        opacity: 0.9;
+    }
+    50% {
+        transform: translateY(-10px) translateX(-15px) scale(0.9);
+        opacity: 1;
+    }
+    75% {
+        transform: translateY(-30px) translateX(8px) scale(1.05);
+        opacity: 0.85;
+    }
+}
+
+/* Container principal - Liquid Glass */
+.editor-container {
     display: flex;
     flex-direction: column;
-    background: #f8f8f8;
+    /* Hauteur dynamique avec support multiple navigateurs */
+    height: 100vh;
+    height: -webkit-fill-available; /* Safari iOS */
+    height: 100dvh; /* Navigateurs modernes */
+    width: 100vw;
+    width: -webkit-fill-available;
+    /* Fallback avec couleur opaque pour navigateurs sans backdrop-filter */
+    background: rgba(240, 240, 255, 0.95);
+    /* Backdrop-filter avec préfixes pour compatibilité */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    /* Amélioration avec @supports pour navigateurs modernes */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
+    position: relative;
     overflow: hidden;
-  }
-  
-  /* ================================
-     HEADER
-  ================================ */
-  .header {
-    height: 60px;
-    background: #222;
-    color: #fff;
+    /* Safe areas iOS pour ne pas être caché par les encoches */
+    padding: max(4px, env(safe-area-inset-top, 4px)) 
+             max(4px, env(safe-area-inset-right, 4px)) 
+             max(4px, env(safe-area-inset-bottom, 4px)) 
+             max(4px, env(safe-area-inset-left, 4px));
+    margin: 0;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.1),
+        0 2px 8px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    animation: containerGlow 3s ease-in-out infinite alternate;
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .editor-container {
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+@keyframes containerGlow {
+    0% { 
+        position: relative;
+    z-index: 9999;
+    box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.1),
+            0 2px 8px rgba(0, 0, 0, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    100% { 
+        position: relative;
+    z-index: 9999;
+    box-shadow: 
+            0 12px 48px rgba(103, 126, 234, 0.2),
+            0 4px 16px rgba(118, 75, 162, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    z-index: 10000;
+    }
+}
+
+/* Project info optimisé avec menu hamburger - Liquid Glass */
+.project-info {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 16px;
+    justify-content: center;
     position: relative;
-    z-index: 1000;
-  }
-  
-  /* ================================
-     BOUTON MENU HAMBURGER
-  ================================ */
-  .hamburger {
+    padding: 8px 12px; /* Réduit pour desktop */
+    /* Fallback pour navigateurs sans backdrop-filter */
+    background: rgba(240, 240, 255, 0.95);
+    backdrop-filter: blur(15px) saturate(200%);
+    -webkit-backdrop-filter: blur(15px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    margin: 4px;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    z-index: 10000;
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(15px)) or (-webkit-backdrop-filter: blur(15px)) {
+    .project-info {
+        background: rgba(255, 255, 255, 0.15);
+    }
+}
+
+.menu-hamburger {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 0; /* Masquer le texte */
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
     cursor: pointer;
-    width: 30px;
-    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.1),
+        0 2px 8px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    z-index: 10;
+}
+
+/* Créer les icônes avec du CSS pur pour un alignement parfait */
+.menu-hamburger::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 2px;
+    background: white;
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
+    -webkit-transform: translate(-50%, -50%);
+    -webkit-transform-origin: center center;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 -6px 0 white,
+        0 6px 0 white;
+    transition: all 0.3s ease;
+    margin: 0;
+    padding: 0;
+}
+
+/* Style quand le menu est ouvert (croix) */
+.menu-hamburger.open::before {
+    background: white;
+    position: relative;
+    z-index: 9999;
+    box-shadow: none;
+    transform: translate(-50%, -50%) rotate(45deg);
+    -webkit-transform: translate(-50%, -50%) rotate(45deg);
+    transform-origin: center center;
+    -webkit-transform-origin: center center;
+}
+
+.menu-hamburger.open::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 2px;
+    background: white;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    -webkit-transform: translate(-50%, -50%) rotate(-45deg);
+    transform-origin: center center;
+    -webkit-transform-origin: center center;
+    margin: 0;
+    padding: 0;
+}
+
+.menu-hamburger:hover, .menu-hamburger:active {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    transform: translateY(-50%) scale(1.05);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 8px 24px rgba(103, 126, 234, 0.3),
+        0 4px 12px rgba(118, 75, 162, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    z-index: 10000;
+}
+
+
+.project-info h2 {
+    font-size: 1.1rem;
+    margin: 8px 0;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+    flex: 1;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.3px;
+}
+
+/* Toolbar principal avec boutons liquid glass - cachée par défaut */
+.toolbar {
+    padding: 0 8px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 18px;
+    margin: 6px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-10px);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.toolbar.visible {
+    padding: 12px 8px;
+    max-height: 200px;
+    opacity: 1;
+    transform: translateY(0);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 8px 24px rgba(0, 0, 0, 0.15),
+        0 4px 12px rgba(103, 126, 234, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    z-index: 10000;
+}
+
+/* Outils avec boutons optimisés et compacts */
+.tools {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 4px;
+    justify-content: center;
+}
+
+.tools button {
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    color: white;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    touch-action: manipulation;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    min-height: 40px;
+    line-height: 1.2;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.tools button:hover {
+    transform: translateY(-2px) scale(1.02);
+    background: rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 6px 20px rgba(103, 126, 234, 0.3),
+        0 3px 10px rgba(118, 75, 162, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    z-index: 10000;
+}
+
+.tools button:active {
+    transform: translateY(0) scale(0.98);
+    background: rgba(255, 255, 255, 0.25);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Style spécial pour le bouton play/stop - Liquid Glass */
+#previewBtn {
+    font-size: 1.2rem !important;
+    background: linear-gradient(135deg, 
+        rgba(40, 167, 69, 0.8), 
+        rgba(32, 201, 151, 0.8)) !important;
+    backdrop-filter: blur(15px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(15px) saturate(200%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: 20px !important;
+    color: white !important;
+    font-weight: bold !important;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    min-width: 50px !important;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 16px rgba(40, 167, 69, 0.3),
+        0 2px 8px rgba(32, 201, 151, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+#previewBtn:hover {
+    background: linear-gradient(135deg, 
+        rgba(33, 136, 56, 0.9), 
+        rgba(26, 188, 156, 0.9)) !important;
+    transform: translateY(-3px) scale(1.05) !important;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 8px 32px rgba(40, 167, 69, 0.4),
+        0 4px 16px rgba(32, 201, 151, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+#previewBtn:active {
+    transform: translateY(-1px) scale(0.98) !important;
+    background: linear-gradient(135deg, 
+        rgba(30, 126, 52, 0.9), 
+        rgba(23, 162, 184, 0.9)) !important;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 16px rgba(40, 167, 69, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Animation pulsante quand l'animation est en cours */
+#previewBtn.playing {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { position: relative;
+    z-index: 9999;
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+    70% { position: relative;
+    z-index: 9999;
+    box-shadow: 0 0 0 6px rgba(40, 167, 69, 0); }
+    100% { position: relative;
+    z-index: 9999;
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+
+/* Section secondaire pour couleurs et gomme - Liquid Glass */
+.tools-secondary {
+    padding: 8px;
+    /* Fallback pour navigateurs sans backdrop-filter */
+    background: rgba(235, 235, 250, 0.98);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    margin: 4px;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .tools-secondary {
+        background: rgba(255, 255, 255, 0.08);
+    }
+}
+
+/* Palette de couleurs compacte */
+.color-palette {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+#colorPicker {
+    width: 40px;
+    height: 40px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    cursor: pointer;
+    outline: none;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#colorPicker:hover {
+    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.5);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 6px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    z-index: 10000;
+}
+
+.validate-color-btn {
+    padding: 6px 8px;
+    border: 2px solid #007AFF;
+    border-radius: 4px;
+    background-color: #007AFF;
+    color: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transition: all 0.1s ease;
+    min-height: 30px;
+    min-width: 30px;
+}
+
+.validate-color-btn:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.validate-color-btn:active {
+    transform: scale(0.95);
+}
+
+.validate-color-btn:disabled {
+    background-color: #ccc;
+    border-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.undo-redo-btn {
+    padding: 6px 8px;
+    border: 2px solid #666;
+    border-radius: 4px;
+    background-color: white;
+    color: #666;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: all 0.1s ease;
+    min-height: 30px;
+    min-width: 30px;
+}
+
+.undo-redo-btn:hover:not(:disabled) {
+    background-color: #f0f0f0;
+    border-color: #333;
+    transform: scale(1.05);
+}
+
+.undo-redo-btn:active:not(:disabled) {
+    background-color: #e0e0e0;
+    transform: scale(0.95);
+}
+
+.undo-redo-btn:disabled {
+    background-color: #f8f8f8;
+    border-color: #ddd;
+    color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.eraser-btn {
+    padding: 6px 8px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    color: #666;
+    cursor: pointer;
+    font-size: 0.65rem;
+    font-weight: 500;
+    transition: all 0.1s ease;
+    min-height: 30px;
+}
+
+.eraser-btn:active, .eraser-btn.active {
+    background-color: #ff6b6b;
+    color: white;
+    border-color: #ff5252;
+    transform: scale(0.95);
+}
+
+.preset-colors {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.color-btn {
+    width: 32px;
+    height: 32px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(5px) saturate(180%);
+    -webkit-backdrop-filter: blur(5px) saturate(180%);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.color-btn:hover {
+    transform: scale(1.1) translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.5);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 6px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    z-index: 10000;
+}
+
+.color-btn:active {
+    transform: scale(0.95) translateY(0);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Styles pour les couleurs de base */
+.color-btn.default-color {
+    border: 2px solid #ccc;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.color-btn.default-color:hover {
+    border-color: #999;
+    transform: scale(1.05);
+}
+
+/* Styles pour les couleurs personnalisées */
+.color-btn.custom-color {
+    border: 2px solid #007AFF;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 0 0 0 1px rgba(0, 122, 255, 0.3), 0 2px 4px rgba(0, 122, 255, 0.2);
+    position: relative;
+}
+
+.color-btn.custom-color::after {
+    content: '★';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: 0.6rem;
+    color: #007AFF;
+    background: white;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #007AFF;
+    font-weight: bold;
+}
+
+.color-btn.custom-color:hover {
+    border-color: #0056b3;
+    transform: scale(1.05);
+}
+
+/* Container de la grille - Liquid Glass */
+.grid-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px) saturate(150%);
+    -webkit-backdrop-filter: blur(15px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    margin: 4px;
+    min-height: 200px;
+    max-height: calc(100vh - 260px); /* Réduit pour desktop */
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Grille de pixels - GARANTIE 32x32 cases exactes sur toutes plateformes */
+#pixelGrid {
+    display: grid;
+    grid-template-columns: repeat(32, 1fr);
+    grid-template-rows: repeat(32, 1fr);
+    gap: 1px;
+    /* Fallback pour navigateurs sans backdrop-filter */
+    background: rgba(245, 245, 255, 0.98);
+    backdrop-filter: blur(10px) saturate(120%);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px; /* Coins moins arrondis pour récupérer les pixels d'angle */
+    aspect-ratio: 1 / 1;
+    position: relative;
+    margin: 0 auto;
+    
+    /* Calcul EXACT pour 32x32 cases avec clamp() pour plus de stabilité
+       formule: (taille_case * 32) + (gap * 31) + border */
+    --cell-size: clamp(
+        8px,  /* Minimum absolu pour lisibilité */
+        min(
+            calc((100vw - max(20px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
+            calc((100vh - max(140px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+        ),
+        15px  /* Maximum pour mobile standard */
+    );
+    
+    width: calc(var(--cell-size) * 32 + 31px + 4px);
+    height: calc(var(--cell-size) * 32 + 31px + 4px);
+    
+    /* Contraintes absolues pour éviter les déformations */
+    min-width: calc(8px * 32 + 31px + 4px); /* Minimum 8px par case */
+    min-height: calc(8px * 32 + 31px + 4px);
+    max-width: calc(15px * 32 + 31px + 4px); /* Maximum pour mobile */
+    max-height: calc(15px * 32 + 31px + 4px);
+    
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.15),
+        0 4px 16px rgba(103, 126, 234, 0.1),
+        inset 0 2px 0 rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
+    #pixelGrid {
+        background: rgba(255, 255, 255, 0.15);
+    }
+}
+
+#pixelGrid:hover {
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 12px 48px rgba(0, 0, 0, 0.2),
+        0 6px 24px rgba(103, 126, 234, 0.15),
+        inset 0 2px 0 rgba(255, 255, 255, 0.3);
+}
+
+.pixel {
+    background-color: white;
+    cursor: crosshair;
+    position: relative;
+    transition: none;
+    min-width: 0;
+    min-height: 0;
+}
+
+.pixel:active {
+    outline: 1px solid #007AFF;
+}
+
+/* Container de frames optimisé - Liquid Glass */
+.frames-container {
+    /* Fallback pour navigateurs sans backdrop-filter */
+    background: rgba(240, 240, 255, 0.95);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 12px;
+    /* Marge bottom adaptative pour bannière pub + safe area */
+    margin: 6px 6px calc(80px + env(safe-area-inset-bottom, 0px)) 6px;
+    min-height: 120px;
+    max-height: 160px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    margin-top: auto;
+    position: relative;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .frames-container {
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Styles pour l'aide */
+.help-content {
+    padding: 20px;
+    line-height: 1.6;
+    color: #333;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.help-content h2 {
+    color: #007AFF;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #007AFF;
+    padding-bottom: 10px;
+}
+
+.help-section {
+    margin-bottom: 25px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 15px;
+    border-left: 4px solid #007AFF;
+}
+
+.help-section h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.help-item {
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.help-item:last-child {
+    border-bottom: none;
+}
+
+.help-item strong {
+    color: #007AFF;
+    font-weight: 600;
+}
+
+.help-item kbd {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    margin: 0 2px;
+}
+
+.help-item ul {
+    margin: 8px 0 0 20px;
+    padding: 0;
+}
+
+.help-item li {
+    margin: 4px 0;
+}
+
+/* Améliorer l'affichage sur mobile */
+@media (max-width: 600px) {
+    .help-content {
+        padding: 15px;
+    }
+    
+    .help-content h2 {
+        font-size: 1.3rem;
+    }
+    
+    .help-section h3 {
+        font-size: 1.1rem;
+    }
+    
+    .help-section {
+        padding: 12px;
+        margin-bottom: 20px;
+    }
+}
+
+/* Styles pour le partage */
+.share-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.share-content h3 {
+    color: #007AFF;
+    margin-bottom: 15px;
+}
+
+.share-options {
+    margin: 20px 0;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-  }
-  
-  .hamburger span {
+    gap: 12px;
+}
+
+.share-option {
+    background: #f8f9fa;
+    border: 2px solid #007AFF;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.share-option:hover {
+    background: #007AFF;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.share-option small {
     display: block;
-    height: 4px;
-    background: #fff;
-    border-radius: 2px;
-  }
-  
-  /* ================================
-     TOOLBAR (MENU DÉROULANT)
-  ================================ */
-  .toolbar {
-    position: absolute;
-    top: 60px; /* sous le header */
+    margin-top: 5px;
+    opacity: 0.7;
+    font-size: 0.9rem;
+}
+
+.share-instructions {
+    background: #f0f8ff;
+    border: 1px solid #007AFF;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    text-align: left;
+}
+
+.share-instructions code {
+    background: #e6f3ff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+/* Drag & Drop styles */
+body.drag-over {
+    background-color: rgba(0, 122, 255, 0.1);
+}
+
+body.drag-over::before {
+    content: '📤 Déposez votre fichier .pixelart ici pour l\'importer !';
+    position: fixed;
+    top: 0;
     left: 0;
     right: 0;
-    background: #333;
-    color: #fff;
-    display: none;
-    flex-direction: column;
-    padding: 10px;
-    z-index: 999;
-    overflow-y: auto;
-    max-height: calc(var(--vh) - 60px); /* empêche d’être masqué */
-  }
-  
-  .toolbar.visible {
+    bottom: 0;
+    background: rgba(0, 122, 255, 0.9);
+    color: white;
     display: flex;
-  }
-  
-  .toolbar a {
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    z-index: 10000;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Animation pour le feedback drag & drop */
+@keyframes dragPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+body.drag-over .grid-container {
+    animation: dragPulse 1s infinite;
+}
+
+/* Styles pour l'interface de chargement */
+.load-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.load-content h3 {
+    color: #007AFF;
+    margin-bottom: 15px;
+}
+
+.load-options {
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.load-option {
+    background: #f8f9fa;
+    border: 2px solid #007AFF;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.load-option:hover {
+    background: #007AFF;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.load-option small {
+    display: block;
+    margin-top: 5px;
+    opacity: 0.7;
+    font-size: 0.9rem;
+}
+
+.drop-zone {
+    background: #f0f8ff;
+    border: 2px dashed #007AFF;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+    text-align: center;
+    color: #007AFF;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.drop-zone.drag-active {
+    background: #007AFF;
+    color: white;
+    transform: scale(1.02);
+}
+
+.load-instructions {
+    background: #f0f8ff;
+    border: 1px solid #007AFF;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    text-align: left;
+}
+
+.load-instructions ul {
+    margin: 10px 0 0 20px;
+    padding: 0;
+}
+
+.load-instructions li {
+    margin: 8px 0;
+    line-height: 1.4;
+}
+
+/* Améliorer les styles de partage pour iOS */
+.share-option:first-child {
+    background: linear-gradient(135deg, #007AFF, #0056b3);
+    color: white;
+    border-color: #0056b3;
+    font-weight: 600;
+}
+
+.share-option:first-child:hover {
+    background: linear-gradient(135deg, #0056b3, #004494);
+    transform: translateY(-3px);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+#addFrameBtn {
+    width: 100%;
     padding: 12px;
-    text-decoration: none;
-    color: #fff;
-  }
-  
-  .toolbar a:hover {
-    background: #444;
-  }
-  
-  /* ================================
-     CONTENU PRINCIPAL
-  ================================ */
-  .content {
-    flex: 1;
-    overflow-y: auto;
+    background: linear-gradient(135deg, 
+        rgba(40, 167, 69, 0.8), 
+        rgba(32, 201, 151, 0.8));
+    backdrop-filter: blur(15px) saturate(200%);
+    -webkit-backdrop-filter: blur(15px) saturate(200%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    min-height: 44px;
+    touch-action: manipulation;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 16px rgba(40, 167, 69, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+#addFrameBtn:hover {
+    transform: translateY(-2px) scale(1.02);
+    background: linear-gradient(135deg, 
+        rgba(33, 136, 56, 0.9), 
+        rgba(26, 188, 156, 0.9));
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 8px 24px rgba(40, 167, 69, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    z-index: 10000;
+}
+
+#addFrameBtn:active {
+    transform: translateY(0) scale(0.98);
+    background: linear-gradient(135deg, 
+        rgba(30, 126, 52, 0.9), 
+        rgba(23, 162, 184, 0.9));
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 2px 8px rgba(40, 167, 69, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+#framesList {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 4px 0;
+    min-height: 50px; /* Hauteur minimale garantie */
+}
+
+/* Espace publicitaire réservé - Liquid Glass */
+.ad-space {
+    height: 72px;
+    /* Fallback pour navigateurs sans backdrop-filter */
+    background: rgba(240, 240, 255, 0.95);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px 24px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+    font-weight: 500;
+    position: fixed;
+    /* Respect des safe areas iOS en bas */
+    bottom: env(safe-area-inset-bottom, 0);
+    left: max(8px, env(safe-area-inset-left, 8px));
+    right: max(8px, env(safe-area-inset-right, 8px));
+    z-index: 50; /* Réduire le z-index pour éviter les conflits */
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 -4px 16px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    margin: 0;
+    padding: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Amélioration pour navigateurs supportant backdrop-filter */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .ad-space {
+        background: rgba(255, 255, 255, 0.08);
+    }
+}
+
+.ad-space::before {
+    content: "✨ Espace publicitaire réservé ✨";
+    opacity: 0.8;
+}
+
+/* Styles pour les frames */
+.frame-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.frame-preview {
+    padding: 2px;
+    background-color: white;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    touch-action: manipulation;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.frame-preview.active {
+    border-color: #007AFF;
+    background-color: #e3f2fd;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 0 0 0 1px rgba(0, 122, 255, 0.3);
+}
+
+/* Styles pour les miniatures de frames */
+.frame-thumbnail {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    grid-template-rows: repeat(16, 1fr);
+    width: 36px;
+    height: 36px;
+    border: 1px solid #ccc;
+    border-radius: 1px;
+    overflow: hidden;
+    position: relative;
+    background: white;
+}
+
+.thumbnail-pixel {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Numéro de frame pour les frames vides */
+.frame-number {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #666;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.insert-frame-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #ccc;
+    background-color: #f0f0f0;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+}
+
+/* Dialogues et modales mobiles - Liquid Glass */
+.save-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    animation: modalBackdropFadeIn 0.3s ease;
+}
+
+.save-dialog-content {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(25px) saturate(200%);
+    -webkit-backdrop-filter: blur(25px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 24px;
+    padding: 32px;
+    width: 100%;
+    max-width: 420px;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 16px 64px rgba(0, 0, 0, 0.2),
+        0 8px 32px rgba(103, 126, 234, 0.1),
+        inset 0 2px 0 rgba(255, 255, 255, 0.4);
+    animation: modalContentSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalBackdropFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalContentSlideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(30px) scale(0.9);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.save-dialog h3 {
+    margin: 0 0 20px 0;
+    text-align: center;
+    font-size: 1.3rem;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.save-dialog input {
+    width: 100%;
     padding: 16px;
-  }
-  
-  /* ================================
-     RESPONSIVE
-  ================================ */
-  @media (min-width: 768px) {
-    .hamburger {
-      display: none;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    outline: none;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: white;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.save-dialog input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.save-dialog input:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.15);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 6px 20px rgba(103, 126, 234, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.dialog-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.dialog-buttons button {
+    flex: 1;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 48px;
+    touch-action: manipulation;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+#dialogSave {
+    background: linear-gradient(135deg, 
+        rgba(0, 122, 255, 0.8), 
+        rgba(0, 86, 179, 0.8));
+    color: white;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 16px rgba(0, 122, 255, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+#dialogSave:hover {
+    transform: translateY(-2px) scale(1.02);
+    background: linear-gradient(135deg, 
+        rgba(0, 122, 255, 0.9), 
+        rgba(0, 86, 179, 0.9));
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 8px 24px rgba(0, 122, 255, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    z-index: 10000;
+}
+
+#dialogCancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+#dialogCancel:hover {
+    transform: translateY(-1px) scale(1.01);
+    background: rgba(255, 255, 255, 0.15);
+    position: relative;
+    z-index: 9999;
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Marqueurs de pixels */
+.previous-pixel-marker {
+    position: absolute;
+    width: 25%;
+    height: 25%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.next-pixel-marker-1, .next-pixel-marker-2 {
+    position: absolute;
+    width: 20%;
+    height: 20%;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.next-pixel-marker-1 {
+    top: 25%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.next-pixel-marker-2 {
+    top: 75%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Styles pour la modal des crédits */
+.credits-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+}
+
+.credits-content {
+    background-color: white;
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.close-credits {
+    width: 100%;
+    padding: 12px;
+    background-color: #007AFF;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 16px;
+    min-height: 44px;
+    touch-action: manipulation;
+}
+
+/* ===================================================================
+   MEDIA QUERIES POUR DIFFÉRENTES TAILLES D'ÉCRAN
+   =================================================================== */
+
+/* Très petits téléphones (iPhone SE 1st gen, etc.) */
+@media screen and (max-width: 374px) {
+    .project-info h2 {
+        font-size: 0.95rem;
     }
-  
+    
+    .tools button {
+        font-size: 0.65rem;
+        padding: 8px 10px;
+        min-height: 36px;
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            6px,  /* Plus petit minimum pour très petits écrans */
+            min(
+                calc((100vw - max(16px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
+                calc((100vh - max(160px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+            ),
+            12px
+        );
+        min-width: calc(6px * 32 + 31px + 4px);
+        min-height: calc(6px * 32 + 31px + 4px);
+        max-width: calc(12px * 32 + 31px + 4px);
+        max-height: calc(12px * 32 + 31px + 4px);
+    }
+    
+    .color-btn {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .frames-container {
+        max-height: 100px;
+        margin-bottom: 60px;
+    }
+}
+
+/* Petits téléphones (iPhone SE 2nd gen, iPhone 12 mini) */
+@media screen and (min-width: 375px) and (max-width: 413px) {
+    .project-info h2 {
+        font-size: 1rem;
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            7px,
+            min(
+                calc((100vw - max(18px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
+                calc((100vh - max(150px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+            ),
+            13px
+        );
+        max-width: calc(13px * 32 + 31px + 4px);
+        max-height: calc(13px * 32 + 31px + 4px);
+    }
+}
+
+/* Téléphones moyens/grands (iPhone 12, 13, 14, Galaxy S21, etc.) */
+@media screen and (min-width: 414px) and (max-width: 479px) {
+    .project-info h2 {
+        font-size: 1.15rem;
+    }
+    
+    .tools button {
+        font-size: 0.8rem;
+        padding: 11px 13px;
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            8px,
+            min(
+                calc((100vw - max(20px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
+                calc((100vh - max(145px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+            ),
+            14px
+        );
+        max-width: calc(14px * 32 + 31px + 4px);
+        max-height: calc(14px * 32 + 31px + 4px);
+    }
+}
+
+/* Grands téléphones (iPhone Pro Max, Galaxy Note, etc.) */
+@media screen and (min-width: 480px) and (max-width: 767px) {
+    .project-info h2 {
+        font-size: 1.2rem;
+    }
+    
+    .tools button {
+        font-size: 0.85rem;
+        padding: 12px 14px;
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            9px,
+            min(
+                calc((100vw - max(24px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
+                calc((100vh - max(140px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+            ),
+            16px
+        );
+        max-width: calc(16px * 32 + 31px + 4px);
+        max-height: calc(16px * 32 + 31px + 4px);
+    }
+    
+    .frames-container {
+        max-height: 140px;
+    }
+}
+
+/* Tablettes en portrait (iPad, Galaxy Tab) */
+@media screen and (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
     .toolbar {
-      display: flex !important;
-      position: static;
-      flex-direction: row;
-      max-height: none;
-      background: none;
-      color: inherit;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
     }
-  
-    .toolbar a {
-      color: #000;
-      padding: 0 12px;
+    
+    .tools {
+        display: flex;
+        flex-wrap: wrap;
+        max-width: none;
     }
-  }  
+    
+    .tools button {
+        font-size: 0.9rem;
+        padding: 10px 16px;
+    }
+    
+    .frames-container {
+        max-height: 160px;
+    }
+    
+    /* Grille plus grande sur tablettes */
+    #pixelGrid {
+        --cell-size: clamp(
+            12px,
+            min(
+                calc((100vw - 32px - 4px - 31px) / 32),
+                calc((100vh - 120px - 4px - 31px) / 32)
+            ),
+            20px
+        );
+        
+        width: calc(var(--cell-size) * 32 + 31px + 4px);
+        height: calc(var(--cell-size) * 32 + 31px + 4px);
+        max-width: calc(20px * 32 + 31px + 4px);
+        max-height: calc(20px * 32 + 31px + 4px);
+        border-radius: 4px;
+    }
+    
+    .project-info h2 {
+        font-size: 1.4rem;
+    }
+}
+
+/* Tablettes en paysage */
+@media screen and (min-width: 768px) and (max-width: 1023px) and (orientation: landscape) {
+    .grid-container {
+        max-height: calc(100vh - 200px);
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            10px,
+            min(
+                calc((100vw - 32px - 4px - 31px) / 32),
+                calc((100vh - 160px - 4px - 31px) / 32)
+            ),
+            18px
+        );
+        max-width: calc(18px * 32 + 31px + 4px);
+        max-height: calc(18px * 32 + 31px + 4px);
+    }
+    
+    .frames-container {
+        max-height: 120px;
+    }
+}
+
+/* Optimisations spécifiques iOS Safari */
+@supports (-webkit-touch-callout: none) {
+    /* Fix pour la barre d'URL qui apparaît/disparaît sur iOS */
+    .editor-container {
+        height: 100vh;
+        height: -webkit-fill-available;
+    }
+    
+    .grid-container {
+        /* Ajustement pour iOS Safari qui calcule mal parfois */
+        max-height: calc(100vh - 280px);
+        max-height: calc(-webkit-fill-available - 280px);
+    }
+}
+
+/* DESKTOP LAYOUT SELON VOS SPECS - Nuancier gauche | Grille centre | Frames droite */
+
+
+/* Fix pour menu hamburger partiellement caché par les barres du navigateur */
+@media screen and (max-height: 800px) {
+    .toolbar.visible {
+        margin-top: 8px;
+        margin-bottom: 8px;
+        position: relative;
+        z-index: 10000;
+    }
+}
+
+/* Fix pour Safari iOS avec barres dynamiques */
+@supports (-webkit-touch-callout: none) {
+    .toolbar.visible {
+        position: relative;
+        z-index: 10000;
+        margin-top: max(8px, env(safe-area-inset-top, 8px));
+    }
+}
