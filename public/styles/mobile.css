@@ -278,7 +278,7 @@ body::before {
 
 .toolbar.visible {
     padding: 8px 6px;
-    max-height: clamp(320px, 75vh, 640px);
+    max-height: clamp(200px, 60vh, 400px);
     overflow: visible;
     opacity: 1;
     transform: translateY(0);
@@ -622,8 +622,8 @@ body::before {
     border-radius: 16px;
     margin: 4px;
     min-height: 200px;
-    max-height: calc(100vh - 260px); /* Réduit pour desktop */
-    max-height: clamp(240px, calc(100dvh - 320px), 560px); /* Ajuste pour les barres système mobiles */
+    max-height: calc(100vh - 200px); /* Réduit pour desktop */
+    max-height: clamp(280px, calc(100dvh - 180px), 600px); /* Ajuste pour les barres système mobiles */
     box-shadow: 
         0 4px 20px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -651,9 +651,9 @@ body::before {
         8px,  /* Minimum absolu pour lisibilité */
         min(
             calc((100vw - max(20px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
-            calc((100vh - max(140px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+            calc((100vh - max(120px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
         ),
-        15px  /* Maximum pour mobile standard */
+        18px  /* Maximum pour mobile standard */
     );
     
     width: calc(var(--cell-size) * 32 + 31px + 4px);
@@ -1433,7 +1433,7 @@ body.drag-over .grid-container {
             6px,  /* Plus petit minimum pour très petits écrans */
             min(
                 calc((100vw - max(16px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
-                calc((100vh - max(160px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+                calc((100vh - max(140px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
             ),
             12px
         );
@@ -1465,7 +1465,7 @@ body.drag-over .grid-container {
             7px,
             min(
                 calc((100vw - max(18px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
-                calc((100vh - max(150px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+                calc((100vh - max(130px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
             ),
             13px
         );
@@ -1515,7 +1515,7 @@ body.drag-over .grid-container {
             9px,
             min(
                 calc((100vw - max(24px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px - 31px) / 32),
-                calc((100vh - max(140px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
+                calc((100vh - max(120px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px - 31px) / 32)
             ),
             16px
         );
@@ -1618,7 +1618,7 @@ body.drag-over .grid-container {
 
 /* Amélioration pour menu hamburger - boutons plus compacts */
 .toolbar.visible {
-    max-height: clamp(320px, 75vh, 640px);
+    max-height: clamp(200px, 60vh, 400px);
     overflow: visible;
     overscroll-behavior: contain;
 }
@@ -1632,4 +1632,75 @@ body.drag-over .grid-container {
     padding: 6px 8px;
     min-height: 32px;
     line-height: 1.1;
+}
+
+
+/* ===================================================================
+   OPTIMISATIONS POUR BARRES DU NAVIGATEUR ET ESPACE PERDU
+   =================================================================== */
+
+/* Récupérer l'espace perdu entre grille et bannière pub */
+.grid-container {
+    margin-bottom: 2px; /* Réduire l'espace perdu */
+    padding-bottom: 4px; /* Optimiser le padding */
+}
+
+/* Optimisation pour barres grises du navigateur */
+@media screen and (max-height: 700px) {
+    .grid-container {
+        max-height: calc(100vh - 160px); /* Plus d'espace pour la grille */
+        max-height: calc(100dvh - 160px); /* Support barres dynamiques */
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            6px,
+            min(
+                calc((100vw - 20px - 4px - 31px) / 32),
+                calc((100vh - 120px - 4px - 31px) / 32)
+            ),
+            12px
+        );
+    }
+}
+
+/* Fix spécifique pour Safari avec barres */
+@supports (-webkit-touch-callout: none) {
+    .grid-container {
+        max-height: calc(100vh - 150px);
+        max-height: calc(-webkit-fill-available - 150px);
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            7px,
+            min(
+                calc((100vw - 20px - 4px - 31px) / 32),
+                calc((100vh - 110px - 4px - 31px) / 32)
+            ),
+            14px
+        );
+    }
+}
+
+/* Optimisation pour Chrome avec barres */
+@media screen and (max-height: 600px) {
+    .toolbar.visible {
+        max-height: 180px; /* Menu plus compact sur petits écrans */
+    }
+    
+    .grid-container {
+        max-height: calc(100vh - 140px);
+    }
+    
+    #pixelGrid {
+        --cell-size: clamp(
+            5px,
+            min(
+                calc((100vw - 16px - 4px - 31px) / 32),
+                calc((100vh - 100px - 4px - 31px) / 32)
+            ),
+            10px
+        );
+    }
 }
