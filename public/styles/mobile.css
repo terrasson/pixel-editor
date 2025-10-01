@@ -266,8 +266,8 @@ body::before {
 }
 
 .toolbar.visible {
-    padding: 12px 8px;
-    max-height: 200px;
+    padding: 8px 6px;
+    max-height: 300px;
     opacity: 1;
     transform: translateY(0);
     box-shadow: 
@@ -285,7 +285,7 @@ body::before {
 }
 
 .tools button {
-    padding: 10px 12px;
+    padding: 8px 10px;
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.2);
@@ -297,7 +297,7 @@ body::before {
     font-weight: 600;
     touch-action: manipulation;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    min-height: 40px;
+    min-height: 36px;
     line-height: 1.2;
     box-shadow: 
         0 2px 8px rgba(0, 0, 0, 0.1),
@@ -1582,3 +1582,20 @@ body.drag-over .grid-container {
 }
 
 /* DESKTOP LAYOUT SELON VOS SPECS - Nuancier gauche | Grille centre | Frames droite */
+
+/* Amélioration pour menu hamburger - boutons plus compacts */
+.toolbar.visible {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.toolbar.visible .tools {
+    gap: 3px;
+}
+
+.toolbar.visible .tools button {
+    font-size: 0.7rem;
+    padding: 6px 8px;
+    min-height: 32px;
+    line-height: 1.1;
+}
