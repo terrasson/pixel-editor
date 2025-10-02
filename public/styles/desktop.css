@@ -530,3 +530,59 @@ html, body {
         margin-bottom: 8px !important;
     }
 }
+
+
+/* ===================================================================
+   DEBUG ET FORCE DES MARQUEURS - DESKTOP UNIQUEMENT
+   =================================================================== */
+
+@media (min-width: 1024px) {
+    /* Forcer la visibilité des marqueurs avec des styles très visibles */
+    .previous-pixel-marker {
+        width: 12px !important;
+        height: 12px !important;
+        background-color: red !important;
+        border: 2px solid black !important;
+        border-radius: 50% !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        pointer-events: none !important;
+        z-index: 9999 !important;
+        opacity: 1 !important;
+        display: block !important;
+    }
+    
+    .next-pixel-marker-1, .next-pixel-marker-2 {
+        width: 10px !important;
+        height: 10px !important;
+        background-color: blue !important;
+        border: 2px solid white !important;
+        border-radius: 50% !important;
+        position: absolute !important;
+        pointer-events: none !important;
+        z-index: 9999 !important;
+        opacity: 1 !important;
+        display: block !important;
+    }
+    
+    .next-pixel-marker-1 {
+        top: 25% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+    }
+    
+    .next-pixel-marker-2 {
+        top: 75% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+    }
+    
+    /* Debug : border rouge sur les pixels qui ont des marqueurs */
+    .pixel:has(.previous-pixel-marker),
+    .pixel:has(.next-pixel-marker-1),
+    .pixel:has(.next-pixel-marker-2) {
+        border: 1px solid red !important;
+    }
+}
