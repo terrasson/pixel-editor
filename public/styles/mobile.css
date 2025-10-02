@@ -1707,7 +1707,7 @@ body.drag-over .grid-container {
 
 
 /* ===================================================================
-   BOUTON PLAY DANS LA BARRE DU HAUT
+   BOUTON PLAY DANS LA BARRE DU HAUT - MOBILE ROND
    =================================================================== */
 
 .play-button {
@@ -1718,7 +1718,7 @@ body.drag-over .grid-container {
     width: 40px;
     height: 40px;
     border: none;
-    border-radius: 8px;
+    border-radius: 50%; /* ROND comme le hamburger */
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -1730,11 +1730,13 @@ body.drag-over .grid-container {
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .play-button:hover {
     background: rgba(255, 255, 255, 0.3);
     transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .play-button:active {
@@ -1752,22 +1754,24 @@ body.drag-over .grid-container {
     100% { transform: translateY(-50%) scale(1); }
 }
 
-/* Responsive pour mobile */
+/* Responsive pour mobile - garder rond */
 @media (max-width: 1023px) {
     .play-button {
         right: 8px;
         width: 36px;
         height: 36px;
         font-size: 14px;
+        border-radius: 50%; /* Toujours rond sur mobile */
     }
 }
 
-/* Ajustement pour les petits écrans */
+/* Ajustement pour les petits écrans - toujours rond */
 @media (max-width: 480px) {
     .play-button {
         right: 6px;
         width: 32px;
         height: 32px;
         font-size: 12px;
+        border-radius: 50%; /* Toujours rond même sur petits écrans */
     }
 }
