@@ -1704,3 +1704,70 @@ body.drag-over .grid-container {
         );
     }
 }
+
+
+/* ===================================================================
+   BOUTON PLAY DANS LA BARRE DU HAUT
+   =================================================================== */
+
+.play-button {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.play-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-50%) scale(1.05);
+}
+
+.play-button:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.play-button.playing {
+    background: rgba(255, 0, 0, 0.3);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.1); }
+    100% { transform: translateY(-50%) scale(1); }
+}
+
+/* Responsive pour mobile */
+@media (max-width: 1023px) {
+    .play-button {
+        right: 8px;
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+}
+
+/* Ajustement pour les petits écrans */
+@media (max-width: 480px) {
+    .play-button {
+        right: 6px;
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+}

@@ -998,9 +998,21 @@ function startAnimation() {
     
     isAnimationPlaying = true;
     const previewBtn = document.getElementById('previewBtn');
-    previewBtn.innerHTML = '⏹️';
-    previewBtn.title = 'Arrêter l\'animation';
-    previewBtn.classList.add('playing');
+    const playToggle = document.getElementById('playToggle');
+    
+    // Mettre à jour le bouton dans le menu
+    if (previewBtn) {
+        previewBtn.innerHTML = '⏹️';
+        previewBtn.title = 'Arrêter l\'animation';
+        previewBtn.classList.add('playing');
+    }
+    
+    // Mettre à jour le bouton dans la barre du haut
+    if (playToggle) {
+        playToggle.innerHTML = '⏹️';
+        playToggle.title = 'Arrêter l\'animation';
+        playToggle.classList.add('playing');
+    }
     
     let frameIndex = 0;
     
@@ -1035,9 +1047,21 @@ function stopAnimation() {
     
     isAnimationPlaying = false;
     const previewBtn = document.getElementById('previewBtn');
-    previewBtn.innerHTML = '▶️';
-    previewBtn.title = 'Lancer l\'animation';
-    previewBtn.classList.remove('playing');
+    const playToggle = document.getElementById('playToggle');
+    
+    // Mettre à jour le bouton dans le menu
+    if (previewBtn) {
+        previewBtn.innerHTML = '▶️';
+        previewBtn.title = 'Lancer l\'animation';
+        previewBtn.classList.remove('playing');
+    }
+    
+    // Mettre à jour le bouton dans la barre du haut
+    if (playToggle) {
+        playToggle.innerHTML = '▶️';
+        playToggle.title = 'Lancer l\'animation';
+        playToggle.classList.remove('playing');
+    }
     
     // Retourner à la frame de travail actuelle
     loadFrame(currentFrame);
@@ -1826,6 +1850,9 @@ function initEventListeners() {
     
     // Menu hamburger
     document.getElementById('menuToggle')?.addEventListener('click', toggleToolbar);
+    
+    // Bouton play dans la barre du haut
+    document.getElementById('playToggle')?.addEventListener('click', previewAnimation);
     
     // Event listeners pour TOUS les boutons desktop dans sidebar
     document.getElementById('previewBtn2')?.addEventListener('click', () => {
