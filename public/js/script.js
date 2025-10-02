@@ -1075,9 +1075,10 @@ function rgbToHex(rgb) {
     return '#000000'; // Fallback
 }
 
-// Styles pour les marqueurs de pixels (le reste est géré par le CSS principal)
+// Styles pour les marqueurs de pixels - Responsive selon la plateforme
 const styleSheet = document.createElement('style');
 styleSheet.textContent = `
+/* Styles par défaut pour mobile */
 .previous-pixel-marker {
     position: absolute;
     width: 4px;
@@ -1109,6 +1110,21 @@ styleSheet.textContent = `
     transform: translate(-50%, -50%);
     border-radius: 50%;
     pointer-events: none;
+}
+
+/* Styles pour desktop - plus grands et visibles */
+@media (min-width: 1024px) {
+    .previous-pixel-marker {
+        width: 8px !important;
+        height: 8px !important;
+        border: 1px solid rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .next-pixel-marker-1, .next-pixel-marker-2 {
+        width: 6px !important;
+        height: 6px !important;
+        border: 1px solid rgba(0, 0, 0, 0.3) !important;
+    }
 }
 `;
 document.head.appendChild(styleSheet);
