@@ -497,3 +497,36 @@ html, body {
         min-height: 2px !important;
     }
 }
+
+
+/* ===================================================================
+   CORRECTIONS SUPPLÉMENTAIRES - DESKTOP UNIQUEMENT
+   =================================================================== */
+
+@media (min-width: 1024px) {
+    /* Fixer la taille des miniatures pour éviter le redimensionnement */
+    .frame-thumbnail {
+        width: 100% !important;
+        height: 60px !important;
+        min-height: 60px !important;
+        max-height: 60px !important;
+        flex-shrink: 0 !important;
+    }
+    
+    /* Corriger les marqueurs pour qu'ils prennent la couleur des frames */
+    .previous-pixel-marker {
+        background-color: inherit !important;
+        border: 1px solid rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    .next-pixel-marker-1, .next-pixel-marker-2 {
+        background-color: inherit !important;
+        border: 1px solid rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    /* Améliorer la visibilité des miniatures */
+    .frame-container {
+        min-width: 120px !important;
+        margin-bottom: 8px !important;
+    }
+}
