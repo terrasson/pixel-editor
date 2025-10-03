@@ -20,7 +20,6 @@ let animationInterval = null;
 let history = []; // Historique des états de la frame courante
 let historyIndex = -1; // Index actuel dans l'historique
 const maxHistorySize = 50; // Nombre maximum d'étapes dans l'historique
-let hasDrawnInCurrentAction = false; // Pour éviter les sauvegardes multiples pendant une action
 
 // Initialisation de la grille
 function initGrid() {
@@ -39,11 +38,8 @@ function initGrid() {
 
 // Fonctions de dessin
 function startDrawing(e) {
-    // Sauvegarder l'état avant de commencer à dessiner (seulement si pas déjà fait)
-    if (!hasDrawnInCurrentAction) {
-        saveToHistory();
-        hasDrawnInCurrentAction = true;
-    }
+    // Sauvegarder l'état avant de commencer à dessiner
+    saveToHistory();
     isDrawing = true;
     draw(e);
 }
@@ -75,7 +71,6 @@ function draw(e) {
 
 function stopDrawing() {
     isDrawing = false;
-    hasDrawnInCurrentAction = false; // Réinitialiser pour la prochaine action
 }
 
 // Gestion des couleurs
