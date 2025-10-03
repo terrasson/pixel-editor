@@ -450,12 +450,40 @@ body::before {
     transform: scale(1.05);
 }
 
-/* Outils de dessin compacts */
-.compact-drawing-tools {
+/* Ligne principale des outils */
+.compact-main-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Outils de gauche : Gomme + Couleur actuelle */
+.compact-left-tools {
     display: flex;
     align-items: center;
     gap: 6px;
-    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Outils de droite : Undo/Redo */
+.compact-right-tools {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* Indicateur de couleur actuelle */
+.compact-current-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    background-color: #000000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
 }
 
 .compact-eraser-btn {
@@ -476,18 +504,19 @@ body::before {
 }
 
 .compact-undo-redo-btn {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border: none;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.2);
     color: white;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .compact-undo-redo-btn:hover {
@@ -498,9 +527,13 @@ body::before {
 /* Couleurs preset compactes */
 .compact-preset-colors {
     display: flex;
-    gap: 4px;
+    gap: 3px;
     justify-content: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    flex: 1;
+    min-width: 0;
+    padding: 2px 0;
 }
 
 .compact-color-btn {
