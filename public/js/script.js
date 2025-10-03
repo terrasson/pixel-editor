@@ -413,6 +413,9 @@ function initColorPicker() {
             document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
         }
         
+        // Mettre à jour l'indicateur de couleur
+        updateCurrentColorDisplay();
+        
         // Activer le bouton de validation s'il y a une couleur en attente
         if (validateBtn && !isPredefinedColor(pendingColor)) {
             validateBtn.disabled = false;
@@ -492,8 +495,14 @@ function updateCompactColorSelection(selectedBtn) {
 // Fonction pour mettre à jour l'indicateur de couleur actuelle
 function updateCurrentColorDisplay() {
     const currentColorDisplay = document.getElementById('currentColorDisplay');
+    const colorPicker = document.getElementById('colorPicker');
+    
     if (currentColorDisplay) {
         currentColorDisplay.style.backgroundColor = currentColor;
+    }
+    
+    if (colorPicker) {
+        colorPicker.value = currentColor;
     }
 }
 

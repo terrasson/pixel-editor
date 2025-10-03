@@ -83,7 +83,10 @@
                     <!-- Gauche : Gomme + Couleur actuelle -->
                     <div class="compact-left-tools">
                         <button id="eraserBtn" class="compact-eraser-btn">Gomme</button>
-                        <div class="compact-current-color" id="currentColorDisplay"></div>
+                        <div class="compact-current-color-container">
+                            <input type="color" id="colorPicker" value="#000000" class="compact-color-picker">
+                            <div class="compact-current-color" id="currentColorDisplay"></div>
+                        </div>
                     </div>
                     
                     <!-- Centre : Couleurs preset -->

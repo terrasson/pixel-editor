@@ -440,6 +440,26 @@ body::before {
     flex-shrink: 0;
 }
 
+/* Container pour la couleur actuelle avec sélecteur caché */
+.compact-current-color-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Sélecteur de couleur invisible mais cliquable */
+.compact-color-picker {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    opacity: 0;
+    z-index: 2;
+}
+
 /* Indicateur de couleur actuelle */
 .compact-current-color {
     width: 24px;
@@ -449,6 +469,8 @@ body::before {
     background-color: #000000;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     flex-shrink: 0;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .compact-eraser-btn {
