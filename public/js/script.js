@@ -260,6 +260,13 @@ async function showLocalProjects() {
                 });
             }
             
+            // Charger la palette personnalisée si elle existe
+            if (project.custom_palette || project.customPalette) {
+                const palette = project.custom_palette || project.customPalette;
+                customPalette = typeof palette === 'string' ? JSON.parse(palette) : palette;
+                updateCompactPalette(); // Mettre à jour l'affichage
+            }
+            
             // Définir l'ID du projet actuel pour les futures sauvegardes
             currentProjectId = project.id;
             
@@ -1194,6 +1201,7 @@ async function saveToFile() {
             frames: frames,
             currentFrame: currentFrame,
             customColors: customColors,
+            customPalette: customPalette, // Ajouter la palette personnalisée
             created: new Date().toISOString(),
             version: '2.0'
         };
@@ -1851,7 +1859,8 @@ async function saveToServer() {
             name: fileName,
             frames: frames,
             currentFrame: currentFrame,
-            customColors: customColors
+            customColors: customColors,
+            customPalette: customPalette // Ajouter la palette personnalisée
         };
 
         const response = await fetch('/api/save', {
@@ -1912,6 +1921,12 @@ async function loadFromServer() {
             customColors = data.customColors;
             saveCustomColors();
             updateColorPalette();
+        }
+        
+        // Charger la palette personnalisée si elle existe
+        if (data.customPalette) {
+            customPalette = data.customPalette;
+            updateCompactPalette(); // Mettre à jour l'affichage
         }
         
         const title = document.getElementById('projectTitle');
@@ -2355,6 +2370,12 @@ function importProjectData(projectData) {
             });
         }
         
+        // Importer la palette personnalisée
+        if (projectData.customPalette && Array.isArray(projectData.customPalette)) {
+            customPalette = projectData.customPalette;
+            updateCompactPalette(); // Mettre à jour l'affichage
+        }
+        
         // Mettre à jour l'interface
         const title = document.getElementById('projectTitle');
         if (title) {
@@ -2396,6 +2417,7 @@ function createShareableProject() {
         frames: frames,
         currentFrame: currentFrame,
         customColors: customColors,
+        customPalette: customPalette, // Ajouter la palette personnalisée
         
         // Informations pour la compatibilité
         gridSize: { width: 32, height: 32 },
