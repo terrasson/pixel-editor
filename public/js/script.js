@@ -443,6 +443,58 @@ function initColorPicker() {
     }
 
     // Note: Les event listeners pour les boutons de couleur sont maintenant gérés dans updateColorPalette()
+    
+    // Ajouter les event listeners pour les couleurs prédéfinies compactes
+    initCompactColorButtons();
+}
+
+// Fonction pour initialiser les boutons de couleur compacts
+function initCompactColorButtons() {
+    const compactColorBtns = document.querySelectorAll('.compact-color-btn');
+    
+    compactColorBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Récupérer la couleur depuis le style background-color
+            const color = btn.style.backgroundColor;
+            const hexColor = rgbToHex(color);
+            
+            // Mettre à jour la couleur actuelle
+            currentColor = hexColor;
+            
+            // Mettre à jour l'indicateur de couleur actuelle
+            updateCurrentColorDisplay();
+            
+            // Désactiver la gomme
+            isErasing = false;
+            const eraserBtn = document.getElementById('eraserBtn');
+            if (eraserBtn) {
+                eraserBtn.classList.remove('active');
+                document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
+            }
+            
+            // Mettre à jour l'affichage visuel des boutons
+            updateCompactColorSelection(btn);
+        });
+    });
+}
+
+// Fonction pour mettre à jour la sélection visuelle des couleurs compactes
+function updateCompactColorSelection(selectedBtn) {
+    const compactColorBtns = document.querySelectorAll('.compact-color-btn');
+    
+    compactColorBtns.forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    selectedBtn.classList.add('selected');
+}
+
+// Fonction pour mettre à jour l'indicateur de couleur actuelle
+function updateCurrentColorDisplay() {
+    const currentColorDisplay = document.getElementById('currentColorDisplay');
+    if (currentColorDisplay) {
+        currentColorDisplay.style.backgroundColor = currentColor;
+    }
 }
 
 // ========================================

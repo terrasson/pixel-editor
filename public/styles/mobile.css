@@ -413,42 +413,7 @@ body::before {
     gap: 8px;
 }
 
-/* Section couleur compacte */
-.compact-color-section {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    justify-content: center;
-}
-
-.compact-color-picker {
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.compact-validate-btn {
-    width: 28px;
-    height: 28px;
-    border: none;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.compact-validate-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
-}
+/* Section couleur supprimée - plus nécessaire */
 
 /* Ligne principale des outils */
 .compact-main-tools {
@@ -553,9 +518,9 @@ body::before {
 }
 
 .compact-color-btn.selected {
-    border-color: white;
+    border: 3px solid rgba(255, 255, 255, 0.8);
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 /* Section secondaire cachée sur mobile - utiliser l'interface compacte */
