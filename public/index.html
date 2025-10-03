@@ -110,6 +110,27 @@
             </div>
         </div>
 
+        <!-- Modal pour personnaliser la palette -->
+        <div id="paletteModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Personnaliser la palette</h3>
+                    <button id="closePaletteModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="palette-customizer">
+                        <div class="palette-colors-grid" id="paletteColorsGrid">
+                            <!-- Les couleurs seront générées dynamiquement -->
+                        </div>
+                        <div class="palette-actions">
+                            <button id="resetPaletteBtn" class="reset-btn">🔄 Couleurs par défaut</button>
+                            <button id="savePaletteBtn" class="save-btn">💾 Sauvegarder</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="tools-secondary">
             <div class="color-palette">
                 <!-- Ligne 1 : Color picker + Validate -->

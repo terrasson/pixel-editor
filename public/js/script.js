@@ -8,6 +8,7 @@ let clipboard = null; // Pour le copier-coller
 let copiedFrame = null;
 let customColors = []; // Palette de couleurs personnalisées
 const maxCustomColors = 8; // Nombre maximum de couleurs personnalisées
+let customPalette = null; // Palette personnalisée pour le projet
 let autoSaveProjects = []; // Projets sauvegardés automatiquement en local
 const maxAutoSaveProjects = 10; // Nombre maximum de projets auto-sauvegardés
 
@@ -455,28 +456,72 @@ function initColorPicker() {
 function initCompactColorButtons() {
     const compactColorBtns = document.querySelectorAll('.compact-color-btn');
     
-    compactColorBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Récupérer la couleur depuis le style background-color
-            const color = btn.style.backgroundColor;
-            const hexColor = rgbToHex(color);
-            
-            // Mettre à jour la couleur actuelle
-            currentColor = hexColor;
-            
-            // Mettre à jour l'indicateur de couleur actuelle
-            updateCurrentColorDisplay();
-            
-            // Désactiver la gomme
-            isErasing = false;
-            const eraserBtn = document.getElementById('eraserBtn');
-            if (eraserBtn) {
-                eraserBtn.classList.remove('active');
-                document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
+    compactColorBtns.forEach((btn, index) => {
+        let longPressTimer = null;
+        let isLongPress = false;
+        
+        // Clic normal - sélectionner la couleur
+        btn.addEventListener('click', (e) => {
+            if (!isLongPress) {
+                // Récupérer la couleur depuis le style background-color
+                const color = btn.style.backgroundColor;
+                const hexColor = rgbToHex(color);
+                
+                // Mettre à jour la couleur actuelle
+                currentColor = hexColor;
+                
+                // Mettre à jour l'indicateur de couleur actuelle
+                updateCurrentColorDisplay();
+                
+                // Désactiver la gomme
+                isErasing = false;
+                const eraserBtn = document.getElementById('eraserBtn');
+                if (eraserBtn) {
+                    eraserBtn.classList.remove('active');
+                    document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
+                }
+                
+                // Mettre à jour l'affichage visuel des boutons
+                updateCompactColorSelection(btn);
             }
-            
-            // Mettre à jour l'affichage visuel des boutons
-            updateCompactColorSelection(btn);
+        });
+        
+        // Détection de l'appui long
+        btn.addEventListener('mousedown', (e) => {
+            isLongPress = false;
+            longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                openColorCustomizer(index, btn);
+            }, 500); // 500ms pour déclencher l'appui long
+        });
+        
+        btn.addEventListener('mouseup', () => {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+            }
+        });
+        
+        btn.addEventListener('mouseleave', () => {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+            }
+        });
+        
+        // Support tactile
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isLongPress = false;
+            longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                openColorCustomizer(index, btn);
+            }, 500);
+        });
+        
+        btn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+            }
         });
     });
 }
@@ -504,6 +549,195 @@ function updateCurrentColorDisplay() {
     if (colorPicker) {
         colorPicker.value = currentColor;
     }
+}
+
+// ========================================
+// PERSONNALISATION DE PALETTE
+// ========================================
+
+// Ouvrir le personnalisateur pour une couleur spécifique
+function openColorCustomizer(colorIndex, colorBtn) {
+    const currentColor = colorBtn.style.backgroundColor;
+    const hexColor = rgbToHex(currentColor);
+    
+    // Créer une modal simple pour changer cette couleur
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Changer la couleur ${colorIndex + 1}</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="color-customizer">
+                    <div class="current-color-preview" style="background-color: ${hexColor}"></div>
+                    <input type="color" id="colorCustomizer" value="${hexColor}" class="color-picker-full">
+                    <div class="color-actions">
+                        <button id="resetColorBtn" class="reset-btn">🔄 Couleur par défaut</button>
+                        <button id="saveColorBtn" class="save-btn">💾 Sauvegarder</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event listeners
+    modal.querySelector('.close-btn').addEventListener('click', () => {
+        modal.remove();
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+    
+    const colorPicker = modal.querySelector('#colorCustomizer');
+    const preview = modal.querySelector('.current-color-preview');
+    
+    colorPicker.addEventListener('input', (e) => {
+        preview.style.backgroundColor = e.target.value;
+    });
+    
+    modal.querySelector('#resetColorBtn').addEventListener('click', () => {
+        const defaultColors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+        const defaultColor = defaultColors[colorIndex];
+        colorPicker.value = defaultColor;
+        preview.style.backgroundColor = defaultColor;
+    });
+    
+    modal.querySelector('#saveColorBtn').addEventListener('click', () => {
+        const newColor = colorPicker.value;
+        colorBtn.style.backgroundColor = newColor;
+        
+        // Mettre à jour la palette personnalisée
+        if (!customPalette) {
+            customPalette = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+        }
+        customPalette[colorIndex] = newColor;
+        
+        showNotification('Couleur mise à jour !', 'success');
+        modal.remove();
+    });
+}
+
+// Ouvrir la modal de personnalisation
+function openPaletteModal() {
+    const modal = document.getElementById('paletteModal');
+    if (modal) {
+        modal.style.display = 'block';
+        generatePaletteCustomizer();
+    }
+}
+
+// Fermer la modal
+function closePaletteModal() {
+    const modal = document.getElementById('paletteModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Générer l'interface de personnalisation
+function generatePaletteCustomizer() {
+    const grid = document.getElementById('paletteColorsGrid');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    
+    // Utiliser la palette personnalisée si elle existe, sinon les couleurs par défaut
+    const colors = customPalette || ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    const labels = ['Noir', 'Blanc', 'Rouge', 'Vert', 'Bleu', 'Jaune', 'Magenta', 'Cyan'];
+    
+    colors.forEach((color, index) => {
+        const colorItem = document.createElement('div');
+        colorItem.className = 'palette-color-item';
+        
+        colorItem.innerHTML = `
+            <div class="palette-color-preview" style="background-color: ${color}" data-color-index="${index}">
+                <input type="color" class="palette-color-input" value="${color}" data-color-index="${index}">
+            </div>
+            <div class="palette-color-label">${labels[index]}</div>
+        `;
+        
+        grid.appendChild(colorItem);
+    });
+    
+    // Ajouter les event listeners
+    const colorInputs = grid.querySelectorAll('.palette-color-input');
+    colorInputs.forEach(input => {
+        input.addEventListener('change', (e) => {
+            const index = parseInt(e.target.dataset.colorIndex);
+            const newColor = e.target.value;
+            const preview = e.target.previousElementSibling;
+            preview.style.backgroundColor = newColor;
+        });
+    });
+}
+
+// Réinitialiser la palette aux couleurs par défaut
+function resetPaletteToDefault() {
+    customPalette = null;
+    generatePaletteCustomizer();
+    updateCompactPalette();
+}
+
+// Sauvegarder la palette personnalisée
+function saveCustomPalette() {
+    const colorInputs = document.querySelectorAll('.palette-color-input');
+    const newPalette = Array.from(colorInputs).map(input => input.value);
+    
+    customPalette = newPalette;
+    updateCompactPalette();
+    closePaletteModal();
+    
+    // Afficher un message de confirmation
+    showNotification('Palette personnalisée sauvegardée !', 'success');
+}
+
+// Mettre à jour la palette compacte
+function updateCompactPalette() {
+    const colors = customPalette || ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    const compactBtns = document.querySelectorAll('.compact-color-btn');
+    
+    compactBtns.forEach((btn, index) => {
+        if (colors[index]) {
+            btn.style.backgroundColor = colors[index];
+        }
+    });
+}
+
+// Fonction pour afficher des notifications
+function showNotification(message, type = 'info') {
+    // Créer une notification temporaire
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? 'rgba(100, 255, 100, 0.9)' : 'rgba(100, 150, 255, 0.9)'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 1001;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Supprimer après 3 secondes
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 3000);
 }
 
 // ========================================
