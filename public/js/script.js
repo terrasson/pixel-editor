@@ -17,9 +17,10 @@ let isAnimationPlaying = false;
 let animationInterval = null;
 
 // Variables pour l'historique undo/redo
-let history = []; // Historique des états de la frame courante
+let history = []; // Historique des changements de pixels
 let historyIndex = -1; // Index actuel dans l'historique
 const maxHistorySize = 50; // Nombre maximum d'étapes dans l'historique
+let lastPixelStates = new Map(); // État précédent de chaque pixel
 
 // Initialisation de la grille
 function initGrid() {
@@ -56,6 +57,24 @@ function draw(e) {
         !e.target.classList.contains('next-pixel-marker-1') &&
         !e.target.classList.contains('next-pixel-marker-2')) {
         
+        // Récupérer l'index du pixel
+        const pixels = document.querySelectorAll('.pixel');
+        const pixelIndex = Array.from(pixels).indexOf(e.target);
+        
+        // Sauvegarder l'état précédent du pixel si pas déjà fait
+        if (!lastPixelStates.has(pixelIndex)) {
+            lastPixelStates.set(pixelIndex, {
+                color: e.target.style.backgroundColor || '#FFFFFF',
+                isEmpty: e.target.classList.contains('empty')
+            });
+            
+            // Sauvegarder ce changement dans l'historique
+            savePixelChangeToHistory(pixelIndex, {
+                color: e.target.style.backgroundColor || '#FFFFFF',
+                isEmpty: e.target.classList.contains('empty')
+            });
+        }
+        
         if (isErasing) {
             // Mode gomme
             e.target.style.backgroundColor = '#FFFFFF';
@@ -71,6 +90,8 @@ function draw(e) {
 
 function stopDrawing() {
     isDrawing = false;
+    // Réinitialiser les états des pixels pour la prochaine action
+    lastPixelStates.clear();
 }
 
 // Gestion des couleurs
@@ -746,7 +767,7 @@ function showNotification(message, type = 'info') {
 // SYSTÈME UNDO/REDO
 // ========================================
 
-// Sauvegarder l'état actuel dans l'historique
+// Sauvegarder l'état actuel dans l'historique (méthode complète - pour l'initialisation)
 function saveToHistory() {
     const pixels = document.querySelectorAll('.pixel');
     const currentState = Array.from(pixels).map(pixel => ({
@@ -772,20 +793,58 @@ function saveToHistory() {
     updateUndoRedoButtons();
 }
 
+// Sauvegarder un changement de pixel individuel
+function savePixelChangeToHistory(pixelIndex, previousState) {
+    // Supprimer les états futurs si on est au milieu de l'historique
+    if (historyIndex < history.length - 1) {
+        history = history.slice(0, historyIndex + 1);
+    }
+    
+    // Ajouter le changement de pixel
+    history.push({
+        type: 'pixelChange',
+        pixelIndex: pixelIndex,
+        previousState: previousState
+    });
+    historyIndex++;
+    
+    // Limiter la taille de l'historique
+    if (history.length > maxHistorySize) {
+        history = history.slice(-maxHistorySize);
+        historyIndex = history.length - 1;
+    }
+    
+    updateUndoRedoButtons();
+}
+
 // Restaurer un état depuis l'historique
 function restoreFromHistory(state) {
     const pixels = document.querySelectorAll('.pixel');
     
-    state.forEach((pixelData, i) => {
-        if (pixels[i]) {
-            pixels[i].style.backgroundColor = pixelData.color;
-            if (pixelData.isEmpty) {
-                pixels[i].classList.add('empty');
+    if (state.type === 'pixelChange') {
+        // Restaurer un changement de pixel individuel
+        const pixel = pixels[state.pixelIndex];
+        if (pixel) {
+            pixel.style.backgroundColor = state.previousState.color;
+            if (state.previousState.isEmpty) {
+                pixel.classList.add('empty');
             } else {
-                pixels[i].classList.remove('empty');
+                pixel.classList.remove('empty');
             }
         }
-    });
+    } else {
+        // Restaurer un état complet (pour l'initialisation)
+        state.forEach((pixelData, i) => {
+            if (pixels[i]) {
+                pixels[i].style.backgroundColor = pixelData.color;
+                if (pixelData.isEmpty) {
+                    pixels[i].classList.add('empty');
+                } else {
+                    pixels[i].classList.remove('empty');
+                }
+            }
+        });
+    }
     
     // Sauvegarder la frame courante avec le nouvel état
     saveCurrentFrame();
