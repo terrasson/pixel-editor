@@ -392,21 +392,142 @@ body::before {
     100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
 }
 
-/* Section secondaire pour couleurs et gomme - Liquid Glass améliorée */
-.tools-secondary {
-    padding: 12px;
-    /* Fallback pour navigateurs sans backdrop-filter */
-    background: rgba(235, 235, 250, 0.98);
+/* Interface compacte mobile - Liquid Glass */
+.tools-compact {
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 18px;
     margin: 6px;
     box-shadow: 
-        0 6px 20px rgba(0, 0, 0, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    /* Rendre plus visible */
-    min-height: 120px;
+        0 8px 24px rgba(0, 0, 0, 0.15),
+        0 4px 12px rgba(103, 126, 234, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.compact-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Section couleur compacte */
+.compact-color-section {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+}
+
+.compact-color-picker {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.compact-validate-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.compact-validate-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+/* Outils de dessin compacts */
+.compact-drawing-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+}
+
+.compact-eraser-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.compact-eraser-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.compact-undo-redo-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.compact-undo-redo-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+/* Couleurs preset compactes */
+.compact-preset-colors {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.compact-color-btn {
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.compact-color-btn:hover {
+    transform: scale(1.1);
+    border-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.compact-color-btn.selected {
+    border-color: white;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+    transform: scale(1.1);
+}
+
+/* Section secondaire cachée sur mobile - utiliser l'interface compacte */
+.tools-secondary {
+    display: none;
 }
 
 /* Amélioration pour navigateurs supportant backdrop-filter */
