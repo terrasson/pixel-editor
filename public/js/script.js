@@ -807,10 +807,14 @@ function undo() {
 
 // Fonction Redo (rétablir)
 function redo() {
+    console.log('🔄 Fonction redo appelée', { historyIndex, historyLength: history.length });
     if (historyIndex < history.length - 1) {
         historyIndex++;
         restoreFromHistory(history[historyIndex]);
         updateUndoRedoButtons();
+        console.log('✅ Redo effectué', { newHistoryIndex: historyIndex });
+    } else {
+        console.log('❌ Redo impossible - déjà à la fin');
     }
 }
 
@@ -844,10 +848,16 @@ function initHistory() {
     
     if (undoBtn) {
         undoBtn.addEventListener('click', undo);
+        console.log('✅ Event listener undo attaché');
+    } else {
+        console.warn('❌ Bouton undo non trouvé');
     }
     
     if (redoBtn) {
         redoBtn.addEventListener('click', redo);
+        console.log('✅ Event listener redo attaché');
+    } else {
+        console.warn('❌ Bouton redo non trouvé');
     }
     
     updateUndoRedoButtons();
