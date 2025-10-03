@@ -820,9 +820,15 @@ function redo() {
 
 // Mettre à jour l'état des boutons undo/redo
 function updateUndoRedoButtons() {
+    // Boutons mobile
     const undoBtn = document.getElementById('undoBtn');
     const redoBtn = document.getElementById('redoBtn');
     
+    // Boutons desktop
+    const undoBtnDesktop = document.getElementById('undoBtnDesktop');
+    const redoBtnDesktop = document.getElementById('redoBtnDesktop');
+    
+    // Mettre à jour les boutons mobile
     if (undoBtn) {
         undoBtn.disabled = historyIndex <= 0;
         undoBtn.title = historyIndex <= 0 ? 'Rien à annuler' : `Annuler (${historyIndex} actions disponibles)`;
@@ -831,6 +837,17 @@ function updateUndoRedoButtons() {
     if (redoBtn) {
         redoBtn.disabled = historyIndex >= history.length - 1;
         redoBtn.title = historyIndex >= history.length - 1 ? 'Rien à rétablir' : `Rétablir (${history.length - historyIndex - 1} actions disponibles)`;
+    }
+    
+    // Mettre à jour les boutons desktop
+    if (undoBtnDesktop) {
+        undoBtnDesktop.disabled = historyIndex <= 0;
+        undoBtnDesktop.title = historyIndex <= 0 ? 'Rien à annuler' : `Annuler (${historyIndex} actions disponibles)`;
+    }
+    
+    if (redoBtnDesktop) {
+        redoBtnDesktop.disabled = historyIndex >= history.length - 1;
+        redoBtnDesktop.title = historyIndex >= history.length - 1 ? 'Rien à rétablir' : `Rétablir (${history.length - historyIndex - 1} actions disponibles)`;
     }
 }
 
@@ -842,22 +859,40 @@ function initHistory() {
     // Sauvegarder l'état initial (grille vide)
     saveToHistory();
     
-    // Configurer les event listeners pour les boutons
+    // Configurer les event listeners pour les boutons mobile
     const undoBtn = document.getElementById('undoBtn');
     const redoBtn = document.getElementById('redoBtn');
     
     if (undoBtn) {
         undoBtn.addEventListener('click', undo);
-        console.log('✅ Event listener undo attaché');
+        console.log('✅ Event listener undo mobile attaché');
     } else {
-        console.warn('❌ Bouton undo non trouvé');
+        console.warn('❌ Bouton undo mobile non trouvé');
     }
     
     if (redoBtn) {
         redoBtn.addEventListener('click', redo);
-        console.log('✅ Event listener redo attaché');
+        console.log('✅ Event listener redo mobile attaché');
     } else {
-        console.warn('❌ Bouton redo non trouvé');
+        console.warn('❌ Bouton redo mobile non trouvé');
+    }
+    
+    // Configurer les event listeners pour les boutons desktop
+    const undoBtnDesktop = document.getElementById('undoBtnDesktop');
+    const redoBtnDesktop = document.getElementById('redoBtnDesktop');
+    
+    if (undoBtnDesktop) {
+        undoBtnDesktop.addEventListener('click', undo);
+        console.log('✅ Event listener undo desktop attaché');
+    } else {
+        console.warn('❌ Bouton undo desktop non trouvé');
+    }
+    
+    if (redoBtnDesktop) {
+        redoBtnDesktop.addEventListener('click', redo);
+        console.log('✅ Event listener redo desktop attaché');
+    } else {
+        console.warn('❌ Bouton redo desktop non trouvé');
     }
     
     updateUndoRedoButtons();
