@@ -798,10 +798,14 @@ function restoreFromHistory(state) {
 
 // Fonction Undo (annuler)
 function undo() {
+    console.log('↺ Fonction undo appelée', { historyIndex, historyLength: history.length });
     if (historyIndex > 0) {
         historyIndex--;
         restoreFromHistory(history[historyIndex]);
         updateUndoRedoButtons();
+        console.log('✅ Undo effectué', { newHistoryIndex: historyIndex });
+    } else {
+        console.log('❌ Undo impossible - déjà au début');
     }
 }
 
