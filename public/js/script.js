@@ -810,10 +810,22 @@ function saveActionToHistory(startState, modifiedPixels) {
         history = history.slice(0, historyIndex + 1);
     }
     
-    // Ajouter l'action complète
+    // Créer l'état final avec les couleurs originales
+    const finalState = Array.from(startState);
+    modifiedPixels.forEach((pixelState, pixelIndex) => {
+        if (finalState[pixelIndex]) {
+            finalState[pixelIndex] = {
+                color: pixelState.color,
+                isEmpty: pixelState.isEmpty
+            };
+        }
+    });
+    
+    // Ajouter l'action complète avec l'état final
     history.push({
         type: 'action',
         startState: startState,
+        finalState: finalState,
         modifiedPixels: new Map(modifiedPixels)
     });
     historyIndex++;
@@ -869,36 +881,46 @@ function restoreFromHistoryForRedo(state) {
     const pixels = document.querySelectorAll('.pixel');
     
     if (state.type === 'action') {
-        // Pour redo, on doit restaurer l'état après l'action
-        // On utilise l'état de départ et on applique les modifications
-        state.startState.forEach((pixelData, i) => {
-            if (pixels[i]) {
-                pixels[i].style.backgroundColor = pixelData.color;
-                if (pixelData.isEmpty) {
-                    pixels[i].classList.add('empty');
-                } else {
-                    pixels[i].classList.remove('empty');
+        // Pour redo, on restaure directement l'état final avec les bonnes couleurs
+        if (state.finalState) {
+            state.finalState.forEach((pixelData, i) => {
+                if (pixels[i]) {
+                    pixels[i].style.backgroundColor = pixelData.color;
+                    if (pixelData.isEmpty) {
+                        pixels[i].classList.add('empty');
+                    } else {
+                        pixels[i].classList.remove('empty');
+                    }
                 }
-            }
-        });
-        
-        // Puis appliquer les modifications de l'action
-        state.modifiedPixels.forEach((previousState, pixelIndex) => {
-            const pixel = pixels[pixelIndex];
-            if (pixel) {
-                // Appliquer la couleur actuelle (pas l'ancienne)
-                if (previousState.isEmpty) {
-                    // Si c'était vide, maintenant c'est coloré
-                    pixel.style.backgroundColor = currentColor;
-                    pixel.classList.remove('empty');
-                } else {
-                    // Si c'était coloré, maintenant c'est la couleur actuelle
-                    pixel.style.backgroundColor = currentColor;
-                    pixel.classList.remove('empty');
+            });
+            console.log('↻ Action rétablie avec couleurs originales', { pixelsRestaurés: state.finalState.length });
+        } else {
+            // Fallback si finalState n'existe pas
+            state.startState.forEach((pixelData, i) => {
+                if (pixels[i]) {
+                    pixels[i].style.backgroundColor = pixelData.color;
+                    if (pixelData.isEmpty) {
+                        pixels[i].classList.add('empty');
+                    } else {
+                        pixels[i].classList.remove('empty');
+                    }
                 }
-            }
-        });
-        console.log('↻ Action rétablie', { pixelsModifiés: state.modifiedPixels.size });
+            });
+            
+            // Appliquer les modifications avec les couleurs originales
+            state.modifiedPixels.forEach((pixelState, pixelIndex) => {
+                const pixel = pixels[pixelIndex];
+                if (pixel) {
+                    pixel.style.backgroundColor = pixelState.color;
+                    if (pixelState.isEmpty) {
+                        pixel.classList.add('empty');
+                    } else {
+                        pixel.classList.remove('empty');
+                    }
+                }
+            });
+            console.log('↻ Action rétablie (fallback)', { pixelsModifiés: state.modifiedPixels.size });
+        }
     } else {
         // Restaurer un état complet (pour l'initialisation)
         state.forEach((pixelData, i) => {
