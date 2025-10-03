@@ -20,7 +20,8 @@ let animationInterval = null;
 let history = []; // Historique des changements de pixels
 let historyIndex = -1; // Index actuel dans l'historique
 const maxHistorySize = 50; // Nombre maximum d'étapes dans l'historique
-let lastPixelStates = new Map(); // État précédent de chaque pixel
+let currentActionPixels = new Map(); // Pixels modifiés dans l'action actuelle
+let actionStartState = null; // État de la grille au début de l'action
 
 // Initialisation de la grille
 function initGrid() {
@@ -39,8 +40,16 @@ function initGrid() {
 
 // Fonctions de dessin
 function startDrawing(e) {
-    // Sauvegarder l'état avant de commencer à dessiner
-    saveToHistory();
+    // Sauvegarder l'état de la grille au début de l'action
+    const pixels = document.querySelectorAll('.pixel');
+    actionStartState = Array.from(pixels).map(pixel => ({
+        color: pixel.style.backgroundColor || '#FFFFFF',
+        isEmpty: pixel.classList.contains('empty')
+    }));
+    
+    // Réinitialiser les pixels de l'action actuelle
+    currentActionPixels.clear();
+    
     isDrawing = true;
     draw(e);
 }
@@ -61,15 +70,9 @@ function draw(e) {
         const pixels = document.querySelectorAll('.pixel');
         const pixelIndex = Array.from(pixels).indexOf(e.target);
         
-        // Sauvegarder l'état précédent du pixel si pas déjà fait
-        if (!lastPixelStates.has(pixelIndex)) {
-            lastPixelStates.set(pixelIndex, {
-                color: e.target.style.backgroundColor || '#FFFFFF',
-                isEmpty: e.target.classList.contains('empty')
-            });
-            
-            // Sauvegarder ce changement dans l'historique
-            savePixelChangeToHistory(pixelIndex, {
+        // Enregistrer ce pixel comme modifié dans l'action actuelle
+        if (!currentActionPixels.has(pixelIndex)) {
+            currentActionPixels.set(pixelIndex, {
                 color: e.target.style.backgroundColor || '#FFFFFF',
                 isEmpty: e.target.classList.contains('empty')
             });
@@ -90,8 +93,15 @@ function draw(e) {
 
 function stopDrawing() {
     isDrawing = false;
-    // Réinitialiser les états des pixels pour la prochaine action
-    lastPixelStates.clear();
+    
+    // Sauvegarder l'action complète dans l'historique si des pixels ont été modifiés
+    if (currentActionPixels.size > 0 && actionStartState) {
+        saveActionToHistory(actionStartState, currentActionPixels);
+    }
+    
+    // Réinitialiser pour la prochaine action
+    currentActionPixels.clear();
+    actionStartState = null;
 }
 
 // Gestion des couleurs
@@ -793,18 +803,18 @@ function saveToHistory() {
     updateUndoRedoButtons();
 }
 
-// Sauvegarder un changement de pixel individuel
-function savePixelChangeToHistory(pixelIndex, previousState) {
+// Sauvegarder une action complète (trait, forme, etc.)
+function saveActionToHistory(startState, modifiedPixels) {
     // Supprimer les états futurs si on est au milieu de l'historique
     if (historyIndex < history.length - 1) {
         history = history.slice(0, historyIndex + 1);
     }
     
-    // Ajouter le changement de pixel
+    // Ajouter l'action complète
     history.push({
-        type: 'pixelChange',
-        pixelIndex: pixelIndex,
-        previousState: previousState
+        type: 'action',
+        startState: startState,
+        modifiedPixels: new Map(modifiedPixels)
     });
     historyIndex++;
     
@@ -815,23 +825,27 @@ function savePixelChangeToHistory(pixelIndex, previousState) {
     }
     
     updateUndoRedoButtons();
+    console.log('💾 Action sauvegardée', { pixelsModifiés: modifiedPixels.size, historyIndex });
 }
 
 // Restaurer un état depuis l'historique
 function restoreFromHistory(state) {
     const pixels = document.querySelectorAll('.pixel');
     
-    if (state.type === 'pixelChange') {
-        // Restaurer un changement de pixel individuel
-        const pixel = pixels[state.pixelIndex];
-        if (pixel) {
-            pixel.style.backgroundColor = state.previousState.color;
-            if (state.previousState.isEmpty) {
-                pixel.classList.add('empty');
-            } else {
-                pixel.classList.remove('empty');
+    if (state.type === 'action') {
+        // Restaurer une action complète (annuler tout le trait)
+        state.modifiedPixels.forEach((previousState, pixelIndex) => {
+            const pixel = pixels[pixelIndex];
+            if (pixel) {
+                pixel.style.backgroundColor = previousState.color;
+                if (previousState.isEmpty) {
+                    pixel.classList.add('empty');
+                } else {
+                    pixel.classList.remove('empty');
+                }
             }
-        }
+        });
+        console.log('↺ Action annulée', { pixelsRestaurés: state.modifiedPixels.size });
     } else {
         // Restaurer un état complet (pour l'initialisation)
         state.forEach((pixelData, i) => {
