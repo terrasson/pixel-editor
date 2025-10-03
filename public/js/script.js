@@ -828,7 +828,7 @@ function saveActionToHistory(startState, modifiedPixels) {
     console.log('💾 Action sauvegardée', { pixelsModifiés: modifiedPixels.size, historyIndex });
 }
 
-// Restaurer un état depuis l'historique
+// Restaurer un état depuis l'historique (pour undo)
 function restoreFromHistory(state) {
     const pixels = document.querySelectorAll('.pixel');
     
@@ -846,6 +846,59 @@ function restoreFromHistory(state) {
             }
         });
         console.log('↺ Action annulée', { pixelsRestaurés: state.modifiedPixels.size });
+    } else {
+        // Restaurer un état complet (pour l'initialisation)
+        state.forEach((pixelData, i) => {
+            if (pixels[i]) {
+                pixels[i].style.backgroundColor = pixelData.color;
+                if (pixelData.isEmpty) {
+                    pixels[i].classList.add('empty');
+                } else {
+                    pixels[i].classList.remove('empty');
+                }
+            }
+        });
+    }
+    
+    // Sauvegarder la frame courante avec le nouvel état
+    saveCurrentFrame();
+}
+
+// Restaurer un état pour redo (inverse de restoreFromHistory)
+function restoreFromHistoryForRedo(state) {
+    const pixels = document.querySelectorAll('.pixel');
+    
+    if (state.type === 'action') {
+        // Pour redo, on doit restaurer l'état après l'action
+        // On utilise l'état de départ et on applique les modifications
+        state.startState.forEach((pixelData, i) => {
+            if (pixels[i]) {
+                pixels[i].style.backgroundColor = pixelData.color;
+                if (pixelData.isEmpty) {
+                    pixels[i].classList.add('empty');
+                } else {
+                    pixels[i].classList.remove('empty');
+                }
+            }
+        });
+        
+        // Puis appliquer les modifications de l'action
+        state.modifiedPixels.forEach((previousState, pixelIndex) => {
+            const pixel = pixels[pixelIndex];
+            if (pixel) {
+                // Appliquer la couleur actuelle (pas l'ancienne)
+                if (previousState.isEmpty) {
+                    // Si c'était vide, maintenant c'est coloré
+                    pixel.style.backgroundColor = currentColor;
+                    pixel.classList.remove('empty');
+                } else {
+                    // Si c'était coloré, maintenant c'est la couleur actuelle
+                    pixel.style.backgroundColor = currentColor;
+                    pixel.classList.remove('empty');
+                }
+            }
+        });
+        console.log('↻ Action rétablie', { pixelsModifiés: state.modifiedPixels.size });
     } else {
         // Restaurer un état complet (pour l'initialisation)
         state.forEach((pixelData, i) => {
@@ -882,9 +935,10 @@ function redo() {
     console.log('🔄 Fonction redo appelée', { historyIndex, historyLength: history.length });
     if (historyIndex < history.length - 1) {
         historyIndex++;
-        restoreFromHistory(history[historyIndex]);
+        const nextState = history[historyIndex];
+        restoreFromHistoryForRedo(nextState);
         updateUndoRedoButtons();
-        console.log('✅ Redo effectué', { newHistoryIndex: historyIndex });
+        console.log('✅ Redo effectué', { newHistoryIndex: historyIndex, stateType: nextState.type });
     } else {
         console.log('❌ Redo impossible - déjà à la fin');
     }
