@@ -830,6 +830,17 @@ function saveActionToHistory(startState, modifiedPixels) {
         isEmpty: pixel.classList.contains('empty')
     }));
     
+    // Si c'est la première action (historyIndex === 0), s'assurer que history[0] est une grille vierge
+    if (historyIndex === 0 && history.length === 1) {
+        // Remplacer history[0] par une grille vierge
+        const emptyState = Array.from(pixels).map(() => ({
+            color: '#FFFFFF',
+            isEmpty: true
+        }));
+        history[0] = emptyState;
+        console.log('🔄 history[0] remplacé par une grille vierge');
+    }
+    
     // Ajouter simplement l'état final à l'historique
     history.push(finalState);
     historyIndex++;
