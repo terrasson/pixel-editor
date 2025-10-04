@@ -92,11 +92,24 @@ function draw(e) {
 }
 
 function stopDrawing() {
+    console.log('🛑 stopDrawing appelé', { 
+        isDrawing, 
+        currentActionPixelsSize: currentActionPixels.size, 
+        actionStartStateExists: !!actionStartState 
+    });
+    
     isDrawing = false;
     
     // Sauvegarder l'action complète dans l'historique si des pixels ont été modifiés
     if (currentActionPixels.size > 0 && actionStartState) {
+        console.log('✅ Sauvegarde de l\'action dans l\'historique', { 
+            pixelsModifiés: currentActionPixels.size 
+        });
         saveActionToHistory(actionStartState, currentActionPixels);
+    } else {
+        console.log('❌ Action NON sauvegardée', { 
+            raison: currentActionPixels.size === 0 ? 'Aucun pixel modifié' : 'actionStartState manquant' 
+        });
     }
     
     // Réinitialiser pour la prochaine action
