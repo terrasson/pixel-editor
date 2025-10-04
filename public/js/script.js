@@ -839,11 +839,16 @@ function saveActionToHistory(startState, modifiedPixels) {
         }));
         history[0] = emptyState;
         console.log('🔄 history[0] remplacé par une grille vierge');
+        
+        // Ajouter la première action à history[1] (pas history[0])
+        history.push(finalState);
+        historyIndex = 1; // Commencer à 1, pas 0
+        console.log('🔄 Première action sauvegardée à historyIndex: 1');
+    } else {
+        // Ajouter simplement l'état final à l'historique
+        history.push(finalState);
+        historyIndex++;
     }
-    
-    // Ajouter simplement l'état final à l'historique
-    history.push(finalState);
-    historyIndex++;
     
     // Limiter la taille de l'historique
     if (history.length > maxHistorySize) {
