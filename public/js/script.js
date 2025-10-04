@@ -829,7 +829,8 @@ function saveActionToHistory(startState, modifiedPixels) {
         type: 'action',
         startState: startState,
         finalState: finalState,
-        modifiedPixels: new Map(modifiedPixels)
+        modifiedPixels: new Map(modifiedPixels),
+        actionColor: currentColor // Sauvegarder la couleur utilisée pour cette action
     });
     historyIndex++;
     
@@ -884,46 +885,37 @@ function restoreFromHistoryForRedo(state) {
     const pixels = document.querySelectorAll('.pixel');
     
     if (state.type === 'action') {
-        // Pour redo, on restaure directement l'état final avec les bonnes couleurs
-        if (state.finalState) {
-            state.finalState.forEach((pixelData, i) => {
-                if (pixels[i]) {
-                    pixels[i].style.backgroundColor = pixelData.color;
-                    if (pixelData.isEmpty) {
-                        pixels[i].classList.add('empty');
-                    } else {
-                        pixels[i].classList.remove('empty');
-                    }
+        // Pour redo, on restaure seulement les pixels modifiés avec leurs couleurs finales
+        // D'abord restaurer l'état de départ
+        state.startState.forEach((pixelData, i) => {
+            if (pixels[i]) {
+                pixels[i].style.backgroundColor = pixelData.color;
+                if (pixelData.isEmpty) {
+                    pixels[i].classList.add('empty');
+                } else {
+                    pixels[i].classList.remove('empty');
                 }
-            });
-            console.log('↻ Action rétablie avec couleurs originales', { pixelsRestaurés: state.finalState.length });
-        } else {
-            // Fallback si finalState n'existe pas
-            state.startState.forEach((pixelData, i) => {
-                if (pixels[i]) {
-                    pixels[i].style.backgroundColor = pixelData.color;
-                    if (pixelData.isEmpty) {
-                        pixels[i].classList.add('empty');
-                    } else {
-                        pixels[i].classList.remove('empty');
-                    }
+            }
+        });
+        
+        // Puis appliquer les modifications avec la couleur originale de l'action
+        const actionColor = state.actionColor || currentColor;
+        state.modifiedPixels.forEach((previousState, pixelIndex) => {
+            const pixel = pixels[pixelIndex];
+            if (pixel) {
+                // Appliquer la couleur originale de l'action
+                if (previousState.isEmpty) {
+                    // Si c'était vide, maintenant c'est coloré avec la couleur originale
+                    pixel.style.backgroundColor = actionColor;
+                    pixel.classList.remove('empty');
+                } else {
+                    // Si c'était coloré, maintenant c'est la couleur originale
+                    pixel.style.backgroundColor = actionColor;
+                    pixel.classList.remove('empty');
                 }
-            });
-            
-            // Appliquer les modifications avec les couleurs originales
-            state.modifiedPixels.forEach((pixelState, pixelIndex) => {
-                const pixel = pixels[pixelIndex];
-                if (pixel) {
-                    pixel.style.backgroundColor = pixelState.color;
-                    if (pixelState.isEmpty) {
-                        pixel.classList.add('empty');
-                    } else {
-                        pixel.classList.remove('empty');
-                    }
-                }
-            });
-            console.log('↻ Action rétablie (fallback)', { pixelsModifiés: state.modifiedPixels.size });
-        }
+            }
+        });
+        console.log('↻ Action rétablie avec couleurs finales', { pixelsModifiés: state.modifiedPixels.size });
     } else {
         // Restaurer un état complet (pour l'initialisation)
         state.forEach((pixelData, i) => {
