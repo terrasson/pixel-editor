@@ -950,19 +950,21 @@ function initHistory() {
     history = [];
     historyIndex = 0; // Commencer à 0 pour plus de simplicité
     
-    // Créer un état initial vraiment vide (tous les pixels blancs)
+    // S'assurer que la grille est vraiment vide AVANT de créer l'état initial
     const pixels = document.querySelectorAll('.pixel');
+    pixels.forEach(pixel => {
+        pixel.style.backgroundColor = '#FFFFFF';
+        pixel.classList.add('empty');
+    });
+    
+    // Créer un état initial vraiment vide (tous les pixels blancs)
     const initialState = Array.from(pixels).map(() => ({
         color: '#FFFFFF',
         isEmpty: true
     }));
     history.push(initialState);
     
-    // S'assurer que la grille est vraiment vide
-    pixels.forEach(pixel => {
-        pixel.style.backgroundColor = '#FFFFFF';
-        pixel.classList.add('empty');
-    });
+    console.log('✅ Historique initialisé avec grille vide', { historyIndex, historyLength: history.length });
     
     // Configurer les event listeners pour les boutons mobile
     const undoBtn = document.getElementById('undoBtn');
