@@ -810,13 +810,16 @@ function saveActionToHistory(startState, modifiedPixels) {
         history = history.slice(0, historyIndex + 1);
     }
     
-    // Créer l'état final avec les couleurs originales
+    // Créer l'état final en récupérant l'état actuel des pixels modifiés
     const finalState = Array.from(startState);
-    modifiedPixels.forEach((pixelState, pixelIndex) => {
-        if (finalState[pixelIndex]) {
+    const pixels = document.querySelectorAll('.pixel');
+    
+    modifiedPixels.forEach((previousState, pixelIndex) => {
+        if (finalState[pixelIndex] && pixels[pixelIndex]) {
+            // Récupérer l'état actuel du pixel (après modification)
             finalState[pixelIndex] = {
-                color: pixelState.color,
-                isEmpty: pixelState.isEmpty
+                color: pixels[pixelIndex].style.backgroundColor || '#FFFFFF',
+                isEmpty: pixels[pixelIndex].classList.contains('empty')
             };
         }
     });
