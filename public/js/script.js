@@ -946,8 +946,10 @@ function restoreFromHistoryForRedo(state) {
 function undo() {
     console.log('↺ Fonction undo appelée', { historyIndex, historyLength: history.length });
     if (historyIndex > 0) {
+        // Restaurer l'état précédent (avant l'action actuelle)
+        const previousState = history[historyIndex - 1];
+        restoreFromHistory(previousState);
         historyIndex--;
-        restoreFromHistory(history[historyIndex]);
         updateUndoRedoButtons();
         console.log('✅ Undo effectué', { newHistoryIndex: historyIndex });
     } else {
@@ -959,9 +961,10 @@ function undo() {
 function redo() {
     console.log('🔄 Fonction redo appelée', { historyIndex, historyLength: history.length });
     if (historyIndex < history.length - 1) {
-        historyIndex++;
-        const nextState = history[historyIndex];
+        // Restaurer l'état suivant (après l'action actuelle)
+        const nextState = history[historyIndex + 1];
         restoreFromHistoryForRedo(nextState);
+        historyIndex++;
         updateUndoRedoButtons();
         console.log('✅ Redo effectué', { newHistoryIndex: historyIndex, stateType: nextState.type });
     } else {
