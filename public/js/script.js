@@ -1015,8 +1015,8 @@ function initHistory() {
     history = [];
     historyIndex = -1;
     
-    // Sauvegarder l'état initial (grille vide)
-    saveToHistory();
+    // Ne pas sauvegarder l'état initial pour éviter le décalage
+    // saveToHistory(); // Commenté pour corriger l'ordre chronologique
     
     // Configurer les event listeners pour les boutons mobile
     const undoBtn = document.getElementById('undoBtn');
