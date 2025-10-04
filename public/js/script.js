@@ -875,8 +875,8 @@ function restoreFromHistory(state) {
         });
     }
     
-    // Sauvegarder la frame courante avec le nouvel état
-    saveCurrentFrame();
+    // Ne pas sauvegarder la frame lors des opérations undo/redo
+    // saveCurrentFrame(); // Commenté pour éviter les sauvegardes automatiques
 }
 
 // Restaurer un état pour redo (inverse de restoreFromHistory)
@@ -938,8 +938,8 @@ function restoreFromHistoryForRedo(state) {
         });
     }
     
-    // Sauvegarder la frame courante avec le nouvel état
-    saveCurrentFrame();
+    // Ne pas sauvegarder la frame lors des opérations undo/redo
+    // saveCurrentFrame(); // Commenté pour éviter les sauvegardes automatiques
 }
 
 // Fonction Undo (annuler)
