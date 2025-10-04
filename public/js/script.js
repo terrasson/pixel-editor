@@ -823,28 +823,15 @@ function saveActionToHistory(startState, modifiedPixels) {
         history = history.slice(0, historyIndex + 1);
     }
     
-    // Créer l'état final en récupérant l'état actuel des pixels modifiés
-    const finalState = Array.from(startState);
+    // Créer l'état final simple (tableau de pixels)
     const pixels = document.querySelectorAll('.pixel');
+    const finalState = Array.from(pixels).map(pixel => ({
+        color: pixel.style.backgroundColor || '#FFFFFF',
+        isEmpty: pixel.classList.contains('empty')
+    }));
     
-    modifiedPixels.forEach((previousState, pixelIndex) => {
-        if (finalState[pixelIndex] && pixels[pixelIndex]) {
-            // Récupérer l'état actuel du pixel (après modification)
-            finalState[pixelIndex] = {
-                color: pixels[pixelIndex].style.backgroundColor || '#FFFFFF',
-                isEmpty: pixels[pixelIndex].classList.contains('empty')
-            };
-        }
-    });
-    
-    // Ajouter l'action complète avec l'état final
-    history.push({
-        type: 'action',
-        startState: startState,
-        finalState: finalState,
-        modifiedPixels: new Map(modifiedPixels),
-        actionColor: currentColor // Sauvegarder la couleur utilisée pour cette action
-    });
+    // Ajouter simplement l'état final à l'historique
+    history.push(finalState);
     historyIndex++;
     
     // Limiter la taille de l'historique
@@ -857,104 +844,38 @@ function saveActionToHistory(startState, modifiedPixels) {
     console.log('💾 Action sauvegardée', { pixelsModifiés: modifiedPixels.size, historyIndex });
 }
 
-// Restaurer un état depuis l'historique (pour undo)
-function restoreFromHistory(state) {
+// Restaurer un état depuis l'historique (pour undo et redo)
+function restoreFromHistory(state, isRedo = false) {
     const pixels = document.querySelectorAll('.pixel');
+    let restoredCount = 0;
+
+    // Restaurer simplement l'état (tableau de pixels)
+    state.forEach((pixelData, i) => {
+        if (pixels[i]) {
+            pixels[i].style.backgroundColor = pixelData.color;
+            if (pixelData.isEmpty) {
+                pixels[i].classList.add('empty');
+            } else {
+                pixels[i].classList.remove('empty');
+            }
+            restoredCount++;
+        }
+    });
     
-    if (state.type === 'action') {
-        // Restaurer une action complète (annuler tout le trait)
-        state.modifiedPixels.forEach((previousState, pixelIndex) => {
-            const pixel = pixels[pixelIndex];
-            if (pixel) {
-                pixel.style.backgroundColor = previousState.color;
-                if (previousState.isEmpty) {
-                    pixel.classList.add('empty');
-                } else {
-                    pixel.classList.remove('empty');
-                }
-            }
-        });
-        console.log('↺ Action annulée', { pixelsRestaurés: state.modifiedPixels.size });
-    } else {
-        // Restaurer un état complet (pour l'initialisation)
-        state.forEach((pixelData, i) => {
-            if (pixels[i]) {
-                pixels[i].style.backgroundColor = pixelData.color;
-                if (pixelData.isEmpty) {
-                    pixels[i].classList.add('empty');
-                } else {
-                    pixels[i].classList.remove('empty');
-                }
-            }
-        });
-    }
+    console.log(`%c${isRedo ? '✅ Action rétablie' : '↺ Action annulée'}`, 'color: #007bff;', { pixelsRestaurés: restoredCount });
     
     // Ne pas sauvegarder la frame lors des opérations undo/redo
     // saveCurrentFrame(); // Commenté pour éviter les sauvegardes automatiques
 }
 
-// Restaurer un état pour redo (inverse de restoreFromHistory)
-function restoreFromHistoryForRedo(state) {
-    const pixels = document.querySelectorAll('.pixel');
-    
-    if (state.type === 'action') {
-        // Pour redo, on restaure seulement les pixels modifiés avec leurs couleurs finales
-        // D'abord restaurer l'état de départ
-        state.startState.forEach((pixelData, i) => {
-            if (pixels[i]) {
-                pixels[i].style.backgroundColor = pixelData.color;
-                if (pixelData.isEmpty) {
-                    pixels[i].classList.add('empty');
-                } else {
-                    pixels[i].classList.remove('empty');
-                }
-            }
-        });
-        
-        // Puis appliquer les modifications avec la couleur originale de l'action
-        const actionColor = state.actionColor || currentColor;
-        state.modifiedPixels.forEach((previousState, pixelIndex) => {
-            const pixel = pixels[pixelIndex];
-            if (pixel) {
-                // Appliquer la couleur originale de l'action
-                if (previousState.isEmpty) {
-                    // Si c'était vide, maintenant c'est coloré avec la couleur originale
-                    pixel.style.backgroundColor = actionColor;
-                    pixel.classList.remove('empty');
-                } else {
-                    // Si c'était coloré, maintenant c'est la couleur originale
-                    pixel.style.backgroundColor = actionColor;
-                    pixel.classList.remove('empty');
-                }
-            }
-        });
-        console.log('↻ Action rétablie avec couleurs finales', { pixelsModifiés: state.modifiedPixels.size });
-    } else {
-        // Restaurer un état complet (pour l'initialisation)
-        state.forEach((pixelData, i) => {
-            if (pixels[i]) {
-                pixels[i].style.backgroundColor = pixelData.color;
-                if (pixelData.isEmpty) {
-                    pixels[i].classList.add('empty');
-                } else {
-                    pixels[i].classList.remove('empty');
-                }
-            }
-        });
-    }
-    
-    // Ne pas sauvegarder la frame lors des opérations undo/redo
-    // saveCurrentFrame(); // Commenté pour éviter les sauvegardes automatiques
-}
+// Fonction supprimée - restoreFromHistoryForRedo n'est plus nécessaire
 
 // Fonction Undo (annuler)
 function undo() {
     console.log('↺ Fonction undo appelée', { historyIndex, historyLength: history.length });
     if (historyIndex > 0) {
-        // Restaurer l'état précédent (avant l'action actuelle)
-        const previousState = history[historyIndex - 1];
-        restoreFromHistory(previousState);
-        historyIndex--;
+        historyIndex--; // Aller à l'état précédent
+        restoreFromHistory(history[historyIndex]); // Restaurer cet état
         updateUndoRedoButtons();
         console.log('✅ Undo effectué', { newHistoryIndex: historyIndex });
     } else {
@@ -966,12 +887,10 @@ function undo() {
 function redo() {
     console.log('🔄 Fonction redo appelée', { historyIndex, historyLength: history.length });
     if (historyIndex < history.length - 1) {
-        // Restaurer l'état suivant (après l'action actuelle)
-        historyIndex++;
-        const nextState = history[historyIndex];
-        restoreFromHistoryForRedo(nextState);
+        historyIndex++; // Aller à l'état suivant
+        restoreFromHistory(history[historyIndex], true); // Restaurer cet état (isRedo = true)
         updateUndoRedoButtons();
-        console.log('✅ Redo effectué', { newHistoryIndex: historyIndex, stateType: nextState.type });
+        console.log('✅ Redo effectué', { newHistoryIndex: historyIndex });
     } else {
         console.log('❌ Redo impossible - déjà à la fin');
     }
@@ -1013,10 +932,15 @@ function updateUndoRedoButtons() {
 // Initialiser l'historique avec l'état vide
 function initHistory() {
     history = [];
-    historyIndex = -1;
+    historyIndex = 0; // Commencer à 0 pour plus de simplicité
     
-    // Ne pas sauvegarder l'état initial pour éviter le décalage
-    // saveToHistory(); // Commenté pour corriger l'ordre chronologique
+    // Sauvegarder l'état initial (grille vide)
+    const pixels = document.querySelectorAll('.pixel');
+    const initialState = Array.from(pixels).map(pixel => ({
+        color: pixel.style.backgroundColor || '#FFFFFF',
+        isEmpty: pixel.classList.contains('empty')
+    }));
+    history.push(initialState);
     
     // Configurer les event listeners pour les boutons mobile
     const undoBtn = document.getElementById('undoBtn');
