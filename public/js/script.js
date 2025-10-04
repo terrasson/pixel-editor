@@ -947,14 +947,25 @@ function updateUndoRedoButtons() {
 
 // Initialiser l'historique avec l'état vide
 function initHistory() {
+    console.log('🔄 Initialisation de l\'historique...');
+    
     history = [];
     historyIndex = 0; // Commencer à 0 pour plus de simplicité
     
     // S'assurer que la grille est vraiment vide AVANT de créer l'état initial
     const pixels = document.querySelectorAll('.pixel');
-    pixels.forEach(pixel => {
+    console.log('📊 Nombre de pixels trouvés:', pixels.length);
+    
+    // Forcer une grille complètement vide
+    pixels.forEach((pixel, index) => {
         pixel.style.backgroundColor = '#FFFFFF';
         pixel.classList.add('empty');
+        if (index < 5) { // Log des 5 premiers pixels pour debug
+            console.log(`Pixel ${index}:`, {
+                backgroundColor: pixel.style.backgroundColor,
+                isEmpty: pixel.classList.contains('empty')
+            });
+        }
     });
     
     // Créer un état initial vraiment vide (tous les pixels blancs)
@@ -964,7 +975,12 @@ function initHistory() {
     }));
     history.push(initialState);
     
-    console.log('✅ Historique initialisé avec grille vide', { historyIndex, historyLength: history.length });
+    console.log('✅ Historique initialisé avec grille vide', { 
+        historyIndex, 
+        historyLength: history.length,
+        pixelsVides: initialState.filter(p => p.isEmpty).length,
+        pixelsTotal: initialState.length
+    });
     
     // Configurer les event listeners pour les boutons mobile
     const undoBtn = document.getElementById('undoBtn');
