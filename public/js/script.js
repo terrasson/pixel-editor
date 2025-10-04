@@ -950,7 +950,7 @@ function initHistory() {
     console.log('🔄 Initialisation de l\'historique...');
     
     history = [];
-    historyIndex = 0; // Commencer à 0 pour plus de simplicité
+    historyIndex = -1; // Commencer à -1 pour plus de simplicité
     
     // S'assurer que la grille est vraiment vide AVANT de créer l'état initial
     const pixels = document.querySelectorAll('.pixel');
