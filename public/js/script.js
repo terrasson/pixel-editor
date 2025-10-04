@@ -967,9 +967,9 @@ function redo() {
     console.log('🔄 Fonction redo appelée', { historyIndex, historyLength: history.length });
     if (historyIndex < history.length - 1) {
         // Restaurer l'état suivant (après l'action actuelle)
-        const nextState = history[historyIndex + 1];
-        restoreFromHistoryForRedo(nextState);
         historyIndex++;
+        const nextState = history[historyIndex];
+        restoreFromHistoryForRedo(nextState);
         updateUndoRedoButtons();
         console.log('✅ Redo effectué', { newHistoryIndex: historyIndex, stateType: nextState.type });
     } else {
