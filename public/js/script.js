@@ -1196,10 +1196,10 @@ function loadFrame(frameIndex) {
     currentFrame = frameIndex;
     updateFramesList();
     
-    // Sauvegarder l'état initial de la nouvelle frame dans l'historique
-    setTimeout(() => {
-        saveToHistory();
-    }, 10);
+    // Ne pas sauvegarder l'état initial pour éviter le décalage
+    // setTimeout(() => {
+    //     saveToHistory();
+    // }, 10);
 }
 
 function addFrame() {
