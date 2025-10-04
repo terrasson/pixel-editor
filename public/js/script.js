@@ -878,6 +878,16 @@ function undo() {
         restoreFromHistory(history[historyIndex]); // Restaurer cet état
         updateUndoRedoButtons();
         console.log('✅ Undo effectué', { newHistoryIndex: historyIndex });
+    } else if (historyIndex === 0) {
+        // Cas spécial : vider complètement la grille
+        const pixels = document.querySelectorAll('.pixel');
+        pixels.forEach(pixel => {
+            pixel.style.backgroundColor = '#FFFFFF';
+            pixel.classList.add('empty');
+        });
+        historyIndex = -1; // Marquer comme "avant le début"
+        updateUndoRedoButtons();
+        console.log('✅ Grille vidée complètement', { newHistoryIndex: historyIndex });
     } else {
         console.log('❌ Undo impossible - déjà au début');
     }
@@ -886,7 +896,13 @@ function undo() {
 // Fonction Redo (rétablir)
 function redo() {
     console.log('🔄 Fonction redo appelée', { historyIndex, historyLength: history.length });
-    if (historyIndex < history.length - 1) {
+    if (historyIndex === -1) {
+        // Cas spécial : revenir à l'état initial (history[0])
+        historyIndex = 0;
+        restoreFromHistory(history[historyIndex], true); // Restaurer cet état (isRedo = true)
+        updateUndoRedoButtons();
+        console.log('✅ Redo effectué depuis grille vide', { newHistoryIndex: historyIndex });
+    } else if (historyIndex < history.length - 1) {
         historyIndex++; // Aller à l'état suivant
         restoreFromHistory(history[historyIndex], true); // Restaurer cet état (isRedo = true)
         updateUndoRedoButtons();
