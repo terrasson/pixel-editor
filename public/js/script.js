@@ -830,8 +830,8 @@ function saveActionToHistory(startState, modifiedPixels) {
         isEmpty: pixel.classList.contains('empty')
     }));
     
-    // Si c'est la première action (historyIndex === 0), s'assurer que history[0] est une grille vierge
-    if (historyIndex === 0) {
+    // Si c'est la première action (history.length === 1), s'assurer que history[0] est une grille vierge
+    if (history.length === 1) {
         // history[0] est déjà une grille vierge (créée dans initHistory)
         // Ajouter la première action à history[1] (pas history[0])
         history.push(finalState);
