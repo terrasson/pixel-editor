@@ -934,13 +934,19 @@ function initHistory() {
     history = [];
     historyIndex = 0; // Commencer à 0 pour plus de simplicité
     
-    // Sauvegarder l'état initial (grille vide)
+    // Créer un état initial vraiment vide (tous les pixels blancs)
     const pixels = document.querySelectorAll('.pixel');
-    const initialState = Array.from(pixels).map(pixel => ({
-        color: pixel.style.backgroundColor || '#FFFFFF',
-        isEmpty: pixel.classList.contains('empty')
+    const initialState = Array.from(pixels).map(() => ({
+        color: '#FFFFFF',
+        isEmpty: true
     }));
     history.push(initialState);
+    
+    // S'assurer que la grille est vraiment vide
+    pixels.forEach(pixel => {
+        pixel.style.backgroundColor = '#FFFFFF';
+        pixel.classList.add('empty');
+    });
     
     // Configurer les event listeners pour les boutons mobile
     const undoBtn = document.getElementById('undoBtn');
