@@ -830,18 +830,9 @@ function saveActionToHistory(startState, modifiedPixels) {
         isEmpty: pixel.classList.contains('empty')
     }));
     
-    // Si c'est la première action (historyIndex === 0), s'assurer que history[0] est une grille vierge
-    if (historyIndex === 0) {
-        // history[0] est déjà une grille vierge (créée dans initHistory)
-        // Ajouter la première action à history[1] (pas history[0])
-        history.push(finalState);
-        historyIndex = 1; // Commencer à 1, pas 0
-        console.log('🔄 Première action sauvegardée à historyIndex: 1');
-    } else {
-        // Ajouter simplement l'état final à l'historique
-        history.push(finalState);
-        historyIndex++;
-    }
+    // TOUJOURS ajouter l'état final à l'historique
+    history.push(finalState);
+    historyIndex++;
     
     // Limiter la taille de l'historique
     if (history.length > maxHistorySize) {
