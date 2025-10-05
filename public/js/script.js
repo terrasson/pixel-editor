@@ -942,17 +942,24 @@ function updateUndoRedoButtons() {
 function initHistory() {
     console.log('🔄 Initialisation de l\'historique...');
     
+    // Réinitialiser complètement l'historique
     history = [];
-    historyIndex = 0; // Commencer à 0 pour plus de simplicité
+    historyIndex = -1; // Commencer à -1 pour que le premier état soit à l'index 0
     
     // S'assurer que la grille est vraiment vide AVANT de créer l'état initial
     const pixels = document.querySelectorAll('.pixel');
     console.log('📊 Nombre de pixels trouvés:', pixels.length);
     
+    if (pixels.length === 0) {
+        console.warn('⚠️ Aucun pixel trouvé, report de l\'initialisation de l\'historique');
+        return;
+    }
+    
     // Forcer une grille complètement vide
     pixels.forEach((pixel, index) => {
         pixel.style.backgroundColor = '#FFFFFF';
         pixel.classList.add('empty');
+        pixel.classList.remove('colored');
         if (index < 5) { // Log des 5 premiers pixels pour debug
             console.log(`Pixel ${index}:`, {
                 backgroundColor: pixel.style.backgroundColor,
@@ -966,7 +973,10 @@ function initHistory() {
         color: '#FFFFFF',
         isEmpty: true
     }));
+    
+    // Ajouter l'état initial à l'historique
     history.push(initialState);
+    historyIndex = 0; // Maintenant on est à l'index 0
     
     console.log('✅ Historique initialisé avec grille vide', { 
         historyIndex, 
@@ -1153,10 +1163,10 @@ function loadFrame(frameIndex) {
     currentFrame = frameIndex;
     updateFramesList();
     
-    // Ne pas sauvegarder l'état initial pour éviter le décalage
-    // setTimeout(() => {
-    //     saveToHistory();
-    // }, 10);
+    // Sauvegarder l'état initial de la frame chargée dans l'historique
+    setTimeout(() => {
+        saveToHistory();
+    }, 10);
 }
 
 function addFrame() {
@@ -1344,6 +1354,9 @@ function clearAllFrames() {
 
         // Nettoyer les marqueurs
         document.querySelectorAll('.previous-pixel-marker, .next-pixel-marker-1, .next-pixel-marker-2').forEach(marker => marker.remove());
+
+        // Réinitialiser l'historique avec la grille vide
+        initHistory();
 
         // Mettre à jour l'interface
         updateFramesList();
@@ -2381,8 +2394,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialiser le sélecteur de couleur après la palette
     initColorPicker();
     
-    // Initialiser l'historique undo/redo
-    initHistory();
+    // Initialiser l'historique undo/redo APRÈS que la grille soit prête
+    setTimeout(() => {
+        initHistory();
+    }, 100);
     
     // Charger les données (Supabase + localStorage en fallback)
     loadSupabaseProjects().catch(() => loadAutoSaveProjects());
