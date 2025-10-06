@@ -20,7 +20,7 @@ let animationInterval = null;
 let history = []; // Historique des changements de pixels
 let historyIndex = -1; // Index actuel dans l'historique
 const maxHistorySize = 50; // Nombre maximum d'étapes dans l'historique
-let currentActionPixels = new Map(); // Pixels modifiés dans l'action actuelle
+let currentActionPixels = new Set(); // Pixels modifiés dans l'action actuelle
 let actionStartState = null; // État de la grille au début de l'action
 
 // Initialisation de la grille
@@ -71,12 +71,7 @@ function draw(e) {
         const pixelIndex = Array.from(pixels).indexOf(e.target);
         
         // Enregistrer ce pixel comme modifié dans l'action actuelle
-        if (!currentActionPixels.has(pixelIndex)) {
-            currentActionPixels.set(pixelIndex, {
-                color: e.target.style.backgroundColor || '#FFFFFF',
-                isEmpty: e.target.classList.contains('empty')
-            });
-        }
+        currentActionPixels.add(pixelIndex);
         
         if (isErasing) {
             // Mode gomme
@@ -818,6 +813,12 @@ function saveToHistory() {
 
 // Sauvegarder une action complète (trait, forme, etc.)
 function saveActionToHistory(startState, modifiedPixels) {
+    console.log('💾 Sauvegarde de l\'action dans l\'historique', { 
+        pixelsModifiés: modifiedPixels.size,
+        historyIndex,
+        historyLength: history.length
+    });
+    
     // Supprimer les états futurs si on est au milieu de l'historique
     if (historyIndex < history.length - 1) {
         history = history.slice(0, historyIndex + 1);
@@ -830,18 +831,14 @@ function saveActionToHistory(startState, modifiedPixels) {
         isEmpty: pixel.classList.contains('empty')
     }));
     
-    // Si c'est la première action (history.length === 1), s'assurer que history[0] est une grille vierge
-    if (history.length === 1) {
-        // history[0] est déjà une grille vierge (créée dans initHistory)
-        // Ajouter la première action à history[1] (pas history[0])
-        history.push(finalState);
-        historyIndex = 1; // Commencer à 1, pas 0
-        console.log('🔄 Première action sauvegardée à historyIndex: 1');
-    } else {
-        // Ajouter simplement l'état final à l'historique
-        history.push(finalState);
-        historyIndex++;
-    }
+    // Ajouter l'état final à l'historique
+    history.push(finalState);
+    historyIndex++;
+    
+    console.log('✅ Action sauvegardée', { 
+        nouveauHistoryIndex: historyIndex,
+        nouvelleHistoryLength: history.length
+    });
     
     // Limiter la taille de l'historique
     if (history.length > maxHistorySize) {
@@ -849,8 +846,8 @@ function saveActionToHistory(startState, modifiedPixels) {
         historyIndex = history.length - 1;
     }
     
+    // Mettre à jour les boutons
     updateUndoRedoButtons();
-    console.log('💾 Action sauvegardée', { pixelsModifiés: modifiedPixels.size, historyIndex });
 }
 
 // Restaurer un état depuis l'historique (pour undo et redo)
