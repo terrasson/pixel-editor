@@ -590,6 +590,71 @@ function updateCurrentColorDisplay() {
     if (colorPicker) {
         colorPicker.value = currentColor;
     }
+    
+    // Mettre à jour la sélection visuelle des couleurs compactes
+    updateCompactColorSelectionByColor(currentColor);
+}
+
+// Fonction pour mettre à jour la sélection visuelle des couleurs compactes par couleur
+function updateCompactColorSelectionByColor(color) {
+    // Retirer la classe 'selected' de tous les boutons
+    document.querySelectorAll('.compact-color-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    // Trouver et sélectionner le bouton avec la couleur correspondante
+    document.querySelectorAll('.compact-color-btn').forEach(btn => {
+        if (btn.style.backgroundColor === color) {
+            btn.classList.add('selected');
+        }
+    });
+}
+
+// Fonction pour initialiser les event listeners des couleurs compactes
+function initCompactColorButtons() {
+    const compactColorButtons = document.querySelectorAll('.compact-color-btn');
+    
+    compactColorButtons.forEach(btn => {
+        // Supprimer les anciens event listeners
+        btn.replaceWith(btn.cloneNode(true));
+    });
+    
+    // Réattacher les event listeners
+    document.querySelectorAll('.compact-color-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Récupérer la couleur depuis le style background-color
+            const color = btn.style.backgroundColor;
+            if (color) {
+                currentColor = color;
+                document.getElementById('colorPicker').value = color;
+                updateCurrentColorDisplay();
+                isErasing = false;
+                
+                // Désactiver la gomme
+                const eraserBtn = document.getElementById('eraserBtn');
+                if (eraserBtn) {
+                    eraserBtn.classList.remove('active');
+                    document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
+                }
+                
+                // Mettre à jour la sélection visuelle
+                updateCompactColorSelection(btn);
+                
+                console.log('🎨 Couleur compacte sélectionnée:', color);
+            }
+        });
+    });
+}
+
+// Fonction pour mettre à jour la sélection visuelle des couleurs compactes
+function updateCompactColorSelection(selectedBtn) {
+    // Retirer la classe 'selected' de tous les boutons
+    document.querySelectorAll('.compact-color-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    // Ajouter la classe 'selected' au bouton cliqué
+    selectedBtn.classList.add('selected');
 }
 
 // ========================================
@@ -2390,6 +2455,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialiser le sélecteur de couleur après la palette
     initColorPicker();
+    
+    // Initialiser l'affichage de la couleur actuelle
+    updateCurrentColorDisplay();
+    
+    // Initialiser les couleurs compactes
+    initCompactColorButtons();
     
     // Initialiser l'historique undo/redo APRÈS que la grille soit prête
     setTimeout(() => {
