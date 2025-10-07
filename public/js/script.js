@@ -597,6 +597,8 @@ function updateCurrentColorDisplay() {
 
 // Fonction pour mettre à jour la sélection visuelle des couleurs compactes par couleur
 function updateCompactColorSelectionByColor(color) {
+    console.log('🔍 Mise à jour sélection par couleur:', color);
+    
     // Retirer la classe 'selected' de tous les boutons
     document.querySelectorAll('.compact-color-btn').forEach(btn => {
         btn.classList.remove('selected');
@@ -604,10 +606,42 @@ function updateCompactColorSelectionByColor(color) {
     
     // Trouver et sélectionner le bouton avec la couleur correspondante
     document.querySelectorAll('.compact-color-btn').forEach(btn => {
-        if (btn.style.backgroundColor === color) {
+        const btnColor = btn.style.backgroundColor;
+        console.log('🎨 Comparaison:', btnColor, '===', color);
+        
+        // Normaliser les couleurs pour la comparaison
+        const normalizedBtnColor = normalizeColor(btnColor);
+        const normalizedColor = normalizeColor(color);
+        
+        if (normalizedBtnColor === normalizedColor) {
             btn.classList.add('selected');
+            console.log('✅ Couleur sélectionnée:', btnColor);
         }
     });
+}
+
+// Fonction pour normaliser les couleurs (RGB vers HEX)
+function normalizeColor(color) {
+    if (!color) return '';
+    
+    // Si c'est déjà en format hex, le retourner
+    if (color.startsWith('#')) {
+        return color.toUpperCase();
+    }
+    
+    // Si c'est en format RGB, le convertir en hex
+    if (color.startsWith('rgb')) {
+        const rgb = color.match(/\d+/g);
+        if (rgb && rgb.length === 3) {
+            const hex = '#' + rgb.map(x => {
+                const hex = parseInt(x).toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('').toUpperCase();
+            return hex;
+        }
+    }
+    
+    return color.toUpperCase();
 }
 
 // Fonction pour initialiser les event listeners des couleurs compactes
@@ -633,8 +667,12 @@ function initCompactColorButtons() {
                 const color = btn.style.backgroundColor;
                 console.log('🎨 Couleur récupérée:', color);
                 if (color) {
-                    currentColor = color;
-                    document.getElementById('colorPicker').value = color;
+                    // Normaliser la couleur
+                    const normalizedColor = normalizeColor(color);
+                    console.log('🎨 Couleur normalisée:', normalizedColor);
+                    
+                    currentColor = normalizedColor;
+                    document.getElementById('colorPicker').value = normalizedColor;
                     updateCurrentColorDisplay();
                     isErasing = false;
                     
@@ -648,7 +686,7 @@ function initCompactColorButtons() {
                     // Mettre à jour la sélection visuelle
                     updateCompactColorSelection(btn);
                     
-                    console.log('✅ Couleur compacte sélectionnée:', color);
+                    console.log('✅ Couleur compacte sélectionnée:', normalizedColor);
                 }
             }
             isLongPress = false;
