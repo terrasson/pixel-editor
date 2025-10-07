@@ -613,6 +613,7 @@ function updateCompactColorSelectionByColor(color) {
 // Fonction pour initialiser les event listeners des couleurs compactes
 function initCompactColorButtons() {
     const compactColorButtons = document.querySelectorAll('.compact-color-btn');
+    console.log('🔍 Boutons de couleur compacte trouvés:', compactColorButtons.length);
     
     compactColorButtons.forEach(btn => {
         // Supprimer les anciens event listeners
@@ -626,9 +627,11 @@ function initCompactColorButtons() {
         
         // Clic normal - sélectionner la couleur
         btn.addEventListener('click', (e) => {
+            console.log('🖱️ Clic sur couleur compacte détecté');
             if (!isLongPress) {
                 // Récupérer la couleur depuis le style background-color
                 const color = btn.style.backgroundColor;
+                console.log('🎨 Couleur récupérée:', color);
                 if (color) {
                     currentColor = color;
                     document.getElementById('colorPicker').value = color;
@@ -645,7 +648,7 @@ function initCompactColorButtons() {
                     // Mettre à jour la sélection visuelle
                     updateCompactColorSelection(btn);
                     
-                    console.log('🎨 Couleur compacte sélectionnée:', color);
+                    console.log('✅ Couleur compacte sélectionnée:', color);
                 }
             }
             isLongPress = false;
