@@ -725,9 +725,42 @@ function initCompactColorButtons() {
         
         btn.addEventListener('touchend', (e) => {
             e.preventDefault();
+            
+            // Si ce n'est pas un appui long, sélectionner la couleur
+            if (!isLongPress && longPressTimer) {
+                // Récupérer la couleur depuis le style background-color
+                const color = btn.style.backgroundColor;
+                console.log('📱 Touch: Couleur récupérée:', color);
+                
+                if (color) {
+                    // Normaliser la couleur
+                    const normalizedColor = normalizeColor(color);
+                    console.log('📱 Touch: Couleur normalisée:', normalizedColor);
+                    
+                    currentColor = normalizedColor;
+                    document.getElementById('colorPicker').value = normalizedColor;
+                    updateCurrentColorDisplay();
+                    isErasing = false;
+                    
+                    // Désactiver la gomme
+                    const eraserBtn = document.getElementById('eraserBtn');
+                    if (eraserBtn) {
+                        eraserBtn.classList.remove('active');
+                        document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
+                    }
+                    
+                    // Mettre à jour la sélection visuelle
+                    updateCompactColorSelection(btn);
+                    
+                    console.log('✅ Touch: Couleur compacte sélectionnée:', normalizedColor);
+                }
+            }
+            
             if (longPressTimer) {
                 clearTimeout(longPressTimer);
             }
+            
+            isLongPress = false;
         });
     });
 }
