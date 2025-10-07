@@ -570,6 +570,147 @@ body::before {
     transform: scale(1.05);
 }
 
+/* ========================================
+   MODAL FPS
+   ======================================== */
+
+.fps-control {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 10px;
+}
+
+.fps-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.fps-value {
+    font-size: 48px;
+    color: #667eea;
+}
+
+.fps-label {
+    font-size: 20px;
+    color: #666;
+}
+
+.fps-desc {
+    font-size: 16px;
+    color: #999;
+    font-weight: normal;
+}
+
+.fps-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.fps-slider {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, #667eea, #764ba2);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.fps-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #667eea;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.fps-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #667eea;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.fps-min, .fps-max {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.fps-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.fps-presets-label {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.fps-preset-btn {
+    flex: 1;
+    min-width: 70px;
+    padding: 10px 8px;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    background: white;
+    color: #667eea;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.fps-preset-btn small {
+    display: block;
+    font-size: 10px;
+    margin-top: 2px;
+    opacity: 0.7;
+}
+
+.fps-preset-btn:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.fps-preset-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+.fps-info {
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 13px;
+    color: #666;
+}
+
+.fps-info p {
+    margin: 5px 0;
+}
+
 /* Modal de personnalisation de palette */
 .modal {
     display: none;

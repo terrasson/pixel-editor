@@ -9,6 +9,7 @@ let copiedFrame = null;
 let customColors = []; // Palette de couleurs personnalisées
 const maxCustomColors = 8; // Nombre maximum de couleurs personnalisées
 let customPalette = null; // Palette personnalisée des couleurs compactes pour le projet
+let animationFPS = 24; // FPS par défaut (cinéma)
 let autoSaveProjects = []; // Projets sauvegardés automatiquement en local
 const maxAutoSaveProjects = 10; // Nombre maximum de projets auto-sauvegardés
 
@@ -642,6 +643,84 @@ function normalizeColor(color) {
     }
     
     return color.toUpperCase();
+}
+
+// Fonction pour obtenir la description du FPS
+function getFPSDescription(fps) {
+    if (fps <= 12) return '(Animation)';
+    if (fps <= 24) return '(Cinéma)';
+    if (fps <= 30) return '(Vidéo)';
+    if (fps <= 45) return '(Jeu)';
+    return '(Fluide)';
+}
+
+// Fonction pour initialiser le modal FPS
+function initFPSModal() {
+    const fpsBtn = document.getElementById('fpsBtn');
+    const fpsModal = document.getElementById('fpsModal');
+    const closeFpsModal = document.getElementById('closeFpsModal');
+    const fpsSlider = document.getElementById('fpsSlider');
+    const fpsValue = document.getElementById('fpsValue');
+    const fpsDesc = document.getElementById('fpsDesc');
+    const fpsPresetBtns = document.querySelectorAll('.fps-preset-btn');
+    
+    if (!fpsBtn || !fpsModal) return;
+    
+    // Ouvrir le modal
+    fpsBtn.addEventListener('click', () => {
+        fpsModal.style.display = 'flex';
+        fpsSlider.value = animationFPS;
+        fpsValue.textContent = animationFPS;
+        fpsDesc.textContent = getFPSDescription(animationFPS);
+        updatePresetButtons(animationFPS);
+    });
+    
+    // Fermer le modal
+    closeFpsModal.addEventListener('click', () => {
+        fpsModal.style.display = 'none';
+    });
+    
+    // Fermer en cliquant à l'extérieur
+    fpsModal.addEventListener('click', (e) => {
+        if (e.target === fpsModal) {
+            fpsModal.style.display = 'none';
+        }
+    });
+    
+    // Slider FPS
+    fpsSlider.addEventListener('input', (e) => {
+        const fps = parseInt(e.target.value);
+        animationFPS = fps;
+        fpsValue.textContent = fps;
+        fpsDesc.textContent = getFPSDescription(fps);
+        updatePresetButtons(fps);
+        console.log('🎬 FPS changé:', fps);
+    });
+    
+    // Boutons préréglés
+    fpsPresetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const fps = parseInt(btn.getAttribute('data-fps'));
+            animationFPS = fps;
+            fpsSlider.value = fps;
+            fpsValue.textContent = fps;
+            fpsDesc.textContent = getFPSDescription(fps);
+            updatePresetButtons(fps);
+            console.log('🎬 FPS preset sélectionné:', fps);
+        });
+    });
+    
+    // Fonction pour mettre à jour les boutons préréglés
+    function updatePresetButtons(fps) {
+        fpsPresetBtns.forEach(btn => {
+            const btnFps = parseInt(btn.getAttribute('data-fps'));
+            if (btnFps === fps) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
 }
 
 // Fonction pour initialiser les event listeners des couleurs compactes
@@ -2783,6 +2862,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialiser les couleurs compactes
     initCompactColorButtons();
+    
+    // Initialiser le modal FPS
+    initFPSModal();
     
     // Initialiser l'historique undo/redo APRÈS que la grille soit prête
     setTimeout(() => {

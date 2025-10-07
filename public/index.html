@@ -63,6 +63,7 @@
                 <button id="clearBtn">Effacer tout</button>
                 <button id="deleteFrameBtn">Supprimer la frame</button>
                 <button id="previewBtn" title="Lancer/Arrêter l'animation">▶️</button>
+                <button id="fpsBtn" title="Régler la vitesse d'animation">⚙️ FPS</button>
                 <button id="saveBtn">💾 Sauvegarder</button>
                 <button id="loadBtn">📂 Charger</button>
                 <button id="loadLocalBtn">🌐 Mes projets</button>
@@ -125,6 +126,44 @@
                         <div class="palette-actions">
                             <button id="resetPaletteBtn" class="reset-btn">🔄 Couleurs par défaut</button>
                             <button id="savePaletteBtn" class="save-btn">💾 Sauvegarder</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal pour régler le FPS -->
+        <div id="fpsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>⚙️ Vitesse d'animation</h3>
+                    <button id="closeFpsModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="fps-control">
+                        <div class="fps-display">
+                            <span id="fpsValue" class="fps-value">24</span>
+                            <span class="fps-label">FPS</span>
+                            <span id="fpsDesc" class="fps-desc">(Cinéma)</span>
+                        </div>
+                        
+                        <div class="fps-slider-container">
+                            <span class="fps-min">1</span>
+                            <input type="range" id="fpsSlider" min="1" max="60" value="24" class="fps-slider">
+                            <span class="fps-max">60</span>
+                        </div>
+                        
+                        <div class="fps-presets">
+                            <span class="fps-presets-label">Préréglages :</span>
+                            <button class="fps-preset-btn" data-fps="12">12 FPS<br><small>(Animation)</small></button>
+                            <button class="fps-preset-btn" data-fps="24">24 FPS<br><small>(Cinéma)</small></button>
+                            <button class="fps-preset-btn" data-fps="30">30 FPS<br><small>(Vidéo)</small></button>
+                            <button class="fps-preset-btn" data-fps="60">60 FPS<br><small>(Fluide)</small></button>
+                        </div>
+                        
+                        <div class="fps-info">
+                            <p>💡 Plus le FPS est élevé, plus l'animation sera fluide.</p>
+                            <p>24 FPS = Qualité cinéma professionnelle</p>
                         </div>
                     </div>
                 </div>
