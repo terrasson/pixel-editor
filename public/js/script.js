@@ -2839,6 +2839,14 @@ function initEventListeners() {
         document.getElementById('creditsBtn')?.click();
     });
     
+    // Event listeners pour les nouveaux boutons copier/coller dans le bandeau des frames
+    document.getElementById('copyFrameBtnMain')?.addEventListener('click', () => {
+        document.getElementById('copyFrameBtn')?.click();
+    });
+    document.getElementById('pasteFrameBtnMain')?.addEventListener('click', () => {
+        document.getElementById('pasteFrameBtn')?.click();
+    });
+    
     // Initialiser les autres fonctionnalités
     initMobileFeatures();
 }
