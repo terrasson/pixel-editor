@@ -347,7 +347,7 @@ html, body {
 
 .frame-actions {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 12px;
     margin-bottom: 15px;
 }
@@ -381,7 +381,7 @@ html, body {
 }
 
 .copy-btn {
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
 }
 
 .paste-btn {
