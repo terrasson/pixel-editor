@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 Générateurs de Logo Pixel Art</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .tool-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-5px);
+            border-color: #ffd700;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+        }
+
+        .tool-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .tool-title {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .tool-description {
+            margin-bottom: 25px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .tool-btn {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+        }
+
+        .tool-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.6);
+            text-decoration: none;
+            color: white;
+        }
+
+        .tool-btn.primary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .tool-btn.primary:hover {
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+        }
+
+        .info-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .info-section h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .info-section p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .status {
+            background: rgba(46, 204, 113, 0.2);
+            border: 2px solid #2ecc71;
+            color: #2ecc71;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .tools-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Générateurs de Logo Pixel Art</h1>
+        <p class="subtitle">Crée des logos magnifiques pour ton app pixel art !</p>
+
+        <div class="status">
+            ✅ Tous les outils sont prêts à utiliser !
+        </div>
+
+        <div class="tools-grid">
+            <div class="tool-card">
+                <span class="tool-icon">🖼️</span>
+                <h3 class="tool-title">Convertisseur Image → Logo</h3>
+                <p class="tool-description">
+                    Upload une image et convertis-la automatiquement en logo SVG vectoriel avec effets néon. 
+                    Parfait pour transformer tes créations en logo professionnel.
+                </p>
+                <a href="convertisseur-logo.html" class="tool-btn primary">
+                    🚀 Ouvrir le Convertisseur
+                </a>
+            </div>
+
+            <div class="tool-card">
+                <span class="tool-icon">🎨</span>
+                <h3 class="tool-title">Générateur de Logo</h3>
+                <p class="tool-description">
+                    Crée des logos à partir de zéro avec différents styles : néon, synthwave, cyberpunk, 
+                    et plus encore. Personnalise les couleurs et effets.
+                </p>
+                <a href="logo-generator.html" class="tool-btn">
+                    ✨ Créer un Logo
+                </a>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3>💡 Comment utiliser :</h3>
+            <p><strong>1. Convertisseur Image → Logo :</strong> Parfait pour transformer une image existante en logo</p>
+            <p><strong>2. Générateur de Logo :</strong> Idéal pour créer des logos originaux avec différents styles</p>
+            <p><strong>3. Téléchargement :</strong> Export en SVG (vectoriel) ou PNG (raster)</p>
+            <p><strong>4. Application :</strong> Remplace directement le favicon.svg de ton app</p>
+        </div>
+
+        <div class="info-section">
+            <h3>🎯 Recommandation :</h3>
+            <p>Commence par le <strong>Convertisseur Image → Logo</strong> si tu as déjà une image que tu veux transformer en logo !</p>
+        </div>
+    </div>
+
+    <script>
+        // Vérifier que les fichiers existent
+        function checkFileExists(filename) {
+            fetch(filename, { method: 'HEAD' })
+                .then(response => {
+                    if (!response.ok) {
+                        console.warn(`Fichier ${filename} non trouvé`);
+                    }
+                })
+                .catch(error => {
+                    console.warn(`Erreur lors de la vérification de ${filename}:`, error);
+                });
+        }
+
+        // Vérifier les fichiers au chargement
+        window.addEventListener('load', () => {
+            checkFileExists('convertisseur-logo.html');
+            checkFileExists('logo-generator.html');
+        });
+
+        // Animation d'entrée pour les cartes
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.tool-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>

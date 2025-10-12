@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créateur d'icônes iOS/Android</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover { background: #0056b3; }
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .icon-item {
+            text-align: center;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .icon-item canvas {
+            border: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .status {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Créateur d'icônes iOS/Android</h1>
+        
+        <div class="status">
+            ✅ Logo SVG chargé - Prêt à créer les icônes !
+        </div>
+        
+        <button onclick="createAllIcons()">🚀 Créer toutes les icônes</button>
+        
+        <div class="icon-grid" id="iconGrid">
+            <!-- Les icônes seront générées ici -->
+        </div>
+    </div>
+
+    <script>
+        // Charger le SVG du logo
+        const logoSVG = `<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+          <!-- Fond sombre avec grille -->
+          <rect width="512" height="512" fill="#0a0a0a"/>
+          
+          <!-- Grille bleue -->
+          <defs>
+            <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1a4a7a" stroke-width="1" opacity="0.3"/>
+            </pattern>
+            
+            <!-- Filtre néon -->
+            <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+              <feMerge> 
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+            
+            <!-- Filtre néon intense -->
+            <filter id="neonIntense" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+              <feMerge> 
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          
+          <!-- Grille de fond -->
+          <rect width="512" height="512" fill="url(#grid)"/>
+          
+          <!-- Cadre néon rose -->
+          <rect x="80" y="80" width="352" height="352" rx="20" ry="20" 
+                fill="none" stroke="#ff1493" stroke-width="8" 
+                filter="url(#neonIntense)" opacity="0.9"/>
+          
+          <!-- Crayon central -->
+          <!-- Gomme (magenta) -->
+          <rect x="248" y="140" width="16" height="20" fill="#ff1493" filter="url(#neonGlow)"/>
+          <!-- Bande métallique (orange) -->
+          <rect x="244" y="160" width="24" height="8" fill="#ff8c00" filter="url(#neonGlow)"/>
+          <!-- Corps du crayon -->
+          <!-- Bande jaune gauche -->
+          <rect x="244" y="168" width="4" height="120" fill="#ffff00" filter="url(#neonGlow)"/>
+          <!-- Bandes vertes centrales -->
+          <rect x="248" y="168" width="4" height="120" fill="#00ff00" filter="url(#neonGlow)"/>
+          <rect x="252" y="168" width="4" height="120" fill="#00ff00" filter="url(#neonGlow)"/>
+          <rect x="256" y="168" width="4" height="120" fill="#00ff00" filter="url(#neonGlow)"/>
+          <!-- Bande jaune droite -->
+          <rect x="260" y="168" width="4" height="120" fill="#ffff00" filter="url(#neonGlow)"/>
+          <!-- Pointe du crayon (orange) -->
+          <polygon points="244,288 264,288 256,320" fill="#ff8c00" filter="url(#neonGlow)"/>
+          <!-- Mine (magenta) -->
+          <polygon points="256,320 252,340 260,340" fill="#ff1493" filter="url(#neonGlow)"/>
+          
+          <!-- Éléments pixel art autour du crayon -->
+          <!-- Plus jaune en haut à gauche -->
+          <rect x="180" y="180" width="8" height="8" fill="#ffff00" filter="url(#neonGlow)"/>
+          <rect x="184" y="176" width="8" height="8" fill="#ffff00" filter="url(#neonGlow)"/>
+          <rect x="184" y="184" width="8" height="8" fill="#ffff00" filter="url(#neonGlow)"/>
+          <rect x="184" y="188" width="8" height="8" fill="#ffff00" filter="url(#neonGlow)"/>
+          
+          <!-- Cœur vert en haut à droite -->
+          <rect x="324" y="180" width="8" height="8" fill="#00ff00" filter="url(#neonGlow)"/>
+          <rect x="332" y="180" width="8" height="8" fill="#00ff00" filter="url(#neonGlow)"/>
+          <rect x="320" y="188" width="8" height="8" fill="#00ff00" filter="url(#neonGlow)"/>
+          <rect x="328" y="188" width="8" height="8" fill="#00ff00" filter="url(#neonGlow)"/>
+          <rect x="336" y="188" width="8" height="8" fill="#00ff00" filter="url(#neonGlow)"/>
+          <rect x="344" y="188" width="8" height="8" fill="#00ff00" filter="url(#neonGlow)"/>
+          <rect x="324" y="196" width="8" height="8" fill="#00ff00" filter="url(#neonGlow)"/>
+          <rect x="332" y="196" width="8" height="8" fill="#00ff00" filter="url(#neonGlow)"/>
+          <rect x="340" y="196" width="8" height="8" fill="#00ff00" filter="url(#neonGlow)"/>
+          <rect x="332" y="204" width="8" height="8" fill="#00ff00" filter="url(#neonGlow)"/>
+          
+          <!-- Étoile bleue milieu gauche -->
+          <rect x="160" y="240" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          <rect x="168" y="240" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          <rect x="176" y="240" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          <rect x="168" y="232" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          <rect x="168" y="248" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          
+          <!-- Étoile bleue milieu droite -->
+          <rect x="328" y="240" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          <rect x="336" y="240" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          <rect x="344" y="240" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          <rect x="336" y="232" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          <rect x="336" y="248" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          
+          <!-- Losange bleu bas gauche -->
+          <rect x="180" y="320" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          <rect x="188" y="312" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          <rect x="196" y="320" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          <rect x="188" y="328" width="8" height="8" fill="#00bfff" filter="url(#neonGlow)"/>
+          
+          <!-- Plus magenta bas droite -->
+          <rect x="324" y="320" width="8" height="8" fill="#ff1493" filter="url(#neonGlow)"/>
+          <rect x="332" y="316" width="8" height="8" fill="#ff1493" filter="url(#neonGlow)"/>
+          <rect x="332" y="324" width="8" height="8" fill="#ff1493" filter="url(#neonGlow)"/>
+          <rect x="332" y="328" width="8" height="8" fill="#ff1493" filter="url(#neonGlow)"/>
+          
+          <!-- Texte "PIXEL ART" en bas -->
+          <text x="256" y="400" text-anchor="middle" 
+                font-family="monospace" font-size="24" font-weight="bold" 
+                fill="#00bfff" filter="url(#neonGlow)">
+            PIXEL ART
+          </text>
+        </svg>`;
+
+        const iconSizes = [
+            { size: 192, name: 'icon-192.png', desc: 'Android/Web' },
+            { size: 512, name: 'icon-512.png', desc: 'Android HD' },
+            { size: 180, name: 'apple-touch-icon.png', desc: 'iOS iPhone' },
+            { size: 167, name: 'apple-touch-icon-ipad.png', desc: 'iOS iPad' },
+            { size: 1024, name: 'apple-touch-icon-app-store.png', desc: 'App Store' }
+        ];
+
+        function createAllIcons() {
+            const iconGrid = document.getElementById('iconGrid');
+            iconGrid.innerHTML = '';
+
+            iconSizes.forEach(iconConfig => {
+                createIcon(iconConfig);
+            });
+        }
+
+        function createIcon(iconConfig) {
+            const { size, name, desc } = iconConfig;
+            
+            // Créer le canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Créer l'image SVG
+            const img = new Image();
+            const svgBlob = new Blob([logoSVG], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                // Dessiner l'image redimensionnée
+                ctx.drawImage(img, 0, 0, size, size);
+                
+                // Créer l'élément de téléchargement
+                const iconItem = document.createElement('div');
+                iconItem.className = 'icon-item';
+                
+                const canvasClone = canvas.cloneNode(true);
+                iconItem.appendChild(canvasClone);
+                
+                const label = document.createElement('p');
+                label.textContent = `${name} (${size}x${size})`;
+                iconItem.appendChild(label);
+                
+                const descP = document.createElement('p');
+                descP.textContent = desc;
+                descP.style.fontSize = '12px';
+                descP.style.color = '#666';
+                iconItem.appendChild(descP);
+                
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = '📥 Télécharger';
+                downloadBtn.onclick = () => downloadCanvas(canvas, name);
+                iconItem.appendChild(downloadBtn);
+                
+                document.getElementById('iconGrid').appendChild(iconItem);
+                
+                URL.revokeObjectURL(url);
+            };
+            
+            img.src = url;
+        }
+
+        function downloadCanvas(canvas, filename) {
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Créer les icônes au chargement
+        window.addEventListener('load', createAllIcons);
+    </script>
+</body>
+</html>

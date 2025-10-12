@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Logo Pixel Art</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(180deg, #4a90e2 0%, #7b68ee 25%, #9966cc 50%, #ba55d3 75%, #da70d6 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        label {
+            display: block;
+            color: white;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .preview {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+        }
+
+        .download-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Générateur de Logo Pixel Art</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="logoType">Type de Logo</label>
+                <select id="logoType">
+                    <option value="grid">Grille Pixel</option>
+                    <option value="pencil">Crayon + Grille</option>
+                    <option value="frames">Frames Animation</option>
+                    <option value="modern">Moderne Typography</option>
+                    <option value="neon-grid">Grille Néon 80's</option>
+                    <option value="synthwave">Synthwave Retro</option>
+                    <option value="cyberpunk">Cyberpunk Matrix</option>
+                    <option value="outrun">Outrun Sunset</option>
+                    <option value="vaporwave">Vaporwave Aesthetic</option>
+                    <option value="glitch">Glitch Art</option>
+                    <option value="pencil-neon">Crayon Néon Stylisé</option>
+                    <option value="exact-logo">Logo Exact (Basé sur l'image)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="colorScheme">Palette de Couleurs</label>
+                <select id="colorScheme">
+                    <option value="gradient">Dégradé App</option>
+                    <option value="monochrome">Monochrome</option>
+                    <option value="rainbow">Arc-en-ciel</option>
+                    <option value="neon">Néon</option>
+                    <option value="synthwave">Synthwave 80's</option>
+                    <option value="cyberpunk">Cyberpunk Green</option>
+                    <option value="outrun">Outrun Pink/Blue</option>
+                    <option value="vaporwave">Vaporwave Pastel</option>
+                    <option value="retro">Retro Fluorescent</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="size">Taille</label>
+                <select id="size">
+                    <option value="192">192x192 (Mobile)</option>
+                    <option value="512">512x512 (Desktop)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="preview">
+            <div id="logoPreview"></div>
+        </div>
+
+        <div class="download-section">
+            <button class="download-btn" onclick="downloadLogo()">📥 Télécharger le Logo</button>
+        </div>
+    </div>
+
+    <script>
+        let currentLogo = null;
+
+        const colorSchemes = {
+            gradient: { primary: '#4a90e2', secondary: '#7b68ee', tertiary: '#9966cc' },
+            monochrome: { primary: '#333333', secondary: '#666666', tertiary: '#999999' },
+            rainbow: { primary: '#ff0000', secondary: '#00ff00', tertiary: '#0000ff' },
+            neon: { primary: '#00ffff', secondary: '#ff00ff', tertiary: '#ffff00' },
+            synthwave: { primary: '#ff0080', secondary: '#00ffff', tertiary: '#ff4081' },
+            cyberpunk: { primary: '#00ff41', secondary: '#008f11', tertiary: '#39ff14' },
+            outrun: { primary: '#ff006e', secondary: '#8338ec', tertiary: '#3a86ff' },
+            vaporwave: { primary: '#ff71ce', secondary: '#01cdfe', tertiary: '#05ffa1' },
+            retro: { primary: '#ff073a', secondary: '#ffbe0b', tertiary: '#fb5607' }
+        };
+
+        function generateLogo() {
+            const logoType = document.getElementById('logoType').value;
+            const colorScheme = document.getElementById('colorScheme').value;
+            const size = parseInt(document.getElementById('size').value);
+            
+            const colors = colorSchemes[colorScheme];
+            let svg = '';
+            
+            switch(logoType) {
+                case 'grid':
+                    svg = generateGridLogo(size, colors);
+                    break;
+                case 'pencil':
+                    svg = generatePencilLogo(size, colors);
+                    break;
+                case 'frames':
+                    svg = generateFramesLogo(size, colors);
+                    break;
+                case 'modern':
+                    svg = generateModernLogo(size, colors);
+                    break;
+                case 'neon-grid':
+                    svg = generateNeonGridLogo(size, colors);
+                    break;
+                case 'synthwave':
+                    svg = generateSynthwaveLogo(size, colors);
+                    break;
+                case 'cyberpunk':
+                    svg = generateCyberpunkLogo(size, colors);
+                    break;
+                case 'outrun':
+                    svg = generateOutrunLogo(size, colors);
+                    break;
+                case 'vaporwave':
+                    svg = generateVaporwaveLogo(size, colors);
+                    break;
+                case 'glitch':
+                    svg = generateGlitchLogo(size, colors);
+                    break;
+                case 'pencil-neon':
+                    svg = generatePencilNeonLogo(size, colors);
+                    break;
+                case 'exact-logo':
+                    svg = generateExactLogo(size, colors);
+                    break;
+            }
+            
+            currentLogo = svg;
+            document.getElementById('logoPreview').innerHTML = svg;
+        }
+
+        function generateGridLogo(size, colors) {
+            const center = size / 2;
+            const gridSize = size * 0.6;
+            const cellSize = gridSize / 3;
+            const startX = center - gridSize / 2;
+            const startY = center - gridSize / 2;
+            
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Fond circulaire
+            svg += `<circle cx="${center}" cy="${center}" r="${size * 0.45}" fill="${colors.primary}" opacity="0.1"/>`;
+            
+            // Grille 3x3
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const x = startX + j * cellSize;
+                    const y = startY + i * cellSize;
+                    const isColored = (i + j) % 2 === 0;
+                    
+                    if (isColored) {
+                        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="${colors.primary}"/>`;
+                    }
+                    
+                    svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                            fill="none" stroke="${colors.secondary}" stroke-width="2" opacity="0.5"/>`;
+                }
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generatePencilLogo(size, colors) {
+            const center = size / 2;
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Fond
+            svg += `<circle cx="${center}" cy="${center}" r="${size * 0.45}" fill="${colors.primary}" opacity="0.1"/>`;
+            
+            // Crayon
+            const pencilY = center - size * 0.2;
+            svg += `<polygon points="${center-size*0.1},${pencilY} ${center+size*0.1},${pencilY} ${center+size*0.05},${pencilY+size*0.3} ${center-size*0.05},${pencilY+size*0.3}" fill="${colors.primary}"/>`;
+            
+            // Grille
+            const gridSize = size * 0.4;
+            const cellSize = gridSize / 3;
+            const startX = center - gridSize / 2;
+            const startY = center + size * 0.1;
+            
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const x = startX + j * cellSize;
+                    const y = startY + i * cellSize;
+                    const isColored = (i + j) % 2 === 0;
+                    
+                    if (isColored) {
+                        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="${colors.secondary}" opacity="0.7"/>`;
+                    }
+                    svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                            fill="none" stroke="${colors.tertiary}" stroke-width="1" opacity="0.5"/>`;
+                }
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generateFramesLogo(size, colors) {
+            const center = size / 2;
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Fond
+            svg += `<circle cx="${center}" cy="${center}" r="${size * 0.45}" fill="${colors.primary}" opacity="0.1"/>`;
+            
+            // 3 frames
+            const frameSize = size * 0.2;
+            const spacing = size * 0.1;
+            
+            for (let i = 0; i < 3; i++) {
+                const x = center - frameSize * 1.5 - spacing + i * (frameSize + spacing);
+                const y = center - frameSize / 2;
+                
+                svg += `<rect x="${x}" y="${y}" width="${frameSize}" height="${frameSize}" 
+                        fill="none" stroke="${colors.primary}" stroke-width="3"/>`;
+                
+                const pixelX = x + frameSize * 0.2 + i * frameSize * 0.3;
+                const pixelY = y + frameSize * 0.2;
+                svg += `<rect x="${pixelX}" y="${pixelY}" width="${frameSize * 0.3}" height="${frameSize * 0.3}" 
+                        fill="${colors.secondary}"/>`;
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generateModernLogo(size, colors) {
+            const center = size / 2;
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Fond
+            svg += `<circle cx="${center}" cy="${center}" r="${size * 0.45}" fill="${colors.primary}" opacity="0.1"/>`;
+            
+            // Texte
+            const fontSize = size * 0.15;
+            svg += `<text x="${center}" y="${center - fontSize * 0.3}" 
+                    font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" 
+                    text-anchor="middle" fill="${colors.primary}">PIXEL</text>`;
+            
+            svg += `<text x="${center}" y="${center + fontSize * 0.5}" 
+                    font-family="Arial, sans-serif" font-size="${fontSize * 0.8}" font-weight="bold" 
+                    text-anchor="middle" fill="${colors.secondary}">ART</text>`;
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generateNeonGridLogo(size, colors) {
+            const center = size / 2;
+            const gridSize = size * 0.7;
+            const cellSize = gridSize / 4;
+            const startX = center - gridSize / 2;
+            const startY = center - gridSize / 2;
+            
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Effets néon
+            svg += `<defs>
+                <filter id="neonGlow">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="outerGlow">
+                    <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>`;
+            
+            // Fond sombre
+            svg += `<rect width="${size}" height="${size}" fill="#0a0a0a"/>`;
+            
+            // Grille néon 4x4
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const x = startX + j * cellSize;
+                    const y = startY + i * cellSize;
+                    const isColored = (i + j) % 2 === 0;
+                    
+                    if (isColored) {
+                        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                                fill="${colors.primary}" filter="url(#neonGlow)" opacity="0.9"/>`;
+                    }
+                    
+                    svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                            fill="none" stroke="${colors.secondary}" stroke-width="2" 
+                            filter="url(#outerGlow)" opacity="0.7"/>`;
+                }
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generateSynthwaveLogo(size, colors) {
+            const center = size / 2;
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Fond synthwave
+            svg += `<defs>
+                <linearGradient id="synthwaveBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ff0080;stop-opacity:0.8" />
+                    <stop offset="50%" style="stop-color:#8338ec;stop-opacity:0.6" />
+                    <stop offset="100%" style="stop-color:#3a86ff;stop-opacity:0.8" />
+                </linearGradient>
+                <filter id="synthGlow">
+                    <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>`;
+            
+            // Fond dégradé
+            svg += `<rect width="${size}" height="${size}" fill="url(#synthwaveBg)"/>`;
+            
+            // Grille synthwave
+            const gridSize = size * 0.6;
+            const cellSize = gridSize / 3;
+            const startX = center - gridSize / 2;
+            const startY = center - gridSize / 2;
+            
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const x = startX + j * cellSize;
+                    const y = startY + i * cellSize;
+                    const isColored = (i + j) % 2 === 0;
+                    
+                    if (isColored) {
+                        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                                fill="${colors.primary}" filter="url(#synthGlow)" opacity="0.9"/>`;
+                    }
+                    
+                    svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                            fill="none" stroke="${colors.secondary}" stroke-width="3" 
+                            filter="url(#synthGlow)" opacity="0.8"/>`;
+                }
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generateCyberpunkLogo(size, colors) {
+            const center = size / 2;
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Fond cyberpunk
+            svg += `<defs>
+                <filter id="cyberGlow">
+                    <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>`;
+            
+            // Fond noir
+            svg += `<rect width="${size}" height="${size}" fill="#000000"/>`;
+            
+            // Grille matrix
+            const gridSize = size * 0.8;
+            const cellSize = gridSize / 5;
+            const startX = center - gridSize / 2;
+            const startY = center - gridSize / 2;
+            
+            for (let i = 0; i < 5; i++) {
+                for (let j = 0; j < 5; j++) {
+                    const x = startX + j * cellSize;
+                    const y = startY + i * cellSize;
+                    const isColored = Math.random() > 0.6; // Effet aléatoire matrix
+                    
+                    if (isColored) {
+                        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                                fill="${colors.primary}" filter="url(#cyberGlow)" opacity="0.8"/>`;
+                    }
+                    
+                    svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                            fill="none" stroke="${colors.secondary}" stroke-width="1" 
+                            filter="url(#cyberGlow)" opacity="0.4"/>`;
+                }
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generateOutrunLogo(size, colors) {
+            const center = size / 2;
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Fond outrun
+            svg += `<defs>
+                <radialGradient id="outrunBg" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#ff006e;stop-opacity:0.9" />
+                    <stop offset="50%" style="stop-color:#8338ec;stop-opacity:0.7" />
+                    <stop offset="100%" style="stop-color:#3a86ff;stop-opacity:0.5" />
+                </radialGradient>
+                <filter id="outrunGlow">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>`;
+            
+            // Fond dégradé radial
+            svg += `<circle cx="${center}" cy="${center}" r="${size * 0.5}" fill="url(#outrunBg)"/>`;
+            
+            // Grille outrun
+            const gridSize = size * 0.5;
+            const cellSize = gridSize / 3;
+            const startX = center - gridSize / 2;
+            const startY = center - gridSize / 2;
+            
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const x = startX + j * cellSize;
+                    const y = startY + i * cellSize;
+                    const isColored = (i + j) % 2 === 0;
+                    
+                    if (isColored) {
+                        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                                fill="${colors.primary}" filter="url(#outrunGlow)" opacity="0.9"/>`;
+                    }
+                    
+                    svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                            fill="none" stroke="${colors.secondary}" stroke-width="2" 
+                            filter="url(#outrunGlow)" opacity="0.7"/>`;
+                }
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generateVaporwaveLogo(size, colors) {
+            const center = size / 2;
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Fond vaporwave
+            svg += `<defs>
+                <linearGradient id="vaporBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ff71ce;stop-opacity:0.8" />
+                    <stop offset="50%" style="stop-color:#01cdfe;stop-opacity:0.6" />
+                    <stop offset="100%" style="stop-color:#05ffa1;stop-opacity:0.8" />
+                </linearGradient>
+                <filter id="vaporGlow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>`;
+            
+            // Fond dégradé
+            svg += `<rect width="${size}" height="${size}" fill="url(#vaporBg)"/>`;
+            
+            // Grille vaporwave
+            const gridSize = size * 0.6;
+            const cellSize = gridSize / 4;
+            const startX = center - gridSize / 2;
+            const startY = center - gridSize / 2;
+            
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const x = startX + j * cellSize;
+                    const y = startY + i * cellSize;
+                    const isColored = (i + j) % 2 === 0;
+                    
+                    if (isColored) {
+                        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                                fill="${colors.primary}" filter="url(#vaporGlow)" opacity="0.8"/>`;
+                    }
+                    
+                    svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                            fill="none" stroke="${colors.secondary}" stroke-width="2" 
+                            filter="url(#vaporGlow)" opacity="0.6"/>`;
+                }
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generateGlitchLogo(size, colors) {
+            const center = size / 2;
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Effets glitch
+            svg += `<defs>
+                <filter id="glitchEffect">
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>`;
+            
+            // Fond sombre
+            svg += `<rect width="${size}" height="${size}" fill="#000000"/>`;
+            
+            // Grille glitch
+            const gridSize = size * 0.7;
+            const cellSize = gridSize / 4;
+            const startX = center - gridSize / 2;
+            const startY = center - gridSize / 2;
+            
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const x = startX + j * cellSize;
+                    const y = startY + i * cellSize;
+                    const isColored = (i + j) % 2 === 0;
+                    
+                    if (isColored) {
+                        // Effet glitch avec décalage
+                        const offsetX = Math.random() * 4 - 2;
+                        const offsetY = Math.random() * 4 - 2;
+                        
+                        svg += `<rect x="${x + offsetX}" y="${y + offsetY}" width="${cellSize}" height="${cellSize}" 
+                                fill="${colors.primary}" filter="url(#glitchEffect)" opacity="0.9"/>`;
+                    }
+                    
+                    svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" 
+                            fill="none" stroke="${colors.secondary}" stroke-width="1" 
+                            filter="url(#glitchEffect)" opacity="0.5"/>`;
+                }
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generatePencilNeonLogo(size, colors) {
+            const center = size / 2;
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Effets néon
+            svg += `<defs>
+                <filter id="strongGlow">
+                    <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="outerGlow">
+                    <feGaussianBlur stdDeviation="10" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>`;
+            
+            // Fond sombre avec grille
+            svg += `<rect width="${size}" height="${size}" fill="#0a0a0a"/>`;
+            
+            // Grille de fond
+            const gridSize = 20;
+            for (let i = 0; i < size; i += gridSize) {
+                svg += `<line x1="0" y1="${i}" x2="${size}" y2="${i}" stroke="#001122" stroke-width="1" opacity="0.3"/>`;
+                svg += `<line x1="${i}" y1="0" x2="${i}" y2="${size}" stroke="#001122" stroke-width="1" opacity="0.3"/>`;
+            }
+            
+            // Cadre néon autour du logo
+            const frameSize = size * 0.8;
+            const frameX = center - frameSize / 2;
+            const frameY = center - frameSize / 2;
+            svg += `<rect x="${frameX}" y="${frameY}" width="${frameSize}" height="${frameSize}" 
+                    fill="none" stroke="${colors.primary}" stroke-width="4" 
+                    filter="url(#strongGlow)" rx="20" ry="20"/>`;
+            
+            // Crayon stylisé au centre
+            const pencilWidth = size * 0.15;
+            const pencilHeight = size * 0.4;
+            const pencilX = center - pencilWidth / 2;
+            const pencilY = center - pencilHeight / 2;
+            
+            // Gomme (magenta)
+            svg += `<rect x="${pencilX + pencilWidth * 0.2}" y="${pencilY}" 
+                    width="${pencilWidth * 0.6}" height="${pencilHeight * 0.15}" 
+                    fill="#ff00ff" filter="url(#strongGlow)" rx="3" ry="3"/>`;
+            
+            // Bague métallique (orange)
+            svg += `<rect x="${pencilX + pencilWidth * 0.1}" y="${pencilY + pencilHeight * 0.15}" 
+                    width="${pencilWidth * 0.8}" height="${pencilHeight * 0.1}" 
+                    fill="#ff8800" filter="url(#strongGlow)"/>`;
+            
+            // Corps du crayon (bandes colorées)
+            const bandHeight = pencilHeight * 0.15;
+            const bandColors = ['#ffff00', '#00ff00', '#00ff00', '#00ff00', '#ffff00'];
+            
+            for (let i = 0; i < bandColors.length; i++) {
+                const bandY = pencilY + pencilHeight * 0.25 + i * bandHeight;
+                svg += `<rect x="${pencilX}" y="${bandY}" width="${pencilWidth}" height="${bandHeight}" 
+                        fill="${bandColors[i]}" filter="url(#strongGlow)"/>`;
+            }
+            
+            // Pointe en bois (orange)
+            const tipHeight = pencilHeight * 0.15;
+            const tipY = pencilY + pencilHeight * 0.85;
+            svg += `<polygon points="${pencilX},${tipY} ${pencilX + pencilWidth},${tipY} 
+                    ${pencilX + pencilWidth * 0.5},${pencilY + pencilHeight}" 
+                    fill="#ff8800" filter="url(#strongGlow)"/>`;
+            
+            // Mine (magenta)
+            const leadSize = pencilWidth * 0.3;
+            svg += `<polygon points="${pencilX + pencilWidth * 0.35},${pencilY + pencilHeight} 
+                    ${pencilX + pencilWidth * 0.65},${pencilY + pencilHeight} 
+                    ${center},${pencilY + pencilHeight + leadSize}" 
+                    fill="#ff00ff" filter="url(#strongGlow)"/>`;
+            
+            // Éléments pixel art autour
+            const pixelSize = size * 0.03;
+            
+            // Plus jaune en haut à gauche
+            const plusX = frameX + frameSize * 0.1;
+            const plusY = frameY + frameSize * 0.1;
+            svg += `<rect x="${plusX}" y="${plusY}" width="${pixelSize}" height="${pixelSize * 3}" fill="#ffff00" filter="url(#strongGlow)"/>`;
+            svg += `<rect x="${plusX - pixelSize}" y="${plusY + pixelSize}" width="${pixelSize * 3}" height="${pixelSize}" fill="#ffff00" filter="url(#strongGlow)"/>`;
+            
+            // Étoile bleue sous le plus
+            const starX = plusX + pixelSize * 2;
+            const starY = plusY + pixelSize * 5;
+            svg += `<polygon points="${starX},${starY - pixelSize} ${starX + pixelSize * 0.5},${starY + pixelSize * 0.5} 
+                    ${starX - pixelSize * 0.5},${starY + pixelSize * 0.5} ${starX + pixelSize * 0.5},${starY + pixelSize * 1.5} 
+                    ${starX - pixelSize * 0.5},${starY + pixelSize * 1.5}" 
+                    fill="#00aaff" filter="url(#strongGlow)"/>`;
+            
+            // Diamant de carrés bleus en bas à gauche
+            const diamondX = frameX + frameSize * 0.15;
+            const diamondY = frameY + frameSize * 0.7;
+            svg += `<rect x="${diamondX}" y="${diamondY}" width="${pixelSize}" height="${pixelSize}" fill="#00aaff" filter="url(#strongGlow)"/>`;
+            svg += `<rect x="${diamondX - pixelSize}" y="${diamondY + pixelSize}" width="${pixelSize}" height="${pixelSize}" fill="#00aaff" filter="url(#strongGlow)"/>`;
+            svg += `<rect x="${diamondX + pixelSize}" y="${diamondY + pixelSize}" width="${pixelSize}" height="${pixelSize}" fill="#00aaff" filter="url(#strongGlow)"/>`;
+            svg += `<rect x="${diamondX}" y="${diamondY + pixelSize * 2}" width="${pixelSize}" height="${pixelSize}" fill="#00aaff" filter="url(#strongGlow)"/>`;
+            
+            // Cœur vert en haut à droite
+            const heartX = frameX + frameSize * 0.7;
+            const heartY = frameY + frameSize * 0.1;
+            svg += `<polygon points="${heartX},${heartY + pixelSize} ${heartX + pixelSize},${heartY} 
+                    ${heartX + pixelSize * 2},${heartY} ${heartX + pixelSize * 3},${heartY + pixelSize} 
+                    ${heartX + pixelSize * 3},${heartY + pixelSize * 2} ${heartX + pixelSize * 1.5},${heartY + pixelSize * 3} 
+                    ${heartX},${heartY + pixelSize * 3}" 
+                    fill="#00ff00" filter="url(#strongGlow)"/>`;
+            
+            // Étoile bleue sous le cœur
+            const star2X = heartX + pixelSize * 1.5;
+            const star2Y = heartY + pixelSize * 4;
+            svg += `<polygon points="${star2X},${star2Y - pixelSize} ${star2X + pixelSize * 0.5},${star2Y + pixelSize * 0.5} 
+                    ${star2X - pixelSize * 0.5},${star2Y + pixelSize * 0.5} ${star2X + pixelSize * 0.5},${star2Y + pixelSize * 1.5} 
+                    ${star2X - pixelSize * 0.5},${star2Y + pixelSize * 1.5}" 
+                    fill="#00aaff" filter="url(#strongGlow)"/>`;
+            
+            // Plus magenta en bas à droite
+            const plus2X = frameX + frameSize * 0.7;
+            const plus2Y = frameY + frameSize * 0.7;
+            svg += `<rect x="${plus2X}" y="${plus2Y}" width="${pixelSize}" height="${pixelSize * 3}" fill="#ff00ff" filter="url(#strongGlow)"/>`;
+            svg += `<rect x="${plus2X - pixelSize}" y="${plus2Y + pixelSize}" width="${pixelSize * 3}" height="${pixelSize}" fill="#ff00ff" filter="url(#strongGlow)"/>`;
+            
+            // Étoile bleue au-dessus du plus
+            const star3X = plus2X + pixelSize * 2;
+            const star3Y = plus2Y - pixelSize * 3;
+            svg += `<polygon points="${star3X},${star3Y - pixelSize} ${star3X + pixelSize * 0.5},${star3Y + pixelSize * 0.5} 
+                    ${star3X - pixelSize * 0.5},${star3Y + pixelSize * 0.5} ${star3X + pixelSize * 0.5},${star3Y + pixelSize * 1.5} 
+                    ${star3X - pixelSize * 0.5},${star3Y + pixelSize * 1.5}" 
+                    fill="#00aaff" filter="url(#strongGlow)"/>`;
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function generateExactLogo(size, colors) {
+            const center = size / 2;
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Effets néon exacts comme dans l'image
+            svg += `<defs>
+                <filter id="exactGlow">
+                    <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <filter id="strongExactGlow">
+                    <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>`;
+            
+            // Fond sombre avec grille exacte
+            svg += `<rect width="${size}" height="${size}" fill="#0a0a0a"/>`;
+            
+            // Grille de fond exacte (lignes bleues subtiles)
+            const gridSize = 24;
+            for (let i = 0; i < size; i += gridSize) {
+                svg += `<line x1="0" y1="${i}" x2="${size}" y2="${i}" stroke="#001133" stroke-width="1" opacity="0.4"/>`;
+                svg += `<line x1="${i}" y1="0" x2="${i}" y2="${size}" stroke="#001133" stroke-width="1" opacity="0.4"/>`;
+            }
+            
+            // Cadre néon rose exact comme l'image
+            const frameSize = size * 0.85;
+            const frameX = center - frameSize / 2;
+            const frameY = center - frameSize / 2;
+            svg += `<rect x="${frameX}" y="${frameY}" width="${frameSize}" height="${frameSize}" 
+                    fill="none" stroke="#ff0080" stroke-width="6" 
+                    filter="url(#strongExactGlow)" rx="25" ry="25"/>`;
+            
+            // Crayon exact au centre avec les bonnes proportions
+            const pencilWidth = size * 0.18;
+            const pencilHeight = size * 0.45;
+            const pencilX = center - pencilWidth / 2;
+            const pencilY = center - pencilHeight / 2;
+            
+            // Gomme magenta exacte
+            svg += `<rect x="${pencilX + pencilWidth * 0.15}" y="${pencilY}" 
+                    width="${pencilWidth * 0.7}" height="${pencilHeight * 0.18}" 
+                    fill="#ff00ff" filter="url(#exactGlow)" rx="4" ry="4"/>`;
+            
+            // Bague métallique orange
+            svg += `<rect x="${pencilX + pencilWidth * 0.05}" y="${pencilY + pencilHeight * 0.18}" 
+                    width="${pencilWidth * 0.9}" height="${pencilHeight * 0.12}" 
+                    fill="#ff8800" filter="url(#exactGlow)"/>`;
+            
+            // Corps du crayon avec bandes exactes
+            const bandHeight = pencilHeight * 0.12;
+            const bandColors = ['#ffff00', '#00ff00', '#00ff00', '#00ff00', '#ffff00'];
+            
+            for (let i = 0; i < bandColors.length; i++) {
+                const bandY = pencilY + pencilHeight * 0.3 + i * bandHeight;
+                svg += `<rect x="${pencilX}" y="${bandY}" width="${pencilWidth}" height="${bandHeight}" 
+                        fill="${bandColors[i]}" filter="url(#exactGlow)"/>`;
+            }
+            
+            // Pointe en bois orange avec bords déchiquetés
+            const tipHeight = pencilHeight * 0.18;
+            const tipY = pencilY + pencilHeight * 0.82;
+            svg += `<polygon points="${pencilX},${tipY} ${pencilX + pencilWidth},${tipY} 
+                    ${pencilX + pencilWidth * 0.5},${pencilY + pencilHeight}" 
+                    fill="#ff8800" filter="url(#exactGlow)"/>`;
+            
+            // Mine magenta en forme de V
+            const leadSize = pencilWidth * 0.4;
+            svg += `<polygon points="${pencilX + pencilWidth * 0.3},${pencilY + pencilHeight} 
+                    ${pencilX + pencilWidth * 0.7},${pencilY + pencilHeight} 
+                    ${center},${pencilY + pencilHeight + leadSize}" 
+                    fill="#ff00ff" filter="url(#exactGlow)"/>`;
+            
+            // Éléments pixel art exacts comme dans l'image
+            const pixelSize = size * 0.025;
+            
+            // Plus jaune en haut à gauche (plus grand)
+            const plusX = frameX + frameSize * 0.08;
+            const plusY = frameY + frameSize * 0.08;
+            svg += `<rect x="${plusX}" y="${plusY}" width="${pixelSize}" height="${pixelSize * 4}" fill="#ffff00" filter="url(#exactGlow)"/>`;
+            svg += `<rect x="${plusX - pixelSize * 1.5}" y="${plusY + pixelSize * 1.5}" width="${pixelSize * 4}" height="${pixelSize}" fill="#ffff00" filter="url(#exactGlow)"/>`;
+            
+            // Étoile bleue sous le plus (plus petite)
+            const starX = plusX + pixelSize * 3;
+            const starY = plusY + pixelSize * 6;
+            svg += `<polygon points="${starX},${starY - pixelSize} ${starX + pixelSize * 0.5},${starY + pixelSize * 0.5} 
+                    ${starX - pixelSize * 0.5},${starY + pixelSize * 0.5} ${starX + pixelSize * 0.5},${starY + pixelSize * 1.5} 
+                    ${starX - pixelSize * 0.5},${starY + pixelSize * 1.5}" 
+                    fill="#00aaff" filter="url(#exactGlow)"/>`;
+            
+            // Diamant de carrés bleus en bas à gauche (arrangement exact)
+            const diamondX = frameX + frameSize * 0.12;
+            const diamondY = frameY + frameSize * 0.75;
+            svg += `<rect x="${diamondX}" y="${diamondY}" width="${pixelSize}" height="${pixelSize}" fill="#00aaff" filter="url(#exactGlow)"/>`;
+            svg += `<rect x="${diamondX - pixelSize}" y="${diamondY + pixelSize}" width="${pixelSize}" height="${pixelSize}" fill="#00aaff" filter="url(#exactGlow)"/>`;
+            svg += `<rect x="${diamondX + pixelSize}" y="${diamondY + pixelSize}" width="${pixelSize}" height="${pixelSize}" fill="#00aaff" filter="url(#exactGlow)"/>`;
+            svg += `<rect x="${diamondX}" y="${diamondY + pixelSize * 2}" width="${pixelSize}" height="${pixelSize}" fill="#00aaff" filter="url(#exactGlow)"/>`;
+            
+            // Cœur vert en haut à droite (forme exacte)
+            const heartX = frameX + frameSize * 0.72;
+            const heartY = frameY + frameSize * 0.08;
+            svg += `<polygon points="${heartX},${heartY + pixelSize} ${heartX + pixelSize},${heartY} 
+                    ${heartX + pixelSize * 2},${heartY} ${heartX + pixelSize * 3},${heartY + pixelSize} 
+                    ${heartX + pixelSize * 3},${heartY + pixelSize * 2} ${heartX + pixelSize * 1.5},${heartY + pixelSize * 3} 
+                    ${heartX},${heartY + pixelSize * 3}" 
+                    fill="#00ff00" filter="url(#exactGlow)"/>`;
+            
+            // Étoile bleue sous le cœur
+            const star2X = heartX + pixelSize * 1.5;
+            const star2Y = heartY + pixelSize * 4;
+            svg += `<polygon points="${star2X},${star2Y - pixelSize} ${star2X + pixelSize * 0.5},${star2Y + pixelSize * 0.5} 
+                    ${star2X - pixelSize * 0.5},${star2Y + pixelSize * 0.5} ${star2X + pixelSize * 0.5},${star2Y + pixelSize * 1.5} 
+                    ${star2X - pixelSize * 0.5},${star2Y + pixelSize * 1.5}" 
+                    fill="#00aaff" filter="url(#exactGlow)"/>`;
+            
+            // Plus magenta en bas à droite (plus grand)
+            const plus2X = frameX + frameSize * 0.72;
+            const plus2Y = frameY + frameSize * 0.75;
+            svg += `<rect x="${plus2X}" y="${plus2Y}" width="${pixelSize}" height="${pixelSize * 4}" fill="#ff00ff" filter="url(#exactGlow)"/>`;
+            svg += `<rect x="${plus2X - pixelSize * 1.5}" y="${plus2Y + pixelSize * 1.5}" width="${pixelSize * 4}" height="${pixelSize}" fill="#ff00ff" filter="url(#exactGlow)"/>`;
+            
+            // Étoile bleue au-dessus du plus magenta
+            const star3X = plus2X + pixelSize * 3;
+            const star3Y = plus2Y - pixelSize * 4;
+            svg += `<polygon points="${star3X},${star3Y - pixelSize} ${star3X + pixelSize * 0.5},${star3Y + pixelSize * 0.5} 
+                    ${star3X - pixelSize * 0.5},${star3Y + pixelSize * 0.5} ${star3X + pixelSize * 0.5},${star3Y + pixelSize * 1.5} 
+                    ${star3X - pixelSize * 0.5},${star3Y + pixelSize * 1.5}" 
+                    fill="#00aaff" filter="url(#exactGlow)"/>`;
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function downloadLogo() {
+            if (!currentLogo) return;
+            
+            const blob = new Blob([currentLogo], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'pixel-art-logo.svg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            generateLogo();
+            
+            document.getElementById('logoType').addEventListener('change', generateLogo);
+            document.getElementById('colorScheme').addEventListener('change', generateLogo);
+            document.getElementById('size').addEventListener('change', generateLogo);
+        });
+    </script>
+</body>
+</html>

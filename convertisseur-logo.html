@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🖼️ Convertisseur Image → Logo Pixel Art</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        .preview-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .preview-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .preview-box h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #svgPreview {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ffd700;
+        }
+
+        #svgPreview svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .control-group select {
+            padding: 8px 15px;
+            border-radius: 25px;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-weight: bold;
+        }
+
+        .download-section {
+            text-align: center;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+        }
+
+        .download-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.6);
+        }
+
+        .download-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .info {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .info h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+
+        .info p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 2px solid #2ecc71;
+            color: #2ecc71;
+        }
+
+        .status.error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 2px solid #e74c3c;
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Convertisseur Image → Logo Pixel Art</h1>
+        
+        <div class="upload-section">
+            <input type="file" id="imageInput" accept="image/*">
+            <button class="upload-btn" onclick="document.getElementById('imageInput').click()">
+                📁 Choisir une image
+            </button>
+        </div>
+
+        <div id="status" class="status" style="display: none;"></div>
+
+        <div class="preview-container">
+            <div class="preview-box">
+                <h3>Image Originale</h3>
+                <img id="originalPreview" class="preview-image" style="display: none;">
+                <p id="originalInfo" style="color: rgba(255,255,255,0.7);"></p>
+            </div>
+            
+            <div class="preview-box">
+                <h3>Logo SVG Généré</h3>
+                <div id="svgPreview">
+                    <p style="color: rgba(255,255,255,0.5);">Aucun logo généré</p>
+                </div>
+                <p id="svgInfo" style="color: rgba(255,255,255,0.7);"></p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="logoSize">Taille du Logo</label>
+                <select id="logoSize">
+                    <option value="192">192x192 (Mobile)</option>
+                    <option value="512" selected>512x512 (Desktop)</option>
+                    <option value="1024">1024x1024 (HD)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="quality">Qualité</label>
+                <select id="quality">
+                    <option value="high" selected>Haute</option>
+                    <option value="medium">Moyenne</option>
+                    <option value="low">Basse</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="format">Format de sortie</label>
+                <select id="format">
+                    <option value="svg" selected>SVG (Vectoriel)</option>
+                    <option value="png">PNG (Raster)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="download-section">
+            <button class="download-btn" onclick="downloadLogo()" id="downloadBtn" disabled>
+                📥 Télécharger le Logo
+            </button>
+            <button class="download-btn" onclick="applyToApp()" id="applyBtn" disabled>
+                🚀 Appliquer à l'App
+            </button>
+        </div>
+
+        <div class="info">
+            <h3>💡 Comment ça marche :</h3>
+            <p>1. <strong>Upload ton image</strong> : Le programme analyse les couleurs et formes</p>
+            <p>2. <strong>Génération automatique</strong> : Conversion en logo SVG vectoriel</p>
+            <p>3. <strong>Téléchargement</strong> : Logo prêt à utiliser</p>
+            <p>4. <strong>Application</strong> : Intégration directe dans ton app pixel art</p>
+        </div>
+    </div>
+
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <script>
+        let originalImage = null;
+        let generatedSVG = null;
+
+        function showStatus(message, type = 'success') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    originalImage = new Image();
+                    originalImage.onload = function() {
+                        displayOriginalImage();
+                        generateSVGFromImage();
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function displayOriginalImage() {
+            const preview = document.getElementById('originalPreview');
+            const info = document.getElementById('originalInfo');
+            
+            preview.src = originalImage.src;
+            preview.style.display = 'block';
+            info.textContent = `${originalImage.width} × ${originalImage.height} pixels`;
+        }
+
+        function generateSVGFromImage() {
+            if (!originalImage) {
+                showStatus('Erreur: Aucune image chargée', 'error');
+                return;
+            }
+            
+            try {
+                showStatus('🔄 Génération du logo en cours...', 'success');
+                
+                const size = parseInt(document.getElementById('logoSize').value);
+                const quality = document.getElementById('quality').value;
+                
+                // Créer un canvas pour analyser l'image
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Redimensionner l'image
+                const scale = size / Math.max(originalImage.width, originalImage.height);
+                const newWidth = originalImage.width * scale;
+                const newHeight = originalImage.height * scale;
+                
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                
+                // Dessiner l'image redimensionnée
+                ctx.drawImage(originalImage, 0, 0, newWidth, newHeight);
+                
+                // Analyser les couleurs principales
+                const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
+                
+                // Générer le SVG
+                generatedSVG = createSVGFromImageData(imageData, size);
+                
+                // Afficher le SVG
+                displayGeneratedSVG();
+                
+                // Activer les boutons
+                document.getElementById('downloadBtn').disabled = false;
+                document.getElementById('applyBtn').disabled = false;
+                
+                showStatus('✅ Logo généré avec succès !', 'success');
+                
+            } catch (error) {
+                console.error('Erreur lors de la génération:', error);
+                showStatus('❌ Erreur lors de la génération du logo', 'error');
+            }
+        }
+
+        function createSVGFromImageData(imageData, size) {
+            const width = imageData.width;
+            const height = imageData.height;
+            const data = imageData.data;
+            
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Fond sombre
+            svg += `<rect width="${size}" height="${size}" fill="#0a0a0a"/>`;
+            
+            // Effets néon
+            svg += `<defs>
+                <filter id="neonGlow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>`;
+            
+            // Convertir en pixels
+            const pixelSize = size / Math.max(width, height);
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const index = (y * width + x) * 4;
+                    const r = data[index];
+                    const g = data[index + 1];
+                    const b = data[index + 2];
+                    const a = data[index + 3];
+                    
+                    if (a > 128) { // Pixel non transparent
+                        const svgX = x * pixelSize;
+                        const svgY = y * pixelSize;
+                        const color = `rgb(${r},${g},${b})`;
+                        
+                        svg += `<rect x="${svgX}" y="${svgY}" width="${pixelSize}" height="${pixelSize}" 
+                                fill="${color}" filter="url(#neonGlow)"/>`;
+                    }
+                }
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function displayGeneratedSVG() {
+            const preview = document.getElementById('svgPreview');
+            const info = document.getElementById('svgInfo');
+            
+            preview.innerHTML = generatedSVG;
+            info.textContent = `Logo SVG ${document.getElementById('logoSize').value}×${document.getElementById('logoSize').value}`;
+        }
+
+        function downloadLogo() {
+            if (!generatedSVG) {
+                showStatus('❌ Aucun logo à télécharger', 'error');
+                return;
+            }
+            
+            try {
+                const format = document.getElementById('format').value;
+                const size = document.getElementById('logoSize').value;
+                
+                if (format === 'svg') {
+                    // Télécharger SVG
+                    const blob = new Blob([generatedSVG], { type: 'image/svg+xml' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `pixel-art-logo-${size}x${size}.svg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    showStatus('✅ Logo SVG téléchargé !', 'success');
+                } else {
+                    // Convertir en PNG
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const sizeNum = parseInt(size);
+                    
+                    canvas.width = sizeNum;
+                    canvas.height = sizeNum;
+                    
+                    const img = new Image();
+                    img.onload = function() {
+                        ctx.drawImage(img, 0, 0, sizeNum, sizeNum);
+                        canvas.toBlob(function(blob) {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `pixel-art-logo-${size}x${size}.png`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            
+                            showStatus('✅ Logo PNG téléchargé !', 'success');
+                        });
+                    };
+                    img.src = 'data:image/svg+xml;base64,' + btoa(generatedSVG);
+                }
+            } catch (error) {
+                console.error('Erreur lors du téléchargement:', error);
+                showStatus('❌ Erreur lors du téléchargement', 'error');
+            }
+        }
+
+        function applyToApp() {
+            if (!generatedSVG) {
+                showStatus('❌ Aucun logo à appliquer', 'error');
+                return;
+            }
+            
+            try {
+                // Copier le SVG dans le presse-papier
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(generatedSVG).then(() => {
+                        showStatus('✅ Logo copié ! Remplace le contenu de public/favicon.svg', 'success');
+                    }).catch(() => {
+                        fallbackCopy();
+                    });
+                } else {
+                    fallbackCopy();
+                }
+                
+                function fallbackCopy() {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = generatedSVG;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showStatus('✅ Logo copié ! Remplace le contenu de public/favicon.svg', 'success');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la copie:', error);
+                showStatus('❌ Erreur lors de la copie', 'error');
+            }
+        }
+
+        // Event listeners pour les contrôles
+        document.getElementById('logoSize').addEventListener('change', () => {
+            if (originalImage) generateSVGFromImage();
+        });
+
+        document.getElementById('quality').addEventListener('change', () => {
+            if (originalImage) generateSVGFromImage();
+        });
+
+        document.getElementById('format').addEventListener('change', () => {
+            // Pas besoin de régénérer, juste changer le format de téléchargement
+        });
+    </script>
+</body>
+</html>
