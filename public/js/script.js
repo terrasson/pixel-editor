@@ -3726,7 +3726,56 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
     } catch (supabaseError) {
         console.warn('🔄 Supabase Edge Function échouée, fallback vers gif.js:', supabaseError);
         
-        // Si Supabase échoue, on essaie gif.js en fallback
+        // Vérifier si l'erreur est liée à la configuration Supabase
+        if (supabaseError.message.includes('Configuration Supabase manquante')) {
+            progressDiv.remove();
+            alert(`❌ Configuration Supabase manquante
+            
+Veuillez configurer les clés Supabase dans le fichier supabase-config.js :
+- SUPABASE_URL : URL de votre projet Supabase
+- SUPABASE_ANON_KEY : Clé publique de votre projet
+
+En attendant, l'export GIF utilisera le mode local.`);
+            
+            // Essayer quand même gif.js en fallback
+            try {
+                progressDiv.innerHTML = `
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🎬</div>
+                    <div style="font-size: 1.2rem; margin-bottom: 5px;">Création du GIF (mode local)...</div>
+                    <div id="progressText" style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">Préparation...</div>
+                    <div style="background: rgba(255,255,255,0.3); border-radius: 10px; height: 8px; margin-bottom: 10px;">
+                        <div id="progressBar" style="background: white; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                    <button id="cancelExportBtn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Annuler</button>
+                `;
+                document.body.appendChild(progressDiv);
+                
+                const newProgressText = progressDiv.querySelector('#progressText');
+                const newProgressBar = progressDiv.querySelector('#progressBar');
+                
+                progressDiv.querySelector('#cancelExportBtn').addEventListener('click', () => {
+                    cancelled = true;
+                    progressDiv.remove();
+                });
+                
+                await createGifWithGifJS(frames, { size, frameDelay, repeat, quality }, newProgressText, newProgressBar, cancelled);
+                if (!cancelled) {
+                    progressDiv.remove();
+                }
+            } catch (gifJsError) {
+                console.error('❌ Échec gif.js après erreur Supabase:', gifJsError);
+                progressDiv.remove();
+                alert(`❌ Erreur lors de la création du GIF :
+                
+🌐 Serveur : ${supabaseError.message}
+💻 Local : ${gifJsError.message}
+
+Veuillez réessayer plus tard.`);
+            }
+            return;
+        }
+        
+        // Si Supabase échoue pour une autre raison, on essaie gif.js en fallback
         progressText.textContent = 'Serveur indisponible, traitement local...';
         progressBar.style.width = '10%';
         
@@ -3757,6 +3806,15 @@ async function createGifWithSupabase(frames, config) {
     try {
         console.log('🚀 Appel Supabase Edge Function pour création GIF');
         
+        // Validation des données avant envoi
+        if (!frames || !Array.isArray(frames) || frames.length === 0) {
+            throw new Error('Aucune frame fournie pour la création du GIF');
+        }
+        
+        if (!config || typeof config.size !== 'number' || config.size <= 0) {
+            throw new Error('Configuration de taille invalide pour le GIF');
+        }
+        
         // Préparer les données pour l'Edge Function
         const payload = {
             frames: frames,
@@ -3768,21 +3826,53 @@ async function createGifWithSupabase(frames, config) {
             throw new Error('Supabase non configuré');
         }
         
-        // Appeler l'Edge Function
-        const { data, error } = await supabase.functions.invoke('create-gif', {
-            body: payload,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+        // Utiliser fetch directement au lieu de supabase.functions.invoke
+        const supabaseUrl = supabase.url || 'https://votre-projet.supabase.co';
+        const supabaseKey = supabase.key || 'votre-cle-publique-ici';
         
-        if (error) {
-            console.error('❌ Erreur Supabase Edge Function:', error);
-            throw new Error(`Erreur serveur: ${error.message}`);
+        // Vérifier si les clés Supabase sont configurées
+        if (supabaseUrl.includes('votre-projet') || supabaseKey.includes('votre-cle')) {
+            throw new Error('Configuration Supabase manquante - veuillez configurer SUPABASE_URL et SUPABASE_ANON_KEY');
         }
         
+        const response = await fetch(`${supabaseUrl}/functions/v1/create-gif`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseKey}`,
+                'apikey': supabaseKey
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            let errorMessage = `Erreur serveur (${response.status}): ${response.statusText}`;
+            
+            try {
+                const errorData = JSON.parse(errorText);
+                if (errorData.error) {
+                    errorMessage = errorData.error;
+                }
+                if (errorData.details) {
+                    errorMessage += ` - ${errorData.details}`;
+                }
+            } catch (e) {
+                // Si ce n'est pas du JSON, utiliser le texte brut
+                if (errorText) {
+                    errorMessage = errorText;
+                }
+            }
+            
+            console.error('❌ Erreur Supabase Edge Function:', errorMessage);
+            throw new Error(errorMessage);
+        }
+        
+        // Récupérer les données binaires du GIF
+        const gifData = await response.arrayBuffer();
+        
         // Convertir la réponse en Blob
-        const gifBlob = new Blob([data], { type: 'image/gif' });
+        const gifBlob = new Blob([gifData], { type: 'image/gif' });
         console.log('✅ GIF créé via Supabase:', { size: gifBlob.size });
         
         return gifBlob;
