@@ -18,22 +18,25 @@
     <title>Éditeur Pixel Art</title>
     
     <!-- Favicons et icônes -->
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+
       <!-- Apple Touch Icons -->
-  <link rel="apple-touch-icon" href="icon-180.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
-    
+  <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="assets/icons/icon-192.png">
+
     <!-- Android/Chrome icons -->
-    <link rel="icon" type="image/svg+xml" sizes="192x192" href="icon-192.svg">
+    <link rel="icon" type="image/svg+xml" sizes="192x192" href="assets/icons/icon-192.svg">
     
     <!-- Web App Manifest -->
     <link rel="manifest" href="manifest.json">
     
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <!-- Bibliothèque pour générer des GIF animés -->
     <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
-    
+
     <!-- Meta tags pour le support des fichiers -->
     <meta name="file-handlers" content="application/json:.pixelart,.json">
     
@@ -55,6 +58,10 @@
         <div class="project-info">
             <button id="menuToggle" class="menu-hamburger" title="Afficher les outils"></button>
             <h2 id="projectTitle">Nouveau projet</h2>
+            <div class="user-profile">
+                <span id="userEmail" class="user-email">Loading...</span>
+                <button id="logoutBtn" class="logout-btn" title="Se déconnecter">Déconnexion</button>
+            </div>
             <button id="playToggle" class="play-button" title="Lancer/Arrêter l'animation">▶️</button>
         </div>
         
@@ -135,10 +142,10 @@
         <!-- Modal pour régler le FPS -->
         <div id="fpsModal" class="modal">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h3>⚙️ Vitesse d'animation</h3>
-                    <button id="closeFpsModal" class="close-btn">&times;</button>
-                </div>
+        <div class="modal-header">
+            <h3>⚙️ Vitesse d'animation</h3>
+            <button id="closeFpsModal" class="close-btn">&times;</button>
+        </div>
                 <div class="modal-body">
                     <div class="fps-control">
                         <div class="fps-display">
@@ -170,12 +177,56 @@
             </div>
         </div>
 
+<!-- Modal custom pour sélectionner une couleur -->
+<div id="customColorModal" class="modal-overlay" style="display: none;">
+    <div class="modal custom-color-modal">
+        <div class="modal-header custom-color-header">
+            <h3>Couleur personnalisée</h3>
+            <button id="closeCustomColorModal" class="close-btn">&times;</button>
+        </div>
+        <div class="custom-color-body">
+            <div class="custom-color-preview" id="customColorPreview"></div>
+            <div class="custom-color-info">
+                <span class="custom-color-hex-label">Hex</span>
+                <span class="custom-color-hex-value" id="customColorHexValue">#000000</span>
+            </div>
+            <div class="custom-color-spectrum">
+                <canvas id="customColorCanvas" width="320" height="200"></canvas>
+                <p class="custom-color-spectrum-hint">Glissez dans le nuancier pour sélectionner une teinte.</p>
+            </div>
+            <div class="custom-color-swatches" id="customColorSwatches">
+                <button class="custom-color-swatch" data-color="#FFFFFF" title="#FFFFFF" style="background:#FFFFFF;"></button>
+                <button class="custom-color-swatch" data-color="#000000" title="#000000" style="background:#000000;"></button>
+                <button class="custom-color-swatch" data-color="#FF0000" title="#FF0000" style="background:#FF0000;"></button>
+                <button class="custom-color-swatch" data-color="#FF7F00" title="#FF7F00" style="background:#FF7F00;"></button>
+                <button class="custom-color-swatch" data-color="#FFFF00" title="#FFFF00" style="background:#FFFF00;"></button>
+                <button class="custom-color-swatch" data-color="#00FF00" title="#00FF00" style="background:#00FF00;"></button>
+                <button class="custom-color-swatch" data-color="#00FFFF" title="#00FFFF" style="background:#00FFFF;"></button>
+                <button class="custom-color-swatch" data-color="#0000FF" title="#0000FF" style="background:#0000FF;"></button>
+                <button class="custom-color-swatch" data-color="#8B00FF" title="#8B00FF" style="background:#8B00FF;"></button>
+                <button class="custom-color-swatch" data-color="#FF1493" title="#FF1493" style="background:#FF1493;"></button>
+            </div>
+            <div class="custom-color-actions">
+                <button id="customColorSystem" class="dialog-button secondary">🎨 Sélecteur système</button>
+                <div class="custom-color-actions-right">
+                    <button id="cancelCustomColor" class="dialog-button secondary">Annuler</button>
+                    <button id="applyCustomColor" class="dialog-button">Appliquer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
         <div class="tools-secondary">
             <div class="color-palette">
-                <!-- Ligne 1 : Color picker + Validate -->
+                <!-- Ligne 1 : Couleur actuelle + Color picker + Validate -->
                 <div class="color-picker-row">
+                    <div class="desktop-current-color-container">
+                        <span class="color-label">Couleur actuelle :</span>
+                        <div class="desktop-current-color" id="desktopCurrentColorDisplay"></div>
+                    </div>
                     <input type="color" id="colorPicker" value="#000000">
-                    <button id="validateColorBtn" class="validate-color-btn">✓</button>
+                    <button id="validateColorBtn" class="validate-color-btn" title="Ajouter cette couleur à la palette">✓</button>
                 </div>
                 
                 <!-- Ligne 2 : Undo + Couleurs + Redo -->
@@ -237,7 +288,39 @@
     <!-- Espace réservé pour la publicité future -->
     <div class="ad-space"></div>
 
-    <script src="js/supabase-config.js"></script>
+    <script src="js/config/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/database.js"></script>
+    <script>
+        // Authentication check - must be logged in to use the app
+        (async function() {
+            const initialized = await window.authService.init();
+
+            if (!initialized) {
+                // Show error if Supabase not configured
+                alert('⚠️ Supabase not configured.\n\nPlease:\n1. Create a Supabase project at https://supabase.com\n2. Update public/js/config/supabase-config.js with your credentials\n3. See docs/SETUP-AUTHENTICATION.md for full instructions');
+                window.location.href = '/login.html';
+                return;
+            }
+
+            if (!window.authService.isAuthenticated()) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // Display user email
+            const userEmail = window.authService.getUserEmail();
+            document.getElementById('userEmail').textContent = userEmail;
+
+            // Logout button handler
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                const result = await window.authService.signOut();
+                if (result.success) {
+                    window.location.href = '/login.html';
+                }
+            });
+        })();
+    </script>
     <script src="js/script.js"></script>
 </body>
 </html>

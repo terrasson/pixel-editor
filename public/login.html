@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Connexion - Pixel Art Editor</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/login.css">
+
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Logo/Header -->
+            <div class="login-header">
+                <h1>🎨 Pixel Art Editor</h1>
+                <p class="tagline">Créez et partagez vos animations pixel art</p>
+            </div>
+
+            <!-- Notification Area -->
+            <div id="notification" class="notification hidden"></div>
+
+            <!-- Login/Signup Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="signin">Connexion</button>
+                <button class="tab-btn" data-tab="signup">Inscription</button>
+            </div>
+
+            <!-- Sign In Form -->
+            <form id="signinForm" class="auth-form active">
+                <div class="form-group">
+                    <label for="signin-email">Email</label>
+                    <input
+                        type="email"
+                        id="signin-email"
+                        placeholder="votre@email.com"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="signin-password">Mot de passe</label>
+                    <input
+                        type="password"
+                        id="signin-password"
+                        placeholder="••••••••"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <span class="btn-text">Se connecter</span>
+                    <span class="btn-loading hidden">Connexion...</span>
+                </button>
+
+                <div class="form-footer">
+                    <a href="#" id="forgot-password-link" class="link">Mot de passe oublié ?</a>
+                </div>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="signupForm" class="auth-form">
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input
+                        type="email"
+                        id="signup-email"
+                        placeholder="votre@email.com"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-password">Mot de passe</label>
+                    <input
+                        type="password"
+                        id="signup-password"
+                        placeholder="••••••••"
+                        required
+                        autocomplete="new-password"
+                        minlength="6"
+                    >
+                    <small class="form-hint">Minimum 6 caractères</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-password-confirm">Confirmer le mot de passe</label>
+                    <input
+                        type="password"
+                        id="signup-password-confirm"
+                        placeholder="••••••••"
+                        required
+                        autocomplete="new-password"
+                        minlength="6"
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <span class="btn-text">Créer un compte</span>
+                    <span class="btn-loading hidden">Création...</span>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="divider">
+                <span>ou</span>
+            </div>
+
+            <!-- OAuth Providers -->
+            <div class="oauth-buttons">
+                <button id="google-signin" class="btn btn-oauth btn-google">
+                    <svg width="18" height="18" viewBox="0 0 18 18">
+                        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                        <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+                        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
+                    </svg>
+                    Continuer avec Google
+                </button>
+            </div>
+
+            <!-- Password Reset Modal -->
+            <div id="reset-password-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h3>Réinitialiser le mot de passe</h3>
+                    <p>Entrez votre email pour recevoir un lien de réinitialisation</p>
+
+                    <form id="reset-password-form">
+                        <div class="form-group">
+                            <input
+                                type="email"
+                                id="reset-email"
+                                placeholder="votre@email.com"
+                                required
+                            >
+                        </div>
+                        <div class="modal-buttons">
+                            <button type="button" class="btn btn-secondary" id="cancel-reset">Annuler</button>
+                            <button type="submit" class="btn btn-primary">Envoyer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="login-footer">
+            <p>En vous connectant, vous acceptez nos conditions d'utilisation</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+
+                // Update active tab
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Update active form
+                document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+                document.getElementById(`${tab}Form`).classList.add('active');
+            });
+        });
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.remove('hidden');
+
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Sign In Form
+        document.getElementById('signinForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const btn = e.target.querySelector('.btn-primary');
+            const btnText = btn.querySelector('.btn-text');
+            const btnLoading = btn.querySelector('.btn-loading');
+
+            const email = document.getElementById('signin-email').value;
+            const password = document.getElementById('signin-password').value;
+
+            // Show loading
+            btn.disabled = true;
+            btnText.classList.add('hidden');
+            btnLoading.classList.remove('hidden');
+
+            const result = await window.authService.signIn(email, password);
+
+            if (result.success) {
+                showNotification('Connexion réussie ! Redirection...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/index.html';
+                }, 1000);
+            } else {
+                showNotification(result.error || 'Erreur de connexion', 'error');
+                btn.disabled = false;
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+            }
+        });
+
+        // Sign Up Form
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const btn = e.target.querySelector('.btn-primary');
+            const btnText = btn.querySelector('.btn-text');
+            const btnLoading = btn.querySelector('.btn-loading');
+
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const passwordConfirm = document.getElementById('signup-password-confirm').value;
+
+            // Validate passwords match
+            if (password !== passwordConfirm) {
+                showNotification('Les mots de passe ne correspondent pas', 'error');
+                return;
+            }
+
+            // Show loading
+            btn.disabled = true;
+            btnText.classList.add('hidden');
+            btnLoading.classList.remove('hidden');
+
+            const result = await window.authService.signUp(email, password);
+
+            if (result.success) {
+                showNotification('Compte créé ! Vérifiez votre email pour confirmer.', 'success');
+                // Switch to signin tab
+                setTimeout(() => {
+                    document.querySelector('[data-tab="signin"]').click();
+                }, 2000);
+            } else {
+                showNotification(result.error || 'Erreur lors de la création du compte', 'error');
+            }
+
+            btn.disabled = false;
+            btnText.classList.remove('hidden');
+            btnLoading.classList.add('hidden');
+        });
+
+        // Google Sign In
+        document.getElementById('google-signin').addEventListener('click', async () => {
+            const result = await window.authService.signInWithGoogle();
+            if (!result.success) {
+                showNotification(result.error || 'Erreur de connexion Google', 'error');
+            }
+        });
+
+        // Forgot Password
+        document.getElementById('forgot-password-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('reset-password-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('cancel-reset').addEventListener('click', () => {
+            document.getElementById('reset-password-modal').classList.add('hidden');
+        });
+
+        document.getElementById('reset-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('reset-email').value;
+            const result = await window.authService.resetPassword(email);
+
+            if (result.success) {
+                showNotification('Email de réinitialisation envoyé !', 'success');
+                document.getElementById('reset-password-modal').classList.add('hidden');
+            } else {
+                showNotification(result.error || 'Erreur lors de l\'envoi', 'error');
+            }
+        });
+
+        // Check if already authenticated
+        document.addEventListener('DOMContentLoaded', async () => {
+            const initialized = await window.authService.init();
+
+            if (!initialized) {
+                // Show error if Supabase not configured
+                showNotification(
+                    '⚠️ Supabase not configured. Please check the console and update public/js/config/supabase-config.js',
+                    'error'
+                );
+                return;
+            }
+
+            if (window.authService.isAuthenticated()) {
+                window.location.href = '/index.html';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -9,6 +9,16 @@ let copiedFrame = null;
 let customColors = []; // Palette de couleurs personnalisées
 const maxCustomColors = 8; // Nombre maximum de couleurs personnalisées
 let customPalette = null; // Palette personnalisée des couleurs compactes pour le projet
+let pendingColor = null; // Couleur en attente de validation
+let customColorModalElements = null;
+let customColorModalState = {
+    currentHex: '#000000',
+    h: 0,
+    s: 100,
+    l: 50,
+    escapeHandler: null,
+    pointerUV: null
+};
 let animationFPS = 24; // FPS par défaut (cinéma)
 let autoSaveProjects = []; // Projets sauvegardés automatiquement en local
 const maxAutoSaveProjects = 10; // Nombre maximum de projets auto-sauvegardés
@@ -115,12 +125,43 @@ function stopDrawing() {
 
 // Gestion des couleurs
 function toggleEraser() {
-    isErasing = !isErasing;
-    const eraserBtn = document.getElementById('eraserBtn');
-    if (eraserBtn) {
-        eraserBtn.classList.toggle('active');
+    setEraserState(!isErasing);
+}
+
+function setEraserState(active) {
+    isErasing = active;
+    const pixelGrid = document.getElementById('pixelGrid');
+    if (pixelGrid) {
+        pixelGrid.classList.toggle('eraser-mode', active);
     }
-    document.getElementById('pixelGrid')?.classList.toggle('eraser-mode');
+    document.querySelectorAll('#eraserBtn').forEach(btn => {
+        btn.classList.toggle('active', active);
+    });
+}
+
+function getColorPickers() {
+    return Array.from(document.querySelectorAll('#colorPicker'));
+}
+
+function getActiveColorPicker() {
+    const pickers = getColorPickers();
+    return pickers.find(picker => picker.offsetParent !== null) || pickers[0] || null;
+}
+
+function openNativeColorPicker() {
+    const picker = getActiveColorPicker();
+    if (picker) {
+        picker.focus?.({ preventScroll: true });
+        picker.click();
+    }
+}
+
+function syncColorPickers(color) {
+    getColorPickers().forEach(picker => {
+        if (picker.value !== color) {
+            picker.value = color;
+        }
+    });
 }
 
 // Fonctions pour gérer les couleurs personnalisées
@@ -212,13 +253,30 @@ function autoSaveProjectLocal(name) {
 }
 
 async function showLocalProjects() {
-    console.log('🔍 showLocalProjects appelée');
-    // Charger uniquement depuis localStorage (simple et fiable)
-    loadAutoSaveProjects();
-    console.log('📱 Projets trouvés:', autoSaveProjects.length);
-    
-    if (autoSaveProjects.length === 0) {
-        alert('📱 Aucun projet trouvé.\n\nCommencez à dessiner et vos projets seront automatiquement sauvegardés en ligne ! 🌐');
+    console.log('🔍 showLocalProjects appelée - Loading from Supabase');
+
+    // Load projects from Supabase (cloud storage)
+    try {
+        const result = await window.dbService.getAllProjects();
+
+        if (!result.success) {
+            alert('❌ Erreur lors du chargement: ' + result.error);
+            return;
+        }
+
+        const projects = result.data;
+        console.log('📱 Projets trouvés:', projects.length);
+
+        if (projects.length === 0) {
+            alert('📱 Aucun projet trouvé.\n\nCommencez à dessiner et sauvegardez votre premier projet ! 🎨');
+            return;
+        }
+
+        // Use the loaded projects instead of localStorage
+        autoSaveProjects = projects;
+    } catch (error) {
+        console.error('Error loading projects:', error);
+        alert('❌ Erreur lors du chargement des projets.');
         return;
     }
     
@@ -325,24 +383,23 @@ async function showLocalProjects() {
     deleteBtn.addEventListener('click', async () => {
         if (selectedProject && confirm('Supprimer ce projet définitivement ?')) {
             const project = autoSaveProjects[selectedProject.index];
-            
+
             try {
-                // Supprimer de Supabase si c'est un projet en ligne
-                if (project.id && typeof project.id === 'number') {
-                    await supabase.deleteProject(project.id);
+                // Delete from Supabase using the database service
+                const result = await window.dbService.deleteProjectById(project.id);
+
+                if (result.success) {
                     console.log('✅ Projet supprimé de Supabase');
+                    alert('✅ Projet supprimé avec succès !');
+                    dialog.remove();
+                    showLocalProjects(); // Refresh the list
                 } else {
-                    // Supprimer du localStorage pour les projets locaux
-                    autoSaveProjects.splice(selectedProject.index, 1);
-                    localStorage.setItem('pixelEditor_autoSaveProjects', JSON.stringify(autoSaveProjects));
+                    alert('❌ Erreur lors de la suppression: ' + result.error);
                 }
-                
-                dialog.remove();
-                showLocalProjects(); // Rafraîchir la liste
-                
+
             } catch (error) {
                 console.error('Erreur suppression:', error);
-                alert('Erreur lors de la suppression. Veuillez réessayer.');
+                alert('❌ Erreur lors de la suppression. Veuillez réessayer.');
             }
         }
     });
@@ -403,13 +460,8 @@ function updateColorPalette() {
         btn.title = 'Couleur de base';
         btn.addEventListener('click', () => {
             currentColor = color;
-            document.getElementById('colorPicker').value = color;
-            isErasing = false;
-            const eraserBtn = document.getElementById('eraserBtn');
-            if (eraserBtn) {
-                eraserBtn.classList.remove('active');
-                document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
-            }
+            updateCurrentColorDisplay();
+            setEraserState(false);
         });
         presetColors.appendChild(btn);
     });
@@ -425,13 +477,8 @@ function updateColorPalette() {
             btn.title = `Couleur personnalisée: ${color}`;
             btn.addEventListener('click', () => {
                 currentColor = color;
-                document.getElementById('colorPicker').value = color;
-                isErasing = false;
-                const eraserBtn = document.getElementById('eraserBtn');
-                if (eraserBtn) {
-                    eraserBtn.classList.remove('active');
-                    document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
-                }
+                updateCurrentColorDisplay();
+                setEraserState(false);
             });
             presetColors.appendChild(btn);
         }
@@ -439,58 +486,467 @@ function updateColorPalette() {
 }
 
 // Fonction améliorée pour gérer la gomme avec les couleurs personnalisées
-function initColorPicker() {
-    const colorPicker = document.getElementById('colorPicker');
-    const eraserBtn = document.getElementById('eraserBtn');
+function updateValidateButton(color) {
     const validateBtn = document.getElementById('validateColorBtn');
-    
-    let pendingColor = null; // Couleur en attente de validation
-    
-    // Quand la couleur change, on la marque comme en attente
-    colorPicker.addEventListener('input', (e) => {
-        pendingColor = e.target.value;
-        currentColor = e.target.value;
-        isErasing = false;
-        if (eraserBtn) {
-            eraserBtn.classList.remove('active');
-            document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
+    if (!validateBtn) return;
+
+    if (color && !isPredefinedColor(color)) {
+        validateBtn.disabled = false;
+        validateBtn.title = `Valider la couleur ${color}`;
+    } else if (color) {
+        validateBtn.disabled = true;
+        validateBtn.title = 'Couleur déjà dans la palette';
+    } else {
+        validateBtn.disabled = true;
+        validateBtn.title = 'Choisissez une couleur puis validez';
+    }
+}
+
+function setPendingColor(color, { updateValidate = true, retainPointer = false } = {}) {
+    if (!color) {
+        pendingColor = null;
+        if (updateValidate) {
+            updateValidateButton(null);
         }
-        
-        // Mettre à jour l'indicateur de couleur
+        if (!retainPointer) {
+            customColorModalState.pointerUV = null;
+        }
+        if (isCustomColorModalOpen()) {
+            updateCustomColorModal(currentColor);
+        }
+        return;
+    }
+
+    const normalized = normalizeColor(color);
+    pendingColor = normalized;
+    currentColor = normalized;
+    setEraserState(false);
         updateCurrentColorDisplay();
-        
-        // Activer le bouton de validation s'il y a une couleur en attente
-        if (validateBtn && !isPredefinedColor(pendingColor)) {
-            validateBtn.disabled = false;
-            validateBtn.title = `Valider la couleur ${pendingColor}`;
+    if (updateValidate) {
+        updateValidateButton(normalized);
+    }
+    if (!retainPointer) {
+        customColorModalState.pointerUV = null;
+    }
+    if (isCustomColorModalOpen()) {
+        updateCustomColorModal(normalized);
+    }
+}
+
+function hexToRgbObject(hex) {
+    if (!hex) return null;
+    const normalized = normalizeColor(hex);
+    if (!/^#[0-9A-F]{6}$/i.test(normalized)) return null;
+    return {
+        r: parseInt(normalized.slice(1, 3), 16),
+        g: parseInt(normalized.slice(3, 5), 16),
+        b: parseInt(normalized.slice(5, 7), 16)
+    };
+}
+
+function rgbComponentsToHex(r, g, b) {
+    const clamp = (value) => Math.min(255, Math.max(0, Number(value) || 0));
+    const components = [clamp(r), clamp(g), clamp(b)];
+    return `#${components.map(component => component.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+}
+
+function rgbToHslFromRgbObject(rgb) {
+    if (!rgb) return null;
+    let r = rgb.r / 255;
+    let g = rgb.g / 255;
+    let b = rgb.b / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0;
+    let s = 0;
+    const l = (max + min) / 2;
+
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r:
+                h = (g - b) / d + (g < b ? 6 : 0);
+                break;
+            case g:
+                h = (b - r) / d + 2;
+                break;
+            case b:
+                h = (r - g) / d + 4;
+                break;
+        }
+        h /= 6;
+    }
+
+    return {
+        h: Math.round(h * 360),
+        s: Math.round(s * 100),
+        l: Math.round(l * 100)
+    };
+}
+
+function hslToHex(h, s, l) {
+    const hue = ((Number(h) % 360) + 360) % 360;
+    const sat = Math.min(100, Math.max(0, Number(s)))/100;
+    const lig = Math.min(100, Math.max(0, Number(l)))/100;
+
+    if (sat === 0) {
+        const grey = Math.round(lig * 255);
+        return rgbComponentsToHex(grey, grey, grey);
+    }
+
+    const q = lig < 0.5 ? lig * (1 + sat) : lig + sat - lig * sat;
+    const p = 2 * lig - q;
+    const hk = hue / 360;
+
+    const t = [hk + 1/3, hk, hk - 1/3].map(value => {
+        if (value < 0) value += 1;
+        if (value > 1) value -= 1;
+        if (value < 1/6) return p + (q - p) * 6 * value;
+        if (value < 1/2) return q;
+        if (value < 2/3) return p + (q - p) * (2/3 - value) * 6;
+        return p;
+    });
+
+    return rgbComponentsToHex(Math.round(t[0] * 255), Math.round(t[1] * 255), Math.round(t[2] * 255));
+}
+
+function clampValue(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+}
+
+function isCustomColorModalOpen() {
+    return !!customColorModalElements && customColorModalElements.overlay.style.display !== 'none';
+}
+
+function updateCustomColorModal(color) {
+    if (!customColorModalElements || !customColorModalElements.preview) return;
+    const targetHex = normalizeColor(color || pendingColor || currentColor);
+    const rgb = hexToRgbObject(targetHex);
+    const hsl = rgbToHslFromRgbObject(rgb);
+    if (!rgb || !hsl) return;
+
+    customColorModalState.currentHex = targetHex;
+    customColorModalState.h = hsl.h;
+    customColorModalState.s = hsl.s;
+    customColorModalState.l = hsl.l;
+
+    customColorModalElements.preview.style.backgroundColor = targetHex;
+    if (customColorModalElements.hexValue) {
+        customColorModalElements.hexValue.textContent = targetHex;
+    }
+
+    if (customColorModalElements.swatches?.length) {
+        customColorModalElements.swatches.forEach(btn => {
+            const swatchColor = btn.dataset.color ? normalizeColor(btn.dataset.color) : null;
+            if (swatchColor && swatchColor === targetHex) {
+                btn.classList.add('selected');
         } else {
-            validateBtn.disabled = true;
-            validateBtn.title = 'Couleur déjà dans la palette';
+                btn.classList.remove('selected');
+            }
+        });
+    }
+
+    drawCustomColorSpectrum();
+
+    if (customColorModalElements.applyBtn) {
+        customColorModalElements.applyBtn.disabled = false;
+    }
+}
+
+function drawCustomColorSpectrum() {
+    if (!customColorModalElements?.canvas || !customColorModalElements?.ctx) return;
+
+    const { canvas, ctx } = customColorModalElements;
+    const displayWidth = Math.max(canvas.clientWidth, 1);
+    const displayHeight = Math.max(canvas.clientHeight, 1);
+    const pixelRatio = window.devicePixelRatio || 1;
+    const renderWidth = Math.max(Math.round(displayWidth * pixelRatio), 1);
+    const renderHeight = Math.max(Math.round(displayHeight * pixelRatio), 1);
+
+    if (canvas.width !== renderWidth || canvas.height !== renderHeight) {
+        canvas.width = renderWidth;
+        canvas.height = renderHeight;
+    }
+
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+    const gradientHue = ctx.createLinearGradient(0, 0, displayWidth, 0);
+    gradientHue.addColorStop(0, '#FF0000');
+    gradientHue.addColorStop(1 / 6, '#FFFF00');
+    gradientHue.addColorStop(2 / 6, '#00FF00');
+    gradientHue.addColorStop(3 / 6, '#00FFFF');
+    gradientHue.addColorStop(4 / 6, '#0000FF');
+    gradientHue.addColorStop(5 / 6, '#FF00FF');
+    gradientHue.addColorStop(1, '#FF0000');
+    ctx.fillStyle = gradientHue;
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+    const gradientWhite = ctx.createLinearGradient(0, 0, 0, displayHeight);
+    gradientWhite.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradientWhite.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = gradientWhite;
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+    const gradientBlack = ctx.createLinearGradient(0, 0, 0, displayHeight);
+    gradientBlack.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    gradientBlack.addColorStop(1, 'rgba(0, 0, 0, 1)');
+    ctx.fillStyle = gradientBlack;
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+    let pointerX;
+    let pointerY;
+
+    if (customColorModalState.pointerUV) {
+        pointerX = customColorModalState.pointerUV.u * displayWidth;
+        pointerY = customColorModalState.pointerUV.v * displayHeight;
+    } else {
+        pointerX = clampValue((customColorModalState.h / 360) * displayWidth, 0, displayWidth - 1);
+        pointerY = clampValue((1 - (customColorModalState.l / 100)) * displayHeight, 0, displayHeight - 1);
+        customColorModalState.pointerUV = {
+            u: clampValue(pointerX / displayWidth, 0, 1),
+            v: clampValue(pointerY / displayHeight, 0, 1)
+        };
+    }
+
+    customColorModalElements.pointer = { x: pointerX, y: pointerY };
+
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.beginPath();
+    ctx.arc(pointerX, pointerY, 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.beginPath();
+    ctx.arc(pointerX, pointerY, 9, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+}
+
+function openCustomColorModal(initialColor) {
+    if (!customColorModalElements) {
+        initCustomColorModal();
+    }
+    if (!customColorModalElements) return;
+
+    customColorModalElements.overlay.style.display = 'flex';
+    drawCustomColorSpectrum();
+    updateCustomColorModal(initialColor);
+
+    if (customColorModalState.escapeHandler) {
+        document.removeEventListener('keydown', customColorModalState.escapeHandler);
+    }
+    customColorModalState.escapeHandler = (event) => {
+        if (event.key === 'Escape') {
+            closeCustomColorModal();
+        }
+    };
+    document.addEventListener('keydown', customColorModalState.escapeHandler);
+
+}
+
+function closeCustomColorModal() {
+    if (!customColorModalElements) return;
+    customColorModalElements.overlay.style.display = 'none';
+    customColorModalElements.isDragging = false;
+    if (customColorModalState.escapeHandler) {
+        document.removeEventListener('keydown', customColorModalState.escapeHandler);
+        customColorModalState.escapeHandler = null;
+    }
+}
+
+function initCustomColorModal() {
+    const overlay = document.getElementById('customColorModal');
+    if (!overlay) return;
+
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+
+    customColorModalElements = {
+        overlay,
+        preview: overlay.querySelector('#customColorPreview'),
+        hexValue: overlay.querySelector('#customColorHexValue'),
+        canvas: overlay.querySelector('#customColorCanvas'),
+        ctx: null,
+        pointer: { x: 0, y: 0 },
+        bounds: { width: 320, height: 200 },
+        isDragging: false,
+        swatches: Array.from(overlay.querySelectorAll('.custom-color-swatch')),
+        closeBtn: overlay.querySelector('#closeCustomColorModal'),
+        cancelBtn: overlay.querySelector('#cancelCustomColor'),
+        applyBtn: overlay.querySelector('#applyCustomColor'),
+        systemBtn: overlay.querySelector('#customColorSystem')
+    };
+
+    if (customColorModalElements.canvas) {
+        const canvas = customColorModalElements.canvas;
+        const ctx = canvas.getContext('2d');
+        customColorModalElements.ctx = ctx;
+        customColorModalElements.pointer = {
+            x: canvas.width / 2,
+            y: canvas.height / 2
+        };
+
+        const handleSpectrumInteraction = (event) => {
+            event.preventDefault?.();
+            const { canvas, ctx } = customColorModalElements;
+            if (!canvas || !ctx) return;
+            const rect = canvas.getBoundingClientRect();
+            const input = event.touches ? event.touches[0] : event;
+            const clientX = input?.clientX ?? 0;
+            const clientY = input?.clientY ?? 0;
+            const scaleX = canvas.width / Math.max(rect.width, 1);
+            const scaleY = canvas.height / Math.max(rect.height, 1);
+            const x = clampValue((clientX - rect.left) * scaleX, 0, canvas.width - 1);
+            const y = clampValue((clientY - rect.top) * scaleY, 0, canvas.height - 1);
+
+            const maxWidth = Math.max(canvas.width - 1, 1);
+            const maxHeight = Math.max(canvas.height - 1, 1);
+            customColorModalState.pointerUV = {
+                u: clampValue(x / maxWidth, 0, 1),
+                v: clampValue(y / maxHeight, 0, 1)
+            };
+
+            const pixel = ctx.getImageData(Math.round(x), Math.round(y), 1, 1).data;
+            const hex = rgbComponentsToHex(pixel[0], pixel[1], pixel[2]);
+            setPendingColor(hex, { retainPointer: true });
+        };
+
+        const startSpectrumDrag = (event) => {
+            customColorModalElements.isDragging = true;
+            handleSpectrumInteraction(event);
+        };
+
+        const moveSpectrumDrag = (event) => {
+            if (!customColorModalElements.isDragging) return;
+            handleSpectrumInteraction(event);
+        };
+
+        const stopSpectrumDrag = () => {
+            customColorModalElements.isDragging = false;
+        };
+
+        canvas.addEventListener('mousedown', startSpectrumDrag);
+        canvas.addEventListener('touchstart', startSpectrumDrag, { passive: false });
+        window.addEventListener('mousemove', moveSpectrumDrag);
+        window.addEventListener('touchmove', moveSpectrumDrag, { passive: false });
+        window.addEventListener('mouseup', stopSpectrumDrag);
+        window.addEventListener('touchend', stopSpectrumDrag);
+        window.addEventListener('touchcancel', stopSpectrumDrag);
+
+        drawCustomColorSpectrum();
+    }
+
+    if (customColorModalElements.swatches.length) {
+        customColorModalElements.swatches.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const color = btn.dataset.color;
+                if (color) {
+                    customColorModalState.pointerUV = null;
+                    setPendingColor(color);
+                }
+            });
+        });
+    }
+
+    if (!customColorModalElements.resizeHandler) {
+        customColorModalElements.resizeHandler = () => {
+            if (isCustomColorModalOpen()) {
+                drawCustomColorSpectrum();
+            }
+        };
+        window.addEventListener('resize', customColorModalElements.resizeHandler);
+    }
+
+    customColorModalElements.closeBtn?.addEventListener('click', closeCustomColorModal);
+    customColorModalElements.cancelBtn?.addEventListener('click', closeCustomColorModal);
+
+    customColorModalElements.applyBtn?.addEventListener('click', () => {
+        const hex = customColorModalState.currentHex;
+        if (hex) {
+            setPendingColor(hex);
+            closeCustomColorModal();
         }
     });
-    
-    // Valider la couleur avec le bouton
+
+    customColorModalElements.systemBtn?.addEventListener('click', () => {
+        closeCustomColorModal();
+        openNativeColorPicker();
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeCustomColorModal();
+        }
+    });
+
+    overlay.style.display = 'none';
+    updateCustomColorModal(currentColor);
+}
+
+function initColorPicker() {
+    const colorPickers = getColorPickers();
+    const validateBtn = document.getElementById('validateColorBtn');
+    const desktopColorDisplay = document.getElementById('desktopCurrentColorDisplay');
+    const compactColorDisplay = document.getElementById('currentColorDisplay');
+
+    if (!customColorModalElements) {
+        initCustomColorModal();
+    }
+
+    colorPickers.forEach(picker => {
+        picker.addEventListener('input', (e) => {
+            setPendingColor(e.target.value);
+            if (isCustomColorModalOpen()) {
+                updateCustomColorModal(e.target.value);
+            }
+        });
+    });
+
     if (validateBtn) {
         validateBtn.addEventListener('click', () => {
             if (pendingColor && !isPredefinedColor(pendingColor)) {
                 addCustomColor(pendingColor);
-                pendingColor = null;
+                setPendingColor(null, { updateValidate: false });
                 validateBtn.disabled = true;
                 validateBtn.title = 'Couleur ajoutée à la palette !';
                 setTimeout(() => {
                     validateBtn.title = 'Valider une nouvelle couleur';
+                    updateValidateButton(null);
                 }, 1500);
             }
         });
         
-        // Initialiser le bouton comme désactivé
-        validateBtn.disabled = true;
-        validateBtn.title = 'Choisissez une couleur puis validez';
+        updateValidateButton(null);
     }
 
-    // Note: Les event listeners pour les boutons de couleur sont maintenant gérés dans updateColorPalette()
-    
-    // Ajouter les event listeners pour les couleurs prédéfinies compactes
+    if (desktopColorDisplay) {
+        desktopColorDisplay.setAttribute('tabindex', '0');
+        const openCustom = (e) => {
+            e?.preventDefault?.();
+            openCustomColorModal();
+        };
+        desktopColorDisplay.addEventListener('click', openCustom);
+        desktopColorDisplay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openCustomColorModal();
+            }
+        });
+    }
+
+    if (compactColorDisplay) {
+        const openCustomFromCompact = (e) => {
+            e?.preventDefault?.();
+            openCustomColorModal();
+        };
+
+        compactColorDisplay.addEventListener('click', openCustomFromCompact);
+    }
+
     initCompactColorButtons();
 }
 
@@ -516,12 +972,7 @@ function initCompactColorButtons() {
                 updateCurrentColorDisplay();
                 
                 // Désactiver la gomme
-                isErasing = false;
-                const eraserBtn = document.getElementById('eraserBtn');
-                if (eraserBtn) {
-                    eraserBtn.classList.remove('active');
-                    document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
-                }
+                setEraserState(false);
                 
                 // Mettre à jour l'affichage visuel des boutons
                 updateCompactColorSelection(btn);
@@ -581,16 +1032,18 @@ function updateCompactColorSelection(selectedBtn) {
 
 // Fonction pour mettre à jour l'indicateur de couleur actuelle
 function updateCurrentColorDisplay() {
-    const currentColorDisplay = document.getElementById('currentColorDisplay');
-    const colorPicker = document.getElementById('colorPicker');
+    const compactDisplay = document.getElementById('currentColorDisplay');
+    const desktopDisplay = document.getElementById('desktopCurrentColorDisplay');
     
-    if (currentColorDisplay) {
-        currentColorDisplay.style.backgroundColor = currentColor;
+    if (compactDisplay) {
+        compactDisplay.style.backgroundColor = currentColor;
     }
     
-    if (colorPicker) {
-        colorPicker.value = currentColor;
+    if (desktopDisplay) {
+        desktopDisplay.style.backgroundColor = currentColor;
     }
+
+    syncColorPickers(currentColor);
     
     // Mettre à jour la sélection visuelle des couleurs compactes
     updateCompactColorSelectionByColor(currentColor);
@@ -751,16 +1204,8 @@ function initCompactColorButtons() {
                     console.log('🎨 Couleur normalisée:', normalizedColor);
                     
                     currentColor = normalizedColor;
-                    document.getElementById('colorPicker').value = normalizedColor;
                     updateCurrentColorDisplay();
-                    isErasing = false;
-                    
-                    // Désactiver la gomme
-                    const eraserBtn = document.getElementById('eraserBtn');
-                    if (eraserBtn) {
-                        eraserBtn.classList.remove('active');
-                        document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
-                    }
+                    setEraserState(false);
                     
                     // Mettre à jour la sélection visuelle
                     updateCompactColorSelection(btn);
@@ -817,16 +1262,8 @@ function initCompactColorButtons() {
                     console.log('📱 Touch: Couleur normalisée:', normalizedColor);
                     
                     currentColor = normalizedColor;
-                    document.getElementById('colorPicker').value = normalizedColor;
                     updateCurrentColorDisplay();
-                    isErasing = false;
-                    
-                    // Désactiver la gomme
-                    const eraserBtn = document.getElementById('eraserBtn');
-                    if (eraserBtn) {
-                        eraserBtn.classList.remove('active');
-                        document.getElementById('pixelGrid')?.classList.remove('eraser-mode');
-                    }
+                    setEraserState(false);
                     
                     // Mettre à jour la sélection visuelle
                     updateCompactColorSelection(btn);
@@ -1020,7 +1457,6 @@ function updateCompactColor(colorBtn, newColor) {
     // Si c'est la couleur actuellement sélectionnée, la mettre à jour
     if (colorBtn.classList.contains('selected')) {
         currentColor = newColor;
-        document.getElementById('colorPicker').value = newColor;
         updateCurrentColorDisplay();
     }
     
@@ -2486,98 +2922,155 @@ function saveProject() {
     });
 }
 
-// Fonction pour sauvegarder sur le serveur
+// Fonction pour sauvegarder sur Supabase (cloud)
 async function saveToServer() {
     try {
         const fileName = await showSaveDialog();
         if (!fileName) return;
 
-        const data = {
+        // Save current frame before saving project
+        saveCurrentFrame();
+
+        // Generate thumbnail
+        const thumbnail = window.dbService.generateThumbnail();
+
+        const projectData = {
             name: fileName,
             frames: frames,
             currentFrame: currentFrame,
-            customColors: customColors,
-            customPalette: customPalette // Ajouter la palette personnalisée
+            fps: animationFPS || 24,
+            customPalette: customPalette,
+            thumbnail: thumbnail
         };
 
-        const response = await fetch('/api/save', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
+        console.log('Saving project to Supabase...', fileName);
+        const result = await window.dbService.saveProject(projectData);
 
-        const result = await response.json();
-        
         if (result.success) {
-            alert('Projet sauvegardé sur le serveur avec succès !');
+            const action = result.isUpdate ? 'mis à jour' : 'créé';
+            alert(`✅ Projet "${fileName}" ${action} avec succès !`);
+            console.log('Project saved:', result.data);
         } else {
-            alert('Erreur lors de la sauvegarde: ' + result.error);
+            alert('❌ Erreur lors de la sauvegarde: ' + result.error);
         }
     } catch (err) {
         console.error('Erreur lors de la sauvegarde:', err);
-        alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+        alert('❌ Erreur lors de la sauvegarde. Vérifiez que vous êtes connecté.');
     }
 }
 
-// Fonction pour charger depuis le serveur
+// Fonction pour charger depuis Supabase (cloud)
 async function loadFromServer() {
     try {
-        const projects = await fetch('/api/projects').then(res => res.json());
-        
+        console.log('Loading projects from Supabase...');
+        const result = await window.dbService.getAllProjects();
+
+        if (!result.success) {
+            alert('❌ Erreur lors du chargement: ' + result.error);
+            return;
+        }
+
+        const projects = result.data;
+
         if (projects.length === 0) {
-            alert('Aucun projet sauvegardé trouvé.');
+            alert('Aucun projet sauvegardé trouvé. Créez-en un et sauvegardez-le !');
             return;
         }
 
-        const projectList = projects.map(p => 
-            `${p.name} (${new Date(p.lastModified).toLocaleDateString()})`
-        ).join('\n');
+        // Create dialog to select project
+        const dialog = document.createElement('div');
+        dialog.className = 'save-dialog';
 
-        const projectName = prompt(
-            'Projets disponibles:\n' + projectList + '\n\nEntrez le nom du projet à charger:'
-        );
+        const projectsList = projects.map(p => {
+            const date = new Date(p.updated_at).toLocaleDateString('fr-FR');
+            const time = new Date(p.updated_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+            return `<div class="project-item" data-name="${p.name}">
+                <strong>${p.name}</strong><br>
+                <small>${date} à ${time}</small>
+            </div>`;
+        }).join('');
 
-        if (!projectName) return;
+        dialog.innerHTML = `
+            <div class="save-dialog-content">
+                <h3>Charger un projet</h3>
+                <div style="max-height: 300px; overflow-y: auto; margin: 15px 0;">
+                    ${projectsList}
+                </div>
+                <div class="dialog-buttons">
+                    <button id="dialogCancel">Annuler</button>
+                </div>
+            </div>
+        `;
 
-        const project = projects.find(p => p.name === projectName);
-        if (!project) {
-            alert('Projet non trouvé.');
-            return;
-        }
+        document.body.appendChild(dialog);
 
-        const response = await fetch(`/api/load/${project.filename}`);
-        const data = await response.json();
+        // Add click handlers for project items
+        dialog.querySelectorAll('.project-item').forEach(item => {
+            item.style.cursor = 'pointer';
+            item.style.padding = '10px';
+            item.style.margin = '5px 0';
+            item.style.border = '1px solid #ddd';
+            item.style.borderRadius = '5px';
+            item.style.transition = 'background 0.2s';
 
-        frames = data.frames;
-        currentFrame = data.currentFrame;
-        
-        // Charger les couleurs personnalisées si elles existent
-        if (data.customColors) {
-            customColors = data.customColors;
-            saveCustomColors();
-            updateColorPalette();
-        }
-        
-        // Charger la palette personnalisée si elle existe
-        if (data.customPalette) {
-            customPalette = data.customPalette;
-            updateCompactPalette(); // Mettre à jour l'affichage
-        }
-        
-        const title = document.getElementById('projectTitle');
-        if (title) {
-            title.textContent = data.name || 'Projet sans nom';
-        }
-        
-        updateFramesList();
-        loadFrame(currentFrame);
-        
-        alert('Projet chargé avec succès !');
+            item.addEventListener('mouseenter', () => {
+                item.style.background = '#f0f0f0';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.background = 'white';
+            });
+
+            item.addEventListener('click', async () => {
+                const projectName = item.dataset.name;
+                dialog.remove();
+
+                try {
+                    const loadResult = await window.dbService.loadProject(projectName);
+
+                    if (!loadResult.success) {
+                        alert('❌ Erreur lors du chargement: ' + loadResult.error);
+                        return;
+                    }
+
+                    const data = loadResult.data;
+
+                    frames = data.frames;
+                    currentFrame = data.current_frame;
+
+                    // Load custom palette if exists
+                    if (data.custom_palette) {
+                        customPalette = data.custom_palette;
+                        updateCompactPalette();
+                    }
+
+                    // Load FPS
+                    if (data.fps) {
+                        animationFPS = data.fps;
+                    }
+
+                    const title = document.getElementById('projectTitle');
+                    if (title) {
+                        title.textContent = data.name || 'Projet sans nom';
+                    }
+
+                    updateFramesList();
+                    loadFrame(currentFrame);
+
+                    alert(`✅ Projet "${projectName}" chargé avec succès !`);
+                } catch (err) {
+                    console.error('Error loading project:', err);
+                    alert('❌ Erreur lors du chargement du projet.');
+                }
+            });
+        });
+
+        dialog.querySelector('#dialogCancel').addEventListener('click', () => {
+            dialog.remove();
+        });
+
     } catch (err) {
         console.error('Erreur lors du chargement:', err);
-        alert('Erreur lors du chargement. Veuillez réessayer.');
+        alert('❌ Erreur lors du chargement. Vérifiez que vous êtes connecté.');
     }
 }
 
@@ -2773,13 +3266,98 @@ async function loadFromServerMobile() {
     }
 }
 
+// Fonction intelligente de sauvegarde : essaie Supabase en premier, puis fallback vers localStorage
+async function saveProjectSmart() {
+    try {
+        // Demander le nom du projet
+        const fileName = await showSaveDialog();
+        if (!fileName) return;
+
+        // Sauvegarder la frame courante avant la sauvegarde
+        saveCurrentFrame();
+
+        // Générer la miniature
+        const thumbnail = window.dbService.generateThumbnail();
+
+        const projectData = {
+            name: fileName,
+            frames: frames,
+            currentFrame: currentFrame,
+            fps: animationFPS || 24,
+            customPalette: customPalette,
+            thumbnail: thumbnail,
+            customColors: customColors,
+            created: new Date().toISOString(),
+            version: '2.0'
+        };
+
+        // 1️⃣ ESSAYER SUPABASE EN PREMIER
+        console.log('🔄 Tentative de sauvegarde sur Supabase...', fileName);
+        
+        try {
+            const result = await window.dbService.saveProject(projectData);
+
+            if (result.success) {
+                const action = result.isUpdate ? 'mis à jour' : 'créé';
+                alert(`✅ Projet "${fileName}" ${action} avec succès sur le cloud Supabase !`);
+                console.log('✅ Project saved to Supabase:', result.data);
+                
+                // Aussi sauvegarder en local pour backup
+                try {
+                    localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
+                    console.log('💾 Backup local créé');
+                } catch (localError) {
+                    console.warn('⚠️ Impossible de créer le backup local:', localError);
+                }
+                
+                return;
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (supabaseError) {
+            console.warn('⚠️ Erreur Supabase:', supabaseError);
+            
+            // 2️⃣ FALLBACK VERS LOCALSTORAGE
+            console.log('🔄 Fallback vers sauvegarde locale...');
+            
+            try {
+                localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
+                alert(`⚠️ Projet "${fileName}" sauvegardé en LOCAL uniquement.\n\n` +
+                      `Supabase n'est pas disponible (${supabaseError.message}).\n` +
+                      `Votre projet est en sécurité localement sur cet appareil.`);
+                console.log('💾 Projet sauvegardé en local');
+            } catch (localError) {
+                // 3️⃣ DERNIER RECOURS : TÉLÉCHARGEMENT
+                console.error('❌ Impossible de sauvegarder en local:', localError);
+                
+                const blob = new Blob([JSON.stringify(projectData, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${fileName}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert(`⚠️ Impossible de sauvegarder sur le cloud ou en local.\n` +
+                      `Le fichier a été téléchargé sur votre appareil : "${fileName}.json"`);
+            }
+        }
+        
+    } catch (err) {
+        console.error('❌ Erreur lors de la sauvegarde:', err);
+        alert('❌ Erreur inattendue lors de la sauvegarde. Veuillez réessayer.');
+    }
+}
+
 // Initialisation de tous les event listeners
 function initEventListeners() {
     // Boutons principaux
     document.getElementById('clearBtn')?.addEventListener('click', clearAllFrames);
     document.getElementById('deleteFrameBtn')?.addEventListener('click', deleteCurrentFrame);
     document.getElementById('previewBtn')?.addEventListener('click', previewAnimation);
-    document.getElementById('saveBtn')?.addEventListener('click', saveToFile);
+    document.getElementById('saveBtn')?.addEventListener('click', saveProjectSmart);
     document.getElementById('loadBtn')?.addEventListener('click', loadFromFile);
     document.getElementById('loadLocalBtn')?.addEventListener('click', showLocalProjects);
     document.getElementById('shareProjectBtn')?.addEventListener('click', shareProject);
@@ -2792,8 +3370,10 @@ function initEventListeners() {
     // Bouton nouvelle frame
     document.getElementById('addFrameBtn')?.addEventListener('click', addFrame);
     
-    // Bouton gomme
-    document.getElementById('eraserBtn')?.addEventListener('click', toggleEraser);
+    // Boutons gomme (desktop + mobile)
+    document.querySelectorAll('#eraserBtn').forEach(btn => {
+        btn.addEventListener('click', toggleEraser);
+    });
     
     // Menu hamburger
     document.getElementById('menuToggle')?.addEventListener('click', toggleToolbar);
