@@ -135,7 +135,7 @@ body::before {
     align-items: center;
     justify-content: center;
     position: relative;
-    padding: 8px 12px; /* Réduit pour desktop */
+    padding: 6px 10px;
     /* Fallback pour navigateurs sans backdrop-filter */
     background: linear-gradient(135deg,
         rgba(28, 58, 148, 0.9),
@@ -145,7 +145,7 @@ body::before {
     -webkit-backdrop-filter: blur(15px) saturate(200%);
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 16px;
-    margin: 4px;
+    margin: 2px 4px 4px;
     color: #f4f6ff;
     box-shadow: 
         0 4px 16px rgba(0, 0, 0, 0.12),
@@ -416,7 +416,7 @@ body::before {
 /* Interface compacte mobile - Liquid Glass */
 .tools-compact {
     position: fixed;
-    top: calc(12px + env(safe-area-inset-top, 0px));
+    top: calc(8px + env(safe-area-inset-top, 0px));
     left: calc(12px + env(safe-area-inset-left, 0px));
     width: min(420px, calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
     padding: 8px;
@@ -434,7 +434,7 @@ body::before {
 }
 
 body.is-mobile .editor-container {
-    padding-top: calc(112px + env(safe-area-inset-top, 0px));
+    padding-top: calc(96px + env(safe-area-inset-top, 0px));
 }
 
 .compact-tools {
