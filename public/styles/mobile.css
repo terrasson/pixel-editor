@@ -97,7 +97,7 @@ body::before {
     /* Safe areas iOS pour ne pas être caché par les encoches */
     padding: max(4px, env(safe-area-inset-top, 4px)) 
              max(4px, env(safe-area-inset-right, 4px)) 
-             calc(72px + 24px + env(safe-area-inset-bottom, 0px)) 
+             max(16px, env(safe-area-inset-bottom, 16px)) 
              max(4px, env(safe-area-inset-left, 4px));
     margin: 0;
     box-shadow: 
@@ -1311,14 +1311,12 @@ body.is-mobile .editor-container {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 20px;
     padding: 12px;
-    padding-bottom: 20px;
     /* Marge bottom adaptative pour bannière pub + safe area */
-    margin: 6px 6px calc(88px + env(safe-area-inset-bottom, 12px)) 6px;
+    margin: 6px 6px 12px 6px;
     min-height: 120px;
     max-height: 160px;
     overflow-y: auto;
     flex-shrink: 0;
-    margin-top: auto;
     position: relative;
     box-shadow: 
         0 4px 16px rgba(0, 0, 0, 0.1),
@@ -1766,16 +1764,13 @@ body.drag-over .grid-container {
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    position: fixed;
-    bottom: calc(env(safe-area-inset-bottom, 0) + 0px);
-    left: max(8px, env(safe-area-inset-left, 8px));
-    right: max(8px, env(safe-area-inset-right, 8px));
-    z-index: 50;
+    position: static;
+    margin: 0 6px max(10px, env(safe-area-inset-bottom, 10px)) 6px;
+    flex-shrink: 0;
     box-shadow: 
-        0 -4px 16px rgba(0, 0, 0, 0.15),
+        0 -4px 16px rgba(0, 0, 0, 0.12),
         inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    margin: 0;
-    padding: 0 12px;
+    padding: 0 16px;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
