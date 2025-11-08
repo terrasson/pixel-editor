@@ -80,6 +80,7 @@
                 <button id="pasteFrameBtn">Coller la frame</button>
                 <button id="helpBtn">❓ Aide</button>
                 <button id="creditsBtn">Crédits</button>
+                <button id="logoutBtnMobile" class="logout-btn logout-btn-mobile">Déconnexion</button>
             </div>
         </div>
 
@@ -312,12 +313,19 @@
             const userEmail = window.authService.getUserEmail();
             document.getElementById('userEmail').textContent = userEmail;
 
-            // Logout button handler
-            document.getElementById('logoutBtn').addEventListener('click', async () => {
-                const result = await window.authService.signOut();
-                if (result.success) {
-                    window.location.href = '/login.html';
-                }
+            // Gestion des boutons de déconnexion (header + menu hamburger)
+            const logoutButtons = [
+                document.getElementById('logoutBtn'),
+                document.getElementById('logoutBtnMobile')
+            ].filter(Boolean);
+
+            logoutButtons.forEach(button => {
+                button.addEventListener('click', async () => {
+                    const result = await window.authService.signOut();
+                    if (result.success) {
+                        window.location.href = '/login.html';
+                    }
+                });
             });
         })();
     </script>
