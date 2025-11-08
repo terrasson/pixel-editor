@@ -513,28 +513,27 @@ html, body {
         0 2px 8px rgba(0, 122, 255, 0.2);
 }
 
-/* Étoile ★ pour identifier les couleurs personnalisées */
-.color-btn.custom-color::after {
-    content: '★';
+.color-btn.custom-color .color-badge {
     position: absolute;
     top: -6px;
     right: -6px;
-    font-size: 0.7rem;
-    color: #007AFF;
-    background: white;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    width: 14px;
-    height: 14px;
+    background: #ffffff;
+    border: 1px solid #007AFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #007AFF;
-    font-weight: bold;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #007AFF;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    pointer-events: none; /* L'étoile ne doit pas bloquer les clics */
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    pointer-events: auto;
+    z-index: 2;
 }
 
-/* Effet hover pour les couleurs personnalisées */
 .color-btn.custom-color:hover {
     border-color: #0056b3;
     transform: scale(1.15);
@@ -543,11 +542,25 @@ html, body {
         0 4px 16px rgba(0, 122, 255, 0.3);
 }
 
-/* Animation de l'étoile au hover */
-.color-btn.custom-color:hover::after {
+.color-btn.custom-color:hover .color-badge {
     color: #0056b3;
     border-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.color-btn.custom-color.show-remove {
+    border-color: rgba(255, 59, 48, 0.9);
+    box-shadow: 
+        0 0 0 2px rgba(255, 59, 48, 0.35),
+        0 6px 18px rgba(255, 59, 48, 0.25);
+}
+
+.color-btn.custom-color.show-remove .color-badge {
+    background: linear-gradient(135deg, rgba(255, 93, 95, 0.95), rgba(255, 59, 48, 0.95));
+    color: #ffffff;
+    border-color: rgba(255, 59, 48, 0.8);
     transform: scale(1.1);
+    box-shadow: 0 3px 6px rgba(255, 59, 48, 0.35);
 }
 
 /* TOUS les boutons dans sidebar gauche */

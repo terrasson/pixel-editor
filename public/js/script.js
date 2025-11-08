@@ -8,6 +8,7 @@ let clipboard = null; // Pour le copier-coller
 let copiedFrame = null;
 let customColors = []; // Palette de couleurs personnalisées
 const maxCustomColors = 8; // Nombre maximum de couleurs personnalisées
+const CUSTOM_COLOR_REMOVE_DELAY = 2000; // Délai avant affichage de la croix de suppression
 let customPalette = null; // Palette personnalisée des couleurs compactes pour le projet
 let pendingColor = null; // Couleur en attente de validation
 let customColorModalElements = null;
@@ -469,19 +470,210 @@ function updateColorPalette() {
     // Ajouter les couleurs personnalisées en plus (limitées à 6 pour ne pas surcharger)
     const maxPersonalizedColors = 6;
     customColors.slice(0, maxPersonalizedColors).forEach(color => {
+        const normalizedColor = normalizeColor(color);
+
         // Ne pas ajouter si c'est déjà une couleur de base
-        if (!defaultColors.includes(color.toUpperCase())) {
+        if (!defaultColors.includes(normalizedColor)) {
             const btn = document.createElement('button');
+            btn.type = 'button';
             btn.className = 'color-btn custom-color';
-            btn.style.backgroundColor = color;
-            btn.title = `Couleur personnalisée: ${color}`;
+            btn.dataset.color = normalizedColor;
+            btn.style.backgroundColor = normalizedColor;
+            btn.title = `Couleur personnalisée : ${normalizedColor}`;
             btn.addEventListener('click', () => {
-                currentColor = color;
+                currentColor = normalizedColor;
                 updateCurrentColorDisplay();
                 setEraserState(false);
             });
+
+            const badge = document.createElement('span');
+            badge.className = 'color-badge';
+            badge.textContent = '★';
+            badge.setAttribute('role', 'button');
+            badge.setAttribute('tabindex', '0');
+            badge.setAttribute('aria-label', 'Supprimer cette couleur personnalisée');
+            badge.setAttribute('title', 'Supprimer cette couleur personnalisée');
+            btn.appendChild(badge);
+
+            const removeDelay = CUSTOM_COLOR_REMOVE_DELAY;
+
+            const clearRemoveTimer = () => {
+                if (btn._removeTimer) {
+                    clearTimeout(btn._removeTimer);
+                    btn._removeTimer = null;
+                }
+            };
+
+            const showRemoveState = () => {
+                if (btn.classList.contains('show-remove')) return;
+                btn.classList.add('show-remove');
+                badge.textContent = '✕';
+            };
+
+            const hideRemoveState = () => {
+                btn.classList.remove('show-remove');
+                badge.textContent = '★';
+            };
+
+            const scheduleRemoveState = () => {
+                clearRemoveTimer();
+                btn._removeTimer = setTimeout(() => {
+                    showRemoveState();
+                }, removeDelay);
+            };
+
+            btn.addEventListener('mouseenter', scheduleRemoveState);
+            btn.addEventListener('mouseleave', () => {
+                clearRemoveTimer();
+                hideRemoveState();
+            });
+
+            btn.addEventListener('touchstart', () => {
+                scheduleRemoveState();
+            }, { passive: true });
+
+            const resetTouchState = () => {
+                clearRemoveTimer();
+                hideRemoveState();
+            };
+
+            btn.addEventListener('touchend', resetTouchState, { passive: true });
+            btn.addEventListener('touchcancel', resetTouchState, { passive: true });
+
+            badge.addEventListener('mouseenter', () => {
+                clearRemoveTimer();
+                showRemoveState();
+            });
+
+            badge.addEventListener('mouseleave', () => {
+                if (!btn.matches(':hover')) {
+                    hideRemoveState();
+                }
+            });
+
+            badge.addEventListener('focus', showRemoveState);
+            badge.addEventListener('blur', () => {
+                if (!btn.matches(':hover')) {
+                    hideRemoveState();
+                }
+            });
+
+            badge.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    triggerRemoval();
+                }
+            });
+
+            const triggerRemoval = async () => {
+                clearRemoveTimer();
+                showRemoveState();
+
+                const confirmed = await showConfirmDialog({
+                    title: 'Supprimer la couleur',
+                    message: 'Voulez-vous vraiment l\'effacer ?',
+                    confirmText: 'Oui',
+                    cancelText: 'Annuler',
+                    danger: true
+                });
+
+                if (confirmed) {
+                    removeCustomColor(normalizedColor);
+                } else {
+                    hideRemoveState();
+                }
+            };
+
+            badge.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                triggerRemoval();
+            });
+
+            badge.addEventListener('touchend', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                triggerRemoval();
+            });
+
             presetColors.appendChild(btn);
         }
+    });
+}
+
+function removeCustomColor(color) {
+    const normalized = normalizeColor(color);
+    const initialLength = customColors.length;
+
+    customColors = customColors.filter(existing => normalizeColor(existing) !== normalized);
+
+    if (customColors.length !== initialLength) {
+        saveCustomColors();
+        updateColorPalette();
+        console.log('🗑️ Couleur personnalisée supprimée:', normalized);
+    }
+}
+
+function showConfirmDialog({ 
+    title = 'Confirmation', 
+    message = '', 
+    confirmText = 'Oui', 
+    cancelText = 'Annuler',
+    danger = false 
+} = {}) {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-dialog-overlay';
+
+        const dialogId = `confirm-dialog-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        overlay.innerHTML = `
+            <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="${dialogId}-title" tabindex="-1">
+                <h3 id="${dialogId}-title">${title}</h3>
+                <p>${message}</p>
+                <div class="confirm-dialog-actions">
+                    <button class="dialog-button ${danger ? 'danger' : ''} confirm-btn">${confirmText}</button>
+                    <button class="dialog-button secondary cancel-btn">${cancelText}</button>
+                </div>
+            </div>
+        `;
+
+        const confirmBtn = overlay.querySelector('.confirm-btn');
+        const cancelBtn = overlay.querySelector('.cancel-btn');
+        const dialog = overlay.querySelector('.confirm-dialog');
+
+        const cleanup = (result) => {
+            overlay.removeEventListener('click', handleBackdropClick);
+            overlay.removeEventListener('keydown', handleKeydown, true);
+            overlay.remove();
+            resolve(result);
+        };
+
+        const handleBackdropClick = (event) => {
+            if (event.target === overlay) {
+                cleanup(false);
+            }
+        };
+
+        const handleKeydown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                cleanup(false);
+            }
+        };
+
+        overlay.addEventListener('click', handleBackdropClick);
+        overlay.addEventListener('keydown', handleKeydown, true);
+
+        confirmBtn.addEventListener('click', () => cleanup(true));
+        cancelBtn.addEventListener('click', () => cleanup(false));
+
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => {
+            dialog.focus();
+            confirmBtn.focus();
+        });
     });
 }
 
