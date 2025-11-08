@@ -258,6 +258,25 @@
             <!-- TOUS LES BOUTONS pour desktop -->
             <div class="extra-tools">
                 <button id="previewBtn2" title="Lancer/Arrêter l'animation">▶️ Animation</button>
+                <button id="fpsBtnSidebar" title="Régler la vitesse d'animation">⚙️ Vitesse</button>
+                <div class="fps-sidebar-panel" id="fpsSidebarPanel">
+                    <div class="fps-sidebar-header">
+                        <div class="fps-sidebar-value"><span id="fpsSidebarValue">24</span> FPS</div>
+                        <div class="fps-sidebar-desc" id="fpsSidebarDesc">(Cinéma)</div>
+                    </div>
+                    <div class="fps-sidebar-slider">
+                        <span class="fps-sidebar-min">1</span>
+                        <input type="range" id="fpsSidebarSlider" min="1" max="60" value="24">
+                        <span class="fps-sidebar-max">60</span>
+                    </div>
+                    <div class="fps-sidebar-presets">
+                        <button class="fps-sidebar-preset" data-fps="12">12 FPS<br><small>Animation</small></button>
+                        <button class="fps-sidebar-preset" data-fps="24">24 FPS<br><small>Cinéma</small></button>
+                        <button class="fps-sidebar-preset" data-fps="30">30 FPS<br><small>Vidéo</small></button>
+                        <button class="fps-sidebar-preset" data-fps="60">60 FPS<br><small>Fluide</small></button>
+                    </div>
+                    <p class="fps-sidebar-hint">💡 Ajuste la vitesse pendant la lecture pour voir l'effet en direct.</p>
+                </div>
                 <button id="clearBtn2">🗑️ Effacer tout</button>
                 <button id="deleteFrameBtn2">🗑️ Supprimer la frame</button>
                 <button id="saveBtn2">💾 Sauvegarder</button>
@@ -284,10 +303,12 @@
             </div>
             <div id="framesList"></div>
         </div>
+        
+        <!-- Espace réservé pour la publicité future -->
+        <div class="ad-space">
+            <span>Espace publicitaire</span>
+        </div>
     </div>
-
-    <!-- Espace réservé pour la publicité future -->
-    <div class="ad-space"></div>
 
     <script src="js/config/supabase-config.js"></script>
     <script src="js/auth.js"></script>

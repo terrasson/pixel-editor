@@ -1299,31 +1299,96 @@ function getFPSDescription(fps) {
     return '(Fluide)';
 }
 
+function updatePresetButtonsState(buttons, fps) {
+    if (!buttons) return;
+    buttons.forEach(btn => {
+        const btnFps = parseInt(btn.getAttribute('data-fps'), 10);
+        if (btnFps === fps) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+function updateFPSModalUI(fps) {
+    const fpsSlider = document.getElementById('fpsSlider');
+    if (fpsSlider && parseInt(fpsSlider.value, 10) !== fps) {
+        fpsSlider.value = fps;
+    }
+    
+    const fpsValue = document.getElementById('fpsValue');
+    if (fpsValue) {
+        fpsValue.textContent = fps;
+    }
+    
+    const fpsDesc = document.getElementById('fpsDesc');
+    if (fpsDesc) {
+        fpsDesc.textContent = getFPSDescription(fps);
+    }
+    
+    updatePresetButtonsState(
+        document.querySelectorAll('.fps-preset-btn'),
+        fps
+    );
+}
+
+function updateFPSSidebarUI(fps) {
+    const slider = document.getElementById('fpsSidebarSlider');
+    if (slider && parseInt(slider.value, 10) !== fps) {
+        slider.value = fps;
+    }
+    
+    const value = document.getElementById('fpsSidebarValue');
+    if (value) {
+        value.textContent = fps;
+    }
+    
+    const desc = document.getElementById('fpsSidebarDesc');
+    if (desc) {
+        desc.textContent = getFPSDescription(fps);
+    }
+    
+    updatePresetButtonsState(
+        document.querySelectorAll('.fps-sidebar-preset'),
+        fps
+    );
+}
+
+function setAnimationFPSValue(fps) {
+    const sanitized = Math.max(1, Math.min(60, parseInt(fps, 10) || 24));
+    animationFPS = sanitized;
+    updateFPSModalUI(sanitized);
+    updateFPSSidebarUI(sanitized);
+    console.log('🎬 FPS appliqué:', sanitized);
+}
+
 // Fonction pour initialiser le modal FPS
 function initFPSModal() {
-    const fpsBtn = document.getElementById('fpsBtn');
+    const fpsButtons = [
+        document.getElementById('fpsBtn')
+    ].filter(Boolean);
     const fpsModal = document.getElementById('fpsModal');
     const closeFpsModal = document.getElementById('closeFpsModal');
     const fpsSlider = document.getElementById('fpsSlider');
-    const fpsValue = document.getElementById('fpsValue');
-    const fpsDesc = document.getElementById('fpsDesc');
     const fpsPresetBtns = document.querySelectorAll('.fps-preset-btn');
     
-    if (!fpsBtn || !fpsModal) return;
+    if (fpsButtons.length === 0 || !fpsModal) return;
     
     // Ouvrir le modal
-    fpsBtn.addEventListener('click', () => {
+    const openFpsModal = () => {
         fpsModal.style.display = 'flex';
-        fpsSlider.value = animationFPS;
-        fpsValue.textContent = animationFPS;
-        fpsDesc.textContent = getFPSDescription(animationFPS);
-        updatePresetButtons(animationFPS);
-    });
+        updateFPSModalUI(animationFPS);
+    };
+    
+    fpsButtons.forEach(btn => btn.addEventListener('click', openFpsModal));
     
     // Fermer le modal
-    closeFpsModal.addEventListener('click', () => {
-        fpsModal.style.display = 'none';
-    });
+    if (closeFpsModal) {
+        closeFpsModal.addEventListener('click', () => {
+            fpsModal.style.display = 'none';
+        });
+    }
     
     // Fermer en cliquant à l'extérieur
     fpsModal.addEventListener('click', (e) => {
@@ -1333,39 +1398,50 @@ function initFPSModal() {
     });
     
     // Slider FPS
-    fpsSlider.addEventListener('input', (e) => {
-        const fps = parseInt(e.target.value);
-        animationFPS = fps;
-        fpsValue.textContent = fps;
-        fpsDesc.textContent = getFPSDescription(fps);
-        updatePresetButtons(fps);
-        console.log('🎬 FPS changé:', fps);
-    });
+    if (fpsSlider) {
+        fpsSlider.addEventListener('input', (e) => {
+            const fps = parseInt(e.target.value, 10);
+            setAnimationFPSValue(fps);
+        });
+    }
     
     // Boutons préréglés
     fpsPresetBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            const fps = parseInt(btn.getAttribute('data-fps'));
-            animationFPS = fps;
-            fpsSlider.value = fps;
-            fpsValue.textContent = fps;
-            fpsDesc.textContent = getFPSDescription(fps);
-            updatePresetButtons(fps);
-            console.log('🎬 FPS preset sélectionné:', fps);
+            const fps = parseInt(btn.getAttribute('data-fps'), 10);
+            setAnimationFPSValue(fps);
+        });
+    });
+}
+
+function initFPSSidebarPanel() {
+    const toggleBtn = document.getElementById('fpsBtnSidebar');
+    const panel = document.getElementById('fpsSidebarPanel');
+    const slider = document.getElementById('fpsSidebarSlider');
+    const presetButtons = document.querySelectorAll('.fps-sidebar-preset');
+    
+    if (!toggleBtn || !panel || !slider) return;
+    
+    toggleBtn.addEventListener('click', () => {
+        panel.classList.toggle('open');
+        if (panel.classList.contains('open')) {
+            updateFPSSidebarUI(animationFPS);
+        }
+    });
+    
+    slider.addEventListener('input', (e) => {
+        const fps = parseInt(e.target.value, 10);
+        setAnimationFPSValue(fps);
+    });
+    
+    presetButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const fps = parseInt(btn.getAttribute('data-fps'), 10);
+            setAnimationFPSValue(fps);
         });
     });
     
-    // Fonction pour mettre à jour les boutons préréglés
-    function updatePresetButtons(fps) {
-        fpsPresetBtns.forEach(btn => {
-            const btnFps = parseInt(btn.getAttribute('data-fps'));
-            if (btnFps === fps) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
-    }
+    updateFPSSidebarUI(animationFPS);
 }
 
 // Fonction pour initialiser les event listeners des couleurs compactes
@@ -2584,13 +2660,16 @@ function startAnimation() {
     
     let frameIndex = 0;
     
-    animationInterval = setInterval(() => {
+    const playNextFrame = () => {
+        const frameDelay = Math.max(16, Math.round(1000 / (animationFPS || 24)));
+        
         // Nettoyer les marqueurs pendant l'animation
         cleanUpMarkers();
         
         // Vérifier que la frame existe
         if (!frames[frameIndex] || frames[frameIndex].length === 0) {
             frameIndex = (frameIndex + 1) % frames.length;
+            animationInterval = setTimeout(playNextFrame, frameDelay);
             return;
         }
         
@@ -2603,13 +2682,15 @@ function startAnimation() {
         });
         
         frameIndex = (frameIndex + 1) % frames.length;
-        
-    }, 300); // 300ms par frame pour une animation fluide
+        animationInterval = setTimeout(playNextFrame, frameDelay);
+    };
+    
+    playNextFrame();
 }
 
 function stopAnimation() {
     if (animationInterval) {
-        clearInterval(animationInterval);
+        clearTimeout(animationInterval);
         animationInterval = null;
     }
     
@@ -3237,7 +3318,7 @@ async function loadFromServer() {
 
                     // Load FPS
                     if (data.fps) {
-                        animationFPS = data.fps;
+                        setAnimationFPSValue(data.fps);
                     }
 
                     const title = document.getElementById('projectTitle');
@@ -3643,6 +3724,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialiser les couleurs compactes
     initCompactColorButtons();
     
+    // Contrôles FPS (sidebar + modal)
+    initFPSSidebarPanel();
     // Initialiser le modal FPS
     initFPSModal();
     
@@ -4757,5 +4840,6 @@ Votre animation GIF est prête ! 🎨`);
         }
     });
 }
+
 
 
