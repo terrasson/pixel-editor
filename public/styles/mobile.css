@@ -76,9 +76,9 @@ body::before {
     display: flex;
     flex-direction: column;
     /* Hauteur dynamique avec support multiple navigateurs */
-    height: 100vh;
-    height: -webkit-fill-available; /* Safari iOS */
-    height: 100dvh; /* Navigateurs modernes */
+    min-height: 100vh;
+    min-height: -webkit-fill-available; /* Safari iOS */
+    min-height: 100dvh; /* Navigateurs modernes */
     width: 100vw;
     width: -webkit-fill-available;
     /* Fallback avec couleur opaque pour navigateurs sans backdrop-filter */
@@ -1765,7 +1765,7 @@ body.drag-over .grid-container {
     letter-spacing: 0.04em;
     text-transform: uppercase;
     position: static;
-    margin: 0 6px max(10px, env(safe-area-inset-bottom, 10px)) 6px;
+    margin: 12px 6px max(12px, env(safe-area-inset-bottom, 12px)) 6px;
     flex-shrink: 0;
     box-shadow: 
         0 -4px 16px rgba(0, 0, 0, 0.12),
