@@ -97,7 +97,7 @@ body::before {
     /* Safe areas iOS pour ne pas être caché par les encoches */
     padding: max(4px, env(safe-area-inset-top, 4px)) 
              max(4px, env(safe-area-inset-right, 4px)) 
-             max(16px, env(safe-area-inset-bottom, 16px)) 
+             max(6px, env(safe-area-inset-bottom, 0px)) 
              max(4px, env(safe-area-inset-left, 4px));
     margin: 0;
     box-shadow: 
@@ -1755,7 +1755,7 @@ body.drag-over .grid-container {
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 24px 24px 0 0;
+    border-radius: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1765,12 +1765,13 @@ body.drag-over .grid-container {
     letter-spacing: 0.04em;
     text-transform: uppercase;
     position: static;
-    margin: 12px 6px max(12px, env(safe-area-inset-bottom, 12px)) 6px;
+    margin: 12px 6px 0 6px;
+    padding: 0 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
     flex-shrink: 0;
     box-shadow: 
         0 -4px 16px rgba(0, 0, 0, 0.12),
         inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    padding: 0 16px;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
