@@ -3322,14 +3322,17 @@ async function loadFromServer() {
                     frames = typeof data.frames === 'string' ? JSON.parse(data.frames) : (data.frames || []);
                     currentFrame = data.current_frame ?? data.currentFrame ?? 0;
 
-                    if (currentFrame >= frames.length) {
+                    if (frames.length === 0) {
+                        frames = createEmptyFrames(1, gridWidth, gridHeight);
+                        currentFrame = 0;
+                    } else if (currentFrame >= frames.length) {
                         currentFrame = Math.max(0, frames.length - 1);
                     }
 
                     const colors = data.custom_colors || data.customColors;
+                    customColors = [];
                     if (colors) {
                         const projectColors = typeof colors === 'string' ? JSON.parse(colors) : colors;
-                        customColors = [];
                         projectColors.forEach(color => addCustomColor(color));
                     }
 
