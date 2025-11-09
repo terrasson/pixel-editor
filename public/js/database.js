@@ -51,7 +51,7 @@ class DatabaseService {
                         current_frame: currentFrame,
                         fps: fps || 24,
                         custom_palette: customPalette,
-                        custom_colors: customColors,
+                        custom_colors: customColors ?? null,
                         thumbnail,
                         updated_at: new Date().toISOString()
                     })
@@ -72,7 +72,7 @@ class DatabaseService {
                         current_frame: currentFrame,
                         fps: fps || 24,
                         custom_palette: customPalette,
-                        custom_colors: customColors,
+                        custom_colors: customColors ?? null,
                         thumbnail
                     })
                     .select()
