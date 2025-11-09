@@ -32,7 +32,7 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
-            const { name, frames, currentFrame, fps, customPalette, thumbnail } = projectData;
+            const { name, frames, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
 
             // Check if project already exists
             const { data: existing } = await this.supabase
@@ -51,6 +51,7 @@ class DatabaseService {
                         current_frame: currentFrame,
                         fps: fps || 24,
                         custom_palette: customPalette,
+                        custom_colors: customColors,
                         thumbnail,
                         updated_at: new Date().toISOString()
                     })
@@ -71,6 +72,7 @@ class DatabaseService {
                         current_frame: currentFrame,
                         fps: fps || 24,
                         custom_palette: customPalette,
+                        custom_colors: customColors,
                         thumbnail
                     })
                     .select()

@@ -239,6 +239,9 @@ function autoSaveProjectLocal(name) {
         frames: frames,
         currentFrame: currentFrame,
         customColors: customColors,
+        customPalette: customPalette,
+        fps: animationFPS || 24,
+        signature: 'pixel-art-editor-v2',
         dateCreated: new Date().toISOString(),
         lastModified: new Date().toISOString()
     };
@@ -338,27 +341,31 @@ async function showLocalProjects() {
             const project = autoSaveProjects[selectedProject.index];
             
             // Compatible Supabase (JSON stringifié) et localStorage (objets directs)
-            frames = typeof project.frames === 'string' ? JSON.parse(project.frames) : project.frames;
+            frames = typeof project.frames === 'string' ? JSON.parse(project.frames) : (project.frames || []);
             currentFrame = project.current_frame || project.currentFrame || 0;
+            
+            if (currentFrame >= frames.length) {
+                currentFrame = Math.max(0, frames.length - 1);
+            }
             
             if (project.custom_colors || project.customColors) {
                 const colors = project.custom_colors || project.customColors;
                 const projectColors = typeof colors === 'string' ? JSON.parse(colors) : colors;
                 
-                // Réintégrer les couleurs du projet avec les couleurs de base
-                customColors = []; // Vider d'abord
-                
-                // Ajouter les couleurs du projet qui ne sont pas des couleurs de base
+                customColors = [];
                 projectColors.forEach(color => {
-                    addCustomColor(color); // Cette fonction vérifie déjà les doublons et exclut les couleurs de base
+                    addCustomColor(color);
                 });
             }
             
-            // Charger la palette personnalisée si elle existe
             if (project.custom_palette || project.customPalette) {
                 const palette = project.custom_palette || project.customPalette;
                 customPalette = typeof palette === 'string' ? JSON.parse(palette) : palette;
-                updateCompactPalette(); // Mettre à jour l'affichage
+                updateCompactPalette();
+            }
+            
+            if (project.fps) {
+                animationFPS = project.fps;
             }
             
             // Définir l'ID du projet actuel pour les futures sauvegardes
@@ -3168,12 +3175,17 @@ function saveProject() {
     projectNameInput.focus();
     
     saveDialog.querySelector('#dialogSave').addEventListener('click', () => {
-        const projectName = projectNameInput.value || 'pixel_animation';
+        const projectName = (projectNameInput.value || 'pixel_animation').trim();
         const projectData = {
             frames: frames,
             currentFrame: currentFrame,
+            fps: animationFPS || 24,
+            customPalette: customPalette,
+            customColors: customColors,
+            projectName: projectName,
             version: '1.0.0',
-            date: new Date().toISOString()
+            date: new Date().toISOString(),
+            signature: 'pixel-art-editor-v2'
         };
         
         // Créer et télécharger le fichier
@@ -3307,23 +3319,33 @@ async function loadFromServer() {
 
                     const data = loadResult.data;
 
-                    frames = data.frames;
-                    currentFrame = data.current_frame;
+                    frames = typeof data.frames === 'string' ? JSON.parse(data.frames) : (data.frames || []);
+                    currentFrame = data.current_frame ?? data.currentFrame ?? 0;
 
-                    // Load custom palette if exists
-                    if (data.custom_palette) {
-                        customPalette = data.custom_palette;
+                    if (currentFrame >= frames.length) {
+                        currentFrame = Math.max(0, frames.length - 1);
+                    }
+
+                    const colors = data.custom_colors || data.customColors;
+                    if (colors) {
+                        const projectColors = typeof colors === 'string' ? JSON.parse(colors) : colors;
+                        customColors = [];
+                        projectColors.forEach(color => addCustomColor(color));
+                    }
+
+                    if (data.custom_palette || data.customPalette) {
+                        const palette = data.custom_palette || data.customPalette;
+                        customPalette = typeof palette === 'string' ? JSON.parse(palette) : palette;
                         updateCompactPalette();
                     }
 
-                    // Load FPS
                     if (data.fps) {
                         setAnimationFPSValue(data.fps);
                     }
 
                     const title = document.getElementById('projectTitle');
                     if (title) {
-                        title.textContent = data.name || 'Projet sans nom';
+                        title.textContent = data.name || data.projectTitle || projectName;
                     }
 
                     updateFramesList();
@@ -3552,6 +3574,7 @@ async function saveProjectSmart() {
         // Générer la miniature
         const thumbnail = window.dbService.generateThumbnail();
 
+        const projectTitleText = document.getElementById('projectTitle')?.textContent || fileName;
         const projectData = {
             name: fileName,
             frames: frames,
@@ -3560,8 +3583,12 @@ async function saveProjectSmart() {
             customPalette: customPalette,
             thumbnail: thumbnail,
             customColors: customColors,
+            projectTitle: projectTitleText,
             created: new Date().toISOString(),
-            version: '2.0'
+            updated: new Date().toISOString(),
+            version: '2.0',
+            device_info: navigator.userAgent,
+            signature: 'pixel-art-editor-v2'
         };
 
         // 1️⃣ ESSAYER SUPABASE EN PREMIER
@@ -3866,8 +3893,8 @@ function importProjectData(projectData) {
         }
         
         // Importer le projet
-        frames = projectData.frames;
-        currentFrame = projectData.currentFrame || 0;
+        frames = Array.isArray(projectData.frames) ? projectData.frames : [];
+        currentFrame = Number.isInteger(projectData.currentFrame) ? projectData.currentFrame : 0;
         
         if (currentFrame >= frames.length) {
             currentFrame = 0;
@@ -3887,10 +3914,14 @@ function importProjectData(projectData) {
             updateCompactPalette(); // Mettre à jour l'affichage
         }
         
+        if (projectData.fps) {
+            animationFPS = projectData.fps;
+        }
+        
         // Mettre à jour l'interface
         const title = document.getElementById('projectTitle');
         if (title) {
-            title.textContent = projectData.name || 'Projet partagé';
+            title.textContent = projectData.name || projectData.projectName || 'Projet partagé';
         }
         
         updateFramesList();
@@ -3929,6 +3960,7 @@ function createShareableProject() {
         currentFrame: currentFrame,
         customColors: customColors,
         customPalette: customPalette, // Ajouter la palette personnalisée
+        fps: animationFPS || 24,
         
         // Informations pour la compatibilité
         gridSize: { width: 32, height: 32 },
@@ -4197,8 +4229,8 @@ async function importSharedProject(file) {
         }
         
         // Importer le projet
-        frames = projectData.frames;
-        currentFrame = projectData.currentFrame || 0;
+        frames = Array.isArray(projectData.frames) ? projectData.frames : [];
+        currentFrame = Number.isInteger(projectData.currentFrame) ? projectData.currentFrame : 0;
         
         // Limiter currentFrame au nombre de frames disponibles
         if (currentFrame >= frames.length) {
@@ -4211,6 +4243,15 @@ async function importSharedProject(file) {
             projectData.customColors.forEach(color => {
                 addCustomColor(color);
             });
+        }
+        
+        if (projectData.customPalette && Array.isArray(projectData.customPalette)) {
+            customPalette = projectData.customPalette;
+            updateCompactPalette();
+        }
+        
+        if (projectData.fps) {
+            animationFPS = projectData.fps;
         }
         
         // Mettre à jour l'interface
