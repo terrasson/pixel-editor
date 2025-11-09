@@ -23,6 +23,44 @@ let customColorModalState = {
 let animationFPS = 24; // FPS par défaut (cinéma)
 let autoSaveProjects = []; // Projets sauvegardés automatiquement en local
 const maxAutoSaveProjects = 10; // Nombre maximum de projets auto-sauvegardés
+const GRID_SIZE = 32;
+
+function createEmptyFrame(width = GRID_SIZE, height = GRID_SIZE) {
+    const totalPixels = width * height;
+    return Array.from({ length: totalPixels }, () => ({
+        color: '#FFFFFF',
+        isEmpty: true
+    }));
+}
+
+function normalisePixel(pixel) {
+    if (!pixel || typeof pixel !== 'object') {
+        return { color: '#FFFFFF', isEmpty: true };
+    }
+    return {
+        color: pixel.color || '#FFFFFF',
+        isEmpty: pixel.isEmpty !== false ? true : false
+    };
+}
+
+function normaliseFrames(rawFrames) {
+    if (!Array.isArray(rawFrames) || rawFrames.length === 0) {
+        return [createEmptyFrame()];
+    }
+    return rawFrames.map(frame => {
+        if (!Array.isArray(frame)) {
+            return createEmptyFrame();
+        }
+        if (frame.length !== GRID_SIZE * GRID_SIZE) {
+            const normalised = createEmptyFrame();
+            frame.slice(0, normalised.length).forEach((pixel, idx) => {
+                normalised[idx] = normalisePixel(pixel);
+            });
+            return normalised;
+        }
+        return frame.map(normalisePixel);
+    });
+}
 
 // Variables pour l'animation
 let isAnimationPlaying = false;
@@ -3319,13 +3357,10 @@ async function loadFromServer() {
 
                     const data = loadResult.data;
 
-                    frames = typeof data.frames === 'string' ? JSON.parse(data.frames) : (data.frames || []);
+                    const parsedFrames = typeof data.frames === 'string' ? JSON.parse(data.frames) : data.frames;
+                    frames = normaliseFrames(parsedFrames);
                     currentFrame = data.current_frame ?? data.currentFrame ?? 0;
-
-                    if (frames.length === 0) {
-                        frames = createEmptyFrames(1, gridWidth, gridHeight);
-                        currentFrame = 0;
-                    } else if (currentFrame >= frames.length) {
+                    if (currentFrame >= frames.length) {
                         currentFrame = Math.max(0, frames.length - 1);
                     }
 
@@ -3333,7 +3368,9 @@ async function loadFromServer() {
                     customColors = [];
                     if (colors) {
                         const projectColors = typeof colors === 'string' ? JSON.parse(colors) : colors;
-                        projectColors.forEach(color => addCustomColor(color));
+                        if (Array.isArray(projectColors)) {
+                            projectColors.forEach(color => addCustomColor(color));
+                        }
                     }
 
                     if (data.custom_palette || data.customPalette) {
@@ -3896,7 +3933,8 @@ function importProjectData(projectData) {
         }
         
         // Importer le projet
-        frames = Array.isArray(projectData.frames) ? projectData.frames : [];
+        const parsedFrames = typeof projectData.frames === 'string' ? JSON.parse(projectData.frames) : projectData.frames;
+        frames = normaliseFrames(parsedFrames);
         currentFrame = Number.isInteger(projectData.currentFrame) ? projectData.currentFrame : 0;
         
         if (currentFrame >= frames.length) {
@@ -3904,17 +3942,23 @@ function importProjectData(projectData) {
         }
         
         // Importer les couleurs personnalisées
-        if (projectData.customColors && Array.isArray(projectData.customColors)) {
-            customColors = [];
-            projectData.customColors.forEach(color => {
-                addCustomColor(color);
-            });
+        customColors = [];
+        const projectColors = projectData.customColors || projectData.custom_colors;
+        if (projectColors) {
+            const coloursArray = typeof projectColors === 'string' ? JSON.parse(projectColors) : projectColors;
+            if (Array.isArray(coloursArray)) {
+                coloursArray.forEach(color => addCustomColor(color));
+            }
         }
         
         // Importer la palette personnalisée
-        if (projectData.customPalette && Array.isArray(projectData.customPalette)) {
-            customPalette = projectData.customPalette;
-            updateCompactPalette(); // Mettre à jour l'affichage
+        if (projectData.customPalette || projectData.custom_palette) {
+            const paletteSource = projectData.customPalette || projectData.custom_palette;
+            const paletteArray = typeof paletteSource === 'string' ? JSON.parse(paletteSource) : paletteSource;
+            if (Array.isArray(paletteArray)) {
+                customPalette = paletteArray;
+                updateCompactPalette(); // Mettre à jour l'affichage
+            }
         }
         
         if (projectData.fps) {
