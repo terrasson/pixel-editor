@@ -1827,32 +1827,40 @@ function updateCompactColor(colorBtn, newColor) {
 }
 
 // Fonction pour sauvegarder la palette personnalisée
-function saveCustomPalette() {
-    const compactColorButtons = document.querySelectorAll('.compact-color-btn');
-    customPalette = Array.from(compactColorButtons).map(btn => btn.style.backgroundColor);
-    console.log('💾 Palette personnalisée sauvegardée:', customPalette);
+function getDefaultCompactColors() {
+    return ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
 }
 
-// Fonction pour charger la palette personnalisée
-function loadCustomPalette(palette) {
-    if (!palette || !Array.isArray(palette)) return;
-    
+function applyCompactPaletteColors(colors) {
+    const defaultColors = getDefaultCompactColors();
+    const palette = Array.isArray(colors) && colors.length ? colors : defaultColors;
     const compactColorButtons = document.querySelectorAll('.compact-color-btn');
+
     compactColorButtons.forEach((btn, index) => {
-        if (palette[index]) {
-            btn.style.backgroundColor = palette[index];
+        const fallbackColor = defaultColors[index] || defaultColors[defaultColors.length - 1];
+        const color = palette[index] || fallbackColor;
+        btn.style.backgroundColor = color;
+
+        const normalizedColor = normalizeColor(color);
+        const normalizedDefault = normalizeColor(fallbackColor);
+        const isCustom = normalizedColor !== normalizedDefault;
+
+        btn.classList.toggle('custom-color', isCustom);
+        if (isCustom) {
+            btn.setAttribute('data-custom', 'true');
+        } else {
+            btn.removeAttribute('data-custom');
         }
     });
-    
+}
+
+function loadCustomPalette(palette) {
+    if (!palette || !Array.isArray(palette)) return;
+    applyCompactPaletteColors(palette);
     console.log('📂 Palette personnalisée chargée:', palette);
 }
 
-// Fonction pour mettre à jour la palette compacte (alias pour compatibilité)
-function updateCompactPalette() {
-    if (customPalette) {
-        loadCustomPalette(customPalette);
-    }
-}
+// Fonction pour charger la palette personnalisée
 
 // ========================================
 // PERSONNALISATION DE PALETTE
@@ -1993,26 +2001,32 @@ function resetPaletteToDefault() {
 // Sauvegarder la palette personnalisée
 function saveCustomPalette() {
     const colorInputs = document.querySelectorAll('.palette-color-input');
-    const newPalette = Array.from(colorInputs).map(input => input.value);
+    let newPalette = [];
+    const fromModal = colorInputs.length > 0;
+
+    if (fromModal) {
+        newPalette = Array.from(colorInputs).map(input => input.value);
+    } else {
+        const compactColorButtons = document.querySelectorAll('.compact-color-btn');
+        newPalette = Array.from(compactColorButtons).map(btn => btn.style.backgroundColor);
+    }
     
     customPalette = newPalette;
     updateCompactPalette();
-    closePaletteModal();
     
-    // Afficher un message de confirmation
-    showNotification('Palette personnalisée sauvegardée !', 'success');
+    if (fromModal) {
+        closePaletteModal();
+        // Afficher un message de confirmation
+        showNotification('Palette personnalisée sauvegardée !', 'success');
+    } else {
+        console.log('💾 Palette compacte sauvegardée:', customPalette);
+    }
 }
 
 // Mettre à jour la palette compacte
 function updateCompactPalette() {
-    const colors = customPalette || ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
-    const compactBtns = document.querySelectorAll('.compact-color-btn');
-    
-    compactBtns.forEach((btn, index) => {
-        if (colors[index]) {
-            btn.style.backgroundColor = colors[index];
-        }
-    });
+    const colors = customPalette || getDefaultCompactColors();
+    applyCompactPaletteColors(colors);
 }
 
 // Fonction pour afficher des notifications

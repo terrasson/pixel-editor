@@ -589,6 +589,32 @@ body.is-mobile .editor-container {
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.compact-color-btn.custom-color {
+    border-color: #007AFF;
+    box-shadow: 0 0 0 1px rgba(0, 122, 255, 0.3), 0 2px 6px rgba(0, 122, 255, 0.25);
+}
+
+.compact-color-btn.custom-color::after {
+    content: '★';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #007AFF;
+    color: #007AFF;
+    font-size: 0.6rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
 }
 
 .compact-color-btn:hover {
