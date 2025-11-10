@@ -236,6 +236,15 @@ function loadCustomColors() {
     }
 }
 
+function adjustForOrientation() {
+    requestAnimationFrame(() => {
+        updateFramesList();
+        if (customPalette) {
+            updateCompactPalette();
+        }
+    });
+}
+
 function saveCustomColors() {
     localStorage.setItem('pixelEditor_customColors', JSON.stringify(customColors));
 }
@@ -245,41 +254,15 @@ let currentProjectId = null; // ID du projet actuel pour les mises à jour
 
 async function loadSupabaseProjects() {
     try {
-        autoSaveProjects = await supabase.getProjects();
+        const result = await window.dbService.getAllProjects();
+        if (!result.success || !Array.isArray(result.data)) {
+            throw new Error(result.error || 'Réponse Supabase invalide');
+        }
+        autoSaveProjects = result.data;
         console.log(`📱 ${autoSaveProjects.length} projets chargés depuis Supabase`);
     } catch (error) {
         console.error('Erreur chargement projets:', error);
-        // Fallback vers localStorage si Supabase ne fonctionne pas
         loadAutoSaveProjects();
-    }
-}
-
-async function saveToSupabase(projectData) {
-    try {
-        if (currentProjectId) {
-            // Mise à jour du projet existant
-            const updated = await supabase.updateProject(currentProjectId, {
-                ...projectData,
-                updated_at: new Date().toISOString()
-            });
-            console.log('✅ Projet mis à jour sur Supabase');
-            return updated[0];
-        } else {
-            // Création d'un nouveau projet
-            const created = await supabase.createProject({
-                ...projectData,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            });
-            currentProjectId = created[0].id;
-            console.log('✅ Nouveau projet créé sur Supabase');
-            return created[0];
-        }
-    } catch (error) {
-        console.error('Erreur sauvegarde Supabase:', error);
-        // Fallback vers localStorage
-        autoSaveProjectLocal(projectData.name);
-        throw error;
     }
 }
 
