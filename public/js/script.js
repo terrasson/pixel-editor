@@ -87,6 +87,28 @@ function normaliseFrames(rawFrames) {
     });
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function ensureAuthenticatedUser(retries = 10, delay = 200) {
+    for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+            await window.authService.init();
+        } catch (error) {
+            console.warn('Auth init attempt failed:', error);
+        }
+
+        if (window.authService.isAuthenticated && window.authService.isAuthenticated()) {
+            return true;
+        }
+
+        await sleep(delay);
+    }
+
+    throw new Error('User not authenticated');
+}
+
 // Variables pour l'animation
 let isAnimationPlaying = false;
 let animationInterval = null;
@@ -254,6 +276,8 @@ let currentProjectId = null; // ID du projet actuel pour les mises à jour
 
 async function loadSupabaseProjects() {
     try {
+        await ensureAuthenticatedUser();
+
         const result = await window.dbService.getAllProjects();
         if (!result.success || !Array.isArray(result.data)) {
             throw new Error(result.error || 'Réponse Supabase invalide');
@@ -382,54 +406,69 @@ async function showLocalProjects() {
     });
 
     // Charger le projet sélectionné
-    loadBtn.addEventListener('click', () => {
-        if (selectedProject) {
-            const project = autoSaveProjects[selectedProject.index];
-            
-            // Compatible Supabase (JSON stringifié) et localStorage (objets directs)
-            frames = typeof project.frames === 'string' ? JSON.parse(project.frames) : (project.frames || []);
-            currentFrame = project.current_frame || project.currentFrame || 0;
-            
+    loadBtn.addEventListener('click', async () => {
+        if (!selectedProject) {
+            return;
+        }
+
+        const projectMeta = autoSaveProjects[selectedProject.index];
+        try {
+            const result = await window.dbService.loadProject(projectMeta.name);
+
+            if (!result.success) {
+                alert('❌ Erreur lors du chargement du projet: ' + (result.error || 'inconnue'));
+                return;
+            }
+
+            const data = result.data;
+            console.log('📥 Projet Supabase chargé depuis dialog', {
+                name: data.name,
+                current: data.current_frame,
+                hasFrames: !!data.frames,
+                type: typeof data.frames
+            });
+
+            frames = normaliseFrames(data.frames);
+            currentFrame = data.current_frame ?? data.currentFrame ?? 0;
             if (currentFrame >= frames.length) {
                 currentFrame = Math.max(0, frames.length - 1);
             }
-            
-            if (project.custom_colors || project.customColors) {
-                const colors = project.custom_colors || project.customColors;
+
+            const colors = data.custom_colors || data.customColors;
+            customColors = [];
+            if (colors) {
                 const projectColors = typeof colors === 'string' ? JSON.parse(colors) : colors;
-                
-                customColors = [];
-                projectColors.forEach(color => {
-                    addCustomColor(color);
-                });
+                if (Array.isArray(projectColors)) {
+                    projectColors.forEach(color => addCustomColor(color));
+                }
             }
-            
-            if (project.custom_palette || project.customPalette) {
-                const palette = project.custom_palette || project.customPalette;
-                customPalette = typeof palette === 'string' ? JSON.parse(palette) : palette;
-                updateCompactPalette();
+
+            if (data.custom_palette || data.customPalette) {
+                const paletteSource = data.custom_palette || data.customPalette;
+                const paletteArray = typeof paletteSource === 'string' ? JSON.parse(paletteSource) : paletteSource;
+                if (Array.isArray(paletteArray)) {
+                    customPalette = paletteArray;
+                    updateCompactPalette();
+                }
             }
-            
-            if (project.fps) {
-                animationFPS = project.fps;
+
+            if (data.fps) {
+                setAnimationFPSValue(data.fps);
             }
-            
-            // Définir l'ID du projet actuel pour les futures sauvegardes
-            currentProjectId = project.id;
-            
+
             const title = document.getElementById('projectTitle');
             if (title) {
-                title.textContent = project.name || 'Projet sans nom';
+                title.textContent = data.name || data.projectTitle || projectMeta.name;
             }
-            
+
             updateFramesList();
             loadFrame(currentFrame);
-            
-            // S'assurer que les miniatures sont correctement mises à jour
-            setTimeout(() => updateAllThumbnails(), 100);
-            
+
             dialog.remove();
-            alert('✅ Projet chargé avec succès !');
+            alert(`✅ Projet "${data.name || projectMeta.name}" chargé avec succès !`);
+        } catch (error) {
+            console.error('Erreur chargement projet Supabase:', error);
+            alert('❌ Erreur inattendue lors du chargement du projet. Consultez la console pour plus de détails.');
         }
     });
 
