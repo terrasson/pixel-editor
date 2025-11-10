@@ -44,10 +44,35 @@ function normalisePixel(pixel) {
 }
 
 function normaliseFrames(rawFrames) {
-    if (!Array.isArray(rawFrames) || rawFrames.length === 0) {
+    let framesArray = rawFrames;
+
+    if (rawFrames && typeof rawFrames === 'object' && !Array.isArray(rawFrames)) {
+        if (Array.isArray(rawFrames.frames)) {
+            framesArray = rawFrames.frames;
+        } else if (Array.isArray(rawFrames.data)) {
+            framesArray = rawFrames.data;
+        } else {
+            framesArray = Object.values(rawFrames).find(Array.isArray) || [];
+        }
+    }
+
+    if (typeof framesArray === 'string') {
+        try {
+            framesArray = JSON.parse(framesArray);
+        } catch {
+            framesArray = [];
+        }
+    }
+
+    if (!Array.isArray(framesArray) || framesArray.length === 0) {
         return [createEmptyFrame()];
     }
-    return rawFrames.map(frame => {
+
+    return framesArray.map(frame => {
+        if (frame && typeof frame === 'object' && !Array.isArray(frame) && Array.isArray(frame.pixels)) {
+            frame = frame.pixels;
+        }
+
         if (!Array.isArray(frame)) {
             return createEmptyFrame();
         }
@@ -3356,6 +3381,13 @@ async function loadFromServer() {
                     }
 
                     const data = loadResult.data;
+                    console.log('📥 Projet Supabase chargé', {
+                        rawFramesType: typeof data.frames,
+                        hasCustomColors: !!(data.custom_colors || data.customColors),
+                        hasCustomPalette: !!(data.custom_palette || data.customPalette),
+                        fps: data.fps,
+                        currentFrame: data.current_frame ?? data.currentFrame
+                    });
 
                     const parsedFrames = typeof data.frames === 'string' ? JSON.parse(data.frames) : data.frames;
                     frames = normaliseFrames(parsedFrames);
@@ -3363,6 +3395,7 @@ async function loadFromServer() {
                     if (currentFrame >= frames.length) {
                         currentFrame = Math.max(0, frames.length - 1);
                     }
+                    console.log('📐 Frames normalisées', { length: frames.length });
 
                     const colors = data.custom_colors || data.customColors;
                     customColors = [];
@@ -3372,6 +3405,7 @@ async function loadFromServer() {
                             projectColors.forEach(color => addCustomColor(color));
                         }
                     }
+                    console.log('🎨 Couleurs personnalisées appliquées', { count: customColors.length });
 
                     if (data.custom_palette || data.customPalette) {
                         const palette = data.custom_palette || data.customPalette;
@@ -3387,6 +3421,8 @@ async function loadFromServer() {
                     if (title) {
                         title.textContent = data.name || data.projectTitle || projectName;
                     }
+
+                    console.log('🖼️ Mise à jour interface', { currentFrame, framesLength: frames.length });
 
                     updateFramesList();
                     loadFrame(currentFrame);
