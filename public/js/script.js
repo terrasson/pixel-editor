@@ -2955,224 +2955,72 @@ function pasteFrame() {
 // Fonction pour afficher l'aide complète
 function showHelp() {
     const helpContent = `
-        <div class="help-content">
-            <h2>🎨 Guide d'utilisation - Éditeur Pixel Art</h2>
-            
-            <div class="help-section">
-                <h3>🖌️ Outils de dessin</h3>
-                <div class="help-item">
-                    <strong>Sélecteur de couleur:</strong> Choisissez votre couleur avec le nuancier coloré
-                </div>
-                <div class="help-item">
-                    <strong>Bouton ✓ (Valider):</strong> Après avoir choisi une couleur, cliquez sur ✓ pour l'ajouter à votre palette personnalisée
-                </div>
-                <div class="help-item">
-                    <strong>Gomme:</strong> Cliquez sur "Gomme" pour effacer des pixels (les rend blancs)
-                </div>
-                <div class="help-item">
-                    <strong>Palette de couleurs:</strong> 
-                    <br>• Couleurs de base (8 couleurs prédéfinies)
-                    <br>• Couleurs personnalisées (marquées avec ★, jusqu'à 6 couleurs)
-                </div>
+        <div class="help-section">
+            <h3>🔰 Commencer</h3>
+            <div class="help-item">
+                <strong>Palette :</strong> choisissez une couleur (sidebar gauche sur desktop, barre compacte en haut sur mobile) puis cliquez/touchez la grille pour dessiner.
             </div>
-
-            <div class="help-section">
-                <h3>↶↷ Annuler / Rétablir</h3>
-                <div class="help-item">
-                    <strong>Bouton ↶ (Annuler):</strong> Revient en arrière sur votre dernière action de dessin
-                </div>
-                <div class="help-item">
-                    <strong>Bouton ↷ (Rétablir):</strong> Revient en avant si vous êtes revenu trop loin en arrière
-                </div>
-                <div class="help-item">
-                    <strong>Raccourcis clavier:</strong>
-                    <br>• <kbd>Ctrl+Z</kbd> = Annuler
-                    <br>• <kbd>Ctrl+Y</kbd> ou <kbd>Ctrl+Shift+Z</kbd> = Rétablir
-                </div>
-                <div class="help-item">
-                    <strong>Historique:</strong> Jusqu'à 50 actions mémorisées par frame
-                </div>
+            <div class="help-item">
+                <strong>Gomme :</strong> activez la gomme pour effacer, désactivez-la pour revenir au pinceau.
             </div>
+        </div>
 
-            <div class="help-section">
-                <h3>🎬 Système de Frames (Animation)</h3>
-                <div class="help-item">
-                    <strong>+ Nouvelle Frame:</strong> Ajoute une frame vide pour créer une animation
-                </div>
-                <div class="help-item">
-                    <strong>Miniatures:</strong> Cliquez sur une miniature pour changer de frame
-                </div>
-                <div class="help-item">
-                    <strong>Indicateurs visuels:</strong>
-                    <br>• ○ = Pixels de la frame précédente (référence)
-                    <br>• ○○ = Pixels de la frame suivante (aperçu)
-                </div>
-                <div class="help-item">
-                    <strong>Bouton ▶️:</strong> Lance l'animation / ⏹️ pour l'arrêter
-                </div>
-                <div class="help-item">
-                    <strong>Supprimer Frame:</strong> Supprime la frame actuelle (minimum 1 frame)
-                </div>
-                <div class="help-item">
-                    <strong>Copier/Coller:</strong> Dupliquez une frame pour créer des variations
-                </div>
+        <div class="help-section">
+            <h3>🎚️ Couleurs personnalisées</h3>
+            <div class="help-item">
+                <strong>Desktop :</strong> cliquez sur la couleur affichée en haut de la palette pour ouvrir l'éditeur, créez vos teintes puis validez avec ✓.
             </div>
-
-            <div class="help-section">
-                <h3>💾 Sauvegarde et chargement</h3>
-                <div class="help-item">
-                    <strong>💾 Sauvegarder:</strong> Sauve votre projet sur Supabase (cloud)
-                    <br>• Frames et position actuelle
-                    <br>• Couleurs personnalisées
-                    <br>• Accessible depuis tous vos appareils
-                </div>
-                <div class="help-item">
-                    <strong>📂 Charger:</strong> Charge un fichier JSON depuis votre appareil
-                    <br>• Accepte les formats .json et .pixelart
-                    <br>• Compatible avec les projets partagés
-                </div>
-                <div class="help-item">
-                    <strong>🌐 Mes projets:</strong> Liste de vos projets sauvegardés en ligne
-                    <br>• Synchronisés entre appareils
-                    <br>• Sauvegarde automatique des couleurs personnalisées
-                </div>
-                <div class="help-item">
-                    <strong>🗑️ Effacer tout:</strong> Remet la grille à zéro
-                </div>
+            <div class="help-item">
+                <strong>Mobile :</strong> appui long sur une couleur compacte pour la modifier ; une étoile signale vos couleurs perso.
             </div>
+        </div>
 
-            <div class="help-section">
-                <h3>📤 Partage de projets</h3>
-                <div class="help-item">
-                    <strong>📤 Partager:</strong> Partagez vos créations avec vos amis !
-                    <br>• Crée un fichier .pixelart optimisé
-                    <br>• Compatible avec tous les appareils
-                    <br>• Inclut toutes vos couleurs personnalisées
-                </div>
-                <div class="help-item">
-                    <strong>Options de partage:</strong>
-                    <br>• 📥 Téléchargement direct du fichier
-                    <br>• 📧 Partage par email avec instructions
-                    <br>• Compatible AirDrop, messages, etc.
-                </div>
-                <div class="help-item">
-                    <strong>Import facile:</strong>
-                    <br>• Glissez-déposez un fichier .pixelart sur l'écran
-                    <br>• Ou utilisez "📂 Charger" pour sélectionner
-                    <br>• Aperçu des détails avant import
-                </div>
-                <div class="help-item">
-                    <strong>Format de fichier:</strong> Les fichiers .pixelart contiennent tout :
-                    <br>• Toutes les frames de l'animation
-                    <br>• Couleurs personnalisées utilisées
-                    <br>• Métadonnées (nom, date de création)
-                </div>
+        <div class="help-section">
+            <h3>🧱 Frames & animation</h3>
+            <div class="help-item">
+                <strong>+ Nouvelle Frame :</strong> ajoute une frame vide (copie aussi la frame sélectionnée si des pixels existent).
             </div>
-
-            <div class="help-section">
-                <h3>🎬 Export Animation GIF</h3>
-                <div class="help-item">
-                    <strong>🎬 Export GIF:</strong> Créez des animations GIF pour un partage facile !
-                    <br>• Convertit vos frames en animation GIF
-                    <br>• Visible directement sans avoir besoin de l'éditeur
-                    <br>• Parfait pour réseaux sociaux, messages, emails
-                </div>
-                <div class="help-item">
-                    <strong>Options d'export:</strong>
-                    <br>• 📏 Taille : 128x128 à 1024x1024 pixels
-                    <br>• ⚡ Vitesse : De très rapide (0.1s) à très lent (1s)
-                    <br>• 🔄 Répétition : Infinie ou nombre limité
-                    <br>• ✨ Qualité : Maximale à rapide (impact sur taille fichier)
-                </div>
-                <div class="help-item">
-                    <strong>Utilisation:</strong>
-                    <br>• Bouton "🎬 Export GIF" dans la barre d'outils
-                    <br>• Ou option "🎬 Créer Animation GIF" dans le partage
-                    <br>• Configuration facile avec aperçu
-                    <br>• Téléchargement automatique du fichier .gif
-                </div>
-                <div class="help-item">
-                    <strong>Conseils GIF:</strong>
-                    <br>• Taille 256x256 : Bon compromis qualité/taille
-                    <br>• Vitesse 0.3s : Idéale pour la plupart des animations
-                    <br>• Répétition infinie : Standard pour les animations
-                    <br>• Qualité haute : Recommandée sauf contrainte de taille
-                </div>
+            <div class="help-item">
+                <strong>C / V :</strong> copier-colle facilement une frame existante.
             </div>
-
-            <div class="help-section">
-                <h3>📱 Interface mobile</h3>
-                <div class="help-item">
-                    <strong>Menu ☰:</strong> Cliquez pour afficher/masquer les outils sur mobile
-                </div>
-                <div class="help-item">
-                    <strong>Dessin tactile:</strong> Dessinez directement avec votre doigt
-                </div>
-                <div class="help-item">
-                    <strong>Interface adaptative:</strong> S'adapte automatiquement à votre écran
-                </div>
-                <div class="help-item">
-                    <strong>Rotation:</strong> Fonctionne en mode portrait et paysage
-                </div>
+            <div class="help-item">
+                <strong>Play :</strong> lance/arrête l'aperçu de l'animation.
             </div>
-
-            <div class="help-section">
-                <h3>💡 Conseils d'utilisation</h3>
-                <div class="help-item">
-                    <strong>Couleurs personnalisées:</strong> Choisissez d'abord votre couleur, puis validez avec ✓ pour l'ajouter
-                </div>
-                <div class="help-item">
-                    <strong>Animation fluide:</strong> Créez plusieurs frames avec de légères variations
-                </div>
-                <div class="help-item">
-                    <strong>Erreurs de dessin:</strong> Utilisez Ctrl+Z ou le bouton ↶ pour corriger rapidement
-                </div>
-                <div class="help-item">
-                    <strong>Changement de frame:</strong> L'historique undo/redo se réinitialise à chaque frame
-                </div>
-                <div class="help-item">
-                    <strong>Sauvegarde:</strong> Vos couleurs personnalisées sont automatiquement sauvegardées avec vos projets
-                </div>
-                <div class="help-item">
-                    <strong>Partage par lien:</strong> Option recommandée - Partage directe via URL, ouverture immédiate
-                </div>
-                <div class="help-item">
-                    <strong>Partage par fichier:</strong> Téléchargez en .json (standard) ou .txt (spécial iOS si .json grisé)
-                </div>
-                <div class="help-item">
-                    <strong>Import facile:</strong> Glissez-déposez directement un fichier reçu ou cliquez "⬆️ Charger"
-                </div>
-                <div class="help-item">
-                    <strong>Formats supportés:</strong> .json, .txt, .pixelart - Tous contiennent les mêmes données
-                </div>
-                <div class="help-item">
-                    <strong>Collaboration:</strong> Partagez vos projets, récupérez ceux de vos amis et modifiez-les ensemble !
-                </div>
+            <div class="help-item">
+                <strong>Vitesse :</strong> ajustez les FPS (curseur + presets) depuis la sidebar gauche (desktop) ou le panneau mobile.
             </div>
+        </div>
 
-            <div class="help-section">
-                <h3>🔧 Informations techniques</h3>
+        <div class="help-section">
+            <h3>💾 Sauvegarde & chargement</h3>
+            <div class="help-item">
+                <strong>Sauvegarder :</strong> enregistre le projet sur votre compte Supabase (frames, couleurs, FPS…).
+            </div>
+            <div class="help-item">
+                <strong>Mes projets :</strong> liste vos projets ; sélectionnez-en un puis cliquez sur 📂 Charger pour le récupérer, ou 🗑️ Supprimer.
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h3>📤 Export & partage</h3>
+            <div class="help-item">
+                <strong>Export GIF :</strong> génère un GIF animé de toutes vos frames.
+            </div>
+            <div class="help-item">
+                <strong>Partager :</strong> crée un fichier ou un lien pour envoyer votre animation à d'autres personnes.
+            </div>
+            <div class="help-item">
+                <strong>Charger :</strong> importez un projet précédemment exporté (.json / .pixelart / .txt).
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h3>📱 Astuces mobiles</h3>
+            <div class="help-item">
+                <strong>Menu hamburger :</strong> affiche/masque les outils complets.
+            </div>
                 <div class="help-item">
-                    <strong>Grille:</strong> 32×32 pixels (1024 pixels total)
-                </div>
-                <div class="help-item">
-                    <strong>Couleurs personnalisées:</strong> Maximum 6 couleurs en plus des 8 de base
-                </div>
-                <div class="help-item">
-                    <strong>Historique:</strong> 50 actions mémorisées par frame
-                </div>
-                <div class="help-item">
-                    <strong>Animation:</strong> 300ms par frame (environ 3.3 FPS)
-                </div>
-                <div class="help-item">
-                    <strong>Sauvegarde:</strong> Base de données Supabase pour synchronisation multi-appareils
-                </div>
-                <div class="help-item">
-                    <strong>Format de partage:</strong> Fichiers .json (standard), .txt (iOS), .pixelart (legacy) - JSON optimisé avec signature
-                </div>
-                <div class="help-item">
-                    <strong>Import:</strong> Support drag & drop, Web Share API, sélection de fichiers (.json/.txt/.pixelart)
-                </div>
+                <strong>Dessin tactile :</strong> maintenez et glissez pour tracer ; le multitouch est volontairement limité pour éviter les gestes accidentels.
             </div>
         </div>
     `;
