@@ -3213,17 +3213,12 @@ function showCredits() {
                 <li>Aujourd'hui — évolution continue avec vos retours, pour garder l'outil simple et fun</li>
             </ul>
         </div>
-        <div class="credits-section">
-            <h3>Technologie & stack</h3>
-            <ul>
-                <li>Front : HTML5, CSS3, JavaScript ES2022</li>
-                <li>Backend & stockage : Supabase (PostgreSQL + Auth)</li>
-                <li>CI/CD & Hosting : Netlify / Vercel (selon environnements)</li>
-            </ul>
-        </div>
         <div class="credits-section acknowledgements">
-            <h3>Remerciements</h3>
+            <h3>Contributeurs & remerciements</h3>
             <p>Merci à toutes les personnes qui testent l'éditeur, partagent leurs idées et encouragent la création pixel.</p>
+            <ul>
+                <li>guillaume.gay@protonmail.com</li>
+            </ul>
         </div>
         <div class="credits-section legal">
             <h3>Mentions légales</h3>
