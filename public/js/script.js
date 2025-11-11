@@ -3203,14 +3203,14 @@ function showCredits() {
         </div>
         <div class="credits-section">
             <h3>Mission</h3>
-            <p>Donner aux artistes, aux studios et aux marques un outil professionnel pour concevoir des animations pixel-art haut de gamme, prêtes pour la production et la monétisation.</p>
+            <p>Proposer à tous — enfants comme adultes — un studio de pixel animé simple, ludique et accessible pour donner vie à leurs idées créatives.</p>
         </div>
         <div class="credits-section creator-story">
             <h3>Parcours</h3>
             <ul>
-                <li>🎨 2008 — premières animations pixel-art, passion pour l'esthétique 16 bits</li>
-                <li>💼 2014 — direction artistique & production pour des marques nationales et internationales</li>
-                <li>🚀 2023 — lancement du projet Pixel Editor pour professionnaliser la création et l'exploitation d'assets animés</li>
+                <li>2024 — lancement du projet Pixel Editor, d'abord pour la famille et les proches</li>
+                <li>2025 — ouverture progressive à la communauté créative en ligne</li>
+                <li>Aujourd'hui — évolution continue avec vos retours, pour garder l'outil simple et fun</li>
             </ul>
         </div>
         <div class="credits-section">
@@ -3223,7 +3223,7 @@ function showCredits() {
         </div>
         <div class="credits-section acknowledgements">
             <h3>Remerciements</h3>
-            <p>Merci aux créateurs et partenaires qui ont testé l'éditeur, ainsi qu'aux investisseurs qui croient au potentiel de l'animation pixel pour le marketing digital.</p>
+            <p>Merci à toutes les personnes qui testent l'éditeur, partagent leurs idées et encouragent la création pixel.</p>
         </div>
         <div class="credits-section legal">
             <h3>Mentions légales</h3>
