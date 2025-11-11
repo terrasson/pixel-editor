@@ -3194,41 +3194,41 @@ function showCredits() {
     content.className = 'credits-content';
     
     content.innerHTML = `
-        <h2>Éditeur de Pixels - Crédits</h2>
+        <h2>Pixel Editor - Crédits</h2>
         <div class="credits-section">
-            <h3>Version</h3>
-            <p>Version 1.0.0 (Février 2025)</p>
+            <h3>Créateur & vision</h3>
+            <p><strong>Frédéric Terrasson</strong></p>
+            <p>Fondateur, designer produit & développeur principal</p>
+            <p class="credits-contact">✉️ monstertaz06@gmail.com</p>
         </div>
         <div class="credits-section">
-            <h3>Développement</h3>
-            <p>Frédéric Terrasson - Développeur principal</p>
-            <p>Contact : monstertaz06@gmail.com</p>
-            <p>Claude AI - Assistant de développement</p>
+            <h3>Mission</h3>
+            <p>Donner aux artistes, aux studios et aux marques un outil professionnel pour concevoir des animations pixel-art haut de gamme, prêtes pour la production et la monétisation.</p>
         </div>
-        <div class="credits-section">
-            <h3>Fonctionnalités</h3>
+        <div class="credits-section creator-story">
+            <h3>Parcours</h3>
             <ul>
-                <li>Création d'animations pixel par pixel</li>
-                <li>Système multi-frames avec prévisualisation</li>
-                <li>Outils de dessin avancés (pinceau, gomme)</li>
-                <li>Gestion intuitive des frames (copier/coller, glisser-déposer)</li>
-                <li>Visualisation des frames précédentes</li>
+                <li>🎨 2008 — premières animations pixel-art, passion pour l'esthétique 16 bits</li>
+                <li>💼 2014 — direction artistique & production pour des marques nationales et internationales</li>
+                <li>🚀 2023 — lancement du projet Pixel Editor pour professionnaliser la création et l'exploitation d'assets animés</li>
             </ul>
         </div>
         <div class="credits-section">
-            <h3>Date de création</h3>
-            <p>2 Février 2025</p>
-        </div>
-        <div class="credits-section">
-            <h3>Copyright et Licence</h3>
-            <p>© 2025 Frédéric Terrasson. Tous droits réservés.</p>
-            <p>Ce logiciel est protégé par le droit d'auteur et les traités internationaux.</p>
-            <p>Licence : Creative Commons Attribution-NonCommercial 4.0 International</p>
-            <ul class="license-terms">
-                <li>Vous êtes autorisé à utiliser ce logiciel librement à des fins non commerciales</li>
-                <li>Toute modification ou redistribution doit mentionner l'auteur original</li>
-                <li>L'utilisation commerciale nécessite une autorisation écrite de l'auteur</li>
+            <h3>Technologie & stack</h3>
+            <ul>
+                <li>Front : HTML5, CSS3, JavaScript ES2022</li>
+                <li>Backend & stockage : Supabase (PostgreSQL + Auth)</li>
+                <li>CI/CD & Hosting : Netlify / Vercel (selon environnements)</li>
             </ul>
+        </div>
+        <div class="credits-section acknowledgements">
+            <h3>Remerciements</h3>
+            <p>Merci aux créateurs et partenaires qui ont testé l'éditeur, ainsi qu'aux investisseurs qui croient au potentiel de l'animation pixel pour le marketing digital.</p>
+        </div>
+        <div class="credits-section legal">
+            <h3>Mentions légales</h3>
+            <p>© ${new Date().getFullYear()} Frédéric Terrasson. Tous droits réservés.</p>
+            <p>Usage autorisé uniquement dans le cadre des licences signées avec l'éditeur. Pour toute exploitation commerciale, contactez l'adresse ci-dessus.</p>
         </div>
         <button class="close-credits">Fermer</button>
     `;
