@@ -272,6 +272,96 @@ class DatabaseService {
         }
     }
 
+    // User profile (optional onboarding)
+    async getUserProfile() {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            const { data, error } = await this.supabase
+                .from('user_profiles')
+                .select('age_range, gender, country, region, updated_at')
+                .eq('user_id', userId)
+                .single();
+
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    return { success: true, data: null };
+                }
+                throw error;
+            }
+
+            return { success: true, data };
+        } catch (error) {
+            console.warn('Get user profile error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async saveUserProfile(profile) {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            const payload = {
+                user_id: userId,
+                age_range: profile.age_range || null,
+                gender: profile.gender || null,
+                country: profile.country || null,
+                region: profile.region || null,
+                updated_at: new Date().toISOString()
+            };
+
+            const { data, error } = await this.supabase
+                .from('user_profiles')
+                .upsert(payload, { onConflict: 'user_id' })
+                .select('age_range, gender, country, region, updated_at')
+                .single();
+
+            if (error) throw error;
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('Save user profile error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async logUsageEvent(eventName, payload = {}) {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            const { error } = await this.supabase
+                .from('usage_events')
+                .insert({
+                    user_id: userId,
+                    event_name: eventName,
+                    payload,
+                    created_at: new Date().toISOString()
+                });
+
+            if (error) throw error;
+
+            return { success: true };
+        } catch (error) {
+            console.warn('Log event error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
     // Generate thumbnail from current canvas
     generateThumbnail() {
         const canvas = document.createElement('canvas');

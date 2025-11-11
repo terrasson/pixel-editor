@@ -24,6 +24,38 @@ let animationFPS = 24; // FPS par défaut (cinéma)
 let autoSaveProjects = []; // Projets sauvegardés automatiquement en local
 const maxAutoSaveProjects = 10; // Nombre maximum de projets auto-sauvegardés
 const GRID_SIZE = 32;
+let currentUserProfile = null;
+let profileModalContext = 'prompt';
+let profileModalInitialized = false;
+let profilePromptHasBeenShown = false;
+let profileFeatureAvailable = true;
+const PROFILE_PROMPT_DISMISSED_KEY = 'pixelEditor_profile_prompt_dismissed';
+
+const PROFILE_SKIP_KEY = 'pixelEditorProfileSkip_v1';
+const PROFILE_ROLE_OPTIONS = Object.freeze([
+    { value: 'hobbyist', label: 'Hobbyiste / passionné(e)' },
+    { value: 'student', label: 'Étudiant(e)' },
+    { value: 'freelance', label: 'Pro indépendant(e)' },
+    { value: 'studio', label: 'Studio / Entreprise' },
+    { value: 'teacher', label: 'Enseignant(e)' },
+    { value: 'other', label: 'Autre' }
+]);
+const PROFILE_EXPERIENCE_OPTIONS = Object.freeze([
+    { value: 'beginner', label: 'Débutant(e)' },
+    { value: 'intermediate', label: 'Intermédiaire' },
+    { value: 'advanced', label: 'Avancé(e)' }
+]);
+const PROFILE_USAGE_OPTIONS = Object.freeze([
+    { value: 'personal', label: 'Animations personnelles' },
+    { value: 'social', label: 'Réseaux sociaux / streaming' },
+    { value: 'game', label: 'Jeu vidéo / prototypage' },
+    { value: 'marketing', label: 'Marketing / marque' },
+    { value: 'education', label: 'Apprentissage / formation' },
+    { value: 'other', label: 'Autre projet' }
+]);
+
+let userProfile = null;
+let userProfileFetched = false;
 
 function createEmptyFrame(width = GRID_SIZE, height = GRID_SIZE) {
     const totalPixels = width * height;
@@ -107,6 +139,16 @@ async function ensureAuthenticatedUser(retries = 10, delay = 200) {
     }
 
     throw new Error('User not authenticated');
+}
+
+async function logUsageEvent(eventName, payload = {}) {
+    if (!window.dbService?.logUsageEvent) return;
+
+    try {
+        await window.dbService.logUsageEvent(eventName, payload);
+    } catch (error) {
+        console.warn('Usage event log failed:', error.message);
+    }
 }
 
 // Variables pour l'animation
@@ -455,14 +497,19 @@ async function showLocalProjects() {
             if (data.fps) {
                 setAnimationFPSValue(data.fps);
             }
-
+            
             const title = document.getElementById('projectTitle');
             if (title) {
                 title.textContent = data.name || data.projectTitle || projectMeta.name;
             }
-
+            
             updateFramesList();
             loadFrame(currentFrame);
+            logUsageEvent('project_loaded', {
+                name: data.name || projectMeta.name,
+                frames: frames.length,
+                fps: animationFPS
+            });
 
             dialog.remove();
             alert(`✅ Projet "${data.name || projectMeta.name}" chargé avec succès !`);
@@ -1477,9 +1524,9 @@ function initFPSModal() {
     
     // Fermer le modal
     if (closeFpsModal) {
-        closeFpsModal.addEventListener('click', () => {
-            fpsModal.style.display = 'none';
-        });
+    closeFpsModal.addEventListener('click', () => {
+        fpsModal.style.display = 'none';
+    });
     }
     
     // Fermer en cliquant à l'extérieur
@@ -1491,7 +1538,7 @@ function initFPSModal() {
     
     // Slider FPS
     if (fpsSlider) {
-        fpsSlider.addEventListener('input', (e) => {
+    fpsSlider.addEventListener('input', (e) => {
             const fps = parseInt(e.target.value, 10);
             setAnimationFPSValue(fps);
         });
@@ -2016,8 +2063,8 @@ function saveCustomPalette() {
     
     if (fromModal) {
         closePaletteModal();
-        // Afficher un message de confirmation
-        showNotification('Palette personnalisée sauvegardée !', 'success');
+    // Afficher un message de confirmation
+    showNotification('Palette personnalisée sauvegardée !', 'success');
     } else {
         console.log('💾 Palette compacte sauvegardée:', customPalette);
     }
@@ -2790,7 +2837,7 @@ function startAnimation() {
         frameIndex = (frameIndex + 1) % frames.length;
         animationInterval = setTimeout(playNextFrame, frameDelay);
     };
-    
+        
     playNextFrame();
 }
 
@@ -2954,74 +3001,40 @@ function pasteFrame() {
 
 // Fonction pour afficher l'aide complète
 function showHelp() {
+    logUsageEvent('help_opened');
     const helpContent = `
-        <div class="help-section">
+            <div class="help-section">
             <h3>🔰 Commencer</h3>
-            <div class="help-item">
-                <strong>Palette :</strong> choisissez une couleur (sidebar gauche sur desktop, barre compacte en haut sur mobile) puis cliquez/touchez la grille pour dessiner.
-            </div>
-            <div class="help-item">
-                <strong>Gomme :</strong> activez la gomme pour effacer, désactivez-la pour revenir au pinceau.
-            </div>
-        </div>
-
-        <div class="help-section">
+            <div class="help-item"><strong>Palette :</strong> choisissez une couleur (sidebar gauche sur desktop, barre compacte en haut sur mobile) puis dessinez sur la grille 32×32.</div>
+            <div class="help-item"><strong>Gomme :</strong> activez la gomme pour effacer, désactivez-la pour revenir au pinceau.</div>
+                </div>
+            <div class="help-section">
             <h3>🎚️ Couleurs personnalisées</h3>
-            <div class="help-item">
-                <strong>Desktop :</strong> cliquez sur la couleur affichée en haut de la palette pour ouvrir l'éditeur, créez vos teintes puis validez avec ✓.
-            </div>
-            <div class="help-item">
-                <strong>Mobile :</strong> appui long sur une couleur compacte pour la modifier ; une étoile signale vos couleurs perso.
-            </div>
-        </div>
-
-        <div class="help-section">
+            <div class="help-item"><strong>Desktop :</strong> cliquez sur la couleur actuelle pour ouvrir l'éditeur et ajouter vos teintes personnalisées (marquées par une étoile).</div>
+            <div class="help-item"><strong>Mobile :</strong> effectuez un appui long sur une couleur compacte pour la modifier.</div>
+                </div>
+            <div class="help-section">
             <h3>🧱 Frames & animation</h3>
-            <div class="help-item">
-                <strong>+ Nouvelle Frame :</strong> ajoute une frame vide (copie aussi la frame sélectionnée si des pixels existent).
-            </div>
-            <div class="help-item">
-                <strong>C / V :</strong> copier-colle facilement une frame existante.
-            </div>
-            <div class="help-item">
-                <strong>Play :</strong> lance/arrête l'aperçu de l'animation.
-            </div>
-            <div class="help-item">
-                <strong>Vitesse :</strong> ajustez les FPS (curseur + presets) depuis la sidebar gauche (desktop) ou le panneau mobile.
-            </div>
-        </div>
-
-        <div class="help-section">
+            <div class="help-item"><strong>+ Nouvelle Frame :</strong> ajoute une frame vide (ou duplique la sélection si elle contient des pixels).</div>
+            <div class="help-item"><strong>C / V :</strong> copier-collez rapidement une frame.</div>
+            <div class="help-item"><strong>Play :</strong> lance/arrête l'aperçu.</div>
+            <div class="help-item"><strong>Vitesse :</strong> ajustez les FPS via le bouton "Vitesse" (sidebar desktop ou panneau mobile) pour tester plusieurs rythmes.</div>
+                </div>
+            <div class="help-section">
             <h3>💾 Sauvegarde & chargement</h3>
-            <div class="help-item">
-                <strong>Sauvegarder :</strong> enregistre le projet sur votre compte Supabase (frames, couleurs, FPS…).
-            </div>
-            <div class="help-item">
-                <strong>Mes projets :</strong> liste vos projets ; sélectionnez-en un puis cliquez sur 📂 Charger pour le récupérer, ou 🗑️ Supprimer.
-            </div>
-        </div>
-
-        <div class="help-section">
+            <div class="help-item"><strong>Sauvegarder :</strong> enregistre le projet (frames, couleurs, FPS) sur votre compte Supabase et crée un backup local.</div>
+            <div class="help-item"><strong>Mes projets :</strong> retrouvez vos créations, rechargez-les ou supprimez-les.</div>
+            <div class="help-item"><strong>Charger :</strong> importez un projet reçu ou exporté (.json / .pixelart / .txt).</div>
+                </div>
+            <div class="help-section">
             <h3>📤 Export & partage</h3>
-            <div class="help-item">
-                <strong>Export GIF :</strong> génère un GIF animé de toutes vos frames.
-            </div>
-            <div class="help-item">
-                <strong>Partager :</strong> crée un fichier ou un lien pour envoyer votre animation à d'autres personnes.
-            </div>
-            <div class="help-item">
-                <strong>Charger :</strong> importez un projet précédemment exporté (.json / .pixelart / .txt).
-            </div>
-        </div>
-
-        <div class="help-section">
+            <div class="help-item"><strong>Export GIF :</strong> génère un GIF animé de toutes vos frames.</div>
+            <div class="help-item"><strong>Partager :</strong> crée un fichier ou un lien à envoyer à d'autres utilisateurs.</div>
+                </div>
+            <div class="help-section">
             <h3>📱 Astuces mobiles</h3>
-            <div class="help-item">
-                <strong>Menu hamburger :</strong> affiche/masque les outils complets.
-            </div>
-                <div class="help-item">
-                <strong>Dessin tactile :</strong> maintenez et glissez pour tracer ; le multitouch est volontairement limité pour éviter les gestes accidentels.
-            </div>
+            <div class="help-item"><strong>Menu hamburger :</strong> affiche/masque les outils complets.</div>
+            <div class="help-item"><strong>Dessin tactile :</strong> maintenez et glissez pour tracer ; le multitouch est limité pour éviter les gestes accidentels.</div>
         </div>
     `;
 
@@ -3035,6 +3048,7 @@ function showHelp() {
 
 // Ajouter la fonction pour afficher les crédits
 function showCredits() {
+    logUsageEvent('credits_opened');
     const modal = document.createElement('div');
     modal.className = 'credits-modal';
     
@@ -3556,6 +3570,11 @@ async function saveProjectSmart() {
                 const action = result.isUpdate ? 'mis à jour' : 'créé';
                 alert(`✅ Projet "${fileName}" ${action} avec succès sur le cloud Supabase !`);
                 console.log('✅ Project saved to Supabase:', result.data);
+                logUsageEvent('project_saved', {
+                    name: fileName,
+                    frames: frames.length,
+                    fps: animationFPS
+                });
                 
                 // Aussi sauvegarder en local pour backup
                 try {
@@ -3581,6 +3600,12 @@ async function saveProjectSmart() {
                       `Supabase n'est pas disponible (${supabaseError.message}).\n` +
                       `Votre projet est en sécurité localement sur cet appareil.`);
                 console.log('💾 Projet sauvegardé en local');
+                logUsageEvent('project_saved_local', {
+                    name: fileName,
+                    frames: frames.length,
+                    fps: animationFPS,
+                    reason: supabaseError.message
+                });
             } catch (localError) {
                 // 3️⃣ DERNIER RECOURS : TÉLÉCHARGEMENT
                 console.error('❌ Impossible de sauvegarder en local:', localError);
@@ -3597,6 +3622,11 @@ async function saveProjectSmart() {
                 
                 alert(`⚠️ Impossible de sauvegarder sur le cloud ou en local.\n` +
                       `Le fichier a été téléchargé sur votre appareil : "${fileName}.json"`);
+                logUsageEvent('project_saved_download', {
+                    name: fileName,
+                    frames: frames.length,
+                    fps: animationFPS
+                });
             }
         }
         
@@ -3621,6 +3651,8 @@ function initEventListeners() {
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
     document.getElementById('helpBtn')?.addEventListener('click', showHelp);
     document.getElementById('creditsBtn')?.addEventListener('click', showCredits);
+    document.getElementById('profileBtn')?.addEventListener('click', () => window.initUserProfileFlow(true));
+    document.getElementById('profileBtnMobile')?.addEventListener('click', () => window.initUserProfileFlow(true));
     
     // Bouton nouvelle frame
     document.getElementById('addFrameBtn')?.addEventListener('click', addFrame);
@@ -3725,7 +3757,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Désactiver le bouton coller par défaut
     const pasteBtn = document.getElementById('pasteFrameBtn');
     if (pasteBtn) {
-        pasteBtn.disabled = true;
+        pasteBtn.disabled = !copiedFrame;
     }
     
     updateFramesList();
@@ -3759,6 +3791,10 @@ document.addEventListener('DOMContentLoaded', () => {
             stopAnimation();
         }
     });
+
+    if (window.__pixelEditorAuthInitialized) {
+        initUserProfileFlow();
+    }
 });
 
 // ========================================
@@ -3857,7 +3893,7 @@ function importProjectData(projectData) {
         }
         
         // Importer les couleurs personnalisées
-        customColors = [];
+            customColors = [];
         const projectColors = projectData.customColors || projectData.custom_colors;
         if (projectColors) {
             const coloursArray = typeof projectColors === 'string' ? JSON.parse(projectColors) : projectColors;
@@ -3872,7 +3908,7 @@ function importProjectData(projectData) {
             const paletteArray = typeof paletteSource === 'string' ? JSON.parse(paletteSource) : paletteSource;
             if (Array.isArray(paletteArray)) {
                 customPalette = paletteArray;
-                updateCompactPalette(); // Mettre à jour l'affichage
+            updateCompactPalette(); // Mettre à jour l'affichage
             }
         }
         
@@ -3941,10 +3977,13 @@ async function shareProject() {
         const projectData = createShareableProject();
         const jsonString = JSON.stringify(projectData, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
-        
-        // Créer un nom de fichier unique (utiliser .json pour compatibilité iOS)
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
         const fileName = `${projectData.name.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.json`;
+        
+        logUsageEvent('share_initiated', {
+            frames: frames.length,
+            fps: animationFPS
+        });
         
         // Vérifier si Web Share API est supportée et si on peut partager des fichiers
         if (navigator.share && navigator.canShare) {
@@ -3956,6 +3995,7 @@ async function shareProject() {
                     text: `Découvre mon animation pixel art ! Ouvre ce fichier dans l'Éditeur Pixel Art pour la voir.`,
                     files: [file]
                 });
++                logUsageEvent('share_completed', { method: 'native', frames: frames.length });
                 return;
             }
         }
@@ -4041,9 +4081,11 @@ function showShareDialog(blob, fileName, projectData) {
     `;
     
     const dialog = createMobileDialog('📤 Partager le projet', shareContent);
+    logUsageEvent('share_dialog_opened');
     
     // Partager par lien (recommandé pour iOS)
     dialog.querySelector('#linkShare').addEventListener('click', async () => {
++        logUsageEvent('share_option_selected', { method: 'link' });
         try {
             if (navigator.share) {
                 // Utiliser l'API de partage native (iOS/Android)
@@ -4074,6 +4116,7 @@ function showShareDialog(blob, fileName, projectData) {
     
     // Partager par message
     dialog.querySelector('#messageShare').addEventListener('click', () => {
+        logUsageEvent('share_option_selected', { method: 'message' });
         const messageText = encodeURIComponent(`🎨 Regarde mon animation pixel art "${projectData.name}" ! Clique ici pour l'ouvrir : ${shareUrl}`);
         window.open(`sms:?&body=${messageText}`);
         dialog.remove();
@@ -4081,6 +4124,7 @@ function showShareDialog(blob, fileName, projectData) {
     
     // Télécharger le fichier JSON
     dialog.querySelector('#downloadShare').addEventListener('click', () => {
++        logUsageEvent('share_option_selected', { method: 'download_json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -4094,6 +4138,7 @@ function showShareDialog(blob, fileName, projectData) {
     
     // Télécharger en format .txt pour iOS
     dialog.querySelector('#downloadTxtShare').addEventListener('click', () => {
++        logUsageEvent('share_option_selected', { method: 'download_txt' });
         const jsonString = JSON.stringify(projectData, null, 2);
         const txtBlob = new Blob([jsonString], { type: 'text/plain' });
         const txtFileName = fileName.replace('.json', '.txt');
@@ -4111,6 +4156,7 @@ function showShareDialog(blob, fileName, projectData) {
     
     // Partager par email
     dialog.querySelector('#emailShare').addEventListener('click', () => {
++        logUsageEvent('share_option_selected', { method: 'email' });
         const subject = encodeURIComponent(`🎨 ${projectData.name} - Animation Pixel Art`);
         const body = encodeURIComponent(`Salut !
 
@@ -4141,6 +4187,7 @@ Alternative : Le fichier "${fileName}" est aussi en pièce jointe si tu préfèr
     
     // Créer et partager un GIF
     dialog.querySelector('#gifExportShare').addEventListener('click', () => {
++        logUsageEvent('share_option_selected', { method: 'gif_export' });
         dialog.remove();
         // Lancer l'export GIF depuis le partage
         exportToGif();
@@ -4682,6 +4729,13 @@ function downloadGif(gifBlob, size, frameDelay) {
 Votre animation GIF est prête ! 🎨`);
         }, 500);
         
+        logUsageEvent('gif_exported', {
+            name: projectName,
+            frames: frames.length,
+            size,
+            frameDelay
+        });
+        
     } catch (error) {
         console.error('❌ Erreur téléchargement:', error);
         alert('❌ Erreur lors du téléchargement du GIF');
@@ -4843,6 +4897,221 @@ Votre animation GIF est prête ! 🎨`);
         }
     });
 }
+
+function ensureProfileModalDOM() {
+    if (document.getElementById('profileModal')) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'profileModal';
+    modal.className = 'modal profile-modal';
+    modal.style.display = 'none';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Mon profil créatif</h3>
+                <button type="button" id="closeProfileModal" class="close-btn" aria-label="Fermer">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="profile-intro">Ces informations sont 100% optionnelles. Elles nous aident à orienter les améliorations de l'éditeur (tutos, interface, fonctionnalités). Vous pouvez les modifier ou les effacer à tout moment.</p>
+                <form id="profileForm" class="profile-form">
+                    <div class="profile-form-row">
+                        <label for="profileAgeRange">Tranche d'âge</label>
+                        <select id="profileAgeRange" name="age_range">
+                            <option value="">Préférer ne pas répondre</option>
+                            <option value="under_18">Moins de 18 ans</option>
+                            <option value="18_24">18 – 24 ans</option>
+                            <option value="25_34">25 – 34 ans</option>
+                            <option value="35_44">35 – 44 ans</option>
+                            <option value="45_54">45 – 54 ans</option>
+                            <option value="55_64">55 – 64 ans</option>
+                            <option value="65_plus">65 ans et plus</option>
+                        </select>
+                    </div>
+                    <div class="profile-form-row">
+                        <label for="profileGender">Identité de genre</label>
+                        <select id="profileGender" name="gender">
+                            <option value="">Préférer ne pas répondre</option>
+                            <option value="female">Femme</option>
+                            <option value="male">Homme</option>
+                            <option value="non_binary">Non binaire</option>
+                            <option value="other">Autre</option>
+                        </select>
+                    </div>
+                    <div class="profile-form-row">
+                        <label for="profileCountry">Pays</label>
+                        <input type="text" id="profileCountry" name="country" placeholder="France, Canada…" autocomplete="country-name">
+                    </div>
+                    <div class="profile-form-row">
+                        <label for="profileRegion">Région / Ville</label>
+                        <input type="text" id="profileRegion" name="region" placeholder="Île-de-France, Québec…" autocomplete="address-level1">
+                    </div>
+                    <div class="profile-form-actions">
+                        <button type="button" id="skipProfile" class="dialog-button secondary">Plus tard</button>
+                        <button type="submit" class="dialog-button">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+function initProfileModal() {
+    ensureProfileModalDOM();
+
+    if (profileModalInitialized) return;
+    profileModalInitialized = true;
+
+    const form = document.getElementById('profileForm');
+    const skipBtn = document.getElementById('skipProfile');
+    const closeBtn = document.getElementById('closeProfileModal');
+
+    if (form && !form.dataset.bound) {
+        form.addEventListener('submit', submitProfileForm);
+        form.dataset.bound = 'true';
+    }
+
+    skipBtn?.addEventListener('click', () => {
+        const shouldDismiss = profileModalContext === 'prompt';
+        if (shouldDismiss) {
+            logUsageEvent('profile_skipped');
+        }
+        closeProfileModal(shouldDismiss);
+    });
+
+    closeBtn?.addEventListener('click', () => {
+        const shouldDismiss = profileModalContext === 'prompt';
+        closeProfileModal(shouldDismiss);
+    });
+}
+
+function populateProfileForm(profile = {}) {
+    const ageSelect = document.getElementById('profileAgeRange');
+    const genderSelect = document.getElementById('profileGender');
+    const countryInput = document.getElementById('profileCountry');
+    const regionInput = document.getElementById('profileRegion');
+
+    if (!ageSelect || !genderSelect || !countryInput || !regionInput) return;
+
+    ageSelect.value = profile.age_range || '';
+    genderSelect.value = profile.gender || '';
+    countryInput.value = profile.country || '';
+    regionInput.value = profile.region || '';
+}
+
+function openProfileModal(manual = false) {
+    initProfileModal();
+    profilePromptHasBeenShown = profilePromptHasBeenShown || manual;
+    profileModalContext = manual ? 'manual' : 'prompt';
+
+    const modal = document.getElementById('profileModal');
+    if (!modal) return;
+
+    populateProfileForm(currentUserProfile || {});
+    modal.style.display = 'flex';
+
+    logUsageEvent('profile_opened', { context: manual ? 'manual' : 'prompt' });
+}
+
+function closeProfileModal(dismiss = false) {
+    const modal = document.getElementById('profileModal');
+    if (!modal) return;
+
+    modal.style.display = 'none';
+    if (dismiss) {
+        localStorage.setItem(PROFILE_PROMPT_DISMISSED_KEY, 'true');
+        profilePromptHasBeenShown = true;
+    }
+    profileModalContext = 'manual';
+}
+
+async function submitProfileForm(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const profileData = {
+        age_range: form.age_range.value || '',
+        gender: form.gender.value || '',
+        country: form.country.value.trim() || '',
+        region: form.region.value.trim() || ''
+    };
+
+    try {
+        const result = await window.dbService.saveUserProfile(profileData);
+        if (result.success) {
+            currentUserProfile = result.data;
+            window.currentUserProfile = currentUserProfile;
+            localStorage.removeItem(PROFILE_PROMPT_DISMISSED_KEY);
+            profilePromptHasBeenShown = true;
+            closeProfileModal(false);
+            if (typeof showNotification === 'function') {
+                showNotification('Profil mis à jour ✅', 'success');
+            } else {
+                alert('Profil mis à jour ✅');
+            }
+            logUsageEvent('profile_saved', {
+                age_range: result.data.age_range,
+                gender: result.data.gender,
+                country: result.data.country,
+                region: result.data.region
+            });
+        } else {
+            throw new Error(result.error || 'Erreur inconnue');
+        }
+    } catch (error) {
+        console.error('Erreur sauvegarde profil:', error);
+        if (typeof showNotification === 'function') {
+            showNotification('Impossible d\'enregistrer le profil', 'error');
+        } else {
+            alert('❌ Impossible d\'enregistrer le profil.');
+        }
+    }
+}
+
+async function initUserProfileFlow(forceOpen = false) {
+    initProfileModal();
+
+    let modalAlreadyOpened = false;
+    if (forceOpen) {
+        profilePromptHasBeenShown = true;
+        openProfileModal(true);
+        modalAlreadyOpened = true;
+    }
+
+    try {
+        const result = await window.dbService.getUserProfile();
+        if (result.success) {
+            currentUserProfile = result.data;
+            window.currentUserProfile = currentUserProfile;
+            if (modalAlreadyOpened) {
+                populateProfileForm(currentUserProfile || {});
+            }
+        }
+    } catch (error) {
+        console.warn('Impossible de récupérer le profil utilisateur:', error);
+    }
+
+    if (forceOpen) {
+        return;
+    }
+
+    const dismissed = localStorage.getItem(PROFILE_PROMPT_DISMISSED_KEY) === 'true';
+    const hasProfile = currentUserProfile && Object.values(currentUserProfile).some(value => !!value);
+
+    if (!hasProfile && !dismissed && !profilePromptHasBeenShown) {
+        profilePromptHasBeenShown = true;
+        setTimeout(() => {
+            openProfileModal(false);
+            logUsageEvent('profile_prompt_shown');
+        }, 800);
+    }
+
+    // Exposer pour les autres scripts
+    window.currentUserProfile = currentUserProfile;
+}
+
+window.initUserProfileFlow = initUserProfileFlow;
 
 
 

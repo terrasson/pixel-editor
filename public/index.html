@@ -76,6 +76,7 @@
                 <button id="loadLocalBtn">🌐 Mes projets</button>
                 <button id="shareProjectBtn">📤 Partager</button>
                 <button id="exportGifBtn">🎬 Export GIF</button>
+                <button id="profileBtnMobile">👤 Profil</button>
                 <button id="copyFrameBtn">Copier la frame</button>
                 <button id="pasteFrameBtn">Coller la frame</button>
                 <button id="helpBtn">❓ Aide</button>
@@ -284,6 +285,7 @@
                 <button id="loadLocalBtn2">🌐 Mes projets</button>
                 <button id="shareProjectBtn2">📤 Partager</button>
                 <button id="exportGifBtn2">🎬 Export GIF</button>
+                <button id="profileBtn">👤 Mon profil</button>
                 <button id="helpBtn2">❓ Aide</button>
                 <button id="creditsBtn2">ℹ️ Crédits</button>
             </div>
@@ -346,6 +348,11 @@
                     }
                 });
             });
+
+            window.__pixelEditorAuthInitialized = true;
+            if (typeof window.initUserProfileFlow === 'function') {
+                window.initUserProfileFlow();
+            }
         })();
     </script>
     <script src="js/script.js"></script>

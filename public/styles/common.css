@@ -670,3 +670,103 @@ input[type="color"]::-webkit-color-swatch {
         padding: 16px;
     }
 }
+
+.profile-modal .modal-content {
+    width: min(520px, 92vw);
+    max-height: 88vh;
+    overflow: hidden;
+    padding: 0;
+    border-radius: 22px;
+    background: linear-gradient(160deg, rgba(28, 33, 68, 0.94), rgba(16, 18, 40, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.profile-modal .modal-header {
+    padding: 22px 28px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.profile-modal .modal-body {
+    padding: 24px 28px 28px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.profile-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.profile-form-row label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+}
+
+.profile-form-row select,
+.profile-form-row input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border 0.2s ease;
+}
+
+.profile-form-row select:focus,
+.profile-form-row input[type="text"]:focus {
+    border-color: rgba(123, 213, 255, 0.6);
+    box-shadow: 0 0 0 3px rgba(123, 213, 255, 0.18);
+}
+
+.profile-form-row select option {
+    color: #0f1428;
+}
+
+.profile-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.profile-form-actions .dialog-button {
+    min-width: 140px;
+}
+
+@media (max-width: 560px) {
+    .profile-modal .modal-body {
+        padding: 20px 20px 24px;
+    }
+
+    .profile-form-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .profile-form-actions .dialog-button {
+        width: 100%;
+    }
+}
+
+.profile-intro {
+    margin: 0 0 18px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.82);
+}

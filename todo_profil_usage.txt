@@ -1,0 +1,33 @@
+Plan de collecte d'informations utilisateur et de journalisation
+==============================================================
+
+1. Onboarding profil (à développer)
+   - Afficher un modal optionnel après connexion
+   - Champs proposés : rôle, niveau d'expérience, objectif d'usage, pays
+   - Boutons : "Enregistrer" (si l'utilisateur fournit quelque chose), "Plus tard"
+   - Appeler window.dbService.saveUserProfile(profile)
+
+2. Écran/section "Mon profil"
+   - Accès via le bouton 👤 Mon profil dans la sidebar
+   - Pré-remplir les champs avec window.dbService.getUserProfile()
+   - Permettre la mise à jour et la suppression des données (bouton "Effacer mes informations")
+
+3. Journalisation d'événements clés
+   - Créer un helper logEvent(name, payload)
+     -> window.dbService.logUsageEvent(name, payload)
+   - Événements recommandés :
+       * project_saved (frameCount, fps)
+       * project_loaded (source: supabase/local, projectName)
+       * export_gif (frameCount, fps)
+       * share_project (method: link/file)
+       * open_help, open_credits
+       * profile_completed
+
+4. Dashboard & analyses
+   - Utiliser les tables Supabase user_profiles et usage_events
+   - Préparer des vues SQL ou exporter vers un outil externe (Metabase, etc.)
+
+5. Consentement & RGPD
+   - Mentionner l'usage des données dans le formulaire
+   - Donner une option pour se désinscrire des communications (si newsletter)
+   - Prévoir un endpoint / bouton "Supprimer mon compte" pour effacer profil + projets au besoin
