@@ -3653,6 +3653,8 @@ function initEventListeners() {
     document.getElementById('creditsBtn')?.addEventListener('click', showCredits);
     document.getElementById('profileBtn')?.addEventListener('click', () => window.initUserProfileFlow(true));
     document.getElementById('profileBtnMobile')?.addEventListener('click', () => window.initUserProfileFlow(true));
+    document.getElementById('analyticsBtn')?.addEventListener('click', () => { window.location.href = '/admin.html'; });
+    document.getElementById('analyticsBtnMobile')?.addEventListener('click', () => { window.location.href = '/admin.html'; });
     
     // Bouton nouvelle frame
     document.getElementById('addFrameBtn')?.addEventListener('click', addFrame);
@@ -3722,6 +3724,12 @@ function initEventListeners() {
 
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js').catch(err => {
+            console.warn('Enregistrement du service worker impossible:', err);
+        });
+    }
+
     initGrid();
     initEventListeners();
     
@@ -3854,9 +3862,27 @@ function handlePWAShareTarget() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.addEventListener('message', event => {
             if (event.data && event.data.type === 'SHARED_FILE') {
-                const file = event.data.file;
-                if (file && (file.name.endsWith('.pixelart') || file.name.endsWith('.json'))) {
-                    importSharedProject(file);
+                const payload = event.data;
+                const files = [];
+
+                if (Array.isArray(payload.files)) {
+                    payload.files.forEach(fileEntry => {
+                        if (!fileEntry) return;
+                        if (fileEntry instanceof File) {
+                            files.push(fileEntry);
+                        } else if (fileEntry.data) {
+                            const fileName = fileEntry.name || 'projet.pixelart.json';
+                            const blob = new Blob([fileEntry.data], { type: 'application/json' });
+                            files.push(new File([blob], fileName, { type: 'application/json' }));
+                        }
+                    });
+                } else if (payload.file) {
+                    files.push(payload.file);
+                }
+
+                if (files.length > 0) {
+                    // Importer seulement le premier fichier
+                    importSharedProject(files[0]);
                 }
             }
         });

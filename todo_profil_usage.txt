@@ -1,33 +1,25 @@
 Plan de collecte d'informations utilisateur et de journalisation
 ==============================================================
 
-1. Onboarding profil (à développer)
-   - Afficher un modal optionnel après connexion
-   - Champs proposés : rôle, niveau d'expérience, objectif d'usage, pays
-   - Boutons : "Enregistrer" (si l'utilisateur fournit quelque chose), "Plus tard"
-   - Appeler window.dbService.saveUserProfile(profile)
+1. Onboarding profil (implémenté ✅)
+   - Modal optionnel après connexion + bouton Mon profil (desktop & mobile)
+   - Champs : tranche d'âge, genre, pays, région
+   - Sauvegarde via window.dbService.saveUserProfile(profile)
 
-2. Écran/section "Mon profil"
-   - Accès via le bouton 👤 Mon profil dans la sidebar
-   - Pré-remplir les champs avec window.dbService.getUserProfile()
-   - Permettre la mise à jour et la suppression des données (bouton "Effacer mes informations")
+2. Écran/section "Mon profil" (implémenté ✅)
+   - Accessible via le bouton 👤
+   - Modifiable ou ignorable à tout moment
+   - Message clair sur l'usage des données
 
-3. Journalisation d'événements clés
-   - Créer un helper logEvent(name, payload)
-     -> window.dbService.logUsageEvent(name, payload)
-   - Événements recommandés :
-       * project_saved (frameCount, fps)
-       * project_loaded (source: supabase/local, projectName)
-       * export_gif (frameCount, fps)
-       * share_project (method: link/file)
-       * open_help, open_credits
-       * profile_completed
+3. Journalisation d'événements clés (implémenté ✅)
+   - Helper logUsageEvent(name, payload)
+   - Événements : project_saved, profile_saved, profile_prompt_shown, share_option_selected, etc.
 
-4. Dashboard & analyses
-   - Utiliser les tables Supabase user_profiles et usage_events
-   - Préparer des vues SQL ou exporter vers un outil externe (Metabase, etc.)
+4. Dashboard & analyses (à consulter via Supabase Studio)
+   - Tables : user_profiles, usage_events
+   - Requêtes SQL & export CSV disponibles directement dans Supabase
+   - Possibilité future de connecter Metabase / outil BI si besoin
 
 5. Consentement & RGPD
-   - Mentionner l'usage des données dans le formulaire
-   - Donner une option pour se désinscrire des communications (si newsletter)
-   - Prévoir un endpoint / bouton "Supprimer mon compte" pour effacer profil + projets au besoin
+   - Formulaire rappelle que les données sont optionnelles et modifiables
+   - TODO : prévoir une action "Supprimer mon compte" si nécessaire
