@@ -146,27 +146,13 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    max-height: min(280px, 40vh);
-    overflow: hidden;
+    overflow: visible; /* Pas de scroll sur le conteneur principal */
     position: relative;
 }
 
+/* Suppression du scroll sur .color-palette pour éviter la double scrollbar */
 .color-palette.scrollable {
-    overflow-y: auto;
-    padding-right: 6px;
-}
-
-.color-palette.scrollable::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 6px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.05));
-    border-radius: 6px;
-    opacity: 0.35;
-    pointer-events: none;
+    overflow: visible; /* Pas de scroll ici */
 }
 
 .color-picker-row {
@@ -511,7 +497,8 @@ html, body {
 
 .preset-colors.scrollable {
     overflow-y: auto;
-    padding-right: 4px;
+    padding-right: 12px; /* Augmentation du padding pour éviter que la scrollbar cache les couleurs */
+    max-height: 200px; /* Augmentation légère de la hauteur max */
 }
 
 .color-btn {
