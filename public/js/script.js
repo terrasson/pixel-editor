@@ -586,13 +586,12 @@ function addCustomColor(color) {
 function updateColorPalette() {
     const presetColors = document.querySelector('.preset-colors');
     if (!presetColors) return;
-    
-    // Vider la palette actuelle
+
     presetColors.innerHTML = '';
-    
+
     // TOUJOURS afficher les couleurs de base d'abord
     const defaultColors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
-    
+
     defaultColors.forEach(color => {
         const btn = document.createElement('button');
         btn.className = 'color-btn default-color';
@@ -605,7 +604,7 @@ function updateColorPalette() {
         });
         presetColors.appendChild(btn);
     });
-    
+
     // Ajouter les couleurs personnalisées en plus (limitées à 6 pour ne pas surcharger)
     const maxPersonalizedColors = 6;
     customColors.slice(0, maxPersonalizedColors).forEach(color => {
@@ -644,100 +643,64 @@ function updateColorPalette() {
             };
 
             const showRemoveState = () => {
-                if (btn.classList.contains('show-remove')) return;
                 btn.classList.add('show-remove');
-                badge.textContent = '✕';
-            };
-
-            const hideRemoveState = () => {
-                btn.classList.remove('show-remove');
-                badge.textContent = '★';
-            };
-
-            const scheduleRemoveState = () => {
                 clearRemoveTimer();
                 btn._removeTimer = setTimeout(() => {
-                    showRemoveState();
+                    btn.classList.remove('show-remove');
                 }, removeDelay);
             };
 
-            btn.addEventListener('mouseenter', scheduleRemoveState);
-            btn.addEventListener('mouseleave', () => {
-                clearRemoveTimer();
-                hideRemoveState();
+            badge.addEventListener('click', (e) => {
+                e.stopPropagation();
+                customColors = customColors.filter(c => normalizeColor(c) !== normalizedColor);
+                saveCustomColors();
+                updateColorPalette();
             });
 
-            btn.addEventListener('touchstart', () => {
-                scheduleRemoveState();
-            }, { passive: true });
-
-            const resetTouchState = () => {
-                clearRemoveTimer();
-                hideRemoveState();
-            };
-
-            btn.addEventListener('touchend', resetTouchState, { passive: true });
-            btn.addEventListener('touchcancel', resetTouchState, { passive: true });
-
-            badge.addEventListener('mouseenter', () => {
-                clearRemoveTimer();
-                showRemoveState();
-            });
-
-            badge.addEventListener('mouseleave', () => {
-                if (!btn.matches(':hover')) {
-                    hideRemoveState();
+            badge.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    customColors = customColors.filter(c => normalizeColor(c) !== normalizedColor);
+                    saveCustomColors();
+                    updateColorPalette();
                 }
             });
 
-            badge.addEventListener('focus', showRemoveState);
-            badge.addEventListener('blur', () => {
-                if (!btn.matches(':hover')) {
-                    hideRemoveState();
-                }
-            });
-
-            badge.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    triggerRemoval();
-                }
-            });
-
-            const triggerRemoval = async () => {
-                clearRemoveTimer();
-                showRemoveState();
-
-                const confirmed = await showConfirmDialog({
-                    title: 'Supprimer la couleur',
-                    message: 'Voulez-vous vraiment l\'effacer ?',
-                    confirmText: 'Oui',
-                    cancelText: 'Annuler',
-                    danger: true
-                });
-
-                if (confirmed) {
-                    removeCustomColor(normalizedColor);
-                } else {
-                    hideRemoveState();
-                }
-            };
-
-            badge.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                triggerRemoval();
-            });
-
-            badge.addEventListener('touchend', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                triggerRemoval();
-            });
+            btn.addEventListener('mouseenter', showRemoveState);
+            btn.addEventListener('mouseleave', clearRemoveTimer);
+            btn.addEventListener('focus', showRemoveState);
+            btn.addEventListener('blur', clearRemoveTimer);
 
             presetColors.appendChild(btn);
         }
     });
+
+    applyPaletteScrollState(presetColors);
+}
+
+function applyPaletteScrollState(presetColors) {
+    const colorPalette = document.querySelector('.color-palette');
+    if (!colorPalette) return;
+
+    const totalButtons = presetColors.children.length;
+    const columns = 4;
+    const rows = Math.ceil(totalButtons / columns);
+    const hasScroll = rows > 2;
+
+    presetColors.classList.toggle('scrollable', hasScroll);
+    colorPalette.classList.toggle('scrollable', hasScroll);
+
+    let hint = colorPalette.querySelector('.palette-scroll-hint');
+    if (hasScroll) {
+        if (!hint) {
+            hint = document.createElement('p');
+            hint.className = 'palette-scroll-hint';
+            hint.textContent = 'Glissez pour voir les autres couleurs →';
+            colorPalette.appendChild(hint);
+        }
+    } else if (hint) {
+        hint.remove();
+    }
 }
 
 function removeCustomColor(color) {
