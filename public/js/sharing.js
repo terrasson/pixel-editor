@@ -23,7 +23,7 @@ async function initSharingSystem() {
 // ============================================
 
 function setupShareEventListeners() {
-    // Share button clicks - intercept and show new dialog
+    // Share button clicks - directly show public share dialog
     const shareButtons = ['shareProjectBtn', 'shareProjectBtn2'];
     shareButtons.forEach(btnId => {
         const btn = document.getElementById(btnId);
@@ -32,26 +32,8 @@ function setupShareEventListeners() {
             const newBtn = btn.cloneNode(true);
             btn.parentNode.replaceChild(newBtn, btn);
 
-            // Add new listener
-            newBtn.addEventListener('click', showShareMethodDialog);
-        }
-    });
-
-    // Share method dialog
-    document.getElementById('closeShareDialog')?.addEventListener('click', () => {
-        hideModal('shareDialog');
-    });
-
-    document.getElementById('shareViaSupabase')?.addEventListener('click', () => {
-        hideModal('shareDialog');
-        showShareSupabaseDialog();
-    });
-
-    document.getElementById('shareViaFile')?.addEventListener('click', () => {
-        hideModal('shareDialog');
-        // Call the original shareProject function
-        if (typeof shareProject === 'function') {
-            shareProject();
+            // Add new listener for public share
+            newBtn.addEventListener('click', handleShareButtonClick);
         }
     });
 
@@ -108,108 +90,154 @@ function hideModal(modalId) {
 }
 
 // ============================================
-// SHARE METHOD DIALOG
+// PUBLIC SHARE BUTTON HANDLER
 // ============================================
 
-function showShareMethodDialog() {
+async function handleShareButtonClick() {
     // Check if we have a project to share
     if (!frames || frames.length === 0) {
         alert('⚠️ Aucun projet à partager. Créez d\'abord quelque chose !');
         return;
     }
 
-    showModal('shareDialog');
-}
-
-// ============================================
-// SUPABASE SHARE DIALOG
-// ============================================
-
-function showShareSupabaseDialog() {
-    // Reset form
-    document.getElementById('shareRecipientEmail').value = '';
-    document.getElementById('sharePermission').value = 'can_duplicate';
-    document.getElementById('shareMessage').value = '';
-    document.getElementById('shareExpiry').value = '';
-    document.getElementById('shareMessageCount').textContent = '0';
-
-    showModal('shareSupabaseDialog');
-}
-
-async function handleShareViaSupabase() {
-    const email = document.getElementById('shareRecipientEmail').value.trim();
-    const permission = document.getElementById('sharePermission').value;
-    const message = document.getElementById('shareMessage').value.trim();
-    const expiryDays = document.getElementById('shareExpiry').value;
-
-    // Validation
-    if (!email) {
-        alert('⚠️ Veuillez entrer un email');
-        return;
-    }
-
-    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-    if (!emailRegex.test(email)) {
-        alert('⚠️ Email invalide');
-        return;
-    }
-
     // Get current project name
     const projectName = document.getElementById('projectTitle')?.textContent || 'Nouveau projet';
 
-    // Calculate expiry date
-    let expiresAt = null;
-    if (expiryDays) {
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + parseInt(expiryDays));
-        expiresAt = expiryDate.toISOString();
-    }
-
-    // Show loading
-    const confirmBtn = document.getElementById('confirmShareSupabase');
-    const originalText = confirmBtn.textContent;
-    confirmBtn.textContent = '⏳ Partage en cours...';
-    confirmBtn.disabled = true;
+    // Show loading state
+    const button = event.currentTarget;
+    const originalText = button.textContent;
+    button.textContent = '⏳ Création du lien...';
+    button.disabled = true;
 
     try {
-        // Share via Supabase
-        const result = await window.dbService.shareProject(projectName, email, {
-            permission,
-            message: message || null,
-            expiresAt
+        // Create public share
+        const result = await window.dbService.createPublicShare(projectName, {
+            allowDuplicate: true
         });
 
         if (result.success) {
-            alert(`✅ Projet partagé avec succès !\n\nDestinataire : ${email}\nPermission : ${getPermissionLabel(permission)}`);
-            hideModal('shareSupabaseDialog');
+            const shareUrl = window.dbService.getShareableUrl(result.data.share_token);
 
-            // Log usage event
-            if (typeof logUsageEvent === 'function') {
-                logUsageEvent('project_shared_supabase', {
-                    permission,
-                    has_message: !!message,
-                    has_expiry: !!expiresAt
-                });
+            // Log that link was created
+            await window.dbService.logPublicShareAnalytics(result.data.id, 'link_copied');
+
+            // Try to use Web Share API (mobile)
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: `${projectName} - Pixel Art`,
+                        text: `Découvre mon pixel art "${projectName}" !`,
+                        url: shareUrl
+                    });
+
+                    // Success
+                    if (result.isNew) {
+                        showShareSuccessMessage(shareUrl, true);
+                    }
+                } catch (shareError) {
+                    // User cancelled or error
+                    if (shareError.name !== 'AbortError') {
+                        console.error('Share error:', shareError);
+                        // Fallback to copy
+                        await copyToClipboard(shareUrl, projectName);
+                    }
+                }
+            } else {
+                // Fallback for desktop - copy to clipboard
+                await copyToClipboard(shareUrl, projectName);
             }
         } else {
-            alert(`❌ Erreur lors du partage :\n${result.error}`);
+            alert(`❌ Erreur lors de la création du lien :\n${result.error}`);
         }
     } catch (error) {
         console.error('Share error:', error);
         alert('❌ Une erreur est survenue lors du partage');
     } finally {
-        confirmBtn.textContent = originalText;
-        confirmBtn.disabled = false;
+        button.textContent = originalText;
+        button.disabled = false;
     }
 }
 
-function getPermissionLabel(permission) {
-    const labels = {
-        'can_duplicate': 'Peut dupliquer',
-        'view_only': 'Voir uniquement',
-        'can_edit': 'Peut éditer'
-    };
-    return labels[permission] || permission;
+// Copy to clipboard with feedback
+async function copyToClipboard(url, projectName) {
+    try {
+        await navigator.clipboard.writeText(url);
+        showShareSuccessMessage(url, false);
+    } catch (error) {
+        console.error('Clipboard error:', error);
+        // Fallback for older browsers
+        showShareLinkDialog(url, projectName);
+    }
+}
+
+// Show success message with link
+function showShareSuccessMessage(url, wasShared) {
+    const message = wasShared
+        ? `✅ Lien partagé avec succès !\n\n📋 Le lien a aussi été copié dans le presse-papier :\n${url}`
+        : `✅ Lien copié dans le presse-papier !\n\n📤 Partagez-le où vous voulez :\n${url}`;
+
+    alert(message);
+}
+
+// Fallback dialog to manually copy link
+function showShareLinkDialog(url, projectName) {
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(20, 20, 30, 0.98);
+        padding: 30px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        z-index: 10000;
+        max-width: 90vw;
+        width: 500px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    `;
+
+    dialog.innerHTML = `
+        <h3 style="margin: 0 0 20px 0; color: white; font-size: 1.3rem;">📤 Partagez votre projet</h3>
+        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 15px;">
+            Copiez ce lien et partagez-le où vous voulez :
+        </p>
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input
+                type="text"
+                value="${url}"
+                readonly
+                style="flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.1);
+                       border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px;
+                       color: white; font-size: 0.9rem;"
+                onclick="this.select()"
+            />
+            <button
+                onclick="
+                    const input = this.previousElementSibling;
+                    input.select();
+                    document.execCommand('copy');
+                    this.textContent = '✅ Copié !';
+                    setTimeout(() => this.textContent = '📋 Copier', 2000);
+                "
+                style="padding: 12px 20px; background: linear-gradient(135deg, #007AFF, #5856D6);
+                       border: none; border-radius: 10px; color: white; cursor: pointer;
+                       font-weight: 600; white-space: nowrap;"
+            >
+                📋 Copier
+            </button>
+        </div>
+        <button
+            onclick="this.parentElement.remove()"
+            style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.1);
+                   border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px;
+                   color: white; cursor: pointer; font-weight: 600;"
+        >
+            Fermer
+        </button>
+    `;
+
+    document.body.appendChild(dialog);
 }
 
 // ============================================

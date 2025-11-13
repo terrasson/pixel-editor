@@ -74,11 +74,6 @@
                 <button id="saveBtn">💾 Sauvegarder</button>
                 <button id="loadBtn">📂 Charger</button>
                 <button id="loadLocalBtn">🌐 Mes projets</button>
-                <button id="sharedWithMeBtnMobile" class="notification-btn">
-                    👥 Projets partagés
-                    <span id="sharedBadgeMobile" class="notification-badge" style="display: none;">0</span>
-                </button>
-                <button id="shareProjectBtn">📤 Partager</button>
                 <button id="exportGifBtn">🎬 Export GIF</button>
                 <button id="profileBtnMobile">👤 Profil</button>
                 <button id="copyFrameBtn">Copier la frame</button>
@@ -287,11 +282,6 @@
                 <button id="saveBtn2">💾 Sauvegarder</button>
                 <button id="loadBtn2">📂 Charger</button>
                 <button id="loadLocalBtn2">🌐 Mes projets</button>
-                <button id="sharedWithMeBtn" class="notification-btn">
-                    👥 Projets partagés
-                    <span id="sharedBadge" class="notification-badge" style="display: none;">0</span>
-                </button>
-                <button id="shareProjectBtn2">📤 Partager</button>
                 <button id="exportGifBtn2">🎬 Export GIF</button>
                 <button id="profileBtn">👤 Mon profil</button>
                 <button id="helpBtn2">❓ Aide</button>
@@ -318,118 +308,11 @@
         </div>
     </div>
 
-    <!-- Modal de partage amélioré -->
-    <div id="shareDialog" class="modal" style="display: none;">
-        <div class="modal-content share-modal-content">
-            <div class="modal-header">
-                <h3>📤 Partager votre projet</h3>
-                <button id="closeShareDialog" class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="share-method-choice">
-                    <h4>Choisissez votre méthode de partage :</h4>
-                    <div class="share-methods">
-                        <button id="shareViaSupabase" class="share-method-btn primary">
-                            <div class="method-icon">👥</div>
-                            <div class="method-content">
-                                <strong>Partager avec un utilisateur</strong>
-                                <small>Recommandé - Envoyez par email à un autre utilisateur</small>
-                            </div>
-                        </button>
-                        <button id="shareViaFile" class="share-method-btn">
-                            <div class="method-icon">📁</div>
-                            <div class="method-content">
-                                <strong>Partager par fichier</strong>
-                                <small>Méthode classique - JSON, lien ou GIF</small>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de partage Supabase -->
-    <div id="shareSupabaseDialog" class="modal" style="display: none;">
-        <div class="modal-content share-modal-content">
-            <div class="modal-header">
-                <h3>👥 Partager avec un utilisateur</h3>
-                <button id="closeShareSupabaseDialog" class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="share-supabase-form">
-                    <div class="form-group">
-                        <label for="shareRecipientEmail">Email du destinataire *</label>
-                        <input
-                            type="email"
-                            id="shareRecipientEmail"
-                            class="form-input"
-                            placeholder="exemple@email.com"
-                            required
-                        >
-                        <small class="form-hint">L'utilisateur recevra une notification dans l'application</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="sharePermission">Permission</label>
-                        <select id="sharePermission" class="form-select">
-                            <option value="can_duplicate" selected>📋 Peut dupliquer (copier dans son compte)</option>
-                            <option value="view_only">👁️ Voir uniquement (ne peut pas copier)</option>
-                            <option value="can_edit">✏️ Peut éditer (collaboratif - modifie l'original)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="shareMessage">Message (optionnel)</label>
-                        <textarea
-                            id="shareMessage"
-                            class="form-textarea"
-                            placeholder="Ajoutez un message pour le destinataire..."
-                            rows="3"
-                            maxlength="500"
-                        ></textarea>
-                        <small class="form-hint"><span id="shareMessageCount">0</span>/500 caractères</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="shareExpiry">Durée du partage</label>
-                        <select id="shareExpiry" class="form-select">
-                            <option value="" selected>♾️ Permanent</option>
-                            <option value="7">7 jours</option>
-                            <option value="30">30 jours</option>
-                            <option value="90">90 jours</option>
-                        </select>
-                    </div>
-
-                    <div class="share-actions">
-                        <button id="cancelShareSupabase" class="btn-secondary">Annuler</button>
-                        <button id="confirmShareSupabase" class="btn-primary">📤 Partager</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Projets partagés avec moi -->
-    <div id="sharedWithMeDialog" class="modal" style="display: none;">
-        <div class="modal-content shared-projects-modal">
-            <div class="modal-header">
-                <h3>👥 Projets partagés avec moi</h3>
-                <button id="closeSharedWithMeDialog" class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="sharedProjectsList" class="shared-projects-list">
-                    <!-- Projects will be loaded here dynamically -->
-                    <div class="loading-state">Chargement...</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="js/config/supabase-config.js"></script>
+    <script src="js/config/app-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/database.js"></script>
-    <script src="js/sharing.js"></script>
+    <!-- <script src="js/sharing.js"></script> DISABLED - See docs/SHARING-REIMPLEMENTATION-GUIDE.md -->
     <script>
         // Authentication check - must be logged in to use the app
         (async function() {

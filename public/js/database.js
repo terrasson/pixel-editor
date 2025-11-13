@@ -779,6 +779,270 @@ class DatabaseService {
             return { success: false, error: error.message };
         }
     }
+
+    // =====================================================
+    // PUBLIC SHARING FUNCTIONS (via shareable link)
+    // =====================================================
+
+    // Create a public shareable link for a project
+    async createPublicShare(projectName, options = {}) {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            // Get project data
+            const { data: project, error: projectError } = await this.supabase
+                .from('pixel_projects')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('name', projectName)
+                .single();
+
+            if (projectError) throw projectError;
+            if (!project) throw new Error('Project not found');
+
+            // Check if public share already exists
+            const { data: existing } = await this.supabase
+                .from('public_shares')
+                .select('*')
+                .eq('project_id', project.id)
+                .single();
+
+            if (existing) {
+                // Return existing share
+                return { success: true, data: existing, isNew: false };
+            }
+
+            // Create snapshot of project data
+            const projectSnapshot = {
+                name: project.name,
+                frames: project.frames,
+                current_frame: project.current_frame,
+                fps: project.fps,
+                custom_palette: project.custom_palette,
+                custom_colors: project.custom_colors,
+                created_at: project.created_at
+            };
+
+            // Calculate expiry date if specified
+            let expiresAt = null;
+            if (options.expiresInDays) {
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + parseInt(options.expiresInDays));
+                expiresAt = expiryDate.toISOString();
+            }
+
+            // Create public share
+            const { data, error } = await this.supabase
+                .from('public_shares')
+                .insert({
+                    project_id: project.id,
+                    owner_id: userId,
+                    project_snapshot: projectSnapshot,
+                    project_name: project.name,
+                    project_thumbnail: project.thumbnail,
+                    allow_duplicate: options.allowDuplicate !== false,
+                    expires_at: expiresAt
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Log the share event
+            await this.logUsageEvent('project_shared_public', {
+                project_id: project.id,
+                share_token: data.share_token,
+                allow_duplicate: data.allow_duplicate
+            });
+
+            return { success: true, data, isNew: true };
+        } catch (error) {
+            console.error('Create public share error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get public share by token
+    async getPublicShare(shareToken) {
+        if (!this.supabase) this.init();
+
+        try {
+            const { data, error } = await this.supabase
+                .from('public_shares')
+                .select('*')
+                .eq('share_token', shareToken)
+                .single();
+
+            if (error) throw error;
+
+            // Check if expired
+            if (data.expires_at && new Date(data.expires_at) < new Date()) {
+                throw new Error('This share link has expired');
+            }
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('Get public share error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Log analytics for public share
+    async logPublicShareAnalytics(shareId, action, metadata = {}) {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId(); // May be null for anonymous users
+
+            const { error } = await this.supabase
+                .from('public_share_analytics')
+                .insert({
+                    share_id: shareId,
+                    action: action,
+                    user_id: userId,
+                    user_agent: metadata.userAgent || navigator.userAgent,
+                    referrer: metadata.referrer || document.referrer
+                });
+
+            if (error) throw error;
+
+            return { success: true };
+        } catch (error) {
+            console.warn('Log analytics error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Duplicate a public shared project
+    async duplicatePublicShare(shareToken) {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('You must be logged in to duplicate projects');
+            }
+
+            // Get share data
+            const shareResult = await this.getPublicShare(shareToken);
+            if (!shareResult.success) throw new Error(shareResult.error);
+
+            const share = shareResult.data;
+
+            // Check if duplication is allowed
+            if (!share.allow_duplicate) {
+                throw new Error('The owner has disabled duplication for this project');
+            }
+
+            const projectSnapshot = share.project_snapshot;
+
+            // Create new project name with suffix
+            let newName = `${projectSnapshot.name} (copie)`;
+            let counter = 1;
+
+            // Check if name exists, add counter if needed
+            while (true) {
+                const { data: existing } = await this.supabase
+                    .from('pixel_projects')
+                    .select('id')
+                    .eq('user_id', userId)
+                    .eq('name', newName)
+                    .single();
+
+                if (!existing) break;
+                counter++;
+                newName = `${projectSnapshot.name} (copie ${counter})`;
+            }
+
+            // Create duplicate
+            const { data, error } = await this.supabase
+                .from('pixel_projects')
+                .insert({
+                    user_id: userId,
+                    name: newName,
+                    frames: projectSnapshot.frames,
+                    current_frame: projectSnapshot.current_frame,
+                    fps: projectSnapshot.fps,
+                    custom_palette: projectSnapshot.custom_palette,
+                    custom_colors: projectSnapshot.custom_colors,
+                    thumbnail: share.project_thumbnail
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Log analytics
+            await this.logPublicShareAnalytics(share.id, 'duplicated');
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('Duplicate public share error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get all public shares created by current user
+    async getMyPublicShares() {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            const { data, error } = await this.supabase
+                .from('public_shares')
+                .select('*')
+                .eq('owner_id', userId)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('Get my public shares error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Delete a public share
+    async deletePublicShare(shareToken) {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            const { error } = await this.supabase
+                .from('public_shares')
+                .delete()
+                .eq('share_token', shareToken)
+                .eq('owner_id', userId);
+
+            if (error) throw error;
+
+            return { success: true };
+        } catch (error) {
+            console.error('Delete public share error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Generate shareable URL for a project
+    getShareableUrl(shareToken) {
+        // Get APP_URL from environment or use current origin
+        const appUrl = window.APP_URL || window.location.origin;
+        return `${appUrl}/shared.html?token=${shareToken}`;
+    }
 }
 
 // Create global database service instance

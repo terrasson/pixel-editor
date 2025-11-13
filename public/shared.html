@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Projet Partagé - Éditeur Pixel Art</title>
+
+    <!-- Meta tags pour le partage social -->
+    <meta property="og:title" content="Découvre ce pixel art !">
+    <meta property="og:description" content="Un projet pixel art créé avec l'Éditeur Pixel Art">
+    <meta property="og:type" content="website">
+    <meta id="og-image" property="og:image" content="">
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/common.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .shared-container {
+            max-width: 800px;
+            width: 90%;
+            padding: 40px 20px;
+        }
+
+        .shared-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .shared-header h1 {
+            font-size: 2.5rem;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .shared-header p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+        }
+
+        .project-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .project-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .project-thumbnail {
+            width: 120px;
+            height: 120px;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            image-rendering: pixelated;
+            object-fit: cover;
+        }
+
+        .project-details h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.8rem;
+        }
+
+        .project-meta {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.95rem;
+        }
+
+        .project-preview {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        #pixelCanvas {
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            image-rendering: pixelated;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px 30px;
+            border-radius: 12px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 122, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #007AFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #007AFF;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .shared-header h1 {
+                font-size: 2rem;
+            }
+
+            .project-info {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                min-width: 100%;
+            }
+
+            .stats {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shared-container">
+        <div class="shared-header">
+            <h1>🎨 Projet Partagé</h1>
+            <p>Découvrez ce pixel art créé avec l'Éditeur Pixel Art</p>
+        </div>
+
+        <div id="content">
+            <!-- Loading state -->
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement du projet...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/database.js"></script>
+
+    <script>
+        let currentShare = null;
+        let currentUser = null;
+
+        // Initialize
+        async function init() {
+            try {
+                // Get token from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+
+                if (!token) {
+                    showError('Aucun projet trouvé', 'Le lien de partage est invalide ou incomplet.');
+                    return;
+                }
+
+                // Initialize auth
+                await window.authService.init();
+                currentUser = window.authService.getCurrentUser();
+
+                // Load shared project
+                const result = await window.dbService.getPublicShare(token);
+
+                if (!result.success) {
+                    showError('Projet introuvable', result.error);
+                    return;
+                }
+
+                currentShare = result.data;
+
+                // Log view
+                await window.dbService.logPublicShareAnalytics(currentShare.id, 'viewed');
+
+                // Display project
+                displayProject(currentShare);
+
+            } catch (error) {
+                console.error('Init error:', error);
+                showError('Erreur', 'Une erreur est survenue lors du chargement.');
+            }
+        }
+
+        function displayProject(share) {
+            const snapshot = share.project_snapshot;
+
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="project-card">
+                    <div class="project-info">
+                        ${share.project_thumbnail ? `
+                            <img src="${share.project_thumbnail}" alt="${share.project_name}" class="project-thumbnail">
+                        ` : ''}
+                        <div class="project-details">
+                            <h2>${escapeHtml(share.project_name)}</h2>
+                            <div class="project-meta">
+                                <div>📅 Partagé le ${new Date(share.created_at).toLocaleDateString('fr-FR', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
+                                })}</div>
+                                <div>🎬 ${snapshot.fps || 24} FPS • ${snapshot.frames?.length || 1} frame(s)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="project-preview">
+                        <canvas id="pixelCanvas" width="320" height="320"></canvas>
+                    </div>
+
+                    <div class="action-buttons">
+                        ${currentUser ? `
+                            ${share.allow_duplicate ? `
+                                <button class="btn btn-primary" onclick="duplicateProject()">
+                                    📋 Dupliquer dans mon compte
+                                </button>
+                            ` : `
+                                <button class="btn btn-secondary" disabled>
+                                    🔒 Duplication désactivée
+                                </button>
+                            `}
+                        ` : `
+                            <button class="btn btn-primary" onclick="goToLogin()">
+                                👤 Créer un compte pour dupliquer
+                            </button>
+                        `}
+                        <button class="btn btn-secondary" onclick="goToApp()">
+                            🎨 Créer mon propre pixel art
+                        </button>
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${share.view_count || 0}</div>
+                            <div class="stat-label">Vues</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${share.duplicate_count || 0}</div>
+                            <div class="stat-label">Duplications</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${snapshot.frames?.length || 1}</div>
+                            <div class="stat-label">Frames</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Render first frame on canvas
+            renderFrame(snapshot);
+
+            // Update meta tags for sharing
+            updateMetaTags(share);
+        }
+
+        function renderFrame(snapshot) {
+            const canvas = document.getElementById('pixelCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const frames = snapshot.frames || [];
+            const currentFrameIndex = snapshot.current_frame || 0;
+
+            if (frames.length === 0) return;
+
+            const frame = frames[currentFrameIndex];
+            const gridSize = Math.sqrt(frame.length);
+            const pixelSize = canvas.width / gridSize;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw pixels
+            frame.forEach((pixel, index) => {
+                if (!pixel || pixel.isEmpty) return;
+
+                const x = (index % gridSize) * pixelSize;
+                const y = Math.floor(index / gridSize) * pixelSize;
+
+                ctx.fillStyle = pixel.color || '#FFFFFF';
+                ctx.fillRect(x, y, pixelSize, pixelSize);
+            });
+        }
+
+        function updateMetaTags(share) {
+            // Update page title
+            document.title = `${share.project_name} - Pixel Art Partagé`;
+
+            // Update OG tags
+            document.querySelector('meta[property="og:title"]').content = `${share.project_name} - Pixel Art`;
+            if (share.project_thumbnail) {
+                document.getElementById('og-image').content = share.project_thumbnail;
+            }
+        }
+
+        async function duplicateProject() {
+            const btn = event.currentTarget;
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Duplication en cours...';
+            btn.disabled = true;
+
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+
+                const result = await window.dbService.duplicatePublicShare(token);
+
+                if (result.success) {
+                    alert(`✅ Projet "${result.data.name}" dupliqué avec succès !\n\nVous pouvez maintenant le modifier dans votre compte.`);
+
+                    // Redirect to app
+                    window.location.href = '/index.html';
+                } else {
+                    alert(`❌ Erreur : ${result.error}`);
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Duplicate error:', error);
+                alert('❌ Une erreur est survenue');
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function goToLogin() {
+            window.location.href = '/login.html';
+        }
+
+        function goToApp() {
+            window.location.href = '/index.html';
+        }
+
+        function showError(title, message) {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="error-state">
+                    <div class="error-icon">⚠️</div>
+                    <h2>${title}</h2>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin: 20px 0;">${message}</p>
+                    <button class="btn btn-primary" onclick="goToApp()" style="margin: 0 auto; display: inline-block;">
+                        🎨 Aller à l'éditeur
+                    </button>
+                </div>
+            `;
+        }
+
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
