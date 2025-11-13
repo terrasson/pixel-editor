@@ -384,6 +384,401 @@ class DatabaseService {
 
         return canvas.toDataURL('image/png');
     }
+
+    // =====================================================
+    // PROJECT SHARING FUNCTIONS
+    // =====================================================
+
+    // Share a project with another user by email
+    async shareProject(projectName, recipientEmail, options = {}) {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            // Get project ID
+            const { data: project, error: projectError } = await this.supabase
+                .from('pixel_projects')
+                .select('id, name')
+                .eq('user_id', userId)
+                .eq('name', projectName)
+                .single();
+
+            if (projectError) throw projectError;
+            if (!project) throw new Error('Project not found');
+
+            // Validate email format
+            const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+            if (!emailRegex.test(recipientEmail)) {
+                throw new Error('Invalid email address');
+            }
+
+            // Get current user's email to prevent self-sharing
+            const currentUser = await window.authService.getCurrentUser();
+            if (currentUser.email === recipientEmail) {
+                throw new Error('Cannot share project with yourself');
+            }
+
+            // Create share
+            const shareData = {
+                project_id: project.id,
+                owner_id: userId,
+                shared_with_email: recipientEmail.toLowerCase(),
+                permission: options.permission || 'can_duplicate',
+                message: options.message || null,
+                expires_at: options.expiresAt || null,
+                status: 'pending'
+            };
+
+            const { data, error } = await this.supabase
+                .from('project_shares')
+                .insert(shareData)
+                .select()
+                .single();
+
+            if (error) {
+                // Check if already shared
+                if (error.code === '23505') { // Unique constraint violation
+                    throw new Error('Project already shared with this user');
+                }
+                throw error;
+            }
+
+            // Log the share event
+            await this.logUsageEvent('project_shared', {
+                project_id: project.id,
+                recipient_email: recipientEmail,
+                permission: shareData.permission
+            });
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('Share project error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get all projects shared WITH current user
+    async getSharedWithMeProjects() {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            const currentUser = await window.authService.getCurrentUser();
+
+            if (!userId || !currentUser) {
+                throw new Error('User not authenticated');
+            }
+
+            const { data, error } = await this.supabase
+                .from('project_shares')
+                .select(`
+                    id,
+                    project_id,
+                    owner_id,
+                    permission,
+                    status,
+                    message,
+                    created_at,
+                    expires_at,
+                    pixel_projects (
+                        id,
+                        name,
+                        thumbnail,
+                        fps,
+                        current_frame,
+                        created_at,
+                        updated_at
+                    )
+                `)
+                .eq('shared_with_email', currentUser.email)
+                .or(`status.eq.pending,status.eq.accepted`)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            // Get owner emails
+            const enrichedData = await Promise.all(data.map(async (share) => {
+                const { data: owner } = await this.supabase
+                    .from('auth.users')
+                    .select('email')
+                    .eq('id', share.owner_id)
+                    .single();
+
+                return {
+                    ...share,
+                    owner_email: owner?.email || 'Unknown',
+                    project: share.pixel_projects
+                };
+            }));
+
+            return { success: true, data: enrichedData };
+        } catch (error) {
+            console.error('Get shared with me projects error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get count of pending shares for current user
+    async getPendingSharesCount() {
+        if (!this.supabase) this.init();
+
+        try {
+            const currentUser = await window.authService.getCurrentUser();
+            if (!currentUser) {
+                throw new Error('User not authenticated');
+            }
+
+            const { count, error } = await this.supabase
+                .from('project_shares')
+                .select('*', { count: 'exact', head: true })
+                .eq('shared_with_email', currentUser.email)
+                .eq('status', 'pending');
+
+            if (error) throw error;
+
+            return { success: true, count: count || 0 };
+        } catch (error) {
+            console.error('Get pending shares count error:', error);
+            return { success: false, error: error.message, count: 0 };
+        }
+    }
+
+    // Accept a shared project
+    async acceptShare(shareId) {
+        if (!this.supabase) this.init();
+
+        try {
+            const { data, error } = await this.supabase
+                .from('project_shares')
+                .update({ status: 'accepted', updated_at: new Date().toISOString() })
+                .eq('id', shareId)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Log access
+            await this.supabase
+                .from('project_access_log')
+                .insert({
+                    share_id: shareId,
+                    user_id: this.getUserId(),
+                    action: 'accepted'
+                });
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('Accept share error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Decline a shared project
+    async declineShare(shareId) {
+        if (!this.supabase) this.init();
+
+        try {
+            const { data, error } = await this.supabase
+                .from('project_shares')
+                .update({ status: 'declined', updated_at: new Date().toISOString() })
+                .eq('id', shareId)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Log access
+            await this.supabase
+                .from('project_access_log')
+                .insert({
+                    share_id: shareId,
+                    user_id: this.getUserId(),
+                    action: 'declined'
+                });
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('Decline share error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Duplicate a shared project to own account
+    async duplicateSharedProject(shareId) {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            // Get share details
+            const { data: share, error: shareError } = await this.supabase
+                .from('project_shares')
+                .select(`
+                    id,
+                    permission,
+                    pixel_projects (*)
+                `)
+                .eq('id', shareId)
+                .single();
+
+            if (shareError) throw shareError;
+            if (!share) throw new Error('Share not found');
+
+            // Check permission
+            if (share.permission === 'view_only') {
+                throw new Error('You only have view permission for this project');
+            }
+
+            const originalProject = share.pixel_projects;
+
+            // Create new project name with suffix
+            let newName = `${originalProject.name} (copie)`;
+            let counter = 1;
+
+            // Check if name exists, add counter if needed
+            while (true) {
+                const { data: existing } = await this.supabase
+                    .from('pixel_projects')
+                    .select('id')
+                    .eq('user_id', userId)
+                    .eq('name', newName)
+                    .single();
+
+                if (!existing) break;
+                counter++;
+                newName = `${originalProject.name} (copie ${counter})`;
+            }
+
+            // Create duplicate
+            const { data, error } = await this.supabase
+                .from('pixel_projects')
+                .insert({
+                    user_id: userId,
+                    name: newName,
+                    frames: originalProject.frames,
+                    current_frame: originalProject.current_frame,
+                    fps: originalProject.fps,
+                    custom_palette: originalProject.custom_palette,
+                    custom_colors: originalProject.custom_colors,
+                    thumbnail: originalProject.thumbnail
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Log access
+            await this.supabase
+                .from('project_access_log')
+                .insert({
+                    share_id: shareId,
+                    user_id: userId,
+                    action: 'duplicated'
+                });
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('Duplicate shared project error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get a shared project's full data (for viewing)
+    async getSharedProjectData(shareId) {
+        if (!this.supabase) this.init();
+
+        try {
+            const { data: share, error } = await this.supabase
+                .from('project_shares')
+                .select(`
+                    id,
+                    permission,
+                    pixel_projects (*)
+                `)
+                .eq('id', shareId)
+                .single();
+
+            if (error) throw error;
+
+            // Log access
+            await this.supabase
+                .from('project_access_log')
+                .insert({
+                    share_id: shareId,
+                    user_id: this.getUserId(),
+                    action: 'viewed'
+                });
+
+            return { success: true, data: share.pixel_projects, permission: share.permission };
+        } catch (error) {
+            console.error('Get shared project data error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get all projects shared BY current user
+    async getMyShares() {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            const { data, error } = await this.supabase
+                .from('project_shares')
+                .select(`
+                    id,
+                    shared_with_email,
+                    permission,
+                    status,
+                    message,
+                    created_at,
+                    expires_at,
+                    pixel_projects (
+                        id,
+                        name,
+                        thumbnail
+                    )
+                `)
+                .eq('owner_id', userId)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('Get my shares error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Revoke a share (delete)
+    async revokeShare(shareId) {
+        if (!this.supabase) this.init();
+
+        try {
+            const { error } = await this.supabase
+                .from('project_shares')
+                .delete()
+                .eq('id', shareId);
+
+            if (error) throw error;
+
+            return { success: true };
+        } catch (error) {
+            console.error('Revoke share error:', error);
+            return { success: false, error: error.message };
+        }
+    }
 }
 
 // Create global database service instance

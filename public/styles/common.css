@@ -770,3 +770,442 @@ input[type="color"]::-webkit-color-swatch {
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.82);
 }
+
+/* =====================================================
+   SHARING SYSTEM STYLES
+   ===================================================== */
+
+/* Notification button with badge */
+.notification-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ff4757;
+    color: white;
+    border-radius: 12px;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 18px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+    animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Share modal content */
+.share-modal-content {
+    max-width: 520px;
+    min-width: 320px;
+}
+
+.share-method-choice h4 {
+    margin: 0 0 16px;
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.share-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.share-method-btn {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    color: white;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    width: 100%;
+}
+
+.share-method-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.share-method-btn.primary {
+    background: linear-gradient(135deg, rgba(0, 122, 255, 0.2), rgba(88, 86, 214, 0.2));
+    border-color: rgba(0, 122, 255, 0.5);
+}
+
+.share-method-btn.primary:hover {
+    background: linear-gradient(135deg, rgba(0, 122, 255, 0.3), rgba(88, 86, 214, 0.3));
+    border-color: rgba(0, 122, 255, 0.7);
+}
+
+.method-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.method-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.method-content strong {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.method-content small {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.3;
+}
+
+/* Share Supabase form */
+.share-supabase-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: white;
+    font-size: 0.95rem;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(0, 122, 255, 0.6);
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.form-select option {
+    background: #1a1f3a;
+    color: white;
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-hint {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 4px;
+}
+
+.share-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.btn-primary,
+.btn-secondary {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #007AFF, #5856D6);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Shared projects modal */
+.shared-projects-modal {
+    max-width: 720px;
+    min-width: 320px;
+}
+
+.shared-projects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.loading-state,
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    opacity: 0.5;
+}
+
+/* Shared project card */
+.shared-project-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    gap: 16px;
+    transition: all 0.25s ease;
+}
+
+.shared-project-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.shared-project-card.pending {
+    border-left: 4px solid #007AFF;
+}
+
+.shared-project-thumbnail {
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.shared-project-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    image-rendering: pixelated;
+}
+
+.shared-project-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.shared-project-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.shared-project-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: white;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.shared-project-status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.shared-project-status.pending {
+    background: rgba(0, 122, 255, 0.2);
+    color: #5AC8FA;
+    border: 1px solid rgba(90, 200, 250, 0.3);
+}
+
+.shared-project-status.accepted {
+    background: rgba(52, 199, 89, 0.2);
+    color: #34C759;
+    border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+.shared-project-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.shared-project-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.shared-project-message {
+    margin-top: 4px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid rgba(0, 122, 255, 0.5);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.shared-project-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.shared-project-action-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+}
+
+.shared-project-action-btn.primary {
+    background: linear-gradient(135deg, #007AFF, #5856D6);
+    color: white;
+}
+
+.shared-project-action-btn.primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+.shared-project-action-btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.shared-project-action-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.shared-project-action-btn.danger {
+    background: rgba(255, 59, 48, 0.15);
+    color: #FF453A;
+    border: 1px solid rgba(255, 69, 58, 0.3);
+}
+
+.shared-project-action-btn.danger:hover {
+    background: rgba(255, 59, 48, 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .share-modal-content,
+    .shared-projects-modal {
+        max-width: 95vw;
+    }
+
+    .shared-project-card {
+        flex-direction: column;
+    }
+
+    .shared-project-thumbnail {
+        width: 100%;
+        height: 120px;
+    }
+
+    .share-actions {
+        flex-direction: column;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+    }
+
+    .shared-project-actions {
+        flex-direction: column;
+    }
+
+    .shared-project-action-btn {
+        width: 100%;
+    }
+}
