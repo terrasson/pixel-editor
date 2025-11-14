@@ -488,24 +488,34 @@ html, body {
 .preset-colors {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    gap: 6px;
     justify-items: center;
-    max-height: 140px;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
+    max-height: clamp(120px, 16vh, 180px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 12px;
+    scrollbar-gutter: stable;
 }
 
-.preset-colors.scrollable {
-    overflow-y: auto;
-    padding-right: 12px; /* Augmentation du padding pour éviter que la scrollbar cache les couleurs */
-    max-height: 200px; /* Augmentation légère de la hauteur max */
+.preset-colors::-webkit-scrollbar {
+    width: 6px;
+}
+
+.preset-colors::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+}
+
+.preset-colors::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
 }
 
 .color-btn {
-    width: 32px;
-    height: 32px;
+    width: 26px;
+    height: 26px;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 16px;
+    border-radius: 13px;
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -531,17 +541,17 @@ html, body {
 
 .color-btn.custom-color .color-badge {
     position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 16px;
-    height: 16px;
+    top: -5px;
+    right: -5px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     background: #ffffff;
     border: 1px solid #007AFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     font-weight: 700;
     color: #007AFF;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -603,6 +613,9 @@ html, body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
+    flex-shrink: 0;
+    width: 100%;
 }
 
 .extra-tools button:hover {

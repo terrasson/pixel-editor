@@ -350,6 +350,14 @@
             });
 
             window.__pixelEditorAuthInitialized = true;
+            
+            // Initialiser le tracking de session
+            if (window.dbService && typeof window.dbService.startUserSession === 'function') {
+                window.dbService.startUserSession().catch(err => {
+                    console.warn('Session tracking error:', err);
+                });
+            }
+            
             if (typeof window.initUserProfileFlow === 'function') {
                 window.initUserProfileFlow();
             }

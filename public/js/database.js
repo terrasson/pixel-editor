@@ -335,6 +335,35 @@ class DatabaseService {
         }
     }
 
+    // Helper pour détecter le type d'appareil
+    getDeviceType() {
+        const ua = navigator.userAgent;
+        if (/tablet|ipad|playbook|silk/i.test(ua)) return 'tablet';
+        if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(ua)) return 'mobile';
+        return 'desktop';
+    }
+
+    // Helper pour détecter le navigateur
+    getBrowser() {
+        const ua = navigator.userAgent;
+        if (ua.indexOf('Firefox') > -1) return 'Firefox';
+        if (ua.indexOf('Chrome') > -1 && ua.indexOf('Edg') === -1) return 'Chrome';
+        if (ua.indexOf('Safari') > -1 && ua.indexOf('Chrome') === -1) return 'Safari';
+        if (ua.indexOf('Edg') > -1) return 'Edge';
+        if (ua.indexOf('Opera') > -1 || ua.indexOf('OPR') > -1) return 'Opera';
+        return 'Unknown';
+    }
+
+    // Obtenir ou créer un session_id
+    getSessionId() {
+        let sessionId = sessionStorage.getItem('pixel_editor_session_id');
+        if (!sessionId) {
+            sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            sessionStorage.setItem('pixel_editor_session_id', sessionId);
+        }
+        return sessionId;
+    }
+
     async logUsageEvent(eventName, payload = {}) {
         if (!this.supabase) this.init();
 
@@ -344,12 +373,28 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
+            // Collecter les métadonnées enrichies
+            const enrichedPayload = {
+                ...payload,
+                device_type: this.getDeviceType(),
+                browser: this.getBrowser(),
+                screen_resolution: `${window.screen.width}x${window.screen.height}`,
+                session_id: this.getSessionId(),
+                referrer: document.referrer || null,
+                user_agent: navigator.userAgent
+            };
+
             const { error } = await this.supabase
                 .from('usage_events')
                 .insert({
                     user_id: userId,
                     event_name: eventName,
-                    payload,
+                    payload: enrichedPayload,
+                    device_type: enrichedPayload.device_type,
+                    browser: enrichedPayload.browser,
+                    screen_resolution: enrichedPayload.screen_resolution,
+                    session_id: enrichedPayload.session_id,
+                    referrer: enrichedPayload.referrer,
                     created_at: new Date().toISOString()
                 });
 
@@ -358,6 +403,94 @@ class DatabaseService {
             return { success: true };
         } catch (error) {
             console.warn('Log event error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Créer ou mettre à jour une session utilisateur
+    async startUserSession() {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) return { success: false, error: 'Not authenticated' };
+
+            const sessionId = this.getSessionId();
+            const deviceType = this.getDeviceType();
+            const browser = this.getBrowser();
+
+            // Vérifier si la session existe déjà
+            const { data: existingSession } = await this.supabase
+                .from('user_sessions')
+                .select('id')
+                .eq('session_id', sessionId)
+                .single();
+
+            if (existingSession) {
+                // Mettre à jour la session existante
+                const { error } = await this.supabase
+                    .from('user_sessions')
+                    .update({
+                        updated_at: new Date().toISOString(),
+                        page_views: existingSession.page_views + 1
+                    })
+                    .eq('session_id', sessionId);
+
+                if (error) throw error;
+                return { success: true, sessionId };
+            }
+
+            // Créer une nouvelle session
+            const { error } = await this.supabase
+                .from('user_sessions')
+                .insert({
+                    user_id: userId,
+                    session_id: sessionId,
+                    device_type: deviceType,
+                    browser: browser,
+                    screen_resolution: `${window.screen.width}x${window.screen.height}`,
+                    referrer: document.referrer || null,
+                    first_page: window.location.pathname,
+                    started_at: new Date().toISOString()
+                });
+
+            if (error) throw error;
+
+            return { success: true, sessionId };
+        } catch (error) {
+            console.warn('Start session error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Enregistrer un feedback utilisateur
+    async submitFeedback(feedbackData) {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            const deviceType = this.getDeviceType();
+            const browser = this.getBrowser();
+
+            const { error } = await this.supabase
+                .from('user_feedback')
+                .insert({
+                    user_id: userId,
+                    feedback_type: feedbackData.type,
+                    subject: feedbackData.subject,
+                    message: feedbackData.message,
+                    email: feedbackData.email || null,
+                    device_type: deviceType,
+                    browser: browser,
+                    user_agent: navigator.userAgent,
+                    created_at: new Date().toISOString()
+                });
+
+            if (error) throw error;
+
+            return { success: true };
+        } catch (error) {
+            console.error('Submit feedback error:', error);
             return { success: false, error: error.message };
         }
     }

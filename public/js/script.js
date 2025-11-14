@@ -687,10 +687,6 @@ function applyPaletteScrollState(presetColors) {
     const rows = Math.ceil(totalButtons / columns);
     const hasScroll = rows > 2;
 
-    // Ajout de la classe scrollable uniquement à preset-colors, pas à color-palette
-    presetColors.classList.toggle('scrollable', hasScroll);
-    // Suppression de la ligne qui ajoutait scrollable à colorPalette pour éviter la double scrollbar
-
     let hint = colorPalette.querySelector('.palette-scroll-hint');
     if (hasScroll) {
         if (!hint) {
