@@ -3021,7 +3021,7 @@ function showCredits() {
             <h3>Créateur & vision</h3>
             <p><strong>Frédéric Terrasson</strong></p>
             <p>Fondateur, designer produit & développeur principal</p>
-            <p class="credits-contact">✉️ monstertaz06@gmail.com</p>
+            <p class="credits-contact">✉️ contact@pixel-editor.app</p>
         </div>
         <div class="credits-section">
             <h3>Mission</h3>
