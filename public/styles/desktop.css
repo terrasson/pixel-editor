@@ -995,7 +995,7 @@ html, body {
     font-weight: 500;
 }
 
-/* ZONE PUB en bas */
+/* ZONE PUB en bas - Barre visible sans référence publicitaire */
 .ad-space {
     grid-area: pub-area;
     min-height: 64px;
@@ -1006,12 +1006,14 @@ html, body {
     align-items: center;
     justify-content: center;
     padding: 0 24px;
-    color: rgba(12, 23, 54, 0.75);
-    font-size: 1.05rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Masquer tout contenu texte dans la barre */
+.ad-space span,
+.ad-space * {
+    display: none;
+    visibility: hidden;
 }
 
 /* Responsive pour très grands écrans */

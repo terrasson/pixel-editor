@@ -1,6 +1,6 @@
 {
   "name": "Éditeur Pixel Art",
-  "short_name": "PixelArt",
+  "short_name": "Pixel-Editor",
   "description": "Créez des animations pixel art et partagez-les avec vos amis !",
   "start_url": "/",
   "display": "standalone",

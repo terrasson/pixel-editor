@@ -1774,7 +1774,7 @@ body.drag-over .grid-container {
     min-height: 50px; /* Hauteur minimale garantie */
 }
 
-/* Espace publicitaire réservé - Liquid Glass */
+/* Espace publicitaire réservé - Barre visible sans référence publicitaire */
 .ad-space {
     height: 72px;
     background: rgba(240, 240, 255, 0.95);
@@ -1785,11 +1785,6 @@ body.drag-over .grid-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(255, 255, 255, 0.75);
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
     position: static;
     margin: 12px 6px 0 6px;
     padding: 0 16px;
@@ -1798,7 +1793,6 @@ body.drag-over .grid-container {
     box-shadow: 
         0 -4px 16px rgba(0, 0, 0, 0.12),
         inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 /* Amélioration pour navigateurs supportant backdrop-filter */
@@ -1806,6 +1800,13 @@ body.drag-over .grid-container {
     .ad-space {
         background: rgba(255, 255, 255, 0.08);
     }
+}
+
+/* Masquer tout contenu texte dans la barre */
+.ad-space span,
+.ad-space * {
+    display: none;
+    visibility: hidden;
 }
 
 /* Styles pour les frames */
