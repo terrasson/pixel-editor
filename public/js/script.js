@@ -510,7 +510,7 @@ async function showLocalProjects() {
                 frames: frames.length,
                 fps: animationFPS
             });
-
+            
             dialog.remove();
             alert(`✅ Projet "${data.name || projectMeta.name}" chargé avec succès !`);
         } catch (error) {
@@ -586,12 +586,12 @@ function addCustomColor(color) {
 function updateColorPalette() {
     const presetColors = document.querySelector('.preset-colors');
     if (!presetColors) return;
-
+    
     presetColors.innerHTML = '';
-
+    
     // TOUJOURS afficher les couleurs de base d'abord
     const defaultColors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
-
+    
     defaultColors.forEach(color => {
         const btn = document.createElement('button');
         btn.className = 'color-btn default-color';
@@ -604,7 +604,7 @@ function updateColorPalette() {
         });
         presetColors.appendChild(btn);
     });
-
+    
     // Ajouter les couleurs personnalisées en plus (limitées à 6 pour ne pas surcharger)
     const maxPersonalizedColors = 6;
     customColors.slice(0, maxPersonalizedColors).forEach(color => {
@@ -3033,13 +3033,6 @@ function showCredits() {
                 <li>2024 — lancement du projet Pixel Editor, d'abord pour la famille et les proches</li>
                 <li>2025 — ouverture progressive à la communauté créative en ligne</li>
                 <li>Aujourd'hui — évolution continue avec vos retours, pour garder l'outil simple et fun</li>
-            </ul>
-        </div>
-        <div class="credits-section acknowledgements">
-            <h3>Contributeurs & remerciements</h3>
-            <p>Merci à toutes les personnes qui testent l'éditeur, partagent leurs idées et encouragent la création pixel.</p>
-            <ul>
-                <li>guillaume.gay@protonmail.com</li>
             </ul>
         </div>
         <div class="credits-section legal">
