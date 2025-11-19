@@ -240,6 +240,8 @@ function stopDrawing() {
             pixelsModifiés: currentActionPixels.size 
         });
         saveActionToHistory(actionStartState, currentActionPixels);
+        // Mettre à jour la miniature de la frame actuelle après avoir terminé de dessiner
+        updateAllThumbnails();
     } else {
         console.log('❌ Action NON sauvegardée', { 
             raison: currentActionPixels.size === 0 ? 'Aucun pixel modifié' : 'actionStartState manquant' 
@@ -2336,10 +2338,27 @@ function cleanUpOutsideElements() {
 // Gestion des frames
 function saveCurrentFrame() {
     const pixels = document.querySelectorAll('.pixel');
-    const frameData = Array.from(pixels).map(pixel => ({
-        color: pixel.style.backgroundColor || '#FFFFFF',
-        isEmpty: pixel.classList.contains('empty')
-    }));
+    const frameData = Array.from(pixels).map(pixel => {
+        const bgColor = pixel.style.backgroundColor || '#FFFFFF';
+        const isEmpty = pixel.classList.contains('empty') || 
+                       bgColor === '#FFFFFF' || 
+                       bgColor === 'rgb(255, 255, 255)' ||
+                       bgColor === 'white' ||
+                       !bgColor || bgColor.trim() === '';
+        
+        // Normaliser la couleur en hex
+        let color = bgColor;
+        if (color.startsWith('rgb')) {
+            color = rgbToHex(color);
+        } else if (!color.startsWith('#')) {
+            color = '#FFFFFF';
+        }
+        
+        return {
+            color: color,
+            isEmpty: isEmpty
+        };
+    });
     frames[currentFrame] = frameData;
     
     // Mettre à jour seulement la miniature de la frame actuelle (avec debounce)
@@ -2467,26 +2486,35 @@ function createFrameThumbnail(frame, frameIndex) {
     }
     
     const originalSize = 32;
-    const ratio = originalSize / thumbnailSize;
+    const ratio = originalSize / thumbnailSize; // ratio = 2
     
     for (let row = 0; row < thumbnailSize; row++) {
         for (let col = 0; col < thumbnailSize; col++) {
             const pixel = document.createElement('div');
             pixel.className = 'thumbnail-pixel';
             
-            // Échantillonner chaque 2e pixel de la grille originale
-            const originalRow = row * ratio;
-            const originalCol = col * ratio;
-            const originalIndex = originalRow * originalSize + originalCol;
+            // Calculer la zone correspondante dans la grille originale (2x2 pixels)
+            const startRow = Math.floor(row * ratio);
+            const startCol = Math.floor(col * ratio);
+            const endRow = Math.min(startRow + ratio, originalSize);
+            const endCol = Math.min(startCol + ratio, originalSize);
+            
+            // Prendre le pixel en haut à gauche de chaque zone 2x2 pour une représentation précise
+            // Cela garantit que chaque pixel de la miniature correspond exactement à une zone de la grille
+            const originalIndex = startRow * originalSize + startCol;
             
             // Obtenir la couleur du pixel correspondant
             let color = '#FFFFFF'; // Blanc par défaut
-            if (frame && frame[originalIndex]) {
+            if (frame && frame.length > originalIndex && frame[originalIndex]) {
                 if (!frame[originalIndex].isEmpty && frame[originalIndex].color) {
                     // Convertir les couleurs RGB en hex si nécessaire
                     color = frame[originalIndex].color;
                     if (color.startsWith('rgb')) {
                         color = rgbToHex(color);
+                    }
+                    // Normaliser la couleur
+                    if (!color.startsWith('#')) {
+                        color = '#FFFFFF';
                     }
                 } else {
                     color = '#FFFFFF'; // Blanc pour les pixels vides
