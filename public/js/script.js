@@ -2726,7 +2726,7 @@ function showSaveDialog() {
                 box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
                 color: rgba(255, 255, 255, 0.95) !important;
             ">
-                <h3>💾 Sauvegarder sur Supabase</h3>
+                <h3>💾 Sauvegarder le projet</h3>
                 <input type="text" id="saveFileName" placeholder="Nom du projet" value="mon-pixel-art">
                 <div class="dialog-buttons">
                     <button id="dialogSave">Sauvegarder</button>
@@ -3151,7 +3151,7 @@ function showHelp() {
                 </div>
             <div class="help-section">
             <h3>💾 Sauvegarde & chargement</h3>
-            <div class="help-item"><strong>Sauvegarder :</strong> enregistre le projet (frames, couleurs, FPS) sur votre compte Supabase et crée un backup local.</div>
+            <div class="help-item"><strong>Sauvegarder :</strong> enregistre le projet (frames, couleurs, FPS) sur votre compte et crée un backup local.</div>
             <div class="help-item"><strong>Mes projets :</strong> retrouvez vos créations, rechargez-les ou supprimez-les.</div>
             <div class="help-item"><strong>Charger :</strong> importez un projet reçu ou exporté (.json / .pixelart / .txt).</div>
                 </div>
