@@ -953,7 +953,7 @@ html, body {
     width: 100%;
     height: 100%;
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 8px;
+    border-radius: 6px;
     display: grid;
     grid-template-columns: repeat(16, 1fr);
     grid-template-rows: repeat(16, 1fr);
@@ -991,22 +991,25 @@ html, body {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 8px;
+    gap: 5px;
+    margin-bottom: 6px;
     flex-shrink: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .frame-preview {
     position: relative;
     width: 100%;
-    min-width: 140px;
-    max-width: 140px;
-    min-height: 80px;
-    max-height: 80px;
-    padding: 4px;
+    min-width: 110px;
+    max-width: 110px;
+    min-height: 65px;
+    max-height: 65px;
+    padding: 3px;
     background: rgba(135, 206, 250, 0.2);
     border: 1px solid rgba(0, 122, 255, 0.4);
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -1031,15 +1034,15 @@ html, body {
 
 /* Bouton "+" pour insérer une frame */
 .insert-frame-btn {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
     border: 1px solid rgba(0, 122, 255, 0.4);
     background: rgba(135, 206, 250, 0.2);
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 600;
     color: rgba(0, 122, 255, 0.9);
     display: flex;
@@ -1061,11 +1064,11 @@ html, body {
 .frame-container .frame-preview.active::before {
     content: '';
     position: absolute;
-    left: -12px;
+    left: -10px;
     top: 50%;
     transform: translateY(-50%);
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: #007AFF;
     box-shadow: 0 0 8px rgba(0, 122, 255, 0.8), 0 0 16px rgba(0, 122, 255, 0.5);
@@ -1076,11 +1079,11 @@ html, body {
 .frame-container .frame-preview.playing::before {
     content: '';
     position: absolute;
-    left: -12px;
+    left: -10px;
     top: 50%;
     transform: translateY(-50%);
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: #00FF00;
     box-shadow: 0 0 8px rgba(0, 255, 0, 0.8), 0 0 16px rgba(0, 255, 0, 0.5);
@@ -1211,19 +1214,20 @@ html, body {
     
     /* Améliorer la visibilité des miniatures */
     .frame-container {
-        min-width: 140px !important;
-        margin-bottom: 8px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-bottom: 6px !important;
         position: relative;
     }
     
     /* Assurer que toutes les frames ont la même taille */
     .frame-preview {
-        width: 140px !important;
-        min-width: 140px !important;
-        max-width: 140px !important;
-        height: 80px !important;
-        min-height: 80px !important;
-        max-height: 80px !important;
+        width: 110px !important;
+        min-width: 110px !important;
+        max-width: 110px !important;
+        height: 65px !important;
+        min-height: 65px !important;
+        max-height: 65px !important;
     }
 }
 
