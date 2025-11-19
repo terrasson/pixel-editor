@@ -2697,8 +2697,33 @@ function showSaveDialog() {
     return new Promise((resolve) => {
         const dialog = document.createElement('div');
         dialog.className = 'save-dialog';
+        // FORCER le positionnement centré avec des styles inline
+        dialog.style.cssText = `
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0, 0, 0, 0.6) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 9998 !important;
+            padding: 20px !important;
+        `;
         dialog.innerHTML = `
-            <div class="save-dialog-content">
+            <div class="save-dialog-content" style="
+                background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)) !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                border-radius: 24px !important;
+                padding: 32px !important;
+                width: 100% !important;
+                max-width: 420px !important;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+                color: rgba(255, 255, 255, 0.95) !important;
+            ">
                 <h3>💾 Sauvegarder sur Supabase</h3>
                 <input type="text" id="saveFileName" placeholder="Nom du projet" value="mon-pixel-art">
                 <div class="dialog-buttons">
@@ -2728,6 +2753,123 @@ function showSaveDialog() {
         };
 
         input.focus();
+    });
+}
+
+// Fonction pour afficher un message de résultat de sauvegarde dans une vraie fenêtre modale
+function showSaveResultDialog({ title, message, type = 'success' }) {
+    return new Promise(async (resolve) => {
+        // Supprimer TOUTES les notifications existantes (haut, bas, partout) - IMMÉDIATEMENT
+        // Supprimer toutes les notifications créées par showNotification
+        const allFixedElements = document.querySelectorAll('div[style*="position: fixed"]');
+        allFixedElements.forEach(el => {
+            const style = el.getAttribute('style') || '';
+            // Supprimer si c'est une notification (position fixed avec z-index < 2000)
+            if (style.includes('position: fixed')) {
+                const zIndexMatch = style.match(/z-index:\s*(\d+)/);
+                if (!zIndexMatch || parseInt(zIndexMatch[1]) < 2000) {
+                    el.remove();
+                }
+            }
+        });
+        
+        // Attendre un peu pour s'assurer que tout est supprimé
+        await new Promise(r => setTimeout(r, 50));
+
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-dialog-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 11, 28, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.2s ease;
+            padding: 16px;
+        `;
+
+        const dialog = document.createElement('div');
+        dialog.className = 'confirm-dialog';
+        dialog.style.cssText = `
+            width: min(420px, 90vw);
+            max-width: 420px;
+            background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95));
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.95);
+            outline: none;
+            z-index: 10000;
+            position: relative;
+        `;
+        
+        const icon = type === 'success' ? '✅' : type === 'warning' ? '⚠️' : '❌';
+        const titleColor = type === 'success' ? '#4CAF50' : type === 'warning' ? '#FF9800' : '#F44336';
+        
+        dialog.innerHTML = `
+            <h3 style="color: ${titleColor}; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: 1.3rem; font-weight: 600;">
+                <span style="font-size: 1.8rem;">${icon}</span>
+                <span>${title}</span>
+            </h3>
+            <p style="margin-bottom: 24px; white-space: pre-line; line-height: 1.6; font-size: 0.95rem; color: rgba(255, 255, 255, 0.85);">${message}</p>
+            <div class="confirm-dialog-actions" style="margin-top: 24px; display: flex; gap: 12px;">
+                <button class="dialog-button" style="flex: 1; background: linear-gradient(135deg, rgba(0, 122, 255, 0.9), rgba(0, 86, 179, 0.9)); color: white; font-weight: 600; padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; transition: all 0.2s ease;">OK</button>
+            </div>
+        `;
+
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        const okBtn = dialog.querySelector('.dialog-button');
+        
+        // Ajouter un effet hover au bouton
+        okBtn.addEventListener('mouseenter', () => {
+            okBtn.style.transform = 'translateY(-1px)';
+            okBtn.style.boxShadow = '0 4px 12px rgba(0, 122, 255, 0.4)';
+        });
+        okBtn.addEventListener('mouseleave', () => {
+            okBtn.style.transform = 'translateY(0)';
+            okBtn.style.boxShadow = 'none';
+        });
+
+        const handleClose = () => {
+            overlay.style.animation = 'fadeOut 0.2s ease';
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.remove();
+                }
+                resolve();
+            }, 200);
+        };
+
+        okBtn.addEventListener('click', handleClose);
+        
+        // Fermer en cliquant sur l'overlay
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                handleClose();
+            }
+        });
+
+        // Fermer avec Escape
+        const handleKeydown = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                handleClose();
+                document.removeEventListener('keydown', handleKeydown);
+            }
+        };
+        document.addEventListener('keydown', handleKeydown);
+
+        // Focus sur le bouton OK
+        setTimeout(() => {
+            okBtn.focus();
+        }, 100);
     });
 }
 
@@ -3066,9 +3208,34 @@ function saveProject() {
     
     const saveDialog = document.createElement('div');
     saveDialog.className = 'save-dialog';
+    // FORCER le positionnement centré avec des styles inline
+    saveDialog.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0, 0, 0, 0.6) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 9998 !important;
+        padding: 20px !important;
+    `;
     
     saveDialog.innerHTML = `
-        <div class="save-dialog-content">
+        <div class="save-dialog-content" style="
+            background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 24px !important;
+            padding: 32px !important;
+            width: 100% !important;
+            max-width: 420px !important;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+            color: rgba(255, 255, 255, 0.95) !important;
+        ">
             <h3>Sauvegarder le projet</h3>
             <input type="text" id="projectName" placeholder="Nom du projet" value="pixel_animation">
             <div class="dialog-buttons">
@@ -3142,14 +3309,26 @@ async function saveToServer() {
 
         if (result.success) {
             const action = result.isUpdate ? 'mis à jour' : 'créé';
-            alert(`✅ Projet "${fileName}" ${action} avec succès !`);
             console.log('Project saved:', result.data);
+            await showSaveResultDialog({
+                title: 'Sauvegarde réussie',
+                message: `Projet "${fileName}" ${action} avec succès !\n\nVotre projet est maintenant accessible depuis n'importe quel appareil.`,
+                type: 'success'
+            });
         } else {
-            alert('❌ Erreur lors de la sauvegarde: ' + result.error);
+            await showSaveResultDialog({
+                title: 'Erreur de sauvegarde',
+                message: `Erreur lors de la sauvegarde :\n${result.error}`,
+                type: 'error'
+            });
         }
     } catch (err) {
         console.error('Erreur lors de la sauvegarde:', err);
-        alert('❌ Erreur lors de la sauvegarde. Vérifiez que vous êtes connecté.');
+        await showSaveResultDialog({
+            title: 'Erreur de sauvegarde',
+            message: `Erreur lors de la sauvegarde.\n\nVérifiez que vous êtes connecté.\n\n${err.message || ''}`,
+            type: 'error'
+        });
     }
 }
 
@@ -3521,7 +3700,6 @@ async function saveProjectSmart() {
 
             if (result.success) {
                 const action = result.isUpdate ? 'mis à jour' : 'créé';
-                alert(`✅ Projet "${fileName}" ${action} avec succès sur le cloud Supabase !`);
                 console.log('✅ Project saved to Supabase:', result.data);
                 logUsageEvent('project_saved', {
                     name: fileName,
@@ -3537,6 +3715,13 @@ async function saveProjectSmart() {
                     console.warn('⚠️ Impossible de créer le backup local:', localError);
                 }
                 
+                // Afficher le message de succès dans une vraie fenêtre modale
+                await showSaveResultDialog({
+                    title: 'Sauvegarde réussie',
+                    message: `Projet "${fileName}" ${action} avec succès sur le cloud Supabase !\n\nVotre projet est maintenant accessible depuis n'importe quel appareil.`,
+                    type: 'success'
+                });
+                
                 return;
             } else {
                 throw new Error(result.error);
@@ -3549,15 +3734,19 @@ async function saveProjectSmart() {
             
             try {
                 localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
-                alert(`⚠️ Projet "${fileName}" sauvegardé en LOCAL uniquement.\n\n` +
-                      `Supabase n'est pas disponible (${supabaseError.message}).\n` +
-                      `Votre projet est en sécurité localement sur cet appareil.`);
                 console.log('💾 Projet sauvegardé en local');
                 logUsageEvent('project_saved_local', {
                     name: fileName,
                     frames: frames.length,
                     fps: animationFPS,
                     reason: supabaseError.message
+                });
+                
+                // Afficher le message d'avertissement dans une vraie fenêtre modale
+                await showSaveResultDialog({
+                    title: 'Sauvegarde locale',
+                    message: `Projet "${fileName}" sauvegardé en LOCAL uniquement.\n\nSupabase n'est pas disponible (${supabaseError.message}).\n\nVotre projet est en sécurité localement sur cet appareil.`,
+                    type: 'warning'
                 });
             } catch (localError) {
                 // 3️⃣ DERNIER RECOURS : TÉLÉCHARGEMENT
@@ -3573,19 +3762,28 @@ async function saveProjectSmart() {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
-                alert(`⚠️ Impossible de sauvegarder sur le cloud ou en local.\n` +
-                      `Le fichier a été téléchargé sur votre appareil : "${fileName}.json"`);
                 logUsageEvent('project_saved_download', {
                     name: fileName,
                     frames: frames.length,
                     fps: animationFPS
+                });
+                
+                // Afficher le message d'avertissement dans une vraie fenêtre modale
+                await showSaveResultDialog({
+                    title: 'Téléchargement du fichier',
+                    message: `Impossible de sauvegarder sur le cloud ou en local.\n\nLe fichier a été téléchargé sur votre appareil :\n"${fileName}.json"\n\nVous pouvez le réimporter plus tard.`,
+                    type: 'warning'
                 });
             }
         }
         
     } catch (err) {
         console.error('❌ Erreur lors de la sauvegarde:', err);
-        alert('❌ Erreur inattendue lors de la sauvegarde. Veuillez réessayer.');
+        await showSaveResultDialog({
+            title: 'Erreur de sauvegarde',
+            message: `Erreur inattendue lors de la sauvegarde.\n\n${err.message || 'Veuillez réessayer.'}`,
+            type: 'error'
+        });
     }
 }
 
