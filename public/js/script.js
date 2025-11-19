@@ -2569,6 +2569,8 @@ function updateFramesList() {
         frameBtn.addEventListener('click', () => {
             currentFrame = index;
             loadFrame(currentFrame);
+            // Faire défiler pour que la frame active soit visible
+            frameBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
         
         frameContainer.appendChild(insertBeforeBtn);
@@ -2915,6 +2917,23 @@ function startAnimation() {
     
     let frameIndex = 0;
     
+    // Fonction pour mettre à jour l'indicateur visuel de la frame en cours
+    const updatePlayingIndicator = (currentIndex) => {
+        // Retirer la classe "playing" de toutes les frames
+        document.querySelectorAll('.frame-preview').forEach(frame => {
+            frame.classList.remove('playing');
+        });
+        
+        // Ajouter la classe "playing" à la frame actuelle
+        const currentFrameBtn = document.querySelector(`.frame-preview[data-frame-index="${currentIndex}"]`);
+        if (currentFrameBtn) {
+            currentFrameBtn.classList.add('playing');
+            
+            // Faire défiler pour que la frame soit visible si nécessaire
+            currentFrameBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    };
+    
     const playNextFrame = () => {
         const frameDelay = Math.max(16, Math.round(1000 / (animationFPS || 24)));
         
@@ -2936,6 +2955,9 @@ function startAnimation() {
             }
         });
         
+        // Mettre à jour l'indicateur visuel
+        updatePlayingIndicator(frameIndex);
+        
         frameIndex = (frameIndex + 1) % frames.length;
         animationInterval = setTimeout(playNextFrame, frameDelay);
     };
@@ -2952,6 +2974,11 @@ function stopAnimation() {
     isAnimationPlaying = false;
     const previewBtn = document.getElementById('previewBtn');
     const playToggle = document.getElementById('playToggle');
+    
+    // Retirer l'indicateur visuel de toutes les frames
+    document.querySelectorAll('.frame-preview').forEach(frame => {
+        frame.classList.remove('playing');
+    });
     
     // Mettre à jour le bouton dans le menu
     if (previewBtn) {

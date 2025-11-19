@@ -853,7 +853,7 @@ html, body {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    overflow-y: auto;
+    overflow: hidden;
     gap: 10px;
 }
 
@@ -900,6 +900,7 @@ html, body {
     gap: 6px;
     margin-bottom: 10px;
     padding: 0 4px;
+    flex-shrink: 0;
 }
 
 .frame-action-btn {
@@ -993,6 +994,65 @@ html, body {
     color: rgba(255, 255, 255, 0.8);
     text-align: center;
     font-weight: 500;
+}
+
+/* Liste des frames avec scroll indépendant */
+#framesList {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
+/* Indicateur visuel pour la frame en cours d'exécution */
+.frame-container {
+    position: relative;
+}
+
+.frame-preview {
+    position: relative;
+}
+
+/* Pastille bleue pour la frame active (en cours de travail) */
+.frame-container .frame-preview.active::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #007AFF;
+    box-shadow: 0 0 8px rgba(0, 122, 255, 0.8), 0 0 16px rgba(0, 122, 255, 0.5);
+    z-index: 10;
+}
+
+/* Pastille verte pour la frame en cours d'animation (priorité sur la bleue) */
+.frame-container .frame-preview.playing::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00FF00;
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.8), 0 0 16px rgba(0, 255, 0, 0.5);
+    animation: pulse-playing 1s ease-in-out infinite;
+    z-index: 11;
+}
+
+@keyframes pulse-playing {
+    0%, 100% {
+        transform: translateY(-50%) scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: translateY(-50%) scale(1.3);
+        opacity: 0.8;
+    }
 }
 
 /* ZONE PUB en bas - Barre visible sans référence publicitaire */
@@ -1115,6 +1175,7 @@ html, body {
     .frame-container {
         min-width: 120px !important;
         margin-bottom: 8px !important;
+        position: relative;
     }
 }
 
