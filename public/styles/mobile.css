@@ -572,24 +572,57 @@ body.is-mobile .editor-container {
 /* Couleurs preset compactes */
 .compact-preset-colors {
     display: flex;
-    gap: 3px;
-    justify-content: center;
+    gap: 4px;
+    justify-content: flex-start;
     flex-wrap: nowrap;
     overflow-x: auto;
+    overflow-y: hidden;
     flex: 1;
     min-width: 0;
-    padding: 2px 0;
+    padding: 4px 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.4) rgba(255, 255, 255, 0.1);
+    -webkit-overflow-scrolling: touch;
+    /* Espace pour la scrollbar en bas */
+    padding-bottom: 8px;
+    margin-bottom: -4px;
+}
+
+/* Style de la scrollbar pour WebKit (Chrome, Safari, Edge) */
+.compact-preset-colors::-webkit-scrollbar {
+    height: 6px;
+}
+
+.compact-preset-colors::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.compact-preset-colors::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 3px;
+    transition: background 0.2s ease;
+}
+
+.compact-preset-colors::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.6);
 }
 
 .compact-color-btn {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    max-width: 32px;
+    max-height: 32px;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     position: relative;
+    flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .compact-color-btn.custom-color {
