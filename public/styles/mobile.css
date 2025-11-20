@@ -1268,8 +1268,8 @@ body.is-mobile .editor-container {
     backdrop-filter: blur(10px) saturate(120%);
     -webkit-backdrop-filter: blur(10px) saturate(120%);
     border: 2px solid rgba(255, 255, 255, 0.25);
-    border-radius: 8px; /* Coins moins arrondis pour récupérer les pixels d'angle */
-    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    aspect-ratio: 1 / 1; /* Garantir que la grille reste carrée */
     position: relative;
     margin: 0 auto;
     
@@ -1322,6 +1322,24 @@ body.is-mobile .editor-container {
     transition: none;
     min-width: 0;
     min-height: 0;
+    overflow: hidden; /* Pour respecter les angles arrondis de la grille */
+}
+
+/* Angles arrondis pour les pixels aux coins de la grille sur mobile */
+#pixelGrid .pixel:nth-child(1) {
+    border-top-left-radius: 5px; /* 8px - 2px de border - 1px de marge */
+}
+
+#pixelGrid .pixel:nth-child(32) {
+    border-top-right-radius: 5px;
+}
+
+#pixelGrid .pixel:nth-child(993) {
+    border-bottom-left-radius: 5px; /* 32 * 31 + 1 = 993 */
+}
+
+#pixelGrid .pixel:nth-child(1024) {
+    border-bottom-right-radius: 5px; /* 32 * 32 = 1024 */
 }
 
 .pixel:active {

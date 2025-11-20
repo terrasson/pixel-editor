@@ -496,6 +496,9 @@ async function showLocalProjects() {
                 }
             }
 
+            // Mettre à jour l'affichage des couleurs personnalisées
+            updateColorPalette();
+
             if (data.fps) {
                 setAnimationFPSValue(data.fps);
             }
@@ -678,6 +681,10 @@ function updateColorPalette() {
     });
 
     applyPaletteScrollState(presetColors);
+    
+    // Mettre à jour aussi la palette compacte mobile avec les couleurs personnalisées
+    const currentPalette = customPalette || getDefaultCompactColors();
+    applyCompactPaletteColors(currentPalette);
 }
 
 function applyPaletteScrollState(presetColors) {
@@ -1843,8 +1850,12 @@ function getDefaultCompactColors() {
 function applyCompactPaletteColors(colors) {
     const defaultColors = getDefaultCompactColors();
     const palette = Array.isArray(colors) && colors.length ? colors : defaultColors;
-    const compactColorButtons = document.querySelectorAll('.compact-color-btn');
-
+    const compactPresetColors = document.querySelector('.compact-preset-colors');
+    
+    if (!compactPresetColors) return;
+    
+    // Mettre à jour les 8 couleurs de base
+    const compactColorButtons = compactPresetColors.querySelectorAll('.compact-color-btn');
     compactColorButtons.forEach((btn, index) => {
         const fallbackColor = defaultColors[index] || defaultColors[defaultColors.length - 1];
         const color = palette[index] || fallbackColor;
@@ -1861,6 +1872,37 @@ function applyCompactPaletteColors(colors) {
             btn.removeAttribute('data-custom');
         }
     });
+    
+    // Supprimer les anciens boutons de couleurs personnalisées (s'ils existent)
+    const existingCustomButtons = compactPresetColors.querySelectorAll('.compact-color-btn.custom-color-added');
+    existingCustomButtons.forEach(btn => btn.remove());
+    
+    // Ajouter les couleurs personnalisées après les 8 couleurs de base
+    const maxPersonalizedColors = 6;
+    customColors.slice(0, maxPersonalizedColors).forEach(color => {
+        const normalizedColor = normalizeColor(color);
+        
+        // Ne pas ajouter si c'est déjà une couleur de base
+        if (!defaultColors.includes(normalizedColor)) {
+            const btn = document.createElement('button');
+            btn.className = 'compact-color-btn custom-color custom-color-added';
+            btn.style.backgroundColor = normalizedColor;
+            btn.title = `Couleur personnalisée : ${normalizedColor}`;
+            
+            // Ajouter les event listeners comme pour les autres boutons
+            btn.addEventListener('click', () => {
+                currentColor = normalizedColor;
+                updateCurrentColorDisplay();
+                setEraserState(false);
+                updateCompactColorSelection(btn);
+            });
+            
+            compactPresetColors.appendChild(btn);
+        }
+    });
+    
+    // Réinitialiser les event listeners pour tous les boutons
+    initCompactColorButtons();
 }
 
 function loadCustomPalette(palette) {
@@ -3493,6 +3535,9 @@ async function loadFromServer() {
                         updateCompactPalette();
                     }
 
+                    // Mettre à jour l'affichage des couleurs personnalisées
+                    updateColorPalette();
+
                     if (data.fps) {
                         setAnimationFPSValue(data.fps);
                     }
@@ -3689,6 +3734,19 @@ async function loadFromServerMobile() {
                             addCustomColor(color); // Cette fonction vérifie déjà les doublons
                         });
                     }
+                    
+                    // Charger la palette personnalisée si elle existe
+                    if (data.customPalette || data.custom_palette) {
+                        const paletteSource = data.customPalette || data.custom_palette;
+                        const paletteArray = typeof paletteSource === 'string' ? JSON.parse(paletteSource) : paletteSource;
+                        if (Array.isArray(paletteArray)) {
+                            customPalette = paletteArray;
+                            updateCompactPalette();
+                        }
+                    }
+                    
+                    // Mettre à jour l'affichage des couleurs personnalisées
+                    updateColorPalette();
                     
                     const title = document.getElementById('projectTitle');
                     if (title) {
@@ -4140,9 +4198,12 @@ function importProjectData(projectData) {
             const paletteArray = typeof paletteSource === 'string' ? JSON.parse(paletteSource) : paletteSource;
             if (Array.isArray(paletteArray)) {
                 customPalette = paletteArray;
-            updateCompactPalette(); // Mettre à jour l'affichage
+                updateCompactPalette(); // Mettre à jour l'affichage
             }
         }
+        
+        // Mettre à jour l'affichage des couleurs personnalisées
+        updateColorPalette();
         
         if (projectData.fps) {
             animationFPS = projectData.fps;
@@ -4490,6 +4551,9 @@ async function importSharedProject(file) {
             customPalette = projectData.customPalette;
             updateCompactPalette();
         }
+        
+        // Mettre à jour l'affichage des couleurs personnalisées
+        updateColorPalette();
         
         if (projectData.fps) {
             animationFPS = projectData.fps;
