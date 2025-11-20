@@ -3997,7 +3997,7 @@ async function saveProjectSmart() {
                 // Afficher le message de succès dans une vraie fenêtre modale
                 await showSaveResultDialog({
                     title: 'Sauvegarde réussie',
-                    message: `Projet "${fileName}" ${action} avec succès sur le cloud Supabase !\n\nVotre projet est maintenant accessible depuis n'importe quel appareil.`,
+                    message: `Projet "${fileName}" ${action} avec succès sur le cloud !\n\nVotre projet est maintenant accessible depuis n'importe quel appareil.`,
                     type: 'success'
                 });
                 
@@ -4024,7 +4024,7 @@ async function saveProjectSmart() {
                 // Afficher le message d'avertissement dans une vraie fenêtre modale
                 await showSaveResultDialog({
                     title: 'Sauvegarde locale',
-                    message: `Projet "${fileName}" sauvegardé en LOCAL uniquement.\n\nSupabase n'est pas disponible (${supabaseError.message}).\n\nVotre projet est en sécurité localement sur cet appareil.`,
+                    message: `Projet "${fileName}" sauvegardé en LOCAL uniquement.\n\nLe cloud n'est pas disponible (${supabaseError.message}).\n\nVotre projet est en sécurité localement sur cet appareil.`,
                     type: 'warning'
                 });
             } catch (localError) {
