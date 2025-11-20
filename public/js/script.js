@@ -3,6 +3,7 @@ let isDrawing = false;
 let frames = [[]];
 let currentFrame = 0;
 let isErasing = false; // Pour la gomme
+let isEyedropperMode = false; // Pour la pipette
 let modifiedPixels = [new Set()]; // Pour suivre les pixels modifiés
 let clipboard = null; // Pour le copier-coller
 let copiedFrame = null;
@@ -171,6 +172,15 @@ function initGrid() {
         pixel.addEventListener('mousedown', startDrawing);
         pixel.addEventListener('mouseover', draw);
         pixel.addEventListener('mouseup', stopDrawing);
+        // Support tactile pour la pipette
+        pixel.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (isEyedropperMode) {
+                pickColorFromPixel(e.target);
+            } else {
+                startDrawing(e);
+            }
+        });
         grid.appendChild(pixel);
     }
     
@@ -179,6 +189,12 @@ function initGrid() {
 
 // Fonctions de dessin
 function startDrawing(e) {
+    // Mode pipette : récupérer la couleur du pixel cliqué
+    if (isEyedropperMode && e.target.classList.contains('pixel')) {
+        pickColorFromPixel(e.target);
+        return; // Ne pas dessiner en mode pipette
+    }
+    
     // Sauvegarder l'état de la grille au début de l'action
     const pixels = document.querySelectorAll('.pixel');
     actionStartState = Array.from(pixels).map(pixel => ({
@@ -204,6 +220,12 @@ function draw(e) {
         !e.target.classList.contains('previous-pixel-marker') &&
         !e.target.classList.contains('next-pixel-marker-1') &&
         !e.target.classList.contains('next-pixel-marker-2')) {
+        
+        // Mode pipette : récupérer la couleur du pixel cliqué
+        if (isEyedropperMode) {
+            pickColorFromPixel(e.target);
+            return; // Ne pas dessiner en mode pipette
+        }
         
         // Récupérer l'index du pixel
         const pixels = document.querySelectorAll('.pixel');
@@ -260,6 +282,10 @@ function toggleEraser() {
 
 function setEraserState(active) {
     isErasing = active;
+    // Désactiver la pipette si on active la gomme
+    if (active) {
+        setEyedropperState(false);
+    }
     const pixelGrid = document.getElementById('pixelGrid');
     if (pixelGrid) {
         pixelGrid.classList.toggle('eraser-mode', active);
@@ -267,6 +293,146 @@ function setEraserState(active) {
     document.querySelectorAll('#eraserBtn').forEach(btn => {
         btn.classList.toggle('active', active);
     });
+}
+
+// Gestion de la pipette
+function toggleEyedropper() {
+    setEyedropperState(!isEyedropperMode);
+}
+
+function setEyedropperState(active) {
+    isEyedropperMode = active;
+    // Désactiver la gomme si on active la pipette
+    if (active) {
+        setEraserState(false);
+    }
+    const pixelGrid = document.getElementById('pixelGrid');
+    if (pixelGrid) {
+        pixelGrid.classList.toggle('eyedropper-mode', active);
+    }
+    document.querySelectorAll('#eyedropperBtn').forEach(btn => {
+        btn.classList.toggle('active', active);
+    });
+    document.querySelectorAll('.eyedropper-btn').forEach(btn => {
+        btn.classList.toggle('active', active);
+    });
+}
+
+// Récupérer la couleur d'un pixel et l'ajouter à la palette si nécessaire
+function pickColorFromPixel(pixelElement) {
+    if (!pixelElement) return;
+    
+    // Vérifier si le pixel est vide (classe 'empty')
+    if (pixelElement.classList.contains('empty')) {
+        // Pixel vide = blanc
+        currentColor = '#FFFFFF';
+        updateCurrentColorDisplay();
+        setEraserState(false);
+        showEyedropperNotification('Couleur de base : #FFFFFF (pixel vide)');
+        return;
+    }
+    
+    // Récupérer la couleur du pixel
+    const bgColor = pixelElement.style.backgroundColor;
+    if (!bgColor || bgColor === 'transparent' || bgColor === 'rgba(0, 0, 0, 0)') {
+        // Pixel transparent = blanc par défaut
+        currentColor = '#FFFFFF';
+        updateCurrentColorDisplay();
+        setEraserState(false);
+        showEyedropperNotification('Couleur de base : #FFFFFF (pixel vide)');
+        return;
+    }
+    
+    // Convertir en hexadécimal
+    const hexColor = rgbToHex(bgColor);
+    if (!hexColor) {
+        // Si la conversion échoue, utiliser blanc par défaut
+        currentColor = '#FFFFFF';
+        updateCurrentColorDisplay();
+        setEraserState(false);
+        return;
+    }
+    
+    // Normaliser la couleur
+    const normalizedColor = normalizeColor(hexColor);
+    
+    // Définir comme couleur actuelle
+    currentColor = normalizedColor;
+    updateCurrentColorDisplay();
+    
+    // Désactiver la gomme
+    setEraserState(false);
+    
+    // Vérifier si c'est une couleur de base
+    const defaultColors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    const isDefaultColor = defaultColors.includes(normalizedColor);
+    
+    // Si ce n'est pas une couleur de base et qu'elle n'est pas déjà dans customColors, l'ajouter
+    if (!isDefaultColor && !customColors.includes(normalizedColor)) {
+        // Ajouter en début de liste (plus récent en premier)
+        customColors.unshift(normalizedColor);
+        
+        // Limiter le nombre de couleurs personnalisées
+        if (customColors.length > maxCustomColors) {
+            customColors = customColors.slice(0, maxCustomColors);
+        }
+        
+        // Sauvegarder
+        saveCustomColors();
+        
+        // Mettre à jour l'affichage
+        updateColorPalette();
+        
+        // Afficher une notification discrète
+        showEyedropperNotification(`Couleur ${normalizedColor} ajoutée à la palette`);
+    } else if (isDefaultColor) {
+        showEyedropperNotification(`Couleur de base : ${normalizedColor}`);
+    } else {
+        showEyedropperNotification(`Couleur sélectionnée : ${normalizedColor}`);
+    }
+    
+    // Désactiver le mode pipette après utilisation (optionnel, on peut laisser actif)
+    // setEyedropperState(false);
+}
+
+// Afficher une notification discrète pour la pipette
+function showEyedropperNotification(message) {
+    // Supprimer la notification précédente si elle existe
+    const existingNotification = document.querySelector('.eyedropper-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // Créer la notification
+    const notification = document.createElement('div');
+    notification.className = 'eyedropper-notification';
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 122, 255, 0.95);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        pointer-events: none;
+        animation: fadeInOut 2s ease-in-out;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Supprimer après 2 secondes
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.animation = 'fadeOut 0.3s ease-in-out';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 2000);
 }
 
 function getColorPickers() {
@@ -3926,6 +4092,23 @@ function initEventListeners() {
     // Boutons gomme (desktop + mobile)
     document.querySelectorAll('#eraserBtn').forEach(btn => {
         btn.addEventListener('click', toggleEraser);
+    });
+    
+    // Boutons pipette (desktop + mobile)
+    document.querySelectorAll('#eyedropperBtn').forEach(btn => {
+        btn.addEventListener('click', toggleEyedropper);
+    });
+    
+    // Raccourci clavier pour la pipette (touche I)
+    document.addEventListener('keydown', (e) => {
+        // Ne pas activer si on est dans un input ou textarea
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        if (e.key === 'i' || e.key === 'I') {
+            e.preventDefault();
+            toggleEyedropper();
+        }
     });
     
     // Menu hamburger

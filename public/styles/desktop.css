@@ -875,6 +875,52 @@ html, body {
     border-color: rgba(0, 0, 0, 0.2);
 }
 
+/* Mode pipette - curseur spécial */
+#pixelGrid.eyedropper-mode .pixel {
+    cursor: crosshair;
+}
+
+#pixelGrid.eyedropper-mode .pixel:hover {
+    border-color: rgba(0, 122, 255, 0.6);
+    border-width: 2px;
+    box-shadow: 0 0 8px rgba(0, 122, 255, 0.4);
+}
+
+/* Bouton pipette actif */
+.eyedropper-btn.active,
+#eyedropperBtn.active {
+    background: rgba(0, 122, 255, 0.3) !important;
+    border-color: rgba(0, 122, 255, 0.6) !important;
+    box-shadow: 0 0 12px rgba(0, 122, 255, 0.4) !important;
+}
+
+/* Animations pour les notifications pipette */
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+    15%, 85% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+}
+
 /* SIDEBAR DROITE - Frames */
 .frames-container {
     grid-area: right-sidebar;
