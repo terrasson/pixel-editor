@@ -837,7 +837,7 @@ html, body {
 .pixel {
     width: 100%;
     height: 100%;
-    border: none;
+    border: 0.5px solid rgba(0, 0, 0, 0.08);
     box-sizing: border-box;
     cursor: crosshair;
     transition: none;
@@ -846,11 +846,11 @@ html, body {
     padding: 0;
     /* Assurer que les pixels respectent les angles arrondis de la grille */
     overflow: hidden;
-    /* Bordure subtile uniquement au hover pour les séparations visuelles */
+    background-color: #FFFFFF;
 }
 
 .pixel:hover {
-    border: 0.5px solid rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.15);
 }
 
 /* Arrondir les pixels des coins pour suivre la forme arrondie de la grille */
@@ -875,7 +875,6 @@ html, body {
     overflow: hidden;
 }
 
-/* Bordure uniquement au hover pour la séparation visuelle */
 
 /* Mode pipette - curseur spécial */
 #pixelGrid.eyedropper-mode .pixel {
