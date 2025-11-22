@@ -812,8 +812,8 @@ html, body {
     height: calc(var(--cell-size) * 32);
     
     display: grid;
-    grid-template-columns: repeat(32, var(--cell-size));
-    grid-template-rows: repeat(32, var(--cell-size));
+    grid-template-columns: repeat(32, 1fr);
+    grid-template-rows: repeat(32, 1fr);
     gap: 0;
     
     border: 3px solid rgba(255, 255, 255, 0.4);
@@ -832,21 +832,25 @@ html, body {
     max-height: calc(28px * 32);
     
     /* Assurer que la grille reste carrée même en cas de redimensionnement */
-    object-fit: contain;
 }
 
 .pixel {
-    width: var(--cell-size);
-    height: var(--cell-size);
-    border: 0.5px solid rgba(0, 0, 0, 0.05);
+    width: 100%;
+    height: 100%;
+    border: none;
     box-sizing: border-box;
     cursor: crosshair;
-    transition: all 0.1s ease;
+    transition: none;
     position: relative;
     margin: 0;
     padding: 0;
     /* Assurer que les pixels respectent les angles arrondis de la grille */
     overflow: hidden;
+    /* Bordure subtile uniquement au hover pour les séparations visuelles */
+}
+
+.pixel:hover {
+    border: 0.5px solid rgba(0, 0, 0, 0.1);
 }
 
 /* Arrondir les pixels des coins pour suivre la forme arrondie de la grille */
@@ -871,9 +875,7 @@ html, body {
     overflow: hidden;
 }
 
-.pixel:hover {
-    border-color: rgba(0, 0, 0, 0.2);
-}
+/* Bordure uniquement au hover pour la séparation visuelle */
 
 /* Mode pipette - curseur spécial */
 #pixelGrid.eyedropper-mode .pixel {
