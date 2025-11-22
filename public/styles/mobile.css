@@ -523,6 +523,89 @@ body.is-mobile .editor-container {
     transform: translateY(-1px);
 }
 
+/* Bouton pipette compact */
+.compact-eyedropper-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.compact-eyedropper-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.compact-eyedropper-btn.active {
+    background: rgba(0, 122, 255, 0.3);
+    border-color: rgba(0, 122, 255, 0.6);
+    box-shadow: 0 0 12px rgba(0, 122, 255, 0.4);
+}
+
+.compact-eyedropper-btn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+/* Bouton valider couleur mobile */
+.compact-validate-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    border: 1px solid rgba(0, 255, 100, 0.4);
+    border-radius: 8px;
+    background: rgba(0, 255, 100, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.compact-validate-btn:hover:not(:disabled) {
+    background: rgba(0, 255, 100, 0.3);
+    border-color: rgba(0, 255, 100, 0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 255, 100, 0.3);
+}
+
+.compact-validate-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.compact-validate-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
 .compact-undo-redo-btn {
     width: 32px;
     height: 32px;

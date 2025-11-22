@@ -89,10 +89,22 @@
             <div class="compact-tools">
                 <!-- Ligne principale : Gomme + Couleur actuelle + Couleurs + Undo/Redo -->
                 <div class="compact-main-tools">
-                    <!-- Gauche : Gomme + Pipette + Couleur actuelle -->
+                    <!-- Gauche : Gomme + Pipette + Valider + Couleur actuelle -->
                     <div class="compact-left-tools">
                         <button id="eraserBtn" class="compact-eraser-btn">Gomme</button>
-                        <button id="eyedropperBtn" class="compact-eraser-btn eyedropper-btn" title="Pipette (I)">Pipette</button>
+                        <button id="eyedropperBtn" class="compact-eyedropper-btn eyedropper-btn" title="Pipette (I)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Bulbe de la pipette (en haut à droite) -->
+                                <ellipse cx="19" cy="5" rx="3.5" ry="3.5" fill="currentColor"/>
+                                <!-- Tube de la pipette (ligne verticale) -->
+                                <line x1="19" y1="8.5" x2="19" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <!-- Pointe de la pipette (triangle) -->
+                                <path d="M19 18 L15 22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <!-- Goutte qui tombe (cercle en bas) -->
+                                <circle cx="15" cy="24" r="2" fill="currentColor"/>
+                            </svg>
+                        </button>
+                        <button id="validateColorBtnMobile" class="compact-validate-btn" title="Ajouter cette couleur à la palette">V</button>
                         <div class="compact-current-color-container">
                             <input type="color" id="colorPicker" value="#000000" class="compact-color-picker">
                             <div class="compact-current-color" id="currentColorDisplay"></div>

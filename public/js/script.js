@@ -1388,6 +1388,43 @@ function initColorPicker() {
         
         updateValidateButton(null);
     }
+    
+    // Bouton de validation mobile
+    const validateBtnMobile = document.getElementById('validateColorBtnMobile');
+    if (validateBtnMobile) {
+        validateBtnMobile.addEventListener('click', () => {
+            // Utiliser la couleur actuelle
+            const colorToAdd = normalizeColor(currentColor);
+            if (colorToAdd && !isPredefinedColor(colorToAdd)) {
+                // Vérifier si la couleur n'est pas déjà dans customColors
+                const normalized = normalizeColor(colorToAdd);
+                const alreadyExists = customColors.some(c => normalizeColor(c) === normalized);
+                
+                if (!alreadyExists) {
+                    addCustomColor(colorToAdd);
+                    validateBtnMobile.disabled = true;
+                    validateBtnMobile.title = 'Couleur ajoutée !';
+                    validateBtnMobile.style.opacity = '0.6';
+                    setTimeout(() => {
+                        validateBtnMobile.disabled = false;
+                        validateBtnMobile.title = 'Ajouter cette couleur à la palette';
+                        validateBtnMobile.style.opacity = '1';
+                    }, 1500);
+                } else {
+                    validateBtnMobile.title = 'Couleur déjà dans la palette';
+                    setTimeout(() => {
+                        validateBtnMobile.title = 'Ajouter cette couleur à la palette';
+                    }, 1500);
+                }
+            } else if (colorToAdd && isPredefinedColor(colorToAdd)) {
+                // Afficher un message si c'est une couleur de base
+                validateBtnMobile.title = 'Couleur de base déjà dans la palette';
+                setTimeout(() => {
+                    validateBtnMobile.title = 'Ajouter cette couleur à la palette';
+                }, 1500);
+            }
+        });
+    }
 
     if (desktopColorDisplay) {
         desktopColorDisplay.setAttribute('tabindex', '0');
