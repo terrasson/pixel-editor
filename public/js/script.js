@@ -744,7 +744,9 @@ function addCustomColor(color) {
     customColors.unshift(hexColor);
     
     // Limiter le nombre de couleurs personnalisées (6 pour ne pas surcharger)
-    const maxPersonalizedColors = 6;
+    // MAIS : si on a déjà plus de 8 couleurs, c'est probablement une conversion photo
+    // Dans ce cas, on permet jusqu'à 64 couleurs pour ne pas supprimer les couleurs de conversion
+    const maxPersonalizedColors = customColors.length > 8 ? 64 : 6;
     if (customColors.length > maxPersonalizedColors) {
         customColors = customColors.slice(0, maxPersonalizedColors);
     }
@@ -776,8 +778,9 @@ function updateColorPalette() {
         presetColors.appendChild(btn);
     });
     
-    // Ajouter les couleurs personnalisées en plus (limitées à 6 pour ne pas surcharger)
-    const maxPersonalizedColors = 6;
+    // Ajouter les couleurs personnalisées en plus
+    // Si on a plus de 8 couleurs (limite normale), on augmente la limite d'affichage pour les conversions photo
+    const maxPersonalizedColors = customColors.length > 8 ? Math.min(customColors.length, 32) : 6;
     customColors.slice(0, maxPersonalizedColors).forEach(color => {
         const normalizedColor = normalizeColor(color);
 
@@ -2081,7 +2084,8 @@ function applyCompactPaletteColors(colors) {
     existingCustomButtons.forEach(btn => btn.remove());
     
     // Ajouter les couleurs personnalisées après les 8 couleurs de base
-    const maxPersonalizedColors = 6;
+    // Si on a plus de 8 couleurs (limite normale), on augmente la limite d'affichage pour les conversions photo
+    const maxPersonalizedColors = customColors.length > 8 ? Math.min(customColors.length, 32) : 6;
     customColors.slice(0, maxPersonalizedColors).forEach(color => {
         const normalizedColor = normalizeColor(color);
         
