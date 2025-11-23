@@ -320,17 +320,56 @@
      * Initialise la fonctionnalité des modèles
      */
     function initTemplateFeature() {
+        console.log('🎨 ========== INITIALISATION TEMPLATES ==========');
         console.log('🎨 Fonctionnalité Modèles à Réaliser BETA initialisée');
         
         // Ajouter les event listeners pour les boutons
         const templateBtn = document.getElementById('templateBtn');
         const templateBtn2 = document.getElementById('templateBtn2');
+        const publishTemplateBtn = document.getElementById('publishTemplateBtn');
+        const publishTemplateBtnMobile = document.getElementById('publishTemplateBtnMobile');
+        
+        console.log('🔍 Recherche des boutons:', {
+            templateBtn: !!templateBtn,
+            templateBtn2: !!templateBtn2,
+            publishTemplateBtn: !!publishTemplateBtn,
+            publishTemplateBtnMobile: !!publishTemplateBtnMobile
+        });
         
         if (templateBtn) {
-            templateBtn.addEventListener('click', showTemplateGallery);
+            templateBtn.addEventListener('click', function() {
+                console.log('🖱️ Bouton templateBtn cliqué !');
+                showTemplateGallery();
+            });
+            console.log('✅ Event listener ajouté à templateBtn');
+        } else {
+            console.warn('⚠️ templateBtn non trouvé !');
         }
+        
         if (templateBtn2) {
-            templateBtn2.addEventListener('click', showTemplateGallery);
+            templateBtn2.addEventListener('click', function() {
+                console.log('🖱️ Bouton templateBtn2 cliqué !');
+                showTemplateGallery();
+            });
+            console.log('✅ Event listener ajouté à templateBtn2');
+        } else {
+            console.warn('⚠️ templateBtn2 non trouvé !');
+        }
+        
+        if (publishTemplateBtn) {
+            publishTemplateBtn.addEventListener('click', function() {
+                console.log('🖱️ Bouton publishTemplateBtn cliqué !');
+                showPublishTemplateDialog();
+            });
+            console.log('✅ Event listener ajouté à publishTemplateBtn');
+        }
+        
+        if (publishTemplateBtnMobile) {
+            publishTemplateBtnMobile.addEventListener('click', function() {
+                console.log('🖱️ Bouton publishTemplateBtnMobile cliqué !');
+                showPublishTemplateDialog();
+            });
+            console.log('✅ Event listener ajouté à publishTemplateBtnMobile');
         }
         
         // Configurer les intercepteurs
@@ -345,58 +384,151 @@
     }
     
     /**
-     * Affiche la galerie de modèles par thème
+     * Affiche la galerie de modèles par thème (modèles locaux + modèles partagés)
      */
-    function showTemplateGallery() {
+    async function showTemplateGallery() {
         console.log('🖼️ ========== showTemplateGallery DÉBUT ==========');
         console.log('🖼️ Ouverture de la galerie de modèles...');
         
         try {
-        // Grouper les modèles par thème
-        const templatesByTheme = {};
-        TEMPLATES_DATABASE.forEach(template => {
-            if (!templatesByTheme[template.theme]) {
-                templatesByTheme[template.theme] = [];
+            // Charger les modèles depuis Supabase
+            let sharedTemplates = [];
+            if (window.dbService) {
+                console.log('📡 Chargement des modèles partagés depuis Supabase...');
+                const result = await window.dbService.getTemplates({
+                    orderBy: 'created_at',
+                    orderDirection: 'desc',
+                    limit: 100
+                });
+                
+                if (result.success && result.data) {
+                    sharedTemplates = result.data.map(template => ({
+                        id: template.id,
+                        name: template.name,
+                        description: template.description,
+                        theme: template.category, // Utiliser category comme theme
+                        preview: template.preview_data || template.template_data,
+                        difficulty: template.difficulty || 1,
+                        thumbnail: template.thumbnail,
+                        author_email: template.author_email,
+                        view_count: template.view_count || 0,
+                        completion_count: template.completion_count || 0,
+                        style_tags: template.style_tags || [],
+                        isShared: true // Marqueur pour identifier les modèles partagés
+                    }));
+                    console.log(`✅ ${sharedTemplates.length} modèles partagés chargés`);
+                } else {
+                    console.warn('⚠️ Impossible de charger les modèles partagés:', result.error);
+                }
             }
-            templatesByTheme[template.theme].push(template);
-        });
-        
-        const themes = Object.keys(templatesByTheme).sort();
-        
-        // Créer le contenu de la modal
-        let modalContent = `
-            <div style="padding: 20px; color: white; max-height: 80vh; overflow-y: auto;">
-                <h3 style="margin-top: 0; text-align: center; margin-bottom: 20px;">
-                    🧩 Modèles à Réaliser
-                </h3>
-                <p style="text-align: center; margin-bottom: 20px; opacity: 0.9;">
-                    Choisissez un modèle et suivez les indications pour le compléter !
-                </p>
-        `;
-        
-        // Parcourir chaque thème
-        themes.forEach(theme => {
-            modalContent += `
-                <div style="margin-bottom: 30px;">
-                    <h4 style="margin-bottom: 15px; color: #4CAF50; font-size: 1.2em; border-bottom: 2px solid rgba(76, 175, 80, 0.3); padding-bottom: 8px;">
-                        ${theme}
-                    </h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px;">
+            
+            // Combiner les modèles locaux et partagés
+            const allTemplates = [...TEMPLATES_DATABASE.map(t => ({...t, isShared: false})), ...sharedTemplates];
+            
+            // Grouper les modèles par thème/catégorie
+            const templatesByTheme = {};
+            allTemplates.forEach(template => {
+                const theme = template.theme || template.category || 'Autre';
+                if (!templatesByTheme[theme]) {
+                    templatesByTheme[theme] = [];
+                }
+                templatesByTheme[theme].push(template);
+            });
+            
+            const themes = Object.keys(templatesByTheme).sort();
+            
+            // Créer le contenu de la modal avec filtres
+            let modalContent = `
+                <div style="padding: 20px; color: rgba(255, 255, 255, 0.95); max-height: 80vh; overflow-y: auto;">
+                    <h3 style="margin-top: 0; text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.98); font-weight: 600;">
+                        🧩 Modèles à Réaliser
+                    </h3>
+                    <p style="text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85);">
+                        Choisissez un modèle et suivez les indications pour le compléter !
+                    </p>
+                    
+                    <!-- Filtres -->
+                    <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                                🔍 Filtrer par catégorie :
+                            </label>
+                            <select id="filterCategory" 
+                                    style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); font-size: 14px;">
+                                <option value="">Toutes les catégories</option>
+                                ${TEMPLATE_CATEGORIES.map(cat => `<option value="${cat.value}" style="background: rgba(36, 48, 94, 0.95); color: rgba(255, 255, 255, 0.95);">${cat.label}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                                🎨 Filtrer par style (optionnel) :
+                            </label>
+                            <input type="text" id="filterStyle" placeholder="ex: zelda, mario, marvel..." 
+                                   style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); font-size: 14px;">
+                            <p style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7); margin-top: 5px;">
+                                Tapez un mot-clé pour filtrer (ex: jeux-video, marvel, disney...)
+                            </p>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button id="resetFiltersBtn" style="flex: 1; padding: 8px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 500;">
+                                🔄 Réinitialiser
+                            </button>
+                            <button id="applyFiltersBtn" style="flex: 1; padding: 8px; border: none; border-radius: 6px; background: linear-gradient(135deg, #4CAF50, #45A049); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
+                                ✓ Appliquer
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="templatesContainer">
             `;
             
-            templatesByTheme[theme].forEach(template => {
-                // Générer un aperçu du modèle (canvas)
-                const previewCanvas = generateTemplatePreview(template.preview);
+            // Parcourir chaque thème
+            themes.forEach(theme => {
+                modalContent += `
+                    <div class="theme-section" data-theme="${theme}" style="margin-bottom: 30px;">
+                        <h4 style="margin-bottom: 15px; color: #4CAF50; font-size: 1.2em; border-bottom: 2px solid rgba(76, 175, 80, 0.5); padding-bottom: 8px; font-weight: 600;">
+                            ${theme}
+                        </h4>
+                        <div class="templates-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px;">
+                `;
+                
+                templatesByTheme[theme].forEach(template => {
+                    // Utiliser la miniature si disponible, sinon générer un aperçu
+                    let previewHTML = '';
+                    if (template.thumbnail) {
+                        previewHTML = `<img src="${template.thumbnail}" style="width: 100%; height: 100%; object-fit: contain;" alt="${template.name}">`;
+                    } else if (template.preview) {
+                        previewHTML = generateTemplatePreview(template.preview);
+                    } else {
+                        previewHTML = '<div style="color: #999; text-align: center; padding: 20px;">Aperçu indisponible</div>';
+                    }
+                    
+                    const authorInfo = template.isShared ? `<div style="font-size: 0.75em; color: rgba(255, 255, 255, 0.6); margin-top: 4px;">Par ${template.author_email?.split('@')[0] || 'Anonyme'}</div>` : '';
+                    const viewInfo = template.view_count > 0 ? `<div style="font-size: 0.75em; color: rgba(255, 255, 255, 0.6);">👁️ ${template.view_count}</div>` : '';
+                    
+                    modalContent += `
+                        <div class="template-item" data-template-id="${template.id}" 
+                             data-template-theme="${theme}"
+                             data-template-styles="${(template.style_tags || []).join(',')}"
+                             data-is-shared="${template.isShared ? 'true' : 'false'}"
+                             style="cursor: pointer; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; transition: all 0.3s; border: 2px solid ${template.isShared ? 'rgba(156, 39, 176, 0.5)' : 'transparent'};">
+                            <div style="background: white; border-radius: 4px; padding: 5px; margin-bottom: 8px; display: flex; justify-content: center; align-items: center; min-height: 80px;">
+                                ${previewHTML}
+                            </div>
+                            <div style="text-align: center; font-weight: 600; margin-bottom: 4px; color: rgba(255, 255, 255, 0.95);">${template.name}</div>
+                            ${authorInfo}
+                            <div style="text-align: center; font-size: 0.85em; color: rgba(255, 255, 255, 0.7); margin-top: 4px;">
+                                ${'⭐'.repeat(template.difficulty || 1)}
+                            </div>
+                            ${viewInfo}
+                            ${template.isShared ? '<div style="font-size: 0.7em; color: #BB86FC; margin-top: 4px; font-weight: 500;">✨ Partagé</div>' : ''}
+                        </div>
+                    `;
+                });
                 
                 modalContent += `
-                    <div class="template-item" data-template-id="${template.id}" 
-                         style="cursor: pointer; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; transition: all 0.3s; border: 2px solid transparent;">
-                        <div style="background: white; border-radius: 4px; padding: 5px; margin-bottom: 8px; display: flex; justify-content: center; align-items: center; min-height: 80px;">
-                            ${previewCanvas}
-                        </div>
-                        <div style="text-align: center; font-weight: 600; margin-bottom: 4px;">${template.name}</div>
-                        <div style="text-align: center; font-size: 0.85em; opacity: 0.7;">
-                            ${'⭐'.repeat(template.difficulty)}
                         </div>
                     </div>
                 `;
@@ -404,93 +536,281 @@
             
             modalContent += `
                     </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
+                        <button id="cancelTemplateBtn" style="flex: 0 0 auto; padding: 12px 24px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
+                            Annuler
+                        </button>
+                    </div>
                 </div>
             `;
-        });
-        
-        modalContent += `
-                <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
-                    <button id="cancelTemplateBtn" style="flex: 0 0 auto; padding: 12px 24px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: white; cursor: pointer; font-weight: 600;">
-                        Annuler
-                    </button>
+            
+            // Créer le modal
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 900px; width: 90%; max-height: 90vh; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.95);">
+                    ${modalContent}
                 </div>
-            </div>
-        `;
-        
-        // Créer le modal
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.style.display = 'flex';
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width: 800px; width: 90%; max-height: 90vh;">
-                ${modalContent}
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // Event listeners pour les modèles
-        const templateItems = modal.querySelectorAll('.template-item');
-        console.log('🔍 Nombre de modèles trouvés dans la modal:', templateItems.length);
-        
-        templateItems.forEach((item, index) => {
-            console.log(`  📦 Modèle ${index + 1}:`, item.dataset.templateId);
-            // Ajouter les effets hover avec JavaScript pour éviter les erreurs de propriété en lecture seule
-            item.addEventListener('mouseenter', function() {
-                try {
-                    this.style.background = 'rgba(255,255,255,0.2)';
-                    this.style.borderColor = '#4CAF50';
-                } catch (e) {
-                    console.warn('Erreur hover enter:', e);
-                }
-            });
+            `;
             
-            item.addEventListener('mouseleave', function() {
-                try {
-                    this.style.background = 'rgba(255,255,255,0.1)';
-                    this.style.borderColor = 'transparent';
-                } catch (e) {
-                    console.warn('Erreur hover leave:', e);
+            // Ajouter des styles CSS pour les éléments de formulaire dans cette modal
+            const styleSheet = document.createElement('style');
+            styleSheet.textContent = `
+                #filterCategory option,
+                #templateCategoryInput option {
+                    background: rgba(36, 48, 94, 0.98) !important;
+                    color: rgba(255, 255, 255, 0.95) !important;
+                    padding: 8px;
                 }
-            });
+                #filterStyle::placeholder,
+                #templateNameInput::placeholder,
+                #templateDescriptionInput::placeholder {
+                    color: rgba(255, 255, 255, 0.6) !important;
+                    opacity: 1 !important;
+                }
+            `;
+            document.head.appendChild(styleSheet);
             
-            item.addEventListener('click', function() {
-                try {
-                    console.log('🖱️ Clic sur un modèle détecté !');
-                    const templateId = this.dataset.templateId;
-                    console.log('📌 Template ID cliqué:', templateId);
-                    
+            document.body.appendChild(modal);
+            window.currentTemplateGallery = modal; // Stocker pour rafraîchissement
+            
+            // Fonction pour charger un modèle (locale ou partagée)
+            function loadTemplateFromGallery(templateId, isShared) {
+                if (isShared) {
+                    // Charger depuis Supabase
+                    loadSharedTemplate(templateId);
+                } else {
+                    // Charger depuis la base locale
                     const template = TEMPLATES_DATABASE.find(t => t.id === templateId);
-                    console.log('🔍 Template trouvé:', template ? template.id : 'null');
-                    
                     if (template) {
-                        console.log('✅ Chargement du template...');
                         loadTemplate(template);
-                        modal.remove();
                     } else {
-                        console.error('❌ Template non trouvé pour ID:', templateId);
-                        alert('❌ Modèle non trouvé. Veuillez réessayer.');
+                        alert('❌ Modèle non trouvé.');
                     }
-                } catch (error) {
-                    console.error('❌ ERREUR lors du clic sur le modèle:', error);
-                    alert('❌ Erreur lors du chargement du modèle. Vérifiez la console.');
                 }
+            }
+            
+            // Event listeners pour les modèles
+            const templateItems = modal.querySelectorAll('.template-item');
+            console.log('🔍 Nombre de modèles trouvés dans la modal:', templateItems.length);
+            
+            templateItems.forEach((item, index) => {
+                const templateId = item.dataset.templateId;
+                const isShared = item.dataset.isShared === 'true';
+                
+                // Effets hover
+                item.addEventListener('mouseenter', function() {
+                    try {
+                        this.style.background = 'rgba(255,255,255,0.2)';
+                        this.style.borderColor = '#4CAF50';
+                    } catch (e) {
+                        console.warn('Erreur hover enter:', e);
+                    }
+                });
+                
+                item.addEventListener('mouseleave', function() {
+                    try {
+                        this.style.background = 'rgba(255,255,255,0.1)';
+                        const isShared = this.dataset.isShared === 'true';
+                        this.style.borderColor = isShared ? 'rgba(156, 39, 176, 0.5)' : 'transparent';
+                    } catch (e) {
+                        console.warn('Erreur hover leave:', e);
+                    }
+                });
+                
+                item.addEventListener('click', function() {
+                    try {
+                        console.log('🖱️ Clic sur un modèle détecté !', { templateId, isShared });
+                        loadTemplateFromGallery(templateId, isShared);
+                        modal.remove();
+                        window.currentTemplateGallery = null;
+                    } catch (error) {
+                        console.error('❌ ERREUR lors du clic sur le modèle:', error);
+                        alert('❌ Erreur lors du chargement du modèle. Vérifiez la console.');
+                    }
+                });
             });
-        });
-        
-        // Bouton annuler
-        const cancelBtn = document.getElementById('cancelTemplateBtn');
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => {
-                console.log('❌ Annulation de la sélection de modèle');
-                modal.remove();
-            });
-        }
-        
-        console.log('🖼️ ========== showTemplateGallery FIN ==========');
+            
+            // Fonction de filtrage
+            function applyFilters() {
+                const categoryFilter = document.getElementById('filterCategory').value.toLowerCase();
+                const styleFilter = document.getElementById('filterStyle').value.toLowerCase().trim();
+                
+                const themeSections = modal.querySelectorAll('.theme-section');
+                const templateItems = modal.querySelectorAll('.template-item');
+                
+                let visibleCount = 0;
+                
+                themeSections.forEach(section => {
+                    const theme = section.dataset.theme.toLowerCase();
+                    let sectionVisible = false;
+                    
+                    const items = section.querySelectorAll('.template-item');
+                    items.forEach(item => {
+                        const itemTheme = item.dataset.templateTheme.toLowerCase();
+                        const itemStyles = (item.dataset.templateStyles || '').toLowerCase();
+                        
+                        let itemVisible = true;
+                        
+                        // Filtre par catégorie
+                        if (categoryFilter && itemTheme !== categoryFilter) {
+                            itemVisible = false;
+                        }
+                        
+                        // Filtre par style
+                        if (styleFilter && itemStyles && !itemStyles.includes(styleFilter)) {
+                            itemVisible = false;
+                        }
+                        
+                        if (itemVisible) {
+                            item.style.display = '';
+                            sectionVisible = true;
+                            visibleCount++;
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                    
+                    // Masquer la section si aucun modèle visible
+                    section.style.display = sectionVisible ? '' : 'none';
+                });
+                
+                // Afficher un message si aucun résultat
+                const container = document.getElementById('templatesContainer');
+                let noResultsMsg = container.querySelector('.no-results-msg');
+                if (visibleCount === 0) {
+                                if (!noResultsMsg) {
+                        noResultsMsg = document.createElement('div');
+                        noResultsMsg.className = 'no-results-msg';
+                        noResultsMsg.style.cssText = 'text-align: center; padding: 40px; color: rgba(255,255,255,0.85);';
+                        noResultsMsg.innerHTML = '<p style="font-size: 1.1em; margin-bottom: 10px; font-weight: 600;">🔍 Aucun modèle trouvé avec ces filtres.</p><p style="margin-top: 10px; font-size: 0.9em; color: rgba(255,255,255,0.7);">Essayez de modifier vos critères de recherche.</p>';
+                        container.appendChild(noResultsMsg);
+                    }
+                } else {
+                    if (noResultsMsg) {
+                        noResultsMsg.remove();
+                    }
+                }
+                
+                console.log(`🔍 ${visibleCount} modèles visibles après filtrage`);
+            }
+            
+            // Ajouter des styles hover pour les boutons de filtre
+            const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+            const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+            
+            if (applyFiltersBtn) {
+                applyFiltersBtn.addEventListener('mouseenter', function() {
+                    this.style.opacity = '0.9';
+                    this.style.transform = 'translateY(-1px)';
+                });
+                applyFiltersBtn.addEventListener('mouseleave', function() {
+                    this.style.opacity = '1';
+                    this.style.transform = 'translateY(0)';
+                });
+            }
+            
+            if (resetFiltersBtn) {
+                resetFiltersBtn.addEventListener('mouseenter', function() {
+                    this.style.background = 'rgba(255,255,255,0.2)';
+                });
+                resetFiltersBtn.addEventListener('mouseleave', function() {
+                    this.style.background = 'rgba(255,255,255,0.1)';
+                });
+            }
+            
+            // Event listeners pour les filtres
+            if (applyFiltersBtn) {
+                applyFiltersBtn.addEventListener('click', applyFilters);
+            }
+            
+            if (resetFiltersBtn) {
+                resetFiltersBtn.addEventListener('click', () => {
+                    const categoryFilter = document.getElementById('filterCategory');
+                    const styleFilter = document.getElementById('filterStyle');
+                    if (categoryFilter) categoryFilter.value = '';
+                    if (styleFilter) styleFilter.value = '';
+                    applyFilters();
+                });
+            }
+            
+            // Appliquer le filtre automatiquement sur Enter dans le champ style
+            const filterStyleInput = document.getElementById('filterStyle');
+            if (filterStyleInput) {
+                filterStyleInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        applyFilters();
+                    }
+                });
+            }
+            
+            // Bouton annuler
+            const cancelBtn = document.getElementById('cancelTemplateBtn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('mouseenter', function() {
+                    this.style.background = 'rgba(255,255,255,0.2)';
+                });
+                cancelBtn.addEventListener('mouseleave', function() {
+                    this.style.background = 'rgba(255,255,255,0.1)';
+                });
+                cancelBtn.addEventListener('click', () => {
+                    console.log('❌ Annulation de la sélection de modèle');
+                    modal.remove();
+                    window.currentTemplateGallery = null;
+                });
+            }
+            
+            console.log('🖼️ ========== showTemplateGallery FIN ==========');
         } catch (error) {
             console.error('❌ ERREUR dans showTemplateGallery:', error);
             alert('❌ Erreur lors de l\'ouverture de la galerie. Vérifiez la console.');
+        }
+    }
+    
+    /**
+     * Charge un modèle partagé depuis Supabase
+     */
+    async function loadSharedTemplate(templateId) {
+        console.log('📥 Chargement du modèle partagé:', templateId);
+        
+        try {
+            if (!window.dbService) {
+                alert('❌ Service de base de données non disponible.');
+                return;
+            }
+            
+            const result = await window.dbService.getTemplateById(templateId);
+            
+            if (!result.success || !result.data) {
+                alert('❌ Impossible de charger le modèle : ' + (result.error || 'Modèle non trouvé'));
+                return;
+            }
+            
+            const templateData = result.data;
+            
+            // Convertir le modèle partagé au format attendu
+            // Utiliser template_data (version vide avec isEmpty: true mais couleurs stockées) pour le chargement
+            // et preview_data pour l'aperçu dans la galerie
+            const template = {
+                id: templateData.id,
+                name: templateData.name,
+                description: templateData.description,
+                theme: templateData.category,
+                preview: templateData.template_data || templateData.preview_data, // Version vide avec couleurs pour les indicateurs
+                difficulty: templateData.difficulty || 1,
+                isShared: true,
+                author_email: templateData.author_email
+            };
+            
+            // Charger le modèle
+            loadTemplate(template);
+            
+            // Marquer comme complété si l'utilisateur le finit (sera géré plus tard)
+            
+        } catch (error) {
+            console.error('Erreur lors du chargement du modèle partagé:', error);
+            alert('❌ Erreur lors du chargement du modèle. Vérifiez la console.');
         }
     }
     
@@ -514,6 +834,427 @@
         
         svg += `</svg>`;
         return svg;
+    }
+    
+    /**
+     * Liste des catégories disponibles
+     */
+    const TEMPLATE_CATEGORIES = [
+        { value: 'Emoji', label: '😊 Emoji' },
+        { value: 'Formes', label: '🔷 Formes' },
+        { value: 'Animaux', label: '🐾 Animaux' },
+        { value: 'Nature', label: '🌳 Nature' },
+        { value: 'Architecture', label: '🏛️ Architecture' },
+        { value: 'Personnages', label: '👤 Personnages' },
+        { value: 'Véhicules', label: '🚗 Véhicules' },
+        { value: 'Nourriture', label: '🍕 Nourriture' },
+        { value: 'Objets', label: '📦 Objets' },
+        { value: 'Autre', label: '🎨 Autre' }
+    ];
+    
+    /**
+     * Liste des styles/tags disponibles avec groupes
+     */
+    const TEMPLATE_STYLES = {
+        'Jeux Vidéo': [
+            { value: 'jeux-video', label: 'Jeux Vidéo' },
+            { value: 'zelda', label: 'Zelda' },
+            { value: 'mario', label: 'Super Mario' },
+            { value: 'pokemon', label: 'Pokémon' },
+            { value: 'minecraft', label: 'Minecraft' },
+            { value: 'retro', label: 'Rétro' },
+            { value: '8-bit', label: '8-bit' },
+            { value: '16-bit', label: '16-bit' }
+        ],
+        'Dessin Animé': [
+            { value: 'dessin-anime', label: 'Dessin Animé' },
+            { value: 'anime', label: 'Anime' },
+            { value: 'manga', label: 'Manga' },
+            { value: 'studio-ghibli', label: 'Studio Ghibli' },
+            { value: 'disney', label: 'Disney' }
+        ],
+        'Super-Héros': [
+            { value: 'marvel', label: 'Marvel' },
+            { value: 'dc-comics', label: 'DC Comics' },
+            { value: 'super-heros', label: 'Super-Héros' },
+            { value: 'batman', label: 'Batman' },
+            { value: 'spider-man', label: 'Spider-Man' }
+        ],
+        'Genres': [
+            { value: 'fantasy', label: 'Fantasy' },
+            { value: 'medieval', label: 'Médiéval' },
+            { value: 'science-fiction', label: 'Science-Fiction' },
+            { value: 'futuriste', label: 'Futuriste' }
+        ],
+        'Nature': [
+            { value: 'nature', label: 'Nature' },
+            { value: 'animaux', label: 'Animaux' },
+            { value: 'fleurs', label: 'Fleurs' },
+            { value: 'arbres', label: 'Arbres' },
+            { value: 'oiseaux', label: 'Oiseaux' }
+        ],
+        'Véhicules': [
+            { value: 'vehicules', label: 'Véhicules' },
+            { value: 'voitures', label: 'Voitures' },
+            { value: 'avions', label: 'Avions' },
+            { value: 'bateaux', label: 'Bateaux' }
+        ],
+        'Nourriture': [
+            { value: 'nourriture', label: 'Nourriture' },
+            { value: 'fruits', label: 'Fruits' },
+            { value: 'legumes', label: 'Légumes' },
+            { value: 'dessert', label: 'Desserts' }
+        ],
+        'Objets': [
+            { value: 'objets', label: 'Objets' },
+            { value: 'meubles', label: 'Meubles' },
+            { value: 'outils', label: 'Outils' },
+            { value: 'electronique', label: 'Électronique' }
+        ]
+    };
+    
+    /**
+     * Affiche le dialogue pour publier un modèle
+     */
+    function showPublishTemplateDialog() {
+        // Vérifier qu'il y a du contenu dans la grille actuelle
+        if (!frames || frames.length === 0 || !frames[currentFrame]) {
+            alert('⚠️ Veuillez d\'abord créer quelque chose dans la grille avant de publier un modèle.');
+            return;
+        }
+        
+        const currentFrameData = frames[currentFrame];
+        const hasContent = currentFrameData.some(pixel => !pixel.isEmpty);
+        
+        if (!hasContent) {
+            alert('⚠️ La grille actuelle est vide. Veuillez créer quelque chose avant de publier un modèle.');
+            return;
+        }
+        
+        // Créer le contenu de la modal de publication
+        let styleTagsHTML = '';
+        Object.entries(TEMPLATE_STYLES).forEach(([group, styles]) => {
+            styleTagsHTML += `
+                <div style="margin-bottom: 15px;">
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #BB86FC;">${group}</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            `;
+            styles.forEach(style => {
+                styleTagsHTML += `
+                    <label style="display: flex; align-items: center; cursor: pointer; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s ease;">
+                        <input type="checkbox" name="styleTags" value="${style.value}" style="margin-right: 6px; cursor: pointer;">
+                        <span style="color: rgba(255, 255, 255, 0.95); user-select: none;">${style.label}</span>
+                    </label>
+                `;
+            });
+            styleTagsHTML += `
+                    </div>
+                </div>
+            `;
+        });
+        
+        const modalContent = `
+            <div style="padding: 20px; color: rgba(255, 255, 255, 0.95); max-height: 80vh; overflow-y: auto;">
+                <h3 style="margin-top: 0; text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.98); font-weight: 600;">
+                    ✨ Publier un Modèle
+                </h3>
+                <p style="text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85);">
+                    Partagez votre création pour que d'autres puissent la réaliser !
+                </p>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                        Nom du modèle * :
+                    </label>
+                    <input type="text" id="templateNameInput" placeholder="ex: Hibou mignon" 
+                           style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); font-size: 16px; box-sizing: border-box;"
+                           maxlength="100">
+                    <style>
+                        #templateNameInput::placeholder { color: rgba(255, 255, 255, 0.6); }
+                    </style>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                        Description (optionnelle) :
+                    </label>
+                    <textarea id="templateDescriptionInput" placeholder="Décrivez votre modèle..." 
+                              style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); font-size: 14px; min-height: 60px; resize: vertical; box-sizing: border-box; font-family: inherit;"
+                              maxlength="500"></textarea>
+                    <style>
+                        #templateDescriptionInput::placeholder { color: rgba(255, 255, 255, 0.6); }
+                    </style>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                        Catégorie * :
+                    </label>
+                    <select id="templateCategoryInput" 
+                            style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); font-size: 16px; box-sizing: border-box;">
+                        <option value="" style="background: rgba(36, 48, 94, 0.95); color: rgba(255, 255, 255, 0.95);">-- Sélectionnez une catégorie --</option>
+                        ${TEMPLATE_CATEGORIES.map(cat => `<option value="${cat.value}" style="background: rgba(36, 48, 94, 0.95); color: rgba(255, 255, 255, 0.95);">${cat.label}</option>`).join('')}
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                        Styles/Tags (sélectionnez un ou plusieurs) :
+                    </label>
+                    <div style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                        ${styleTagsHTML}
+                    </div>
+                    <p style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7); margin-top: 8px;">
+                        💡 Plus vous sélectionnez de tags précis, plus les utilisateurs trouveront facilement votre modèle !
+                    </p>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                        Difficulté * :
+                    </label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="range" id="templateDifficultyInput" min="1" max="5" value="2" 
+                               style="flex: 1;">
+                        <span id="templateDifficultyValue" style="font-weight: 600; min-width: 80px; text-align: center; color: rgba(255, 255, 255, 0.95);">
+                            2 ⭐⭐
+                        </span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">
+                        <span>Facile</span>
+                        <span>Difficile</span>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(156, 39, 176, 0.3); padding: 15px; border-radius: 8px; border: 1px solid rgba(156, 39, 176, 0.5); margin-bottom: 20px;">
+                    <p style="margin: 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.9);">
+                        💡 <strong style="font-weight: 600;">Astuce :</strong> Votre modèle sera visible par tous les utilisateurs. Assurez-vous qu'il soit terminé et prêt à être réalisé !
+                    </p>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button id="cancelPublishBtn" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; transition: all 0.2s ease;">
+                        Annuler
+                    </button>
+                    <button id="publishTemplateBtnModal" style="flex: 1; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, #9C27B0, #7B1FA2); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; transition: all 0.2s ease;">
+                        ✨ Publier
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Créer le modal
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'flex';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px; width: 90%; max-height: 90vh; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.95);">
+                ${modalContent}
+            </div>
+        `;
+        
+        // Ajouter des styles CSS pour les éléments de formulaire dans cette modal
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            #templateCategoryInput option,
+            #templateNameInput::placeholder,
+            #templateDescriptionInput::placeholder {
+                color: rgba(255, 255, 255, 0.6) !important;
+                opacity: 1 !important;
+            }
+            #templateCategoryInput option {
+                background: rgba(36, 48, 94, 0.98) !important;
+                color: rgba(255, 255, 255, 0.95) !important;
+                padding: 8px;
+            }
+        `;
+        document.head.appendChild(styleSheet);
+        
+        document.body.appendChild(modal);
+        
+        // Ajouter des styles pour les labels de style tags (hover effect)
+        const styleTagLabels = modal.querySelectorAll('label[style*="background: rgba(255,255,255,0.1)"]');
+        styleTagLabels.forEach(label => {
+            label.addEventListener('mouseenter', function() {
+                this.style.background = 'rgba(255,255,255,0.2)';
+                this.style.borderColor = 'rgba(255,255,255,0.4)';
+            });
+            label.addEventListener('mouseleave', function() {
+                this.style.background = 'rgba(255,255,255,0.1)';
+                this.style.borderColor = 'rgba(255,255,255,0.2)';
+            });
+        });
+        
+        // Ajouter des styles pour les boutons (hover effect)
+        const cancelBtn = document.getElementById('cancelPublishBtn');
+        const publishBtn = document.getElementById('publishTemplateBtnModal');
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('mouseenter', function() {
+                this.style.background = 'rgba(255,255,255,0.2)';
+            });
+            cancelBtn.addEventListener('mouseleave', function() {
+                this.style.background = 'rgba(255,255,255,0.1)';
+            });
+        }
+        
+        if (publishBtn) {
+            publishBtn.addEventListener('mouseenter', function() {
+                this.style.opacity = '0.9';
+                this.style.transform = 'translateY(-1px)';
+            });
+            publishBtn.addEventListener('mouseleave', function() {
+                this.style.opacity = '1';
+                this.style.transform = 'translateY(0)';
+            });
+        }
+        
+        // Event listeners
+        const difficultySlider = document.getElementById('templateDifficultyInput');
+        const difficultyValue = document.getElementById('templateDifficultyValue');
+        const difficultyLabels = ['1 ⭐', '2 ⭐⭐', '3 ⭐⭐⭐', '4 ⭐⭐⭐⭐', '5 ⭐⭐⭐⭐⭐'];
+        
+        if (difficultySlider && difficultyValue) {
+            difficultySlider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value) - 1;
+                difficultyValue.textContent = difficultyLabels[value];
+            });
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
+        
+        if (publishBtn) {
+            publishBtn.addEventListener('click', async () => {
+                await publishCurrentTemplate(modal);
+            });
+        }
+    }
+    
+    /**
+     * Publie le modèle actuel dans la banque de modèles
+     */
+    async function publishCurrentTemplate(modal) {
+        try {
+            const name = document.getElementById('templateNameInput').value.trim();
+            const description = document.getElementById('templateDescriptionInput').value.trim();
+            const category = document.getElementById('templateCategoryInput').value;
+            const difficulty = parseInt(document.getElementById('templateDifficultyInput').value);
+            
+            // Récupérer les tags sélectionnés
+            const selectedTags = Array.from(modal.querySelectorAll('input[name="styleTags"]:checked'))
+                .map(checkbox => checkbox.value);
+            
+            // Validation
+            if (!name) {
+                alert('❌ Veuillez saisir un nom pour le modèle.');
+                return;
+            }
+            
+            if (!category) {
+                alert('❌ Veuillez sélectionner une catégorie.');
+                return;
+            }
+            
+            if (!window.dbService) {
+                alert('❌ Service de base de données non disponible.');
+                return;
+            }
+            
+            // Récupérer la frame actuelle
+            const currentFrameData = frames[currentFrame];
+            if (!currentFrameData || currentFrameData.length === 0) {
+                alert('❌ Aucune donnée à publier.');
+                return;
+            }
+            
+            // Créer template_data : version avec les pixels à colorier marqués comme non-vides
+            // mais ils seront vidés lors du chargement pour que l'utilisateur doive colorier
+            // La couleur est conservée pour créer les indicateurs
+            const templateData_withColors = currentFrameData.map(pixel => ({
+                color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
+                isEmpty: false // Marquer comme non-vide pour que loadTemplate crée les indicateurs
+            }));
+            
+            // La previewData contient la version complète pour l'aperçu dans la galerie
+            const previewData_complete = currentFrameData.map(pixel => ({
+                color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
+                isEmpty: false // Version complète pour l'aperçu
+            }));
+            
+            // Générer une miniature (thumbnail) depuis la version complète
+            const thumbnail = generateThumbnail(previewData_complete);
+            
+            // Préparer les données du modèle
+            const templateData = {
+                name,
+                description: description || null,
+                category,
+                styleTags: selectedTags,
+                templateData: templateData_withColors, // Version avec couleurs pour les indicateurs
+                previewData: previewData_complete, // Version complète pour l'aperçu dans la galerie
+                thumbnail,
+                difficulty
+            };
+            
+            // Désactiver le bouton pendant la publication
+            const publishBtn = document.getElementById('publishTemplateBtnModal');
+            publishBtn.disabled = true;
+            publishBtn.textContent = '⏳ Publication...';
+            
+            // Publier le modèle
+            const result = await window.dbService.publishTemplate(templateData);
+            
+            if (result.success) {
+                modal.remove();
+                alert('✅ Modèle publié avec succès !\n\nD\'autres utilisateurs pourront maintenant le découvrir et le réaliser. 🎨');
+                
+                // Rafraîchir la galerie si elle est ouverte
+                if (window.currentTemplateGallery) {
+                    showTemplateGallery();
+                }
+            } else {
+                alert('❌ Erreur lors de la publication : ' + (result.error || 'Erreur inconnue'));
+                publishBtn.disabled = false;
+                publishBtn.textContent = '✨ Publier';
+            }
+        } catch (error) {
+            console.error('Erreur lors de la publication:', error);
+            alert('❌ Erreur inattendue lors de la publication. Consultez la console pour plus de détails.');
+            const publishBtn = document.getElementById('publishTemplateBtnModal');
+            if (publishBtn) {
+                publishBtn.disabled = false;
+                publishBtn.textContent = '✨ Publier';
+            }
+        }
+    }
+    
+    /**
+     * Génère une miniature (thumbnail) à partir d'une frame
+     */
+    function generateThumbnail(frame) {
+        const size = 120;
+        const pixelSize = size / GRID_SIZE;
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        frame.forEach((pixel, index) => {
+            if (!pixel || pixel.isEmpty) return;
+            
+            const x = (index % GRID_SIZE) * pixelSize;
+            const y = Math.floor(index / GRID_SIZE) * pixelSize;
+            
+            ctx.fillStyle = pixel.color;
+            ctx.fillRect(x, y, pixelSize, pixelSize);
+        });
+        
+        return canvas.toDataURL('image/png');
     }
     
     /**

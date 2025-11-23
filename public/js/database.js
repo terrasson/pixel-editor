@@ -1178,5 +1178,278 @@ class DatabaseService {
     }
 }
 
+    // =====================================================
+    // TEMPLATES SYSTEM - Modèles à Réaliser
+    // =====================================================
+    
+    /**
+     * Publie un modèle dans la banque de modèles
+     */
+    async publishTemplate(templateData) {
+        if (!this.supabase) this.init();
+        
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+            
+            const userEmail = window.authService?.getUserEmail() || '';
+            
+            const {
+                name,
+                description,
+                category,
+                styleTags,
+                templateData: frameData,
+                previewData,
+                thumbnail,
+                difficulty
+            } = templateData;
+            
+            // Validation
+            if (!name || !category || !frameData) {
+                throw new Error('Nom, catégorie et données du modèle requis');
+            }
+            
+            const { data, error } = await this.supabase
+                .from('pixel_templates')
+                .insert({
+                    author_id: userId,
+                    author_email: userEmail,
+                    name,
+                    description: description || null,
+                    category,
+                    style_tags: styleTags || [],
+                    template_data: frameData,
+                    preview_data: previewData || frameData,
+                    thumbnail: thumbnail || null,
+                    difficulty: difficulty || 1,
+                    is_public: true,
+                    is_approved: true
+                })
+                .select()
+                .single();
+            
+            if (error) throw error;
+            
+            return { success: true, data };
+        } catch (error) {
+            console.error('Publish template error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+    
+    /**
+     * Récupère tous les modèles publics avec filtres
+     */
+    async getTemplates(filters = {}) {
+        if (!this.supabase) this.init();
+        
+        try {
+            let query = this.supabase
+                .from('pixel_templates')
+                .select('*')
+                .eq('is_public', true)
+                .eq('is_approved', true);
+            
+            // Filtre par catégorie
+            if (filters.category) {
+                query = query.eq('category', filters.category);
+            }
+            
+            // Filtre par tags de style
+            if (filters.styleTags && filters.styleTags.length > 0) {
+                query = query.overlaps('style_tags', filters.styleTags);
+            }
+            
+            // Filtre par difficulté
+            if (filters.difficulty) {
+                query = query.eq('difficulty', filters.difficulty);
+            }
+            
+            // Tri
+            const orderBy = filters.orderBy || 'created_at';
+            const orderDirection = filters.orderDirection || 'desc';
+            query = query.order(orderBy, { ascending: orderDirection === 'asc' });
+            
+            // Limite
+            if (filters.limit) {
+                query = query.limit(filters.limit);
+            }
+            
+            const { data, error } = await query;
+            
+            if (error) throw error;
+            
+            return { success: true, data: data || [] };
+        } catch (error) {
+            console.error('Get templates error:', error);
+            return { success: false, error: error.message, data: [] };
+        }
+    }
+    
+    /**
+     * Récupère un modèle par ID et incrémente le compteur de vues
+     */
+    async getTemplateById(templateId) {
+        if (!this.supabase) this.init();
+        
+        try {
+            // Récupérer le modèle
+            const { data, error } = await this.supabase
+                .from('pixel_templates')
+                .select('*')
+                .eq('id', templateId)
+                .eq('is_public', true)
+                .eq('is_approved', true)
+                .single();
+            
+            if (error) throw error;
+            
+            // Incrémenter le compteur de vues (asynchrone, on ne bloque pas sur l'erreur)
+            this.supabase
+                .from('pixel_templates')
+                .update({ view_count: (data.view_count || 0) + 1 })
+                .eq('id', templateId)
+                .then(() => console.log('✅ Compteur de vues incrémenté'))
+                .catch(err => console.warn('⚠️ Impossible d\'incrémenter le compteur de vues:', err));
+            
+            return { success: true, data };
+        } catch (error) {
+            console.error('Get template error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+    
+    /**
+     * Récupère les modèles de l'utilisateur
+     */
+    async getMyTemplates() {
+        if (!this.supabase) this.init();
+        
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+            
+            const { data, error } = await this.supabase
+                .from('pixel_templates')
+                .select('*')
+                .eq('author_id', userId)
+                .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            
+            return { success: true, data: data || [] };
+        } catch (error) {
+            console.error('Get my templates error:', error);
+            return { success: false, error: error.message, data: [] };
+        }
+    }
+    
+    /**
+     * Marque un modèle comme complété
+     */
+    async markTemplateAsCompleted(templateId, completionTimeSeconds = null) {
+        if (!this.supabase) this.init();
+        
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+            
+            const { data, error } = await this.supabase
+                .from('template_completions')
+                .upsert({
+                    template_id: templateId,
+                    user_id: userId,
+                    completion_time_seconds: completionTimeSeconds,
+                    completed_at: new Date().toISOString()
+                }, {
+                    onConflict: 'template_id,user_id'
+                })
+                .select()
+                .single();
+            
+            if (error) throw error;
+            
+            return { success: true, data };
+        } catch (error) {
+            console.error('Mark template completed error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+    
+    /**
+     * Ajoute/retire un modèle des favoris
+     */
+    async toggleTemplateFavorite(templateId, isFavorite) {
+        if (!this.supabase) this.init();
+        
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+            
+            if (isFavorite) {
+                const { data, error } = await this.supabase
+                    .from('template_favorites')
+                    .insert({
+                        template_id: templateId,
+                        user_id: userId
+                    })
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                return { success: true, data };
+            } else {
+                const { error } = await this.supabase
+                    .from('template_favorites')
+                    .delete()
+                    .eq('template_id', templateId)
+                    .eq('user_id', userId);
+                
+                if (error) throw error;
+                return { success: true, data: null };
+            }
+        } catch (error) {
+            console.error('Toggle template favorite error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+    
+    /**
+     * Supprime un modèle (auteur uniquement)
+     */
+    async deleteTemplate(templateId) {
+        if (!this.supabase) this.init();
+        
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+            
+            const { error } = await this.supabase
+                .from('pixel_templates')
+                .delete()
+                .eq('id', templateId)
+                .eq('author_id', userId);
+            
+            if (error) throw error;
+            
+            return { success: true };
+        } catch (error) {
+            console.error('Delete template error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+}
+
 // Create global database service instance
 window.dbService = new DatabaseService();
