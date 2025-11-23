@@ -1203,7 +1203,8 @@ class DatabaseService {
                 templateData: frameData,
                 previewData,
                 thumbnail,
-                difficulty
+                difficulty,
+                isAnimation
             } = templateData;
             
             // Validation
@@ -1220,9 +1221,10 @@ class DatabaseService {
                     description: description || null,
                     category,
                     style_tags: styleTags || [],
-                    template_data: frameData,
-                    preview_data: previewData || frameData,
+                    template_data: frameData, // Peut être une frame unique ou un array de frames (animation)
+                    preview_data: previewData || frameData, // Version complète pour l'aperçu
                     thumbnail: thumbnail || null,
+                    is_animation: isAnimation || false, // Marqueur pour animation complète
                     difficulty: difficulty || 1,
                     is_public: true,
                     is_approved: true

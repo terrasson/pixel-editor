@@ -500,7 +500,8 @@
                         view_count: template.view_count || 0,
                         completion_count: template.completion_count || 0,
                         style_tags: template.style_tags || [],
-                        isShared: true // Marqueur pour identifier les modèles partagés
+                        isShared: true, // Marqueur pour identifier les modèles partagés
+                        isAnimation: template.is_animation || false // Marqueur pour animation complète
                     }));
                     console.log(`✅ ${sharedTemplates.length} modèles partagés chargés`);
                 } else {
@@ -586,10 +587,18 @@
                     if (template.thumbnail) {
                         previewHTML = `<img src="${template.thumbnail}" style="width: 100%; height: 100%; object-fit: contain;" alt="${template.name}">`;
                     } else if (template.preview) {
-                        previewHTML = generateTemplatePreview(template.preview);
+                        // Si c'est une animation (array de frames), utiliser la première frame pour l'aperçu
+                        let previewFrame = template.preview;
+                        if (template.isAnimation && Array.isArray(template.preview) && template.preview.length > 0 && Array.isArray(template.preview[0])) {
+                            previewFrame = template.preview[0]; // Utiliser la première frame
+                        }
+                        previewHTML = generateTemplatePreview(previewFrame);
                     } else {
                         previewHTML = '<div style="color: #999; text-align: center; padding: 20px;">Aperçu indisponible</div>';
                     }
+                    
+                    const isAnimationModel = template.isAnimation || (template.preview && Array.isArray(template.preview) && template.preview.length > 0 && Array.isArray(template.preview[0]));
+                    const animationBadge = isAnimationModel ? '<div style="font-size: 0.7em; color: #FFC107; margin-top: 4px; font-weight: 500;">🎬 Animation</div>' : '';
                     
                     const authorInfo = template.isShared ? `<div style="font-size: 0.75em; color: rgba(255, 255, 255, 0.6); margin-top: 4px;">Par ${template.author_email?.split('@')[0] || 'Anonyme'}</div>` : '';
                     const viewInfo = template.view_count > 0 ? `<div style="font-size: 0.75em; color: rgba(255, 255, 255, 0.6);">👁️ ${template.view_count}</div>` : '';
@@ -609,6 +618,7 @@
                                 ${'⭐'.repeat(template.difficulty || 1)}
                             </div>
                             ${viewInfo}
+                            ${animationBadge}
                             ${template.isShared ? '<div style="font-size: 0.7em; color: #BB86FC; margin-top: 4px; font-weight: 500;">✨ Partagé</div>' : ''}
                         </div>
                     `;
@@ -878,15 +888,30 @@
             // Convertir le modèle partagé au format attendu
             // Utiliser template_data (version vide avec isEmpty: true mais couleurs stockées) pour le chargement
             // et preview_data pour l'aperçu dans la galerie
+            // Vérifier si c'est une animation (tableau de frames) ou une frame unique
+            const templateData_raw = templateData.template_data || templateData.preview_data;
+            
+            // Utiliser le champ is_animation de la base de données si disponible
+            // Sinon, détecter automatiquement
+            let isAnimation = templateData.is_animation || false;
+            
+            if (!isAnimation && Array.isArray(templateData_raw) && templateData_raw.length > 0) {
+                // Si le premier élément est un array, c'est probablement une animation (array de frames)
+                // Sinon, c'est une frame unique (array de pixels)
+                const firstElement = templateData_raw[0];
+                isAnimation = Array.isArray(firstElement);
+            }
+            
             const template = {
                 id: templateData.id,
                 name: templateData.name,
                 description: templateData.description,
                 theme: templateData.category,
-                preview: templateData.template_data || templateData.preview_data, // Version vide avec couleurs pour les indicateurs
+                preview: templateData_raw, // Peut être une frame unique (array de pixels) ou un tableau de frames (animation)
                 difficulty: templateData.difficulty || 1,
                 isShared: true,
-                author_email: templateData.author_email
+                author_email: templateData.author_email,
+                isAnimation: isAnimation // Marqueur pour animation complète
             };
             
             // Charger le modèle
@@ -1035,6 +1060,35 @@
                     </div>
                 </div>
                 
+                <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                    <label style="display: block; margin-bottom: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                        Type de modèle * :
+                    </label>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <label style="display: flex; align-items: flex-start; cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 2px solid rgba(76, 175, 80, 0.5); transition: all 0.2s ease;" class="template-type-option" data-type="single">
+                        <input type="radio" name="templateType" value="single" checked style="margin-right: 10px; margin-top: 2px; cursor: pointer;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: rgba(255, 255, 255, 0.95); margin-bottom: 4px;">🧩 Modèle à Réaliser (Frame unique)</div>
+                            <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">
+                                Publiez uniquement la frame actuelle avec des indications de couleur. Les utilisateurs devront la compléter.
+                            </div>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: flex-start; cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); transition: all 0.2s ease;" class="template-type-option" data-type="animation">
+                        <input type="radio" name="templateType" value="animation" style="margin-right: 10px; margin-top: 2px; cursor: pointer;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: rgba(255, 255, 255, 0.95); margin-bottom: 4px;">🎬 Animation Complète</div>
+                            <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">
+                                Partagez toutes les frames de votre projet pour que les utilisateurs puissent voir l'animation complète. ${typeof frames !== 'undefined' && frames && frames.length > 0 ? `(${frames.length} frame${frames.length > 1 ? 's' : ''} disponible${frames.length > 1 ? 's' : ''})` : ''}
+                            </div>
+                        </div>
+                    </label>
+                    </div>
+                    <p style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7); margin-top: 12px; margin-bottom: 0;">
+                        💡 Choisissez "Frame unique" pour un puzzle à compléter, ou "Animation complète" pour partager votre animation finie.
+                    </p>
+                </div>
+                
                 <div style="background: rgba(156, 39, 176, 0.3); padding: 15px; border-radius: 8px; border: 1px solid rgba(156, 39, 176, 0.5); margin-bottom: 20px;">
                     <p style="margin: 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.9);">
                         💡 <strong style="font-weight: 600;">Astuce :</strong> Votre modèle sera visible par tous les utilisateurs. Assurez-vous qu'il soit terminé et prêt à être réalisé !
@@ -1157,6 +1211,10 @@
             const selectedTags = Array.from(modal.querySelectorAll('input[name="styleTags"]:checked'))
                 .map(checkbox => checkbox.value);
             
+            // Récupérer le type de modèle sélectionné
+            const templateType = modal.querySelector('input[name="templateType"]:checked')?.value || 'single';
+            const isAnimation = templateType === 'animation';
+            
             // Validation
             if (!name) {
                 alert('❌ Veuillez saisir un nom pour le modèle.');
@@ -1173,29 +1231,57 @@
                 return;
             }
             
-            // Récupérer la frame actuelle
-            const currentFrameData = frames[currentFrame];
-            if (!currentFrameData || currentFrameData.length === 0) {
-                alert('❌ Aucune donnée à publier.');
-                return;
+            let templateData_withColors, previewData_complete, thumbnail;
+            
+            if (isAnimation) {
+                // Mode Animation : publier toutes les frames
+                if (!frames || frames.length === 0) {
+                    alert('❌ Aucune frame à publier.');
+                    return;
+                }
+                
+                // Créer template_data avec toutes les frames (pour l'animation complète)
+                templateData_withColors = frames.map(frame => 
+                    frame.map(pixel => ({
+                        color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
+                        isEmpty: false // Toutes les frames sont complètes pour l'animation
+                    }))
+                );
+                
+                // previewData est identique à templateData (animation complète)
+                previewData_complete = templateData_withColors;
+                
+                // Générer la miniature depuis la première frame pour l'aperçu dans la galerie
+                const firstFrameForThumbnail = frames[0].map(pixel => ({
+                    color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
+                    isEmpty: false
+                }));
+                thumbnail = generateThumbnail(firstFrameForThumbnail);
+            } else {
+                // Mode Frame unique : publier seulement la frame actuelle
+                const currentFrameData = frames[currentFrame];
+                if (!currentFrameData || currentFrameData.length === 0) {
+                    alert('❌ Aucune donnée à publier.');
+                    return;
+                }
+                
+                // Créer template_data : version avec les pixels à colorier marqués comme non-vides
+                // mais ils seront vidés lors du chargement pour que l'utilisateur doive colorier
+                // La couleur est conservée pour créer les indicateurs
+                templateData_withColors = currentFrameData.map(pixel => ({
+                    color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
+                    isEmpty: false // Marquer comme non-vide pour que loadTemplate crée les indicateurs
+                }));
+                
+                // La previewData contient la version complète pour l'aperçu dans la galerie
+                previewData_complete = currentFrameData.map(pixel => ({
+                    color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
+                    isEmpty: false // Version complète pour l'aperçu
+                }));
+                
+                // Générer une miniature (thumbnail) depuis la version complète
+                thumbnail = generateThumbnail(previewData_complete);
             }
-            
-            // Créer template_data : version avec les pixels à colorier marqués comme non-vides
-            // mais ils seront vidés lors du chargement pour que l'utilisateur doive colorier
-            // La couleur est conservée pour créer les indicateurs
-            const templateData_withColors = currentFrameData.map(pixel => ({
-                color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
-                isEmpty: false // Marquer comme non-vide pour que loadTemplate crée les indicateurs
-            }));
-            
-            // La previewData contient la version complète pour l'aperçu dans la galerie
-            const previewData_complete = currentFrameData.map(pixel => ({
-                color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
-                isEmpty: false // Version complète pour l'aperçu
-            }));
-            
-            // Générer une miniature (thumbnail) depuis la version complète
-            const thumbnail = generateThumbnail(previewData_complete);
             
             // Préparer les données du modèle
             const templateData = {
@@ -1203,10 +1289,11 @@
                 description: description || null,
                 category,
                 styleTags: selectedTags,
-                templateData: templateData_withColors, // Version avec couleurs pour les indicateurs
+                templateData: templateData_withColors, // Version avec couleurs pour les indicateurs (peut être une frame ou plusieurs)
                 previewData: previewData_complete, // Version complète pour l'aperçu dans la galerie
                 thumbnail,
-                difficulty
+                difficulty,
+                isAnimation: isAnimation // Marqueur pour savoir si c'est une animation complète
             };
             
             // Désactiver le bouton pendant la publication
@@ -1280,65 +1367,131 @@
             return;
         }
         
-        const nonVides = template.preview.filter(p => p && !p.isEmpty).length;
-        console.log('✅ Modèle valide:', {
-            id: template.id,
-            name: template.name,
-            pixelsNonVides: nonVides,
-            totalPixels: template.preview.length
-        });
-        
-        // Sauvegarder l'état actuel
-        const confirmLoad = confirm(
-            '🎨 Charger ce modèle ?\n\n' +
-            'Le modèle sera chargé avec des indications de couleur.\n' +
-            'Utilisez la pipette pour extraire les couleurs du modèle.\n\n' +
-            'Attention : cela remplacera votre travail actuel !'
-        );
-        
-        if (!confirmLoad) {
-            console.log('❌ Chargement annulé par l\'utilisateur');
-            return;
-        }
-        
-        console.log('✅ Confirmation OK, chargement du modèle...');
-        
         // Stocker le modèle actuel
         currentTemplate = template;
-        isTemplateMode = true;
-        console.log('📌 Mode template activé:', {
-            templateId: currentTemplate.id,
-            isTemplateMode: isTemplateMode
-        });
         
-        // Créer une nouvelle frame vide
-        const newFrame = createEmptyFrame();
+        // Vérifier si c'est une animation complète ou une frame unique
+        // Une animation est un tableau de frames, où chaque frame est un array de pixels
+        // Une frame unique est un array de pixels directement
         
-        // Copier les couleurs du modèle dans la frame
-        template.preview.forEach((pixel, index) => {
-            if (pixel && !pixel.isEmpty) {
-                newFrame[index] = {
-                    color: pixel.color,
-                    isEmpty: true // Vide pour que l'utilisateur doive colorier
-                };
+        // Vérifier d'abord le flag isAnimation si disponible
+        let templateIsAnimation = template.isAnimation || false;
+        
+        // Sinon, détecter automatiquement : si template.preview[0] est un objet avec 'color' et 'isEmpty', c'est une frame unique
+        // Si template.preview[0] est un array, c'est une animation (array de frames)
+        if (!templateIsAnimation && Array.isArray(template.preview) && template.preview.length > 0) {
+            const firstElement = template.preview[0];
+            // Si le premier élément est un array, c'est probablement une animation
+            // Si le premier élément est un objet avec 'color', c'est une frame unique
+            if (Array.isArray(firstElement)) {
+                templateIsAnimation = true;
+            } else if (firstElement && typeof firstElement === 'object' && 'color' in firstElement) {
+                templateIsAnimation = false; // Frame unique
             }
+        }
+        
+        console.log('📌 Type de modèle détecté:', {
+            templateId: currentTemplate.id,
+            isAnimation: templateIsAnimation,
+            previewLength: Array.isArray(template.preview) ? template.preview.length : 0,
+            firstElementType: Array.isArray(template.preview) && template.preview.length > 0 ? 
+                (Array.isArray(template.preview[0]) ? 'array (animation)' : typeof template.preview[0] + ' (frame unique)') : 'none'
         });
         
-        // Remplacer la frame actuelle
-        if (frames && frames.length > 0 && typeof currentFrame !== 'undefined') {
-            frames[currentFrame] = newFrame;
+        if (templateIsAnimation) {
+            // Mode Animation : charger toutes les frames
+            isTemplateMode = false; // Pas de mode template pour les animations (elles sont complètes)
             
-            // Stocker le template preview avant de charger la frame
-            const templatePreview = template.preview;
+            const frameCount = Array.isArray(template.preview) ? template.preview.length : 1;
+            const confirmMessage = 
+                '🎬 Charger cette animation complète ?\n\n' +
+                `L'animation contient ${frameCount} frame(s).\n\n` +
+                'L\'animation sera chargée avec toutes ses frames.\n' +
+                'Attention : cela remplacera votre travail actuel !';
             
-            // Charger la frame normalement d'abord
+            if (!confirm(confirmMessage)) {
+                console.log('❌ Chargement annulé par l\'utilisateur');
+                return;
+            }
+            
+            // Convertir toutes les frames en format normalisé
+            frames = template.preview.map(frame => {
+                if (!Array.isArray(frame)) {
+                    return createEmptyFrame();
+                }
+                // Chaque frame est un array de pixels
+                return frame.map(pixel => {
+                    // Si pixel est déjà un objet avec color/isEmpty, l'utiliser tel quel
+                    if (pixel && typeof pixel === 'object' && 'color' in pixel) {
+                        return {
+                            color: pixel.color || '#FFFFFF',
+                            isEmpty: pixel.isEmpty || false
+                        };
+                    }
+                    // Sinon, créer un pixel vide
+                    return {
+                        color: '#FFFFFF',
+                        isEmpty: true
+                    };
+                });
+            });
+            
+            currentFrame = 0;
+            
+            // Mettre à jour l'interface des frames
+            if (typeof updateFramesList === 'function') {
+                updateFramesList();
+            }
+            
+            // Charger la première frame
             if (typeof loadFrame === 'function') {
                 loadFrame(currentFrame);
             }
             
-            // Attendre que loadFrame ait complètement terminé (y compris ses setTimeout internes)
-            // Puis ajouter les indicateurs avec plusieurs tentatives
-            console.log('⏳ Attente de la fin de loadFrame...');
+            // Mettre à jour le titre
+            const title = document.getElementById('projectTitle');
+            if (title) {
+                title.textContent = template.name || 'Animation partagée';
+            }
+            
+            alert(`✅ Animation "${template.name}" chargée avec ${frames.length} frame(s) !`);
+            
+        } else {
+            // Mode Frame unique : modèle à réaliser avec indicateurs
+            isTemplateMode = true;
+            
+            // Créer une nouvelle frame vide
+            const newFrame = createEmptyFrame();
+            
+            // Copier les couleurs du modèle dans la frame
+            template.preview.forEach((pixel, index) => {
+                if (pixel && !pixel.isEmpty) {
+                    newFrame[index] = {
+                        color: pixel.color,
+                        isEmpty: true // Vide pour que l'utilisateur doive colorier
+                    };
+                }
+            });
+            
+            // Créer un nouveau projet avec une seule frame pour le modèle
+            frames = [newFrame];
+            currentFrame = 0;
+            
+            // Stocker le template preview avant de charger la frame
+            const templatePreview = template.preview;
+            
+            // Mettre à jour l'interface des frames si la fonction existe
+            if (typeof updateFramesList === 'function') {
+                updateFramesList();
+            }
+            
+            // Charger la frame normalement
+            if (typeof loadFrame === 'function') {
+                loadFrame(currentFrame);
+            }
+            
+            // Ajouter les indicateurs après un court délai
+            console.log('⏳ Attente de la fin de loadFrame pour ajouter les indicateurs...');
             
             // Première tentative après 500ms (pour laisser le temps à loadFrame de finir)
             setTimeout(() => {

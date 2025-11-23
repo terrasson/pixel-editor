@@ -36,11 +36,14 @@ CREATE TABLE IF NOT EXISTS pixel_templates (
     -- - objets, meubles, outils, electronique
     
     -- Données du modèle
-    template_data JSONB NOT NULL, -- Contient la frame avec les pixels
+    template_data JSONB NOT NULL, -- Contient la frame unique (array de pixels) ou toutes les frames (array de arrays)
+    preview_data JSONB, -- Aperçu complet pour la galerie
     
     -- Métadonnées visuelles
     thumbnail TEXT, -- Aperçu base64 du modèle fini
-    preview_data JSONB, -- Aperçu complet pour la galerie
+    
+    -- Type de modèle
+    is_animation BOOLEAN DEFAULT false, -- true = animation complète (plusieurs frames), false = frame unique à compléter
     
     -- Difficulté
     difficulty INTEGER DEFAULT 1 CHECK (difficulty >= 1 AND difficulty <= 5),
