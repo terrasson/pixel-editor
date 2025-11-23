@@ -564,8 +564,13 @@
             
             // Créer le contenu de la modal avec filtres
             let modalContent = `
-                <div style="padding: 20px; color: rgba(255, 255, 255, 0.95); max-height: 80vh; overflow-y: auto;">
-                    <h3 style="margin-top: 0; text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.98); font-weight: 600;">
+                <div style="position: relative; padding: 20px; color: rgba(255, 255, 255, 0.95); max-height: 80vh; overflow-y: auto;">
+                    <!-- Bouton de fermeture (croix) en haut à droite -->
+                    <button id="closeTemplateGalleryBtn" style="position: absolute; top: 15px; right: 15px; width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.3); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; z-index: 10; transition: all 0.2s;"
+                            title="Fermer">
+                        ×
+                    </button>
+                    <h3 style="margin-top: 0; text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.98); font-weight: 600; padding-right: 40px;">
                         🧩 Modèles à Réaliser
                     </h3>
                     <p style="text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85);">
@@ -974,7 +979,30 @@
                 });
             }
             
-            // Bouton annuler
+            // Event listener pour le bouton de fermeture (croix) en haut
+            const closeBtn = document.getElementById('closeTemplateGalleryBtn');
+            if (closeBtn) {
+                // Effets hover pour le bouton de fermeture
+                closeBtn.addEventListener('mouseenter', function() {
+                    this.style.background = 'rgba(255, 255, 255, 0.2)';
+                    this.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                    this.style.transform = 'scale(1.1)';
+                });
+                
+                closeBtn.addEventListener('mouseleave', function() {
+                    this.style.background = 'rgba(255, 255, 255, 0.1)';
+                    this.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    this.style.transform = 'scale(1)';
+                });
+                
+                closeBtn.addEventListener('click', () => {
+                    console.log('❌ Fermeture de la galerie de modèles (croix)');
+                    modal.remove();
+                    window.currentTemplateGallery = null;
+                });
+            }
+            
+            // Bouton annuler (gardé en bas pour accessibilité)
             const cancelBtn = document.getElementById('cancelTemplateBtn');
             if (cancelBtn) {
                 cancelBtn.addEventListener('mouseenter', function() {
