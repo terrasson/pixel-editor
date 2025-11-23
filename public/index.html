@@ -409,9 +409,16 @@
                     }
                     
                     const profile = profileResult.data;
-                    const hasUsername = profile && profile.username && profile.username.trim().length >= 2;
+                    const username = profile && profile.username ? profile.username.trim() : '';
                     
-                    if (!hasUsername) {
+                    // Vérifier si le pseudo est configuré (pas de valeur par défaut)
+                    // Les valeurs par défaut à exclure : "user", "utilisateur", etc.
+                    const defaultUsernames = ['user', 'utilisateur', 'anonymous', 'anonyme'];
+                    const hasCustomUsername = username && 
+                                             username.length >= 2 && 
+                                             !defaultUsernames.includes(username.toLowerCase());
+                    
+                    if (!hasCustomUsername) {
                         // Afficher une modal obligatoire pour configurer le profil
                         showRequiredProfileModal();
                     }
@@ -484,10 +491,14 @@
                     setTimeout(async () => {
                         const profileResult = await window.dbService.getUserProfile();
                         if (profileResult.success) {
-                            const profile = profileResult.data;
-                            const hasUsername = profile && profile.username && profile.username.trim().length >= 2;
+                        const profile = profileResult.data;
+                        const username = profile && profile.username ? profile.username.trim() : '';
+                        const defaultUsernames = ['user', 'utilisateur', 'anonymous', 'anonyme'];
+                        const hasCustomUsername = username && 
+                                                 username.length >= 2 && 
+                                                 !defaultUsernames.includes(username.toLowerCase());
                             
-                            if (hasUsername) {
+                            if (hasCustomUsername) {
                                 // Le profil est configuré, ne plus afficher la modal
                                 return;
                             }
@@ -508,9 +519,13 @@
                         const profileResult = await window.dbService.getUserProfile();
                         if (profileResult.success) {
                             const profile = profileResult.data;
-                            const hasUsername = profile && profile.username && profile.username.trim().length >= 2;
+                            const username = profile && profile.username ? profile.username.trim() : '';
+                            const defaultUsernames = ['user', 'utilisateur', 'anonymous', 'anonyme'];
+                            const hasCustomUsername = username && 
+                                                     username.length >= 2 && 
+                                                     !defaultUsernames.includes(username.toLowerCase());
                             
-                            if (hasUsername) {
+                            if (hasCustomUsername) {
                                 clearInterval(checkInterval);
                                 window.removeEventListener('userProfileConfigured', onProfileConfigured);
                                 
