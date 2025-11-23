@@ -1683,6 +1683,15 @@
                 // Utiliser templateData si disponible (contient les pixels avec isEmpty: true), sinon preview
                 const sourceData = template.templateData || template.preview;
                 
+                console.log('📥 Chargement animation à réaliser - Données source:', {
+                    hasTemplateData: !!template.templateData,
+                    hasPreview: !!template.preview,
+                    sourceDataType: Array.isArray(sourceData) ? 'array' : typeof sourceData,
+                    sourceDataLength: Array.isArray(sourceData) ? sourceData.length : 0,
+                    firstFrameSample: Array.isArray(sourceData) && sourceData.length > 0 && Array.isArray(sourceData[0]) ? 
+                        sourceData[0].slice(0, 5).map(p => ({ color: p?.color, isEmpty: p?.isEmpty })) : 'N/A'
+                });
+                
                 // Créer un nouveau projet avec toutes les frames vides mais avec les couleurs pour les indicateurs
                 frames = sourceData.map((frame, frameIndex) => {
                     if (!Array.isArray(frame)) {
@@ -1707,9 +1716,11 @@
                 currentFrame = 0;
                 
                 // Stocker le template avec templateData pour les indicateurs
+                // IMPORTANT : stocker templateData pour que l'intercepteur puisse l'utiliser
                 currentTemplate = {
                     ...template,
-                    preview: sourceData // Utiliser templateData pour les indicateurs
+                    preview: sourceData, // Pour l'affichage
+                    templateData: sourceData // Pour les indicateurs (doit être stocké ici)
                 };
                 window.currentTemplate = currentTemplate;
                 
@@ -1726,28 +1737,58 @@
                 // Ajouter les indicateurs après un court délai pour la première frame
                 setTimeout(() => {
                     if (sourceData && sourceData[currentFrame]) {
-                        addTemplateIndicators(sourceData[currentFrame]);
+                        console.log('🎨 Ajout des indicateurs pour la première frame (index', currentFrame, ')');
+                        const success = addTemplateIndicators(sourceData[currentFrame]);
+                        console.log('📋 Résultat ajout indicateurs frame 0:', success ? '✅ SUCCÈS' : '❌ ÉCHEC');
+                    } else {
+                        console.error('❌ Impossible d\'ajouter les indicateurs: sourceData ou frame manquante', {
+                            hasSourceData: !!sourceData,
+                            currentFrame: currentFrame,
+                            hasFrame: sourceData ? !!sourceData[currentFrame] : false
+                        });
                     }
                 }, 500);
                 
                 // Intercepter les changements de frame pour ajouter les indicateurs à chaque frame
-                if (!window.templateAnimationLoadFrameIntercepted) {
+                // Réinitialiser le flag pour permettre la réinitialisation si nécessaire
+                if (window.templateAnimationLoadFrameIntercepted) {
+                    // Si déjà intercepté, on ne le fait pas deux fois
+                    console.log('⚠️ Intercepteur loadFrame déjà en place');
+                } else {
                     const originalLoadFrame = window.loadFrame;
                     if (originalLoadFrame) {
                         window.loadFrame = function(frameIndex) {
                             const result = originalLoadFrame.apply(this, arguments);
                             // Après le chargement de la frame, ajouter les indicateurs si c'est un template animation
-                            if (window.isTemplateMode && window.currentTemplate && window.currentTemplate.templateData) {
-                                setTimeout(() => {
-                                    const frameData = window.currentTemplate.templateData[frameIndex];
-                                    if (frameData) {
-                                        addTemplateIndicators(frameData);
-                                    }
-                                }, 100);
+                            if (window.isTemplateMode && window.currentTemplate) {
+                                // Utiliser templateData si disponible, sinon preview
+                                const templateData = window.currentTemplate.templateData || window.currentTemplate.preview;
+                                if (templateData && Array.isArray(templateData) && templateData[frameIndex]) {
+                                    setTimeout(() => {
+                                        console.log('🎨 Ajout des indicateurs pour la frame', frameIndex);
+                                        const frameData = templateData[frameIndex];
+                                        if (frameData) {
+                                            const success = addTemplateIndicators(frameData);
+                                            console.log('📋 Résultat ajout indicateurs frame', frameIndex, ':', success ? '✅ SUCCÈS' : '❌ ÉCHEC');
+                                        } else {
+                                            console.warn('⚠️ Frame data manquante pour l\'index', frameIndex);
+                                        }
+                                    }, 150);
+                                } else {
+                                    console.warn('⚠️ Template data invalide pour ajouter les indicateurs:', {
+                                        hasTemplate: !!window.currentTemplate,
+                                        hasTemplateData: !!(window.currentTemplate && window.currentTemplate.templateData),
+                                        hasPreview: !!(window.currentTemplate && window.currentTemplate.preview),
+                                        frameIndex: frameIndex
+                                    });
+                                }
                             }
                             return result;
                         };
                         window.templateAnimationLoadFrameIntercepted = true;
+                        console.log('✅ Intercepteur loadFrame configuré pour les animations à réaliser');
+                    } else {
+                        console.error('❌ Impossible de configurer l\'intercepteur: loadFrame non disponible');
                     }
                 }
                 
@@ -1964,15 +2005,20 @@
                 return false;
             }
             
+            // Pour les animations à réaliser, les pixels peuvent avoir isEmpty: true mais une couleur pour les indicateurs
+            // On vérifie donc la présence d'une couleur valide plutôt que !isEmpty
+            const pixelsAvecCouleur = templatePreview.filter(p => p && p.color && p.color !== '#FFFFFF').length;
             const nonVides = templatePreview.filter(p => p && !p.isEmpty).length;
             console.log('✅ Conditions remplies:', {
                 pixels: pixels.length,
                 templatePixels: templatePreview.length,
-                nonVides: nonVides
+                nonVides: nonVides,
+                pixelsAvecCouleur: pixelsAvecCouleur
             });
             
-            if (nonVides === 0) {
-                console.error('❌ Aucun pixel non vide dans le template !');
+            // Vérifier qu'il y a au moins des pixels avec couleur (pour les indicateurs)
+            if (pixelsAvecCouleur === 0) {
+                console.error('❌ Aucun pixel avec couleur valide dans le template !');
                 return false;
             }
         
@@ -1998,7 +2044,8 @@
         let indicatorsAdded = 0;
         
         console.log('🎨 Parcours des pixels pour ajouter les indicateurs...');
-        console.log(`📊 Template contient ${nonVides} pixels non vides`);
+        const pixelsAvecCouleurCount = templatePreview.filter(p => p && p.color && p.color !== '#FFFFFF').length;
+        console.log(`📊 Template contient ${pixelsAvecCouleurCount} pixels avec couleur (pour indicateurs)`);
         
         pixels.forEach((pixel, index) => {
             if (index >= templatePreview.length) return;
@@ -2006,7 +2053,9 @@
             const templatePixel = templatePreview[index];
             
             // Si le template a une couleur à cet endroit, afficher l'indicateur
-            if (templatePixel && !templatePixel.isEmpty && templatePixel.color) {
+            // IMPORTANT : Pour les animations à réaliser, isEmpty peut être true mais on veut quand même afficher l'indicateur
+            // On vérifie seulement qu'il y a une couleur valide (pas blanche par défaut)
+            if (templatePixel && templatePixel.color && templatePixel.color !== '#FFFFFF') {
                 const expectedColor = templatePixel.color;
                 
                 // Vérifier que le pixel est valide et dans le DOM
