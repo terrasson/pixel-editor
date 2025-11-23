@@ -5571,6 +5571,71 @@ function populateProfileForm(profile = {}) {
     regionInput.value = profile.region || '';
 }
 
+// Affiche un menu pour choisir entre profil créatif et gestion du pseudo
+function showProfileMenu() {
+    const menuContent = `
+        <div style="padding: 20px; color: rgba(255, 255, 255, 0.95);">
+            <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98);">👤 Mon Profil</h3>
+            <p style="text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85); font-size: 0.9em;">
+                Que souhaitez-vous gérer ?
+            </p>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button id="profileCreativeBtn" style="padding: 15px; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; text-align: left;">
+                    <div style="font-size: 1.1em; margin-bottom: 4px;">📊 Profil Créatif</div>
+                    <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">Informations optionnelles pour améliorer l'éditeur</div>
+                </button>
+                
+                <button id="profileUsernameBtn" style="padding: 15px; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; text-align: left;">
+                    <div style="font-size: 1.1em; margin-bottom: 4px;">🎭 Mon Pseudo</div>
+                    <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">Définir votre pseudo public et votre avatar pour les modèles publiés</div>
+                </button>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="cancelProfileMenuBtn" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
+                    Annuler
+                </button>
+            </div>
+        </div>
+    `;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 450px; width: 90%; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.95);">
+            ${menuContent}
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    document.getElementById('profileCreativeBtn')?.addEventListener('click', () => {
+        modal.remove();
+        window.initUserProfileFlow(true);
+    });
+    
+    document.getElementById('profileUsernameBtn')?.addEventListener('click', () => {
+        modal.remove();
+        if (typeof window.showUsernameDialog === 'function') {
+            window.showUsernameDialog();
+        } else {
+            alert('❌ La fonctionnalité de gestion du pseudo n\'est pas encore chargée. Veuillez recharger la page.');
+        }
+    });
+    
+    document.getElementById('cancelProfileMenuBtn')?.addEventListener('click', () => {
+        modal.remove();
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
 function openProfileModal(manual = false) {
     initProfileModal();
     profilePromptHasBeenShown = profilePromptHasBeenShown || manual;
