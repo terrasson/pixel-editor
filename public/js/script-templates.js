@@ -3201,6 +3201,9 @@
                     window.updateUserProfileDisplay();
                 }
                 
+                // Déclencher un événement pour notifier que le profil est maintenant configuré
+                window.dispatchEvent(new CustomEvent('userProfileConfigured'));
+                
                 // Rafraîchir la galerie si elle est ouverte
                 if (window.currentTemplateGallery) {
                     showTemplateGallery();

@@ -364,6 +364,9 @@
 
             window.__pixelEditorAuthInitialized = true;
             
+            // Vérifier si le profil utilisateur est configuré (pseudo requis)
+            await checkAndRequireUserProfile();
+            
             // Initialiser le tracking de session
             if (window.dbService && typeof window.dbService.startUserSession === 'function') {
                 window.dbService.startUserSession().catch(err => {
@@ -383,6 +386,160 @@
             
             if (typeof window.initUserProfileFlow === 'function') {
                 window.initUserProfileFlow();
+            }
+            
+            /**
+             * Vérifie si le profil utilisateur est configuré et affiche une modal obligatoire si nécessaire
+             */
+            async function checkAndRequireUserProfile() {
+                try {
+                    if (!window.dbService) {
+                        console.warn('Database service non disponible, impossible de vérifier le profil');
+                        return;
+                    }
+                    
+                    // Attendre que les scripts soient chargés
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    const profileResult = await window.dbService.getUserProfile();
+                    
+                    if (!profileResult.success) {
+                        console.warn('Erreur lors de la récupération du profil:', profileResult.error);
+                        return;
+                    }
+                    
+                    const profile = profileResult.data;
+                    const hasUsername = profile && profile.username && profile.username.trim().length >= 2;
+                    
+                    if (!hasUsername) {
+                        // Afficher une modal obligatoire pour configurer le profil
+                        showRequiredProfileModal();
+                    }
+                } catch (error) {
+                    console.error('Erreur lors de la vérification du profil:', error);
+                }
+            }
+            
+            /**
+             * Affiche une modal obligatoire pour configurer le pseudo et l'avatar
+             */
+            function showRequiredProfileModal() {
+                const modalContent = `
+                    <div style="padding: 30px; text-align: center; color: rgba(255, 255, 255, 0.95);">
+                        <h2 style="margin-top: 0; color: rgba(255, 255, 255, 0.98); font-size: 24px;">👋 Bienvenue !</h2>
+                        <p style="font-size: 16px; margin: 20px 0; color: rgba(255, 255, 255, 0.9);">
+                            Pour continuer, vous devez configurer votre profil public.
+                        </p>
+                        <p style="font-size: 14px; margin: 15px 0; color: rgba(255, 255, 255, 0.8);">
+                            Choisissez un pseudo et créez un avatar qui seront affichés sur vos créations partagées.
+                        </p>
+                        <button id="configureProfileBtn" style="margin-top: 20px; padding: 12px 30px; border: none; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; font-size: 16px;">
+                            Configurer mon profil
+                        </button>
+                    </div>
+                `;
+                
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.style.display = 'flex';
+                modal.style.zIndex = '10000';
+                modal.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 450px; width: 90%; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.95);">
+                        ${modalContent}
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Empêcher la fermeture de la modal
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                });
+                
+                // Bouton pour configurer le profil
+                document.getElementById('configureProfileBtn').addEventListener('click', () => {
+                    modal.remove();
+                    
+                    // Attendre que les scripts soient chargés puis ouvrir le dialogue de profil
+                    setTimeout(() => {
+                        if (typeof window.showUsernameDialog === 'function') {
+                            window.showUsernameDialog();
+                        } else {
+                            // Fallback : essayer d'ouvrir via le menu profil
+                            const profileBtn = document.getElementById('profileBtn') || document.getElementById('profileBtnMobile');
+                            if (profileBtn) {
+                                profileBtn.click();
+                            }
+                        }
+                    }, 500);
+                });
+                
+                // Écouter l'événement quand le profil est configuré
+                const onProfileConfigured = () => {
+                    // Vérifier une dernière fois avant de fermer définitivement
+                    setTimeout(async () => {
+                        const profileResult = await window.dbService.getUserProfile();
+                        if (profileResult.success) {
+                            const profile = profileResult.data;
+                            const hasUsername = profile && profile.username && profile.username.trim().length >= 2;
+                            
+                            if (hasUsername) {
+                                // Le profil est configuré, ne plus afficher la modal
+                                return;
+                            }
+                        }
+                        
+                        // Si toujours pas configuré, réafficher la modal
+                        if (!document.querySelector('.modal[style*="z-index: 10000"]')) {
+                            showRequiredProfileModal();
+                        }
+                    }, 1000);
+                };
+                
+                window.addEventListener('userProfileConfigured', onProfileConfigured);
+                
+                // Vérifier périodiquement si le profil a été configuré (au cas où l'événement ne se déclenche pas)
+                const checkInterval = setInterval(async () => {
+                    try {
+                        const profileResult = await window.dbService.getUserProfile();
+                        if (profileResult.success) {
+                            const profile = profileResult.data;
+                            const hasUsername = profile && profile.username && profile.username.trim().length >= 2;
+                            
+                            if (hasUsername) {
+                                clearInterval(checkInterval);
+                                window.removeEventListener('userProfileConfigured', onProfileConfigured);
+                                
+                                // Fermer la modal si elle existe encore
+                                const existingModal = document.querySelector('.modal[style*="z-index: 10000"]');
+                                if (existingModal) {
+                                    existingModal.remove();
+                                }
+                                
+                                // Mettre à jour l'affichage
+                                if (typeof window.updateUserProfileDisplay === 'function') {
+                                    window.updateUserProfileDisplay();
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Erreur lors de la vérification:', error);
+                    }
+                }, 2000);
+                
+                // Nettoyer l'intervalle si la modal est supprimée manuellement
+                const observer = new MutationObserver(() => {
+                    if (!document.body.contains(modal)) {
+                        clearInterval(checkInterval);
+                        window.removeEventListener('userProfileConfigured', onProfileConfigured);
+                        observer.disconnect();
+                    }
+                });
+                observer.observe(document.body, { childList: true, subtree: true });
             }
         })();
     </script>
