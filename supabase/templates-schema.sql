@@ -17,8 +17,10 @@ CREATE TABLE IF NOT EXISTS pixel_templates (
     
     -- Catégorie principale (thème)
     category TEXT NOT NULL CHECK (category IN (
-        'Emoji', 'Formes', 'Animaux', 'Nature', 'Architecture', 
-        'Personnages', 'Véhicules', 'Nourriture', 'Objets', 'Autre'
+        'Jeux Vidéo', 'Films', 'Séries TV', 'Dessin Animé', 'Manga/Anime',
+        'Super-Héros', 'Personnages', 'Animaux', 'Nature', 'Architecture',
+        'Véhicules', 'Nourriture', 'Objets', 'Emoji', 'Formes',
+        'Fantasy', 'Science-Fiction', 'Horreur', 'Autre'
     )),
     
     -- Style précis (tags multiples)

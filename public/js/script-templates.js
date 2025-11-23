@@ -87,6 +87,92 @@
     ];
     
     /**
+     * Liste des catégories disponibles
+     */
+    const TEMPLATE_CATEGORIES = [
+        { value: 'Jeux Vidéo', label: '🎮 Jeux Vidéo' },
+        { value: 'Films', label: '🎬 Films' },
+        { value: 'Séries TV', label: '📺 Séries TV' },
+        { value: 'Dessin Animé', label: '🎨 Dessin Animé' },
+        { value: 'Manga/Anime', label: '🎌 Manga/Anime' },
+        { value: 'Super-Héros', label: '🦸 Super-Héros' },
+        { value: 'Personnages', label: '👤 Personnages' },
+        { value: 'Animaux', label: '🐾 Animaux' },
+        { value: 'Nature', label: '🌳 Nature' },
+        { value: 'Architecture', label: '🏛️ Architecture' },
+        { value: 'Véhicules', label: '🚗 Véhicules' },
+        { value: 'Nourriture', label: '🍕 Nourriture' },
+        { value: 'Objets', label: '📦 Objets' },
+        { value: 'Emoji', label: '😊 Emoji' },
+        { value: 'Formes', label: '🔷 Formes' },
+        { value: 'Fantasy', label: '🧙 Fantasy' },
+        { value: 'Science-Fiction', label: '🚀 Science-Fiction' },
+        { value: 'Horreur', label: '🧟 Horreur' },
+        { value: 'Autre', label: '🎨 Autre' }
+    ];
+    
+    /**
+     * Liste des styles/tags disponibles avec groupes
+     */
+    const TEMPLATE_STYLES = {
+        'Jeux Vidéo': [
+            { value: 'jeux-video', label: 'Jeux Vidéo' },
+            { value: 'zelda', label: 'Zelda' },
+            { value: 'mario', label: 'Super Mario' },
+            { value: 'pokemon', label: 'Pokémon' },
+            { value: 'minecraft', label: 'Minecraft' },
+            { value: 'retro', label: 'Rétro' },
+            { value: '8-bit', label: '8-bit' },
+            { value: '16-bit', label: '16-bit' }
+        ],
+        'Dessin Animé': [
+            { value: 'dessin-anime', label: 'Dessin Animé' },
+            { value: 'anime', label: 'Anime' },
+            { value: 'manga', label: 'Manga' },
+            { value: 'studio-ghibli', label: 'Studio Ghibli' },
+            { value: 'disney', label: 'Disney' }
+        ],
+        'Super-Héros': [
+            { value: 'marvel', label: 'Marvel' },
+            { value: 'dc-comics', label: 'DC Comics' },
+            { value: 'super-heros', label: 'Super-Héros' },
+            { value: 'batman', label: 'Batman' },
+            { value: 'spider-man', label: 'Spider-Man' }
+        ],
+        'Genres': [
+            { value: 'fantasy', label: 'Fantasy' },
+            { value: 'medieval', label: 'Médiéval' },
+            { value: 'science-fiction', label: 'Science-Fiction' },
+            { value: 'futuriste', label: 'Futuriste' }
+        ],
+        'Nature': [
+            { value: 'nature', label: 'Nature' },
+            { value: 'animaux', label: 'Animaux' },
+            { value: 'fleurs', label: 'Fleurs' },
+            { value: 'arbres', label: 'Arbres' },
+            { value: 'oiseaux', label: 'Oiseaux' }
+        ],
+        'Véhicules': [
+            { value: 'vehicules', label: 'Véhicules' },
+            { value: 'voitures', label: 'Voitures' },
+            { value: 'avions', label: 'Avions' },
+            { value: 'bateaux', label: 'Bateaux' }
+        ],
+        'Nourriture': [
+            { value: 'nourriture', label: 'Nourriture' },
+            { value: 'fruits', label: 'Fruits' },
+            { value: 'legumes', label: 'Légumes' },
+            { value: 'dessert', label: 'Desserts' }
+        ],
+        'Objets': [
+            { value: 'objets', label: 'Objets' },
+            { value: 'meubles', label: 'Meubles' },
+            { value: 'outils', label: 'Outils' },
+            { value: 'electronique', label: 'Électronique' }
+        ]
+    };
+    
+    /**
      * Génère une frame vide avec la bonne taille
      */
     function createEmptyFrame() {
@@ -835,83 +921,6 @@
         svg += `</svg>`;
         return svg;
     }
-    
-    /**
-     * Liste des catégories disponibles
-     */
-    const TEMPLATE_CATEGORIES = [
-        { value: 'Emoji', label: '😊 Emoji' },
-        { value: 'Formes', label: '🔷 Formes' },
-        { value: 'Animaux', label: '🐾 Animaux' },
-        { value: 'Nature', label: '🌳 Nature' },
-        { value: 'Architecture', label: '🏛️ Architecture' },
-        { value: 'Personnages', label: '👤 Personnages' },
-        { value: 'Véhicules', label: '🚗 Véhicules' },
-        { value: 'Nourriture', label: '🍕 Nourriture' },
-        { value: 'Objets', label: '📦 Objets' },
-        { value: 'Autre', label: '🎨 Autre' }
-    ];
-    
-    /**
-     * Liste des styles/tags disponibles avec groupes
-     */
-    const TEMPLATE_STYLES = {
-        'Jeux Vidéo': [
-            { value: 'jeux-video', label: 'Jeux Vidéo' },
-            { value: 'zelda', label: 'Zelda' },
-            { value: 'mario', label: 'Super Mario' },
-            { value: 'pokemon', label: 'Pokémon' },
-            { value: 'minecraft', label: 'Minecraft' },
-            { value: 'retro', label: 'Rétro' },
-            { value: '8-bit', label: '8-bit' },
-            { value: '16-bit', label: '16-bit' }
-        ],
-        'Dessin Animé': [
-            { value: 'dessin-anime', label: 'Dessin Animé' },
-            { value: 'anime', label: 'Anime' },
-            { value: 'manga', label: 'Manga' },
-            { value: 'studio-ghibli', label: 'Studio Ghibli' },
-            { value: 'disney', label: 'Disney' }
-        ],
-        'Super-Héros': [
-            { value: 'marvel', label: 'Marvel' },
-            { value: 'dc-comics', label: 'DC Comics' },
-            { value: 'super-heros', label: 'Super-Héros' },
-            { value: 'batman', label: 'Batman' },
-            { value: 'spider-man', label: 'Spider-Man' }
-        ],
-        'Genres': [
-            { value: 'fantasy', label: 'Fantasy' },
-            { value: 'medieval', label: 'Médiéval' },
-            { value: 'science-fiction', label: 'Science-Fiction' },
-            { value: 'futuriste', label: 'Futuriste' }
-        ],
-        'Nature': [
-            { value: 'nature', label: 'Nature' },
-            { value: 'animaux', label: 'Animaux' },
-            { value: 'fleurs', label: 'Fleurs' },
-            { value: 'arbres', label: 'Arbres' },
-            { value: 'oiseaux', label: 'Oiseaux' }
-        ],
-        'Véhicules': [
-            { value: 'vehicules', label: 'Véhicules' },
-            { value: 'voitures', label: 'Voitures' },
-            { value: 'avions', label: 'Avions' },
-            { value: 'bateaux', label: 'Bateaux' }
-        ],
-        'Nourriture': [
-            { value: 'nourriture', label: 'Nourriture' },
-            { value: 'fruits', label: 'Fruits' },
-            { value: 'legumes', label: 'Légumes' },
-            { value: 'dessert', label: 'Desserts' }
-        ],
-        'Objets': [
-            { value: 'objets', label: 'Objets' },
-            { value: 'meubles', label: 'Meubles' },
-            { value: 'outils', label: 'Outils' },
-            { value: 'electronique', label: 'Électronique' }
-        ]
-    };
     
     /**
      * Affiche le dialogue pour publier un modèle
