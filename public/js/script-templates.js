@@ -348,6 +348,10 @@
      * Affiche la galerie de modèles par thème
      */
     function showTemplateGallery() {
+        console.log('🖼️ ========== showTemplateGallery DÉBUT ==========');
+        console.log('🖼️ Ouverture de la galerie de modèles...');
+        
+        try {
         // Grouper les modèles par thème
         const templatesByTheme = {};
         TEMPLATES_DATABASE.forEach(template => {
@@ -386,9 +390,7 @@
                 
                 modalContent += `
                     <div class="template-item" data-template-id="${template.id}" 
-                         style="cursor: pointer; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; transition: all 0.3s; border: 2px solid transparent;"
-                         onmouseover="this.style.background='rgba(255,255,255,0.2)'; this.style.borderColor='#4CAF50';"
-                         onmouseout="this.style.background='rgba(255,255,255,0.1)'; this.style.borderColor='transparent';">
+                         style="cursor: pointer; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; transition: all 0.3s; border: 2px solid transparent;">
                         <div style="background: white; border-radius: 4px; padding: 5px; margin-bottom: 8px; display: flex; justify-content: center; align-items: center; min-height: 80px;">
                             ${previewCanvas}
                         </div>
@@ -428,21 +430,68 @@
         document.body.appendChild(modal);
         
         // Event listeners pour les modèles
-        modal.querySelectorAll('.template-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const templateId = item.dataset.templateId;
-                const template = TEMPLATES_DATABASE.find(t => t.id === templateId);
-                if (template) {
-                    loadTemplate(template);
-                    modal.remove();
+        const templateItems = modal.querySelectorAll('.template-item');
+        console.log('🔍 Nombre de modèles trouvés dans la modal:', templateItems.length);
+        
+        templateItems.forEach((item, index) => {
+            console.log(`  📦 Modèle ${index + 1}:`, item.dataset.templateId);
+            // Ajouter les effets hover avec JavaScript pour éviter les erreurs de propriété en lecture seule
+            item.addEventListener('mouseenter', function() {
+                try {
+                    this.style.background = 'rgba(255,255,255,0.2)';
+                    this.style.borderColor = '#4CAF50';
+                } catch (e) {
+                    console.warn('Erreur hover enter:', e);
+                }
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                try {
+                    this.style.background = 'rgba(255,255,255,0.1)';
+                    this.style.borderColor = 'transparent';
+                } catch (e) {
+                    console.warn('Erreur hover leave:', e);
+                }
+            });
+            
+            item.addEventListener('click', function() {
+                try {
+                    console.log('🖱️ Clic sur un modèle détecté !');
+                    const templateId = this.dataset.templateId;
+                    console.log('📌 Template ID cliqué:', templateId);
+                    
+                    const template = TEMPLATES_DATABASE.find(t => t.id === templateId);
+                    console.log('🔍 Template trouvé:', template ? template.id : 'null');
+                    
+                    if (template) {
+                        console.log('✅ Chargement du template...');
+                        loadTemplate(template);
+                        modal.remove();
+                    } else {
+                        console.error('❌ Template non trouvé pour ID:', templateId);
+                        alert('❌ Modèle non trouvé. Veuillez réessayer.');
+                    }
+                } catch (error) {
+                    console.error('❌ ERREUR lors du clic sur le modèle:', error);
+                    alert('❌ Erreur lors du chargement du modèle. Vérifiez la console.');
                 }
             });
         });
         
         // Bouton annuler
-        document.getElementById('cancelTemplateBtn').addEventListener('click', () => {
-            modal.remove();
-        });
+        const cancelBtn = document.getElementById('cancelTemplateBtn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                console.log('❌ Annulation de la sélection de modèle');
+                modal.remove();
+            });
+        }
+        
+        console.log('🖼️ ========== showTemplateGallery FIN ==========');
+        } catch (error) {
+            console.error('❌ ERREUR dans showTemplateGallery:', error);
+            alert('❌ Erreur lors de l\'ouverture de la galerie. Vérifiez la console.');
+        }
     }
     
     /**
@@ -471,10 +520,23 @@
      * Charge un modèle dans la grille avec les indications
      */
     function loadTemplate(template) {
+        console.log('🎯 ========== loadTemplate DÉBUT ==========');
+        console.log('🎯 Template ID:', template ? template.id : 'null');
+        console.log('🎯 Template preview existe:', !!template?.preview);
+        
         if (!template || !template.preview) {
+            console.error('❌ Modèle invalide:', template);
             alert('❌ Modèle invalide');
             return;
         }
+        
+        const nonVides = template.preview.filter(p => p && !p.isEmpty).length;
+        console.log('✅ Modèle valide:', {
+            id: template.id,
+            name: template.name,
+            pixelsNonVides: nonVides,
+            totalPixels: template.preview.length
+        });
         
         // Sauvegarder l'état actuel
         const confirmLoad = confirm(
@@ -484,11 +546,20 @@
             'Attention : cela remplacera votre travail actuel !'
         );
         
-        if (!confirmLoad) return;
+        if (!confirmLoad) {
+            console.log('❌ Chargement annulé par l\'utilisateur');
+            return;
+        }
+        
+        console.log('✅ Confirmation OK, chargement du modèle...');
         
         // Stocker le modèle actuel
         currentTemplate = template;
         isTemplateMode = true;
+        console.log('📌 Mode template activé:', {
+            templateId: currentTemplate.id,
+            isTemplateMode: isTemplateMode
+        });
         
         // Créer une nouvelle frame vide
         const newFrame = createEmptyFrame();
@@ -507,15 +578,47 @@
         if (frames && frames.length > 0 && typeof currentFrame !== 'undefined') {
             frames[currentFrame] = newFrame;
             
+            // Stocker le template preview avant de charger la frame
+            const templatePreview = template.preview;
+            
             // Charger la frame normalement d'abord
             if (typeof loadFrame === 'function') {
                 loadFrame(currentFrame);
             }
             
-            // Ensuite ajouter les indicateurs
+            // Attendre que loadFrame ait complètement terminé (y compris ses setTimeout internes)
+            // Puis ajouter les indicateurs avec plusieurs tentatives
+            console.log('⏳ Attente de la fin de loadFrame...');
+            
+            // Première tentative après 500ms (pour laisser le temps à loadFrame de finir)
             setTimeout(() => {
-                loadFrameWithTemplateIndicators(currentFrame, template.preview);
-            }, 50);
+                console.log('🎨 TENTATIVE 1: Ajout des indicateurs...');
+                const success1 = addTemplateIndicators(templatePreview);
+                console.log('📋 Résultat tentative 1:', success1 ? '✅ SUCCÈS' : '❌ ÉCHEC');
+                
+                if (!success1) {
+                    // Deuxième tentative après 300ms de plus
+                    setTimeout(() => {
+                        console.log('🎨 TENTATIVE 2: Ajout des indicateurs...');
+                        const success2 = addTemplateIndicators(templatePreview);
+                        console.log('📋 Résultat tentative 2:', success2 ? '✅ SUCCÈS' : '❌ ÉCHEC');
+                        
+                        if (!success2) {
+                            // Troisième tentative après encore 300ms
+                            setTimeout(() => {
+                                console.log('🎨 TENTATIVE 3: Ajout des indicateurs...');
+                                const success3 = addTemplateIndicators(templatePreview);
+                                console.log('📋 Résultat tentative 3:', success3 ? '✅ SUCCÈS' : '❌ ÉCHEC');
+                                
+                                if (!success3) {
+                                    console.error('❌ ÉCHEC TOTAL: Impossible d\'ajouter les indicateurs après 3 tentatives');
+                                    alert('⚠️ Les indicateurs n\'ont pas pu être ajoutés. Vérifiez la console pour plus de détails.');
+                                }
+                            }, 300);
+                        }
+                    }, 300);
+                }
+            }, 500);
             
             updateFramesList();
             
@@ -537,26 +640,260 @@
             // Intercepter les événements de dessin pour vérifier la correspondance
             interceptDrawingEvents();
             
-            alert(
-                '✅ Modèle chargé !\n\n' +
-                '💡 Conseils :\n' +
-                '- Utilisez la pipette pour extraire les couleurs du modèle\n' +
-                '- Les triangles indiquent la couleur attendue\n' +
-                '- Les couleurs du modèle ont été ajoutées à votre palette\n\n' +
-                'Amusez-vous bien ! 🎨'
-            );
+            // Retarder l'alerte pour laisser le temps aux indicateurs de s'afficher
+            setTimeout(() => {
+                alert(
+                    '✅ Modèle chargé !\n\n' +
+                    '💡 Conseils :\n' +
+                    '- Utilisez la pipette pour extraire les couleurs du modèle\n' +
+                    '- Les triangles indiquent la couleur attendue\n' +
+                    '- Les couleurs du modèle ont été ajoutées à votre palette\n\n' +
+                    'Amusez-vous bien ! 🎨'
+                );
+            }, 500);
         } else {
             alert('❌ Impossible de charger le modèle. Veuillez réessayer.');
         }
     }
     
     /**
-     * Charge une frame avec les indicateurs de template
+     * Ajoute les indicateurs de template à la grille
+     */
+    function addTemplateIndicators(templatePreview) {
+        try {
+            console.log('🎨 ===== DÉBUT addTemplateIndicators =====');
+            
+            const pixels = document.querySelectorAll('.pixel');
+            const grid = document.getElementById('pixelGrid');
+            
+            console.log('📊 Vérifications initiales:', {
+                pixelsCount: pixels ? pixels.length : 0,
+                gridExists: !!grid,
+                templatePreviewExists: !!templatePreview,
+                templatePreviewIsArray: Array.isArray(templatePreview),
+                templatePreviewLength: templatePreview ? templatePreview.length : 0
+            });
+            
+            if (!pixels || pixels.length === 0) {
+                console.error('❌ Aucun pixel trouvé dans la grille');
+                return false;
+            }
+            
+            if (!grid) {
+                console.error('❌ Grille non trouvée');
+                return false;
+            }
+            
+            if (pixels.length < GRID_SIZE * GRID_SIZE) {
+                console.error('❌ Nombre de pixels insuffisant:', pixels.length, 'au lieu de', GRID_SIZE * GRID_SIZE);
+                return false;
+            }
+            
+            if (!templatePreview || !Array.isArray(templatePreview)) {
+                console.error('❌ Template preview invalide');
+                return false;
+            }
+            
+            const nonVides = templatePreview.filter(p => p && !p.isEmpty).length;
+            console.log('✅ Conditions remplies:', {
+                pixels: pixels.length,
+                templatePixels: templatePreview.length,
+                nonVides: nonVides
+            });
+            
+            if (nonVides === 0) {
+                console.error('❌ Aucun pixel non vide dans le template !');
+                return false;
+            }
+        
+        // Les pixels ont déjà position: relative dans le CSS (common.css), pas besoin de le modifier en JS
+        // Cela évite les erreurs de propriété en lecture seule
+        
+        // Nettoyer les anciens indicateurs d'abord
+        let cleaned = 0;
+        pixels.forEach(pixel => {
+            const existingSvg = pixel.querySelector('svg.template-indicator-svg');
+            if (existingSvg) {
+                existingSvg.remove();
+                cleaned++;
+            }
+            pixel.classList.remove('has-template-indicator', 'template-completed');
+            delete pixel.dataset.expectedColor;
+        });
+        
+        if (cleaned > 0) {
+            console.log('🧹 Anciens indicateurs nettoyés:', cleaned);
+        }
+        
+        let indicatorsAdded = 0;
+        
+        console.log('🎨 Parcours des pixels pour ajouter les indicateurs...');
+        console.log(`📊 Template contient ${nonVides} pixels non vides`);
+        
+        pixels.forEach((pixel, index) => {
+            if (index >= templatePreview.length) return;
+            
+            const templatePixel = templatePreview[index];
+            
+            // Si le template a une couleur à cet endroit, afficher l'indicateur
+            if (templatePixel && !templatePixel.isEmpty && templatePixel.color) {
+                try {
+                    const expectedColor = templatePixel.color;
+                    
+                    // Créer le SVG avec le triangle indicateur
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('width', '100%');
+                    svg.setAttribute('height', '100%');
+                    svg.setAttribute('viewBox', '0 0 100 100');
+                    svg.setAttribute('preserveAspectRatio', 'none');
+                    svg.className = 'template-indicator-svg';
+                    svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
+                    
+                    // Triangle du bas (coin inférieur gauche, coin inférieur droit, point milieu-haut)
+                    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    polygon.setAttribute('points', '0,100 100,100 50,35');
+                    polygon.setAttribute('fill', expectedColor);
+                    polygon.setAttribute('opacity', '0.85');
+                    polygon.setAttribute('stroke', 'rgba(0,0,0,0.4)');
+                    polygon.setAttribute('stroke-width', '1.5');
+                    
+                    svg.appendChild(polygon);
+                    pixel.appendChild(svg);
+                    
+                    // Ajouter les classes et attributs
+                    pixel.classList.add('has-template-indicator');
+                    pixel.setAttribute('data-expected-color', expectedColor);
+                    
+                    indicatorsAdded++;
+                } catch (error) {
+                    console.error(`  ❌ Erreur lors de l'ajout de l'indicateur au pixel ${index}:`, error);
+                }
+            }
+        });
+        
+        console.log('✅ ===== FIN addTemplateIndicators =====');
+        console.log(`✅ ${indicatorsAdded} indicateurs ajoutés avec succès !`);
+        
+        // Vérification immédiate dans le DOM
+        const pixelsWithIndicators = document.querySelectorAll('.pixel.has-template-indicator');
+        const svgsInDOM = document.querySelectorAll('svg.template-indicator-svg');
+        
+        console.log('🔍 Vérification DOM:', {
+            pixelsAvecIndicateurs: pixelsWithIndicators.length,
+            svgsDansDOM: svgsInDOM.length,
+            indicatorsAdded: indicatorsAdded
+        });
+        
+        if (indicatorsAdded > 0 && svgsInDOM.length === indicatorsAdded) {
+            console.log('✅✅✅ SUCCÈS COMPLET : Tous les indicateurs sont dans le DOM !');
+            
+            // Vérifier visuellement le premier indicateur
+            if (svgsInDOM.length > 0) {
+                const firstSvg = svgsInDOM[0];
+                const computedStyle = window.getComputedStyle(firstSvg);
+                console.log('🔍 Premier SVG:', {
+                    display: computedStyle.display,
+                    visibility: computedStyle.visibility,
+                    zIndex: computedStyle.zIndex,
+                    position: computedStyle.position,
+                    width: computedStyle.width,
+                    height: computedStyle.height
+                });
+            }
+        } else {
+            console.error('❌ PROBLÈME : Les indicateurs ne sont pas tous dans le DOM !');
+        }
+        
+        // Vérification différée pour s'assurer qu'ils restent
+        setTimeout(() => {
+            const svgsStillThere = document.querySelectorAll('svg.template-indicator-svg');
+            console.log('🔍 Vérification après 100ms:', svgsStillThere.length, 'SVG trouvés');
+            
+            if (svgsStillThere.length !== indicatorsAdded) {
+                console.error('❌ PROBLÈME : Des indicateurs ont disparu !');
+            }
+            
+            // Si les nombres ne correspondent pas, il y a un problème
+            if (pixelsWithIndicators.length !== indicatorsAdded || svgsInDOM.length !== indicatorsAdded) {
+                console.warn('⚠️ Incohérence détectée entre indicateurs ajoutés et éléments dans le DOM');
+                
+                // Essayer de réparer en réajoutant les indicateurs manquants
+                if (svgsInDOM.length < indicatorsAdded) {
+                    console.log('🔧 Tentative de réparation : réajout des indicateurs manquants...');
+                    // Réajouter les indicateurs pour les pixels qui n'en ont pas
+                    pixelsWithIndicators.forEach(pixel => {
+                        if (!pixel.querySelector('svg.template-indicator-svg')) {
+                            const expectedColor = pixel.dataset.expectedColor;
+                            if (expectedColor) {
+                                // Réajouter l'indicateur
+                                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                                svg.setAttribute('width', '100%');
+                                svg.setAttribute('height', '100%');
+                                svg.setAttribute('viewBox', '0 0 100 100');
+                                svg.setAttribute('preserveAspectRatio', 'none');
+                                svg.className = 'template-indicator-svg';
+                svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
+                                
+                                const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                                polygon.setAttribute('points', '0,100 100,100 50,35');
+                                polygon.setAttribute('fill', expectedColor);
+                                polygon.setAttribute('opacity', '0.85');
+                                polygon.setAttribute('stroke', 'rgba(0,0,0,0.4)');
+                                polygon.setAttribute('stroke-width', '1.5');
+                                
+                                svg.appendChild(polygon);
+                                pixel.appendChild(svg);
+                            }
+                        }
+                    });
+                }
+            }
+        }, 100);
+        
+        if (indicatorsAdded === 0) {
+            console.error('❌ Aucun indicateur ajouté !');
+            console.error('Détails du template:', {
+                templateLength: templatePreview.length,
+                templatePixelsNonVides: templatePreview.filter(p => p && !p.isEmpty).length,
+                premiersPixels: templatePreview.slice(0, 10).map((p, i) => ({
+                    index: i,
+                    isEmpty: p ? p.isEmpty : 'null',
+                    color: p ? p.color : 'null'
+                }))
+            });
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('❌ ERREUR CRITIQUE lors de l\'ajout des indicateurs:', error);
+            console.error('📍 Type d\'erreur:', error.name);
+            console.error('📝 Message:', error.message);
+            console.error('📍 Stack trace:', error.stack);
+            console.error('📍 Ligne probable de l\'erreur:', error.lineNumber || 'inconnue');
+            return false;
+        }
+    }
+    
+    /**
+     * Charge une frame avec les indicateurs de template (ancienne méthode - conservée pour compatibilité)
      */
     function loadFrameWithTemplateIndicators(frameIndex, templatePreview) {
-        if (frameIndex < 0 || frameIndex >= frames.length) return;
+        if (frameIndex < 0 || frameIndex >= frames.length) {
+            console.warn('⚠️ Index de frame invalide:', frameIndex);
+            return;
+        }
         
         const pixels = document.querySelectorAll('.pixel');
+        
+        if (!pixels || pixels.length === 0) {
+            console.warn('⚠️ Aucun pixel trouvé dans la grille');
+            return;
+        }
+        
+        console.log('🎨 Chargement des indicateurs:', pixels.length, 'pixels, template:', templatePreview.length);
+        
+        // Les pixels ont déjà position: relative dans le CSS, pas besoin de le modifier en JS
         
         // Nettoyer les anciens indicateurs d'abord
         pixels.forEach(pixel => {
@@ -567,6 +904,8 @@
             pixel.classList.remove('has-template-indicator', 'template-completed');
             delete pixel.dataset.expectedColor;
         });
+        
+        let indicatorsAdded = 0;
         
         pixels.forEach((pixel, index) => {
             if (index >= templatePreview.length) return;
@@ -584,16 +923,18 @@
                 svg.setAttribute('viewBox', '0 0 100 100');
                 svg.setAttribute('preserveAspectRatio', 'none');
                 svg.className = 'template-indicator-svg';
-                svg.style.cssText = 'position: absolute; top: 0; left: 0; pointer-events: none; z-index: 2; overflow: visible;';
+                                svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
                 
-                // Triangle du bas : points qui forment un triangle pointant vers le haut
+                // Triangle du bas : coin inférieur gauche, coin inférieur droit, point milieu-haut
+                // Cela forme un triangle qui occupe la moitié inférieure du pixel
                 const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-                // Triangle du bas : coin inférieur gauche, coin inférieur droit, milieu du haut
-                polygon.setAttribute('points', '0,100 100,100 50,50');
+                // Triangle pointant vers le haut : bas gauche, bas droit, milieu-haut
+                // Pour un triangle plus visible, on prend une portion plus grande (2/3 du bas)
+                polygon.setAttribute('points', '0,100 100,100 50,35');
                 polygon.setAttribute('fill', expectedColor);
-                polygon.setAttribute('opacity', '0.7');
-                polygon.setAttribute('stroke', 'rgba(0,0,0,0.2)');
-                polygon.setAttribute('stroke-width', '0.5');
+                polygon.setAttribute('opacity', '0.85');
+                polygon.setAttribute('stroke', 'rgba(0,0,0,0.4)');
+                polygon.setAttribute('stroke-width', '1.5');
                 
                 svg.appendChild(polygon);
                 pixel.appendChild(svg);
@@ -601,8 +942,29 @@
                 // Ajouter une classe pour identifier les pixels avec template
                 pixel.classList.add('has-template-indicator');
                 pixel.dataset.expectedColor = expectedColor;
+                
+                indicatorsAdded++;
             }
         });
+        
+        console.log('✅ Indicateurs ajoutés:', indicatorsAdded);
+        
+        // Si aucun indicateur n'a été ajouté, il y a un problème
+        if (indicatorsAdded === 0) {
+            console.error('❌ Aucun indicateur ajouté !');
+            console.error('Détails:', {
+                pixelsCount: pixels.length,
+                templateLength: templatePreview.length,
+                templatePixelsNonVides: templatePreview.filter(p => p && !p.isEmpty).length,
+                premiersPixels: templatePreview.slice(0, 5)
+            });
+        } else {
+            // Vérifier visuellement que les indicateurs sont présents
+            const pixelsWithIndicators = document.querySelectorAll('.pixel.has-template-indicator');
+            console.log('🔍 Vérification:', pixelsWithIndicators.length, 'pixels avec indicateurs trouvés dans le DOM');
+        }
+        
+        return indicatorsAdded > 0;
     }
     
     /**
@@ -781,12 +1143,13 @@
         window.loadFrame = function(frameIndex) {
             const result = originalLoadFrame.apply(this, arguments);
             
-            // Si on est en mode template, ajouter les indicateurs après un court délai
-            if (isTemplateMode && currentTemplate) {
+            // Si on est en mode template, ajouter les indicateurs APRÈS que loadFrame ait terminé
+            if (isTemplateMode && currentTemplate && currentTemplate.preview) {
+                // Utiliser un délai pour s'assurer que loadFrame a complètement terminé
                 setTimeout(() => {
-                    loadFrameWithTemplateIndicators(frameIndex, currentTemplate.preview);
-                    interceptDrawingEvents();
-                }, 100);
+                    console.log('🔄 Intercepteur loadFrame : ajout des indicateurs après chargement');
+                    addTemplateIndicators(currentTemplate.preview);
+                }, 200);
             }
             
             return result;
