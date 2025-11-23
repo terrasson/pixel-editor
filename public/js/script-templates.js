@@ -1715,28 +1715,35 @@
                 });
                 
                 // Créer un nouveau projet avec toutes les frames vides mais avec les couleurs pour les indicateurs
+                // Même logique que pour une frame unique : créer une frame vide, puis copier seulement les pixels colorés
                 frames = sourceData.map((frame, frameIndex) => {
                     if (!Array.isArray(frame)) {
                         console.warn(`⚠️ Frame ${frameIndex} n'est pas un array, création d'une frame vide`);
                         return createEmptyFrame();
                     }
-                    // Chaque frame est un array de pixels à réaliser
-                    // IMPORTANT : conserver la couleur même si isEmpty est true (pour les indicateurs)
-                    return frame.map((pixel, pixelIndex) => {
+                    
+                    // Créer une frame vide comme pour une frame unique
+                    const newFrame = createEmptyFrame();
+                    
+                    // Copier seulement les pixels qui ont une couleur non-blanche (comme pour une frame unique)
+                    // IMPORTANT : sourceData contient tous les pixels avec leurs couleurs (même si isEmpty: true)
+                    // On copie seulement ceux qui ont une couleur valide pour stocker dans la frame
+                    // Mais on utilisera sourceData directement pour les indicateurs (qui contient tous les pixels)
+                    frame.forEach((pixel, pixelIndex) => {
                         if (pixel && typeof pixel === 'object' && 'color' in pixel) {
                             const color = pixel.color || '#FFFFFF';
-                            // Garder la couleur même si isEmpty est true (nécessaire pour les indicateurs)
-                            return {
-                                color: color,
-                                isEmpty: true // Vide pour que l'utilisateur doive colorier
-                            };
+                            // Copier seulement les pixels avec une couleur non-blanche
+                            // Même logique que pour une frame unique : vérifier si le pixel a une couleur valide
+                            if (color && color !== '#FFFFFF') {
+                                newFrame[pixelIndex] = {
+                                    color: color,
+                                    isEmpty: true // Vide pour que l'utilisateur doive colorier (loadFrame ne coloriera pas)
+                                };
+                            }
                         }
-                        // Si le pixel n'a pas de couleur, créer un pixel blanc vide
-                        return {
-                            color: '#FFFFFF',
-                            isEmpty: true
-                        };
                     });
+                    
+                    return newFrame;
                 });
                 
                 // Vérifier que les couleurs sont bien présentes dans les frames
@@ -1749,13 +1756,22 @@
                 currentFrame = 0;
                 
                 // Stocker le template avec templateData pour les indicateurs
-                // IMPORTANT : stocker templateData pour que l'intercepteur puisse l'utiliser
+                // IMPORTANT : templateData contient tous les pixels avec leurs couleurs (même si isEmpty: true)
+                // C'est cette donnée qu'on utilise pour ajouter les triangles indicateurs
                 currentTemplate = {
                     ...template,
-                    preview: sourceData, // Pour l'affichage
-                    templateData: sourceData // Pour les indicateurs (doit être stocké ici)
+                    preview: template.preview || sourceData, // Pour l'aperçu dans la galerie (pixels colorés)
+                    templateData: sourceData // Pour les indicateurs (tous les pixels avec leurs couleurs)
                 };
                 window.currentTemplate = currentTemplate;
+                
+                console.log('📦 Template stocké pour indicateurs:', {
+                    hasTemplateData: !!currentTemplate.templateData,
+                    hasPreview: !!currentTemplate.preview,
+                    templateDataType: Array.isArray(currentTemplate.templateData) ? 
+                        (Array.isArray(currentTemplate.templateData[0]) ? 'array of frames' : 'single frame') : 
+                        typeof currentTemplate.templateData
+                });
                 
                 // Mettre à jour l'interface des frames
                 if (typeof updateFramesList === 'function') {
