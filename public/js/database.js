@@ -1252,7 +1252,7 @@ class DatabaseService {
         try {
             let query = this.supabase
                 .from('pixel_templates')
-                .select('*')
+                .select('*, author_id') // Inclure author_id pour récupérer les avatars
                 .eq('is_public', true)
                 .eq('is_approved', true);
             
@@ -1450,6 +1450,171 @@ class DatabaseService {
         } catch (error) {
             console.error('Delete template error:', error);
             return { success: false, error: error.message };
+        }
+    }
+
+    // =====================================================
+    // USER PROFILES SYSTEM - Gestion des pseudonymes
+    // =====================================================
+    
+    /**
+     * Récupère le profil utilisateur (pseudo)
+     */
+    async getUserProfile() {
+        if (!this.supabase) this.init();
+        
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+            
+            const { data, error } = await this.supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+            
+            if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+                throw error;
+            }
+            
+            return { success: true, data: data || null };
+        } catch (error) {
+            console.error('Get user profile error:', error);
+            return { success: false, error: error.message, data: null };
+        }
+    }
+    
+    /**
+     * Crée ou met à jour le profil utilisateur (pseudo et avatar)
+     */
+    async setUserProfile(username, avatarData = null, avatarSize = 16) {
+        if (!this.supabase) this.init();
+        
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+            
+            const userEmail = window.authService?.getUserEmail() || '';
+            
+            // Validation du pseudo
+            if (!username || username.trim().length < 2 || username.trim().length > 30) {
+                throw new Error('Le pseudo doit contenir entre 2 et 30 caractères');
+            }
+            
+            // Vérifier le format (alphanumérique, tirets et underscores uniquement)
+            if (!/^[a-zA-Z0-9_-]+$/.test(username.trim())) {
+                throw new Error('Le pseudo ne peut contenir que des lettres, chiffres, tirets et underscores');
+            }
+            
+            // Vérifier si le pseudo est déjà utilisé par un autre utilisateur
+            const { data: existingProfile } = await this.supabase
+                .from('user_profiles')
+                .select('user_id')
+                .eq('username', username.trim())
+                .neq('user_id', userId)
+                .single();
+            
+            if (existingProfile) {
+                throw new Error('Ce pseudo est déjà utilisé par un autre utilisateur');
+            }
+            
+            // Vérifier si le profil existe déjà
+            const { data: existing } = await this.supabase
+                .from('user_profiles')
+                .select('id')
+                .eq('user_id', userId)
+                .single();
+            
+            const updateData = {
+                username: username.trim(),
+                updated_at: new Date().toISOString()
+            };
+            
+            // Ajouter l'avatar si fourni
+            if (avatarData !== null) {
+                updateData.avatar_data = avatarData;
+                updateData.avatar_size = avatarSize;
+            }
+            
+            if (existing) {
+                // Mettre à jour le profil existant
+                const { data, error } = await this.supabase
+                    .from('user_profiles')
+                    .update(updateData)
+                    .eq('user_id', userId)
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                // Mettre à jour author_username dans tous les templates de l'utilisateur
+                await this.supabase
+                    .from('pixel_templates')
+                    .update({ author_username: username.trim() })
+                    .eq('author_id', userId);
+                
+                return { success: true, data };
+            } else {
+                // Créer un nouveau profil
+                const insertData = {
+                    user_id: userId,
+                    user_email: userEmail,
+                    username: username.trim()
+                };
+                
+                // Ajouter l'avatar si fourni
+                if (avatarData !== null) {
+                    insertData.avatar_data = avatarData;
+                    insertData.avatar_size = avatarSize;
+                }
+                
+                const { data, error } = await this.supabase
+                    .from('user_profiles')
+                    .insert(insertData)
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                // Mettre à jour author_username dans tous les templates de l'utilisateur
+                await this.supabase
+                    .from('pixel_templates')
+                    .update({ author_username: username.trim() })
+                    .eq('author_id', userId);
+                
+                return { success: true, data };
+            }
+        } catch (error) {
+            console.error('Set user profile error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+    
+    /**
+     * Récupère le pseudo d'un utilisateur par son ID
+     */
+    async getUsernameByUserId(userId) {
+        if (!this.supabase) this.init();
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('user_profiles')
+                .select('username')
+                .eq('user_id', userId)
+                .single();
+            
+            if (error && error.code !== 'PGRST116') {
+                throw error;
+            }
+            
+            return data?.username || null;
+        } catch (error) {
+            console.error('Get username by user ID error:', error);
+            return null;
         }
     }
 }

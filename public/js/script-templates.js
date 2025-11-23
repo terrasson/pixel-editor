@@ -532,7 +532,9 @@
                             templateData: template.template_data, // Stocker aussi template_data pour charger les indicateurs
                             difficulty: template.difficulty || 1,
                             thumbnail: template.thumbnail,
-                            author_email: template.author_email,
+                            author_id: template.author_id, // ID de l'auteur pour récupérer l'avatar
+                            author_email: template.author_email, // Gardé pour l'identification du propriétaire
+                            author_username: template.author_username || template.author_email?.split('@')[0] || 'Anonyme', // Pseudo public
                             view_count: template.view_count || 0,
                             completion_count: template.completion_count || 0,
                             style_tags: template.style_tags || [],
@@ -617,6 +619,30 @@
             // Obtenir l'email de l'utilisateur connecté pour afficher le bouton de suppression
             const currentUserEmail = window.authService?.getUserEmail() || '';
             
+            // Récupérer les avatars de tous les auteurs en une seule requête
+            const allAuthorIds = [...new Set(sharedTemplates.map(t => t.author_id).filter(Boolean))];
+            const avatarMap = new Map();
+            
+            if (allAuthorIds.length > 0 && window.dbService && window.dbService.supabase) {
+                try {
+                    const { data: profiles } = await window.dbService.supabase
+                        .from('user_profiles')
+                        .select('user_id, avatar_data, avatar_size')
+                        .in('user_id', allAuthorIds);
+                    
+                    if (profiles) {
+                        profiles.forEach(profile => {
+                            avatarMap.set(profile.user_id, {
+                                avatar: profile.avatar_data,
+                                size: profile.avatar_size || 16
+                            });
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Impossible de récupérer les avatars:', e);
+                }
+            }
+            
             // Parcourir chaque thème
             themes.forEach(theme => {
                 modalContent += `
@@ -646,7 +672,18 @@
                     const isAnimationModel = template.isAnimation || (template.preview && Array.isArray(template.preview) && template.preview.length > 0 && Array.isArray(template.preview[0]));
                     const animationBadge = isAnimationModel ? '<div style="font-size: 0.7em; color: #FFC107; margin-top: 4px; font-weight: 500;">🎬 Animation</div>' : '';
                     
-                    const authorInfo = template.isShared ? `<div style="font-size: 0.75em; color: rgba(255, 255, 255, 0.6); margin-top: 4px;">Par ${template.author_email?.split('@')[0] || 'Anonyme'}</div>` : '';
+                    // Récupérer l'avatar depuis la map
+                    const authorAvatarData = template.author_id ? avatarMap.get(template.author_id) : null;
+                    const avatarHTML = authorAvatarData?.avatar ? 
+                        generateAvatarPreview(authorAvatarData.avatar, authorAvatarData.size, 20) : 
+                        '<div style="width: 20px; height: 20px; background: rgba(255,255,255,0.2); border-radius: 3px; display: inline-block; vertical-align: middle; font-size: 12px; line-height: 20px; text-align: center;">👤</div>';
+                    
+                    const authorInfo = template.isShared ? `
+                        <div style="font-size: 0.75em; color: rgba(255, 255, 255, 0.6); margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; vertical-align: middle;">${avatarHTML}</span>
+                            <span>Par ${template.author_username || template.author_email?.split('@')[0] || 'Anonyme'}</span>
+                        </div>
+                    ` : '';
                     const viewInfo = template.view_count > 0 ? `<div style="font-size: 0.75em; color: rgba(255, 255, 255, 0.6);">👁️ ${template.view_count}</div>` : '';
                     
                     // Vérifier si l'utilisateur connecté est l'auteur du modèle
@@ -1086,7 +1123,8 @@
                 templateData: templateData_raw, // Version avec isEmpty: true mais couleurs pour les indicateurs
                 difficulty: templateData.difficulty || 1,
                 isShared: true,
-                author_email: templateData.author_email,
+                author_email: templateData.author_email, // Gardé pour l'identification du propriétaire
+                author_username: templateData.author_username || templateData.author_email?.split('@')[0] || 'Anonyme', // Pseudo public
                 isAnimation: isAnimation, // Marqueur pour animation (complète ou à réaliser)
                 isAnimationTemplate: isAnimationTemplate // Marqueur pour distinguer animation complète vs à réaliser
             };
@@ -1100,6 +1138,30 @@
             console.error('Erreur lors du chargement du modèle partagé:', error);
             alert('❌ Erreur lors du chargement du modèle. Vérifiez la console.');
         }
+    }
+    
+    /**
+     * Génère un aperçu SVG de l'avatar
+     */
+    function generateAvatarPreview(avatarData, size = 16, displaySize = 48) {
+        if (!avatarData || !Array.isArray(avatarData) || avatarData.length === 0) {
+            return '<div style="width: ' + displaySize + 'px; height: ' + displaySize + 'px; background: rgba(255,255,255,0.2); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>';
+        }
+        
+        const pixelSize = displaySize / size;
+        let svg = `<svg width="${displaySize}" height="${displaySize}" style="display: block; border-radius: 4px; overflow: hidden;">`;
+        
+        avatarData.forEach((pixel, index) => {
+            if (!pixel || pixel.isEmpty) return;
+            
+            const x = (index % size) * pixelSize;
+            const y = Math.floor(index / size) * pixelSize;
+            
+            svg += `<rect x="${x}" y="${y}" width="${pixelSize}" height="${pixelSize}" fill="${pixel.color}" stroke="none"/>`;
+        });
+        
+        svg += `</svg>`;
+        return svg;
     }
     
     /**
@@ -2578,6 +2640,369 @@
         // Arrêter de vérifier après 10 secondes
         setTimeout(() => clearInterval(checkLoadFrame), 10000);
     }
+    
+    /**
+     * Crée un éditeur d'avatar (petit éditeur pixel art)
+     */
+    function createAvatarEditor(initialAvatarData = null, avatarSize = 16) {
+        return new Promise((resolve) => {
+            const editorSize = avatarSize;
+            const displaySize = 200; // Taille d'affichage de l'éditeur
+            const pixelSize = displaySize / editorSize;
+            
+            // Créer une frame vide si pas d'avatar initial
+            let avatarPixels = initialAvatarData || Array(editorSize * editorSize).fill(null).map(() => ({
+                color: '#FFFFFF',
+                isEmpty: true
+            }));
+            
+            // Si l'avatar initial a une taille différente, créer une nouvelle frame vide
+            if (initialAvatarData && initialAvatarData.length !== editorSize * editorSize) {
+                avatarPixels = Array(editorSize * editorSize).fill(null).map(() => ({
+                    color: '#FFFFFF',
+                    isEmpty: true
+                }));
+            }
+            
+            let currentColor = '#000000';
+            let isDrawing = false;
+            
+            const editorContent = `
+                <div style="padding: 20px; color: rgba(255, 255, 255, 0.95); max-height: 90vh; overflow-y: auto;">
+                    <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98);">🎨 Créer votre Avatar</h3>
+                    <p style="text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85); font-size: 0.9em;">
+                        Créez un avatar ${editorSize}x${editorSize} pixels qui sera affiché à côté de votre pseudo.
+                    </p>
+                    
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                        <!-- Aperçu de l'avatar -->
+                        <div style="text-align: center;">
+                            <label style="display: block; margin-bottom: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                                Aperçu :
+                            </label>
+                            <div id="avatarPreview" style="display: inline-block; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; border: 2px solid rgba(255,255,255,0.3);">
+                                ${generateAvatarPreview(avatarPixels, editorSize, 64)}
+                            </div>
+                        </div>
+                        
+                        <!-- Éditeur pixel art -->
+                        <div style="text-align: center;">
+                            <label style="display: block; margin-bottom: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                                Éditeur :
+                            </label>
+                            <div id="avatarEditor" style="display: inline-block; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); cursor: crosshair;">
+                                <!-- La grille sera générée en JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Palette de couleurs -->
+                        <div style="width: 100%;">
+                            <label style="display: block; margin-bottom: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                                Couleur actuelle :
+                            </label>
+                            <div style="display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                                <input type="color" id="avatarColorPicker" value="${currentColor}" style="width: 60px; height: 40px; border-radius: 6px; border: 2px solid rgba(255,255,255,0.3); cursor: pointer;">
+                                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                    ${['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080', '#FFC0CB', '#A52A2A'].map(color => 
+                                        `<div class="avatar-color-swatch" data-color="${color}" style="width: 30px; height: 30px; background: ${color}; border: 2px solid ${color === currentColor ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)'}; border-radius: 4px; cursor: pointer; transition: transform 0.2s;"></div>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Boutons d'action -->
+                        <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px;">
+                            <button id="avatarClearBtn" style="flex: 1; padding: 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
+                                Effacer
+                            </button>
+                            <button id="avatarCancelBtn" style="flex: 1; padding: 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
+                                Annuler
+                            </button>
+                            <button id="avatarSaveBtn" style="flex: 1; padding: 10px; border: none; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
+                                Enregistrer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 600px; width: 90%; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.95);">
+                    ${editorContent}
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            const editor = document.getElementById('avatarEditor');
+            const preview = document.getElementById('avatarPreview');
+            const colorPicker = document.getElementById('avatarColorPicker');
+            const clearBtn = document.getElementById('avatarClearBtn');
+            const cancelBtn = document.getElementById('avatarCancelBtn');
+            const saveBtn = document.getElementById('avatarSaveBtn');
+            
+            // Créer la grille
+            editor.innerHTML = '';
+            editor.style.width = displaySize + 'px';
+            editor.style.height = displaySize + 'px';
+            editor.style.position = 'relative';
+            
+            avatarPixels.forEach((pixel, index) => {
+                const pixelEl = document.createElement('div');
+                pixelEl.className = 'avatar-pixel';
+                pixelEl.dataset.index = index;
+                pixelEl.style.position = 'absolute';
+                pixelEl.style.width = pixelSize + 'px';
+                pixelEl.style.height = pixelSize + 'px';
+                pixelEl.style.left = (index % editorSize) * pixelSize + 'px';
+                pixelEl.style.top = Math.floor(index / editorSize) * pixelSize + 'px';
+                pixelEl.style.backgroundColor = pixel.isEmpty ? '#FFFFFF' : pixel.color;
+                pixelEl.style.border = '1px solid rgba(0,0,0,0.1)';
+                pixelEl.style.cursor = 'pointer';
+                pixelEl.style.boxSizing = 'border-box';
+                
+                pixelEl.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    isDrawing = true;
+                    drawPixel(index);
+                });
+                
+                pixelEl.addEventListener('mouseenter', () => {
+                    if (isDrawing) {
+                        drawPixel(index);
+                    }
+                });
+                
+                editor.appendChild(pixelEl);
+            });
+            
+            function drawPixel(index) {
+                const pixelEl = editor.querySelector(`[data-index="${index}"]`);
+                if (!pixelEl) return;
+                
+                avatarPixels[index] = {
+                    color: currentColor,
+                    isEmpty: false
+                };
+                pixelEl.style.backgroundColor = currentColor;
+                
+                // Mettre à jour l'aperçu
+                updatePreview();
+            }
+            
+            function updatePreview() {
+                preview.innerHTML = generateAvatarPreview(avatarPixels, editorSize, 64);
+            }
+            
+            // Gestion de la couleur
+            colorPicker.addEventListener('input', (e) => {
+                currentColor = e.target.value;
+                updateColorSwatches();
+            });
+            
+            document.querySelectorAll('.avatar-color-swatch').forEach(swatch => {
+                swatch.addEventListener('click', () => {
+                    currentColor = swatch.dataset.color;
+                    colorPicker.value = currentColor;
+                    updateColorSwatches();
+                });
+            });
+            
+            function updateColorSwatches() {
+                document.querySelectorAll('.avatar-color-swatch').forEach(swatch => {
+                    swatch.style.borderColor = swatch.dataset.color === currentColor ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)';
+                });
+            }
+            
+            // Effacer
+            clearBtn.addEventListener('click', () => {
+                if (confirm('Effacer tout l\'avatar ?')) {
+                    avatarPixels = Array(editorSize * editorSize).fill(null).map(() => ({
+                        color: '#FFFFFF',
+                        isEmpty: true
+                    }));
+                    
+                    editor.querySelectorAll('.avatar-pixel').forEach((pixelEl, index) => {
+                        pixelEl.style.backgroundColor = '#FFFFFF';
+                    });
+                    
+                    updatePreview();
+                }
+            });
+            
+            // Annuler
+            cancelBtn.addEventListener('click', () => {
+                modal.remove();
+                resolve(null);
+            });
+            
+            // Enregistrer
+            saveBtn.addEventListener('click', () => {
+                modal.remove();
+                resolve(avatarPixels);
+            });
+            
+            // Arrêter le dessin quand on relâche la souris
+            document.addEventListener('mouseup', () => {
+                isDrawing = false;
+            });
+        });
+    }
+    
+    /**
+     * Affiche une interface pour gérer le pseudo et l'avatar de l'utilisateur
+     */
+    async function showUsernameDialog() {
+        if (!window.dbService) {
+            alert('❌ Service de base de données non disponible.');
+            return;
+        }
+        
+        // Récupérer le profil actuel
+        const profileResult = await window.dbService.getUserProfile();
+        const currentProfile = profileResult.success ? profileResult.data : null;
+        const currentUsername = currentProfile?.username || '';
+        const currentAvatar = currentProfile?.avatar_data || null;
+        const currentAvatarSize = currentProfile?.avatar_size || 16;
+        
+        const dialogContent = `
+            <div style="padding: 20px; color: rgba(255, 255, 255, 0.95);">
+                <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98);">👤 Mon Profil Public</h3>
+                <p style="text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85); font-size: 0.9em;">
+                    Votre pseudo et avatar seront affichés publiquement sur les modèles que vous publiez.
+                </p>
+                
+                <!-- Avatar -->
+                <div style="margin: 20px 0; text-align: center;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                        Avatar :
+                    </label>
+                    <div id="currentAvatarPreview" style="display: inline-block; margin-bottom: 10px;">
+                        ${generateAvatarPreview(currentAvatar, currentAvatarSize, 64)}
+                    </div>
+                    <div>
+                        <button id="editAvatarBtn" style="padding: 8px 16px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; font-size: 0.9em;">
+                            ${currentAvatar ? '✏️ Modifier l\'avatar' : '🎨 Créer un avatar'}
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Pseudo -->
+                <div style="margin: 20px 0;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                        Pseudo * :
+                    </label>
+                    <input type="text" id="usernameInput" 
+                           value="${currentUsername}" 
+                           placeholder="Votre pseudo (2-30 caractères)"
+                           maxlength="30"
+                           style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); font-size: 14px;">
+                    <p style="font-size: 0.8em; color: rgba(255, 255, 255, 0.7); margin-top: 8px; margin-bottom: 0;">
+                        💡 Le pseudo peut contenir des lettres, chiffres, tirets et underscores uniquement.
+                    </p>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button id="cancelUsernameBtn" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
+                        Annuler
+                    </button>
+                    <button id="saveUsernameBtn" style="flex: 1; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
+                        Enregistrer
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'flex';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 450px; width: 90%; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.95);">
+                ${dialogContent}
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const usernameInput = document.getElementById('usernameInput');
+        const editAvatarBtn = document.getElementById('editAvatarBtn');
+        const currentAvatarPreview = document.getElementById('currentAvatarPreview');
+        const cancelBtn = document.getElementById('cancelUsernameBtn');
+        const saveBtn = document.getElementById('saveUsernameBtn');
+        
+        let currentAvatarData = currentAvatar;
+        let currentAvatarSizeValue = currentAvatarSize;
+        
+        // Éditer l'avatar
+        editAvatarBtn?.addEventListener('click', async () => {
+            const avatarData = await createAvatarEditor(currentAvatarData, currentAvatarSizeValue);
+            if (avatarData !== null) {
+                currentAvatarData = avatarData;
+                currentAvatarSizeValue = 16; // Taille fixe pour l'avatar
+                currentAvatarPreview.innerHTML = generateAvatarPreview(avatarData, 16, 64);
+            }
+        });
+        
+        // Focus sur l'input
+        setTimeout(() => usernameInput?.focus(), 100);
+        
+        // Annuler
+        cancelBtn?.addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        // Enregistrer
+        saveBtn?.addEventListener('click', async () => {
+            const username = usernameInput?.value.trim() || '';
+            
+            if (!username) {
+                alert('❌ Veuillez entrer un pseudo.');
+                return;
+            }
+            
+            if (username.length < 2 || username.length > 30) {
+                alert('❌ Le pseudo doit contenir entre 2 et 30 caractères.');
+                return;
+            }
+            
+            if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+                alert('❌ Le pseudo ne peut contenir que des lettres, chiffres, tirets et underscores.');
+                return;
+            }
+            
+            saveBtn.disabled = true;
+            saveBtn.textContent = '⏳ Enregistrement...';
+            
+            const result = await window.dbService.setUserProfile(username, currentAvatarData, currentAvatarSizeValue);
+            
+            if (result.success) {
+                modal.remove();
+                alert('✅ Profil enregistré avec succès !\n\nVotre pseudo et avatar seront maintenant affichés sur tous vos modèles publiés.');
+                
+                // Rafraîchir la galerie si elle est ouverte
+                if (window.currentTemplateGallery) {
+                    showTemplateGallery();
+                }
+            } else {
+                alert('❌ Erreur lors de l\'enregistrement : ' + (result.error || 'Erreur inconnue'));
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Enregistrer';
+            }
+        });
+        
+        // Fermer en cliquant en dehors
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+    
+    // Exposer la fonction globalement pour qu'elle soit accessible depuis les boutons profil
+    window.showUsernameDialog = showUsernameDialog;
     
     // Exposer les fonctions globalement si nécessaire
     window.templateFeature = {

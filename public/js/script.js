@@ -4166,8 +4166,15 @@ function initEventListeners() {
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
     document.getElementById('helpBtn')?.addEventListener('click', showHelp);
     document.getElementById('creditsBtn')?.addEventListener('click', showCredits);
-    document.getElementById('profileBtn')?.addEventListener('click', () => window.initUserProfileFlow(true));
-    document.getElementById('profileBtnMobile')?.addEventListener('click', () => window.initUserProfileFlow(true));
+    // Gestion du profil : ouvrir le profil créatif OU la gestion du pseudo
+    document.getElementById('profileBtn')?.addEventListener('click', () => {
+        // Afficher un menu pour choisir entre profil créatif et pseudo
+        showProfileMenu();
+    });
+    document.getElementById('profileBtnMobile')?.addEventListener('click', () => {
+        // Afficher un menu pour choisir entre profil créatif et pseudo
+        showProfileMenu();
+    });
     document.getElementById('analyticsBtn')?.addEventListener('click', () => { window.location.href = '/admin.html'; });
     document.getElementById('analyticsBtnMobile')?.addEventListener('click', () => { window.location.href = '/admin.html'; });
     
