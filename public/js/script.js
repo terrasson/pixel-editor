@@ -5749,5 +5749,68 @@ async function initUserProfileFlow(forceOpen = false) {
 
 window.initUserProfileFlow = initUserProfileFlow;
 
+/**
+ * Met à jour l'affichage du profil utilisateur dans la barre du haut (avatar + pseudo)
+ */
+async function updateUserProfileDisplay() {
+    try {
+        const userEmail = window.authService?.getUserEmail() || '';
+        const userProfileDisplay = document.getElementById('userProfileDisplay');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        
+        if (!userProfileDisplay || !userAvatar || !userName) {
+            console.warn('Éléments du profil utilisateur non trouvés');
+            return;
+        }
+        
+        // Charger le profil utilisateur
+        if (window.dbService) {
+            const profileResult = await window.dbService.getUserProfile();
+            
+            if (profileResult.success && profileResult.data) {
+                const profile = profileResult.data;
+                const username = profile.username || userEmail.split('@')[0] || 'Utilisateur';
+                const avatarData = profile.avatar_data || null;
+                const avatarSize = profile.avatar_size || 16;
+                
+                // Afficher l'avatar
+                if (window.generateAvatarPreview && avatarData) {
+                    userAvatar.innerHTML = window.generateAvatarPreview(avatarData, avatarSize, 32);
+                } else {
+                    // Fallback : icône par défaut
+                    userAvatar.innerHTML = '<div style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>';
+                }
+                
+                // Afficher le pseudo
+                userName.textContent = username;
+                userName.title = userEmail; // Email en tooltip
+            } else {
+                // Pas de profil, afficher l'email
+                userAvatar.innerHTML = '<div style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>';
+                userName.textContent = userEmail.split('@')[0] || 'Utilisateur';
+                userName.title = userEmail;
+            }
+        } else {
+            // Fallback si dbService n'est pas disponible
+            userAvatar.innerHTML = '<div style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>';
+            userName.textContent = userEmail.split('@')[0] || 'Utilisateur';
+            userName.title = userEmail;
+        }
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour de l\'affichage du profil:', error);
+        // Fallback en cas d'erreur
+        const userEmail = window.authService?.getUserEmail() || '';
+        const userName = document.getElementById('userName');
+        if (userName) {
+            userName.textContent = userEmail.split('@')[0] || 'Utilisateur';
+            userName.title = userEmail;
+        }
+    }
+}
+
+// Exposer la fonction globalement
+window.updateUserProfileDisplay = updateUserProfileDisplay;
+
 
 

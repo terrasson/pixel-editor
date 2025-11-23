@@ -59,7 +59,10 @@
             <button id="menuToggle" class="menu-hamburger" title="Afficher les outils"></button>
             <h2 id="projectTitle">Nouveau projet</h2>
             <div class="user-profile">
-                <span id="userEmail" class="user-email">Loading...</span>
+                <div id="userProfileDisplay" class="user-profile-display">
+                    <div id="userAvatar" class="user-avatar"></div>
+                    <span id="userName" class="user-name">Loading...</span>
+                </div>
                 <button id="logoutBtn" class="logout-btn" title="Se déconnecter">Déconnexion</button>
             </div>
             <button id="playToggle" class="play-button" title="Lancer/Arrêter l'animation">▶️</button>
@@ -344,10 +347,6 @@
                 return;
             }
 
-            // Display user email
-            const userEmail = window.authService.getUserEmail();
-            document.getElementById('userEmail').textContent = userEmail;
-
             // Gestion des boutons de déconnexion (header + menu hamburger)
             const logoutButtons = [
                 document.getElementById('logoutBtn'),
@@ -371,6 +370,16 @@
                     console.warn('Session tracking error:', err);
                 });
             }
+            
+            // Mettre à jour l'affichage du profil après chargement de tous les scripts
+            // Utiliser un délai pour s'assurer que script-templates.js est chargé
+            setTimeout(() => {
+                if (typeof updateUserProfileDisplay === 'function') {
+                    updateUserProfileDisplay();
+                } else if (typeof window.updateUserProfileDisplay === 'function') {
+                    window.updateUserProfileDisplay();
+                }
+            }, 500);
             
             if (typeof window.initUserProfileFlow === 'function') {
                 window.initUserProfileFlow();

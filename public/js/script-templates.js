@@ -3196,6 +3196,11 @@
                 modal.remove();
                 alert('✅ Profil enregistré avec succès !\n\nVotre pseudo et avatar seront maintenant affichés sur tous vos modèles publiés.');
                 
+                // Mettre à jour l'affichage du profil dans la barre du haut
+                if (typeof window.updateUserProfileDisplay === 'function') {
+                    window.updateUserProfileDisplay();
+                }
+                
                 // Rafraîchir la galerie si elle est ouverte
                 if (window.currentTemplateGallery) {
                     showTemplateGallery();
@@ -3217,6 +3222,9 @@
     
     // Exposer la fonction globalement pour qu'elle soit accessible depuis les boutons profil
     window.showUsernameDialog = showUsernameDialog;
+    
+    // Exposer generateAvatarPreview pour utilisation dans script.js
+    window.generateAvatarPreview = generateAvatarPreview;
     
     // Exposer les fonctions globalement si nécessaire
     window.templateFeature = {

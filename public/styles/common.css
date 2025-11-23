@@ -607,6 +607,46 @@ input[type="color"]::-webkit-color-swatch {
     margin-right: 10px;
 }
 
+.user-profile-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    max-width: 200px;
+    overflow: hidden;
+}
+
+.user-avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-avatar svg {
+    border-radius: 50%;
+}
+
+.user-avatar div {
+    border-radius: 50% !important;
+}
+
+.user-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
 .user-email {
     font-size: 12px;
     color: #666;
