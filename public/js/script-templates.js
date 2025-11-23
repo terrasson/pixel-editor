@@ -1623,36 +1623,36 @@
                         };
                     });
                 });
-            
-            console.log('✅ Animation chargée:', {
-                nombreFrames: frames.length,
-                frames: frames.map((f, i) => ({
-                    index: i,
-                    length: f.length,
-                    hasContent: f.some(p => !p.isEmpty)
-                }))
-            });
-            
-            currentFrame = 0;
-            
-            // Mettre à jour l'interface des frames
-            if (typeof updateFramesList === 'function') {
-                updateFramesList();
+                
+                console.log('✅ Animation chargée:', {
+                    nombreFrames: frames.length,
+                    frames: frames.map((f, i) => ({
+                        index: i,
+                        length: f.length,
+                        hasContent: f.some(p => !p.isEmpty)
+                    }))
+                });
+                
+                currentFrame = 0;
+                
+                // Mettre à jour l'interface des frames
+                if (typeof updateFramesList === 'function') {
+                    updateFramesList();
+                }
+                
+                // Charger la première frame
+                if (typeof loadFrame === 'function') {
+                    loadFrame(currentFrame);
+                }
+                
+                // Mettre à jour le titre
+                const title = document.getElementById('projectTitle');
+                if (title) {
+                    title.textContent = template.name || 'Animation partagée';
+                }
+                
+                alert(`✅ Animation "${template.name}" chargée avec ${frames.length} frame(s) !`);
             }
-            
-            // Charger la première frame
-            if (typeof loadFrame === 'function') {
-                loadFrame(currentFrame);
-            }
-            
-            // Mettre à jour le titre
-            const title = document.getElementById('projectTitle');
-            if (title) {
-                title.textContent = template.name || 'Animation partagée';
-            }
-            
-            alert(`✅ Animation "${template.name}" chargée avec ${frames.length} frame(s) !`);
-            
         } else {
             // Mode Frame unique : modèle à réaliser avec indicateurs
             isTemplateMode = true;
