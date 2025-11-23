@@ -1050,11 +1050,15 @@
             // Utiliser template_data (version vide avec isEmpty: true mais couleurs stockées) pour le chargement
             // et preview_data pour l'aperçu dans la galerie
             // Vérifier si c'est une animation (tableau de frames) ou une frame unique
+            // IMPORTANT : template_data contient les pixels avec isEmpty: true mais avec leurs couleurs (pour les indicateurs)
+            // preview_data contient les pixels colorés (pour l'aperçu dans la galerie)
             const templateData_raw = templateData.template_data || templateData.preview_data;
+            const previewData_raw = templateData.preview_data || templateData.template_data;
             
             // Utiliser le champ is_animation de la base de données si disponible
             // Sinon, détecter automatiquement
             let isAnimation = templateData.is_animation || false;
+            let isAnimationTemplate = templateData.is_animation_template || false;
             
             if (!isAnimation && Array.isArray(templateData_raw) && templateData_raw.length > 0) {
                 // Si le premier élément est un array, c'est probablement une animation (array de frames)
@@ -1063,16 +1067,28 @@
                 isAnimation = Array.isArray(firstElement);
             }
             
+            console.log('📥 Données récupérées depuis Supabase:', {
+                hasTemplateData: !!templateData.template_data,
+                hasPreviewData: !!templateData.preview_data,
+                isAnimation: isAnimation,
+                isAnimationTemplate: isAnimationTemplate,
+                templateDataType: Array.isArray(templateData_raw) ? 
+                    (Array.isArray(templateData_raw[0]) ? 'array of frames' : 'single frame') : 
+                    typeof templateData_raw
+            });
+            
             const template = {
                 id: templateData.id,
                 name: templateData.name,
                 description: templateData.description,
                 theme: templateData.category,
-                preview: templateData_raw, // Peut être une frame unique (array de pixels) ou un tableau de frames (animation)
+                preview: previewData_raw, // Version colorée pour l'aperçu dans la galerie
+                templateData: templateData_raw, // Version avec isEmpty: true mais couleurs pour les indicateurs
                 difficulty: templateData.difficulty || 1,
                 isShared: true,
                 author_email: templateData.author_email,
-                isAnimation: isAnimation // Marqueur pour animation complète
+                isAnimation: isAnimation, // Marqueur pour animation (complète ou à réaliser)
+                isAnimationTemplate: isAnimationTemplate // Marqueur pour distinguer animation complète vs à réaliser
             };
             
             // Charger le modèle
@@ -1436,9 +1452,11 @@
                     
                     // Convertir chaque pixel de la frame
                     return frame.map(pixel => {
+                        // Pour les animations à réaliser, on garde la couleur même si isEmpty est true
+                        // car on en a besoin pour créer les indicateurs
                         const color = pixel && pixel.color ? pixel.color : '#FFFFFF';
-                        // Si c'est une animation "à réaliser", les pixels sont vides (pour les indicateurs)
-                        // Si c'est une animation complète, les pixels sont remplis
+                        // Si c'est une animation "à réaliser", les pixels sont vides (isEmpty: true) mais gardent leur couleur
+                        // Si c'est une animation complète, les pixels sont remplis (isEmpty: false)
                         return {
                             color: color,
                             isEmpty: isAnimationTemplate ? true : false
@@ -1689,7 +1707,11 @@
                     sourceDataType: Array.isArray(sourceData) ? 'array' : typeof sourceData,
                     sourceDataLength: Array.isArray(sourceData) ? sourceData.length : 0,
                     firstFrameSample: Array.isArray(sourceData) && sourceData.length > 0 && Array.isArray(sourceData[0]) ? 
-                        sourceData[0].slice(0, 5).map(p => ({ color: p?.color, isEmpty: p?.isEmpty })) : 'N/A'
+                        sourceData[0].slice(0, 10).map(p => ({ 
+                            color: p?.color, 
+                            isEmpty: p?.isEmpty,
+                            hasColor: !!(p?.color && p?.color !== '#FFFFFF')
+                        })) : 'N/A'
                 });
                 
                 // Créer un nouveau projet avec toutes les frames vides mais avec les couleurs pour les indicateurs
@@ -1699,19 +1721,30 @@
                         return createEmptyFrame();
                     }
                     // Chaque frame est un array de pixels à réaliser
-                    return frame.map(pixel => {
+                    // IMPORTANT : conserver la couleur même si isEmpty est true (pour les indicateurs)
+                    return frame.map((pixel, pixelIndex) => {
                         if (pixel && typeof pixel === 'object' && 'color' in pixel) {
+                            const color = pixel.color || '#FFFFFF';
+                            // Garder la couleur même si isEmpty est true (nécessaire pour les indicateurs)
                             return {
-                                color: pixel.color || '#FFFFFF',
+                                color: color,
                                 isEmpty: true // Vide pour que l'utilisateur doive colorier
                             };
                         }
+                        // Si le pixel n'a pas de couleur, créer un pixel blanc vide
                         return {
                             color: '#FFFFFF',
                             isEmpty: true
                         };
                     });
                 });
+                
+                // Vérifier que les couleurs sont bien présentes dans les frames
+                const framesWithColors = frames.map((frame, idx) => {
+                    const pixelsWithColor = frame.filter(p => p && p.color && p.color !== '#FFFFFF').length;
+                    return { frameIndex: idx, pixelsWithColor, totalPixels: frame.length };
+                });
+                console.log('🎨 Frames créées avec couleurs:', framesWithColors);
                 
                 currentFrame = 0;
                 
@@ -1735,16 +1768,24 @@
                 }
                 
                 // Ajouter les indicateurs après un court délai pour la première frame
+                // Utiliser sourceData directement (contient les pixels avec leurs couleurs)
                 setTimeout(() => {
-                    if (sourceData && sourceData[currentFrame]) {
+                    if (sourceData && Array.isArray(sourceData) && sourceData[currentFrame]) {
+                        const frameData = sourceData[currentFrame];
                         console.log('🎨 Ajout des indicateurs pour la première frame (index', currentFrame, ')');
-                        const success = addTemplateIndicators(sourceData[currentFrame]);
+                        console.log('📊 Données de la frame:', {
+                            frameLength: frameData.length,
+                            pixelsAvecCouleur: frameData.filter(p => p && p.color && p.color !== '#FFFFFF').length,
+                            premiersPixels: frameData.slice(0, 5).map(p => ({ color: p?.color, isEmpty: p?.isEmpty }))
+                        });
+                        const success = addTemplateIndicators(frameData);
                         console.log('📋 Résultat ajout indicateurs frame 0:', success ? '✅ SUCCÈS' : '❌ ÉCHEC');
                     } else {
                         console.error('❌ Impossible d\'ajouter les indicateurs: sourceData ou frame manquante', {
                             hasSourceData: !!sourceData,
+                            isArray: Array.isArray(sourceData),
                             currentFrame: currentFrame,
-                            hasFrame: sourceData ? !!sourceData[currentFrame] : false
+                            hasFrame: sourceData && Array.isArray(sourceData) ? !!sourceData[currentFrame] : false
                         });
                     }
                 }, 500);

@@ -1204,7 +1204,8 @@ class DatabaseService {
                 previewData,
                 thumbnail,
                 difficulty,
-                isAnimation
+                isAnimation,
+                isAnimationTemplate
             } = templateData;
             
             // Validation
@@ -1224,7 +1225,8 @@ class DatabaseService {
                     template_data: frameData, // Peut être une frame unique ou un array de frames (animation)
                     preview_data: previewData || frameData, // Version complète pour l'aperçu
                     thumbnail: thumbnail || null,
-                    is_animation: isAnimation || false, // Marqueur pour animation complète
+                    is_animation: isAnimation || false, // Marqueur pour animation (complète ou à réaliser)
+                    is_animation_template: isAnimationTemplate || false, // Marqueur pour distinguer animation complète vs à réaliser
                     difficulty: difficulty || 1,
                     is_public: true,
                     is_approved: true
