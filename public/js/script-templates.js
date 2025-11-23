@@ -609,6 +609,9 @@
                     <div id="templatesContainer">
             `;
             
+            // Obtenir l'email de l'utilisateur connecté pour afficher le bouton de suppression
+            const currentUserEmail = window.authService?.getUserEmail() || '';
+            
             // Parcourir chaque thème
             themes.forEach(theme => {
                 modalContent += `
@@ -641,12 +644,23 @@
                     const authorInfo = template.isShared ? `<div style="font-size: 0.75em; color: rgba(255, 255, 255, 0.6); margin-top: 4px;">Par ${template.author_email?.split('@')[0] || 'Anonyme'}</div>` : '';
                     const viewInfo = template.view_count > 0 ? `<div style="font-size: 0.75em; color: rgba(255, 255, 255, 0.6);">👁️ ${template.view_count}</div>` : '';
                     
+                    // Vérifier si l'utilisateur connecté est l'auteur du modèle
+                    const isOwner = template.isShared && template.author_email && currentUserEmail && template.author_email.toLowerCase() === currentUserEmail.toLowerCase();
+                    const deleteButton = isOwner ? `
+                        <button class="delete-template-btn" data-template-id="${template.id}" data-template-name="${template.name}"
+                                style="position: absolute; top: 5px; right: 5px; width: 24px; height: 24px; border-radius: 50%; background: rgba(244, 67, 54, 0.9); border: 2px solid rgba(255, 255, 255, 0.9); color: white; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center; z-index: 10; transition: all 0.2s;"
+                                title="Supprimer ce modèle">
+                            ×
+                        </button>
+                    ` : '';
+                    
                     modalContent += `
                         <div class="template-item" data-template-id="${template.id}" 
                              data-template-theme="${theme}"
                              data-template-styles="${(template.style_tags || []).join(',')}"
                              data-is-shared="${template.isShared ? 'true' : 'false'}"
-                             style="cursor: pointer; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; transition: all 0.3s; border: 2px solid ${template.isShared ? 'rgba(156, 39, 176, 0.5)' : 'transparent'};">
+                             style="position: relative; cursor: pointer; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; transition: all 0.3s; border: 2px solid ${template.isShared ? 'rgba(156, 39, 176, 0.5)' : 'transparent'};">
+                            ${deleteButton}
                             <div style="background: white; border-radius: 4px; padding: 5px; margin-bottom: 8px; display: flex; justify-content: center; align-items: center; min-height: 80px;">
                                 ${previewHTML}
                             </div>
@@ -753,8 +767,13 @@
                     }
                 });
                 
-                item.addEventListener('click', function() {
+                item.addEventListener('click', function(e) {
                     try {
+                        // Ne pas charger le modèle si on a cliqué sur le bouton de suppression
+                        if (e.target.classList.contains('delete-template-btn') || e.target.closest('.delete-template-btn')) {
+                            return;
+                        }
+                        
                         console.log('🖱️ Clic sur un modèle détecté !', { templateId, isShared });
                         loadTemplateFromGallery(templateId, isShared);
                         modal.remove();
@@ -762,6 +781,82 @@
                     } catch (error) {
                         console.error('❌ ERREUR lors du clic sur le modèle:', error);
                         alert('❌ Erreur lors du chargement du modèle. Vérifiez la console.');
+                    }
+                });
+            });
+            
+            // Event listeners pour les boutons de suppression
+            const deleteButtons = modal.querySelectorAll('.delete-template-btn');
+            deleteButtons.forEach(button => {
+                // Effets hover pour les boutons de suppression
+                button.addEventListener('mouseenter', function() {
+                    this.style.background = 'rgba(244, 67, 54, 1)';
+                    this.style.transform = 'scale(1.1)';
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    this.style.background = 'rgba(244, 67, 54, 0.9)';
+                    this.style.transform = 'scale(1)';
+                });
+                
+                button.addEventListener('click', async function(e) {
+                    e.stopPropagation(); // Empêcher le clic de déclencher le chargement du modèle
+                    
+                    const templateId = this.dataset.templateId;
+                    const templateName = this.dataset.templateName || 'ce modèle';
+                    
+                    // Demander confirmation
+                    const confirmed = confirm(
+                        `🗑️ Êtes-vous sûr de vouloir supprimer "${templateName}" ?\n\n` +
+                        `Cette action est irréversible.`
+                    );
+                    
+                    if (!confirmed) {
+                        return;
+                    }
+                    
+                    try {
+                        // Désactiver le bouton pendant la suppression
+                        this.disabled = true;
+                        this.style.opacity = '0.5';
+                        this.style.cursor = 'not-allowed';
+                        
+                        // Supprimer le modèle
+                        const result = await window.dbService.deleteTemplate(templateId);
+                        
+                        if (result.success) {
+                            // Retirer l'élément de la liste visuellement
+                            const templateItem = this.closest('.template-item');
+                            if (templateItem) {
+                                templateItem.style.transition = 'opacity 0.3s';
+                                templateItem.style.opacity = '0';
+                                setTimeout(() => {
+                                    templateItem.remove();
+                                    
+                                    // Vérifier si la section de thème est maintenant vide
+                                    const themeSection = templateItem.closest('.theme-section');
+                                    if (themeSection) {
+                                        const remainingItems = themeSection.querySelectorAll('.template-item');
+                                        if (remainingItems.length === 0) {
+                                            themeSection.remove();
+                                        }
+                                    }
+                                }, 300);
+                            }
+                            
+                            alert(`✅ Modèle "${templateName}" supprimé avec succès !`);
+                        } else {
+                            alert(`❌ Erreur lors de la suppression : ${result.error || 'Erreur inconnue'}`);
+                            this.disabled = false;
+                            this.style.opacity = '1';
+                            this.style.cursor = 'pointer';
+                        }
+                    } catch (error) {
+                        console.error('❌ Erreur lors de la suppression du modèle:', error);
+                        alert(`❌ Erreur lors de la suppression : ${error.message || 'Erreur inconnue'}`);
+                        this.disabled = false;
+                        this.style.opacity = '1';
+                        this.style.cursor = 'pointer';
                     }
                 });
             });
