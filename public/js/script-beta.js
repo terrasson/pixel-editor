@@ -48,60 +48,60 @@
      */
     function showPhotoToPixelDialog() {
         const dialogContent = `
-            <div style="padding: 20px; color: white;">
-                <h3 style="margin-top: 0; text-align: center;">📷 Convertir une photo en Pixel Art</h3>
+            <div style="padding: 20px; color: rgba(255, 255, 255, 0.95);">
+                <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98); font-weight: 600;">📷 Convertir une photo en Pixel Art</h3>
                 
                 <div style="margin: 20px 0;">
-                    <label style="display: block; margin-bottom: 10px; font-weight: 600;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
                         Sélectionner une image :
                     </label>
-                    <input type="file" id="photoInput" accept="image/*" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                    <input type="file" id="photoInput" accept="image/*" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); font-size: 14px;">
                 </div>
                 
                 <div style="margin: 20px 0;">
-                    <label style="display: block; margin-bottom: 10px; font-weight: 600;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
                         Mode de conversion :
                     </label>
-                    <select id="conversionMode" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
-                        <option value="simple">⚡ Simple (conversion directe)</option>
-                        <option value="quantized">🎨 Avancé (quantification de couleurs)</option>
+                    <select id="conversionMode" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); font-size: 14px;">
+                        <option value="simple" style="background: rgba(36, 48, 94, 0.98); color: rgba(255, 255, 255, 0.95);">⚡ Simple (conversion directe)</option>
+                        <option value="quantized" style="background: rgba(36, 48, 94, 0.98); color: rgba(255, 255, 255, 0.95);">🎨 Avancé (quantification de couleurs)</option>
                     </select>
                 </div>
                 
                 <div id="advancedOptions" style="display: none; margin: 20px 0;">
-                    <label style="display: block; margin-bottom: 10px; font-weight: 600;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
                         Nombre de couleurs :
                     </label>
-                    <select id="colorCount" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
-                        <option value="8">8 couleurs (style rétro)</option>
-                        <option value="16" selected>16 couleurs (recommandé)</option>
-                        <option value="32">32 couleurs (plus détaillé)</option>
+                    <select id="colorCount" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); font-size: 14px;">
+                        <option value="8" style="background: rgba(36, 48, 94, 0.98); color: rgba(255, 255, 255, 0.95);">8 couleurs (style rétro)</option>
+                        <option value="16" selected style="background: rgba(36, 48, 94, 0.98); color: rgba(255, 255, 255, 0.95);">16 couleurs (recommandé)</option>
+                        <option value="32" style="background: rgba(36, 48, 94, 0.98); color: rgba(255, 255, 255, 0.95);">32 couleurs (plus détaillé)</option>
                     </select>
                     
-                    <label style="display: block; margin: 15px 0 10px 0; font-weight: 600;">
+                    <label style="display: block; margin: 15px 0 10px 0; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
                         Contraste :
                     </label>
                     <input type="range" id="contrastSlider" min="0" max="200" value="100" style="width: 100%;">
-                    <span id="contrastValue" style="display: block; text-align: center; margin-top: 5px;">100%</span>
+                    <span id="contrastValue" style="display: block; text-align: center; margin-top: 5px; color: rgba(255, 255, 255, 0.95);">100%</span>
                     
-                    <label style="display: block; margin: 15px 0 10px 0; font-weight: 600;">
+                    <label style="display: block; margin: 15px 0 10px 0; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
                         Luminosité :
                     </label>
                     <input type="range" id="brightnessSlider" min="0" max="200" value="100" style="width: 100%;">
-                    <span id="brightnessValue" style="display: block; text-align: center; margin-top: 5px;">100%</span>
+                    <span id="brightnessValue" style="display: block; text-align: center; margin-top: 5px; color: rgba(255, 255, 255, 0.95);">100%</span>
                 </div>
                 
-                <div style="margin: 20px 0; padding: 15px; background: rgba(0,122,255,0.2); border-radius: 8px; border: 1px solid rgba(0,122,255,0.4);">
-                    <p style="margin: 0; font-size: 0.9rem;">
-                        💡 <strong>Astuce :</strong> Le mode avancé réduit le nombre de couleurs pour un rendu plus "pixel art" authentique.
+                <div style="margin: 20px 0; padding: 15px; background: rgba(0,122,255,0.3); border-radius: 8px; border: 1px solid rgba(0,122,255,0.5);">
+                    <p style="margin: 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.9);">
+                        💡 <strong style="font-weight: 600;">Astuce :</strong> Le mode avancé réduit le nombre de couleurs pour un rendu plus "pixel art" authentique.
                     </p>
                 </div>
                 
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button id="cancelPhotoBtn" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: white; cursor: pointer; font-weight: 600;">
+                    <button id="cancelPhotoBtn" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
                         Annuler
                     </button>
-                    <button id="convertPhotoBtn" style="flex: 1; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, #FF6B6B, #FF8E53); color: white; cursor: pointer; font-weight: 600;" disabled>
+                    <button id="convertPhotoBtn" style="flex: 1; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, #FF6B6B, #FF8E53); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;" disabled>
                         Convertir
                     </button>
                 </div>
@@ -113,7 +113,7 @@
         modal.className = 'modal';
         modal.style.display = 'flex';
         modal.innerHTML = `
-            <div class="modal-content" style="max-width: 500px; width: 90%;">
+            <div class="modal-content" style="max-width: 500px; width: 90%; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
                 ${dialogContent}
             </div>
         `;
@@ -137,10 +137,12 @@
         
         contrastSlider.addEventListener('input', (e) => {
             contrastValue.textContent = e.target.value + '%';
+            contrastValue.style.color = 'rgba(255, 255, 255, 0.95)';
         });
         
         brightnessSlider.addEventListener('input', (e) => {
             brightnessValue.textContent = e.target.value + '%';
+            brightnessValue.style.color = 'rgba(255, 255, 255, 0.95)';
         });
         
         photoInput.addEventListener('change', (e) => {
