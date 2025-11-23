@@ -1613,8 +1613,6 @@
                     'Amusez-vous bien ! 🎨'
                 );
             }, 500);
-        } else {
-            alert('❌ Impossible de charger le modèle. Veuillez réessayer.');
         }
     }
     
