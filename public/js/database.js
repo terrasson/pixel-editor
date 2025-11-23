@@ -1534,55 +1534,32 @@ class DatabaseService {
                 profileData.avatar_size = avatarSize;
             }
             
-            // Essayer d'abord de récupérer le profil existant
-            const { data: existingProfile } = await this.supabase
+            // Supprimer tous les profils existants pour cet utilisateur (nettoyage des doublons)
+            // Ensuite on en créera un nouveau propre
+            await this.supabase
                 .from('user_profiles')
-                .select('id')
-                .eq('user_id', userId)
-                .maybeSingle(); // maybeSingle() retourne null au lieu d'erreur si aucun résultat
+                .delete()
+                .eq('user_id', userId);
             
-            if (existingProfile && existingProfile.id) {
-                // Mettre à jour le profil existant
-                const { data, error } = await this.supabase
-                    .from('user_profiles')
-                    .update(profileData)
-                    .eq('user_id', userId)
-                    .select()
-                    .single();
-                
-                if (error) {
-                    console.error('Update profile error:', error);
-                    throw error;
-                }
-                
-                // Mettre à jour author_username dans tous les templates
-                await this.supabase
-                    .from('pixel_templates')
-                    .update({ author_username: username.trim() })
-                    .eq('author_id', userId);
-                
-                return { success: true, data };
-            } else {
-                // Créer un nouveau profil (sans inclure l'ID)
-                const { data, error } = await this.supabase
-                    .from('user_profiles')
-                    .insert(profileData)
-                    .select()
-                    .single();
-                
-                if (error) {
-                    console.error('Insert profile error:', error);
-                    throw error;
-                }
-                
-                // Mettre à jour author_username dans tous les templates
-                await this.supabase
-                    .from('pixel_templates')
-                    .update({ author_username: username.trim() })
-                    .eq('author_id', userId);
-                
-                return { success: true, data };
+            // Insérer le nouveau profil (maintenant qu'on a nettoyé les anciens)
+            const { data, error } = await this.supabase
+                .from('user_profiles')
+                .insert(profileData)
+                .select()
+                .single();
+            
+            if (error) {
+                console.error('Insert profile error:', error);
+                throw error;
             }
+            
+            // Mettre à jour author_username dans tous les templates
+            await this.supabase
+                .from('pixel_templates')
+                .update({ author_username: username.trim() })
+                .eq('author_id', userId);
+            
+            return { success: true, data };
             
             // Mettre à jour author_username dans tous les templates de l'utilisateur
             await this.supabase
