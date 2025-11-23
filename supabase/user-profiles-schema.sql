@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     
     -- Lien avec l'utilisateur authentifié
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
-    user_email TEXT NOT NULL,
+    user_email TEXT, -- Optionnel (pour compatibilité avec les anciennes versions)
     
     -- Pseudo de l'utilisateur (affiché publiquement)
     username TEXT NOT NULL,
@@ -33,6 +33,16 @@ BEGIN
             WHERE table_name = 'user_profiles' AND column_name = 'user_email'
         ) THEN
             ALTER TABLE user_profiles ADD COLUMN user_email TEXT;
+        ELSE
+            -- Si la colonne existe mais est NOT NULL, la rendre optionnelle
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'user_profiles' 
+                AND column_name = 'user_email' 
+                AND is_nullable = 'NO'
+            ) THEN
+                ALTER TABLE user_profiles ALTER COLUMN user_email DROP NOT NULL;
+            END IF;
         END IF;
         
         -- Ajouter username si elle n'existe pas
@@ -94,23 +104,32 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_profiles_username ON user_profiles(username);
 
 -- RLS Policies pour user_profiles
-ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
-
--- Policy : Les utilisateurs peuvent voir tous les profils publics (pour afficher les pseudos)
-CREATE POLICY "Allow authenticated users to view all profiles"
-ON user_profiles FOR SELECT USING (true);
-
--- Policy : Les utilisateurs peuvent créer leur propre profil
-CREATE POLICY "Allow users to create their own profile"
-ON user_profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
-
--- Policy : Les utilisateurs peuvent mettre à jour leur propre profil
-CREATE POLICY "Allow users to update their own profile"
-ON user_profiles FOR UPDATE USING (auth.uid() = user_id);
-
--- Policy : Les utilisateurs peuvent supprimer leur propre profil
-CREATE POLICY "Allow users to delete their own profile"
-ON user_profiles FOR DELETE USING (auth.uid() = user_id);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_profiles') THEN
+        ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+        
+        -- Policy : Les utilisateurs peuvent voir tous les profils publics (pour afficher les pseudos)
+        DROP POLICY IF EXISTS "Allow authenticated users to view all profiles" ON user_profiles;
+        CREATE POLICY "Allow authenticated users to view all profiles"
+        ON user_profiles FOR SELECT USING (true);
+        
+        -- Policy : Les utilisateurs peuvent créer leur propre profil
+        DROP POLICY IF EXISTS "Allow users to create their own profile" ON user_profiles;
+        CREATE POLICY "Allow users to create their own profile"
+        ON user_profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
+        
+        -- Policy : Les utilisateurs peuvent mettre à jour leur propre profil
+        DROP POLICY IF EXISTS "Allow users to update their own profile" ON user_profiles;
+        CREATE POLICY "Allow users to update their own profile"
+        ON user_profiles FOR UPDATE USING (auth.uid() = user_id);
+        
+        -- Policy : Les utilisateurs peuvent supprimer leur propre profil
+        DROP POLICY IF EXISTS "Allow users to delete their own profile" ON user_profiles;
+        CREATE POLICY "Allow users to delete their own profile"
+        ON user_profiles FOR DELETE USING (auth.uid() = user_id);
+    END IF;
+END $$;
 
 -- Fonction pour générer un pseudo par défaut basé sur l'email
 CREATE OR REPLACE FUNCTION generate_default_username(email TEXT)

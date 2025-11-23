@@ -1498,8 +1498,6 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
             
-            const userEmail = window.authService?.getUserEmail() || '';
-            
             // Validation du pseudo
             if (!username || username.trim().length < 2 || username.trim().length > 30) {
                 throw new Error('Le pseudo doit contenir entre 2 et 30 caractères');
@@ -1511,51 +1509,53 @@ class DatabaseService {
             }
             
             // Vérifier si le pseudo est déjà utilisé par un autre utilisateur
-            const { data: existingProfile } = await this.supabase
+            const { data: existingProfiles } = await this.supabase
                 .from('user_profiles')
                 .select('user_id')
-                .eq('username', username.trim())
-                .neq('user_id', userId)
-                .single();
+                .eq('username', username.trim());
             
-            if (existingProfile) {
-                throw new Error('Ce pseudo est déjà utilisé par un autre utilisateur');
+            if (existingProfiles && existingProfiles.length > 0) {
+                const otherUser = existingProfiles.find(p => p.user_id !== userId);
+                if (otherUser) {
+                    throw new Error('Ce pseudo est déjà utilisé par un autre utilisateur');
+                }
             }
             
-            // Vérifier si le profil existe déjà
-            const { data: existing } = await this.supabase
-                .from('user_profiles')
-                .select('id')
-                .eq('user_id', userId)
-                .single();
-            
-            const updateData = {
+            // Préparer les données du profil
+            const profileData = {
+                user_id: userId,
                 username: username.trim(),
                 updated_at: new Date().toISOString()
             };
             
-            // Ajouter user_email seulement si la colonne existe (pour compatibilité)
-            // Ne pas l'ajouter dans update car elle pourrait ne pas exister
-            // (user_email est optionnel dans certaines versions du schéma)
-            
             // Ajouter l'avatar si fourni
             if (avatarData !== null) {
-                updateData.avatar_data = avatarData;
-                updateData.avatar_size = avatarSize;
+                profileData.avatar_data = avatarData;
+                profileData.avatar_size = avatarSize;
             }
             
-            if (existing) {
+            // Essayer d'abord de récupérer le profil existant
+            const { data: existingProfile } = await this.supabase
+                .from('user_profiles')
+                .select('id')
+                .eq('user_id', userId)
+                .maybeSingle(); // maybeSingle() retourne null au lieu d'erreur si aucun résultat
+            
+            if (existingProfile && existingProfile.id) {
                 // Mettre à jour le profil existant
                 const { data, error } = await this.supabase
                     .from('user_profiles')
-                    .update(updateData)
+                    .update(profileData)
                     .eq('user_id', userId)
                     .select()
                     .single();
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Update profile error:', error);
+                    throw error;
+                }
                 
-                // Mettre à jour author_username dans tous les templates de l'utilisateur
+                // Mettre à jour author_username dans tous les templates
                 await this.supabase
                     .from('pixel_templates')
                     .update({ author_username: username.trim() })
@@ -1563,33 +1563,19 @@ class DatabaseService {
                 
                 return { success: true, data };
             } else {
-                // Créer un nouveau profil
-                const insertData = {
-                    user_id: userId,
-                    username: username.trim()
-                };
-                
-                // Ajouter user_email seulement si la colonne existe
-                // (pour compatibilité avec les anciennes versions du schéma)
-                if (userEmail) {
-                    insertData.user_email = userEmail;
-                }
-                
-                // Ajouter l'avatar si fourni
-                if (avatarData !== null) {
-                    insertData.avatar_data = avatarData;
-                    insertData.avatar_size = avatarSize;
-                }
-                
+                // Créer un nouveau profil (sans inclure l'ID)
                 const { data, error } = await this.supabase
                     .from('user_profiles')
-                    .insert(insertData)
+                    .insert(profileData)
                     .select()
                     .single();
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Insert profile error:', error);
+                    throw error;
+                }
                 
-                // Mettre à jour author_username dans tous les templates de l'utilisateur
+                // Mettre à jour author_username dans tous les templates
                 await this.supabase
                     .from('pixel_templates')
                     .update({ author_username: username.trim() })
@@ -1597,6 +1583,14 @@ class DatabaseService {
                 
                 return { success: true, data };
             }
+            
+            // Mettre à jour author_username dans tous les templates de l'utilisateur
+            await this.supabase
+                .from('pixel_templates')
+                .update({ author_username: username.trim() })
+                .eq('author_id', userId);
+            
+            return { success: true, data };
         } catch (error) {
             console.error('Set user profile error:', error);
             return { success: false, error: error.message };
