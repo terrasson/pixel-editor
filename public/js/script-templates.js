@@ -1480,6 +1480,12 @@
         currentTemplate = template;
         window.currentTemplate = template;
         
+        // Mettre à jour le titre du projet dès le début (pour tous les types de modèles)
+        const title = document.getElementById('projectTitle');
+        if (title && template.name) {
+            title.textContent = template.name;
+        }
+        
         // Vérifier si c'est une animation complète ou une frame unique
         // Une animation est un tableau de frames, où chaque frame est un array de pixels
         // Une frame unique est un array de pixels directement
@@ -1622,12 +1628,6 @@
                     }
                 }
                 
-                // Mettre à jour le titre
-                const title = document.getElementById('projectTitle');
-                if (title) {
-                    title.textContent = template.name || 'Animation à réaliser';
-                }
-                
                 alert(`✅ Animation "${template.name}" chargée avec ${frames.length} frame(s) à réaliser !`);
                 
             } else {
@@ -1697,12 +1697,6 @@
                 // Charger la première frame
                 if (typeof loadFrame === 'function') {
                     loadFrame(currentFrame);
-                }
-                
-                // Mettre à jour le titre
-                const title = document.getElementById('projectTitle');
-                if (title) {
-                    title.textContent = template.name || 'Animation partagée';
                 }
                 
                 alert(`✅ Animation "${template.name}" chargée avec ${frames.length} frame(s) !`);
