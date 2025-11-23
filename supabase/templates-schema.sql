@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS pixel_templates (
     
     -- Type de modèle
     is_animation BOOLEAN DEFAULT false, -- true = animation complète (plusieurs frames), false = frame unique à compléter
+    is_animation_template BOOLEAN DEFAULT false, -- true = animation à réaliser (avec indicateurs), false = animation complète ou frame unique
     
     -- Difficulté
     difficulty INTEGER DEFAULT 1 CHECK (difficulty >= 1 AND difficulty <= 5),
@@ -177,45 +178,76 @@ CREATE TRIGGER update_template_favorite_count_trigger
     FOR EACH ROW
     EXECUTE FUNCTION update_template_favorite_count();
 
--- RLS Policies
-ALTER TABLE pixel_templates ENABLE ROW LEVEL SECURITY;
-ALTER TABLE template_favorites ENABLE ROW LEVEL SECURITY;
-ALTER TABLE template_completions ENABLE ROW LEVEL SECURITY;
+-- RLS Policies (idempotentes - peuvent être exécutées plusieurs fois)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'pixel_templates') THEN
+        ALTER TABLE pixel_templates ENABLE ROW LEVEL SECURITY;
+        
+        -- Politique : Tout le monde peut voir les modèles publics et approuvés
+        DROP POLICY IF EXISTS "Anyone can view public templates" ON pixel_templates;
+        CREATE POLICY "Anyone can view public templates"
+            ON pixel_templates FOR SELECT
+            USING (is_public = true AND is_approved = true);
+        
+        -- Politique : Les utilisateurs authentifiés peuvent créer des modèles
+        DROP POLICY IF EXISTS "Authenticated users can create templates" ON pixel_templates;
+        CREATE POLICY "Authenticated users can create templates"
+            ON pixel_templates FOR INSERT
+            WITH CHECK (auth.uid() = author_id);
+        
+        -- Politique : Les auteurs peuvent modifier leurs propres modèles
+        DROP POLICY IF EXISTS "Authors can update their own templates" ON pixel_templates;
+        CREATE POLICY "Authors can update their own templates"
+            ON pixel_templates FOR UPDATE
+            USING (auth.uid() = author_id);
+        
+        -- Politique : Les auteurs peuvent supprimer leurs propres modèles
+        DROP POLICY IF EXISTS "Authors can delete their own templates" ON pixel_templates;
+        CREATE POLICY "Authors can delete their own templates"
+            ON pixel_templates FOR DELETE
+            USING (auth.uid() = author_id);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'template_favorites') THEN
+        ALTER TABLE template_favorites ENABLE ROW LEVEL SECURITY;
+        
+        -- Politique : Les utilisateurs peuvent gérer leurs favoris
+        DROP POLICY IF EXISTS "Users can manage their own favorites" ON template_favorites;
+        CREATE POLICY "Users can manage their own favorites"
+            ON template_favorites FOR ALL
+            USING (auth.uid() = user_id);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'template_completions') THEN
+        ALTER TABLE template_completions ENABLE ROW LEVEL SECURITY;
+        
+        -- Politique : Les utilisateurs peuvent voir leurs complétions
+        DROP POLICY IF EXISTS "Users can view their own completions" ON template_completions;
+        CREATE POLICY "Users can view their own completions"
+            ON template_completions FOR SELECT
+            USING (auth.uid() = user_id);
+        
+        -- Politique : Les utilisateurs peuvent créer leurs complétions
+        DROP POLICY IF EXISTS "Users can create their own completions" ON template_completions;
+        CREATE POLICY "Users can create their own completions"
+            ON template_completions FOR INSERT
+            WITH CHECK (auth.uid() = user_id);
+    END IF;
+END $$;
 
--- Politique : Tout le monde peut voir les modèles publics et approuvés
-CREATE POLICY "Anyone can view public templates"
-    ON pixel_templates FOR SELECT
-    USING (is_public = true AND is_approved = true);
-
--- Politique : Les utilisateurs authentifiés peuvent créer des modèles
-CREATE POLICY "Authenticated users can create templates"
-    ON pixel_templates FOR INSERT
-    WITH CHECK (auth.uid() = author_id);
-
--- Politique : Les auteurs peuvent modifier leurs propres modèles
-CREATE POLICY "Authors can update their own templates"
-    ON pixel_templates FOR UPDATE
-    USING (auth.uid() = author_id);
-
--- Politique : Les auteurs peuvent supprimer leurs propres modèles
-CREATE POLICY "Authors can delete their own templates"
-    ON pixel_templates FOR DELETE
-    USING (auth.uid() = author_id);
-
--- Politique : Les utilisateurs peuvent gérer leurs favoris
-CREATE POLICY "Users can manage their own favorites"
-    ON template_favorites FOR ALL
-    USING (auth.uid() = user_id);
-
--- Politique : Les utilisateurs peuvent voir leurs complétions
-CREATE POLICY "Users can view their own completions"
-    ON template_completions FOR SELECT
-    USING (auth.uid() = user_id);
-
--- Politique : Les utilisateurs peuvent créer leurs complétions
-CREATE POLICY "Users can create their own completions"
-    ON template_completions FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+-- Ajouter la colonne is_animation_template si elle n'existe pas (pour les bases existantes)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'pixel_templates') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'pixel_templates' AND column_name = 'is_animation_template'
+        ) THEN
+            ALTER TABLE pixel_templates ADD COLUMN is_animation_template BOOLEAN DEFAULT false;
+        END IF;
+    END IF;
+END $$;
 
 COMMENT ON TABLE pixel_templates IS 'Modèles de pixel art partagés par les utilisateurs pour que d''autres puissent les réaliser';
 COMMENT ON TABLE template_favorites IS 'Favoris des utilisateurs pour les modèles';
