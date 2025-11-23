@@ -494,14 +494,32 @@
                 if (result.success && result.data) {
                     sharedTemplates = result.data.map(template => {
                         // Détecter si c'est une animation "à réaliser" en vérifiant template_data
-                        // Si template_data existe et que tous les pixels sont isEmpty: true, c'est un modèle à réaliser
+                        // Pour les nouveaux modèles : template_data a isEmpty: true
+                        // Pour les anciens modèles : template_data = preview_data (pixels colorés)
                         let isAnimationTemplate = false;
                         if (template.is_animation && template.template_data) {
                             const firstFrame = Array.isArray(template.template_data) ? template.template_data[0] : null;
                             if (firstFrame && Array.isArray(firstFrame) && firstFrame.length > 0) {
-                                // Vérifier si tous les pixels non-vides ont isEmpty: true
+                                // Vérifier si tous les pixels non-vides ont isEmpty: true (nouveaux modèles)
                                 const nonEmptyPixels = firstFrame.filter(p => p && p.color && p.color !== '#FFFFFF');
-                                isAnimationTemplate = nonEmptyPixels.length > 0 && nonEmptyPixels.every(p => p.isEmpty === true);
+                                const allPixelsAreEmpty = nonEmptyPixels.length > 0 && nonEmptyPixels.every(p => p.isEmpty === true);
+                                
+                                // Pour les anciens modèles : si template_data et preview_data sont identiques,
+                                // on considère que c'est une animation complète (pas un modèle à réaliser)
+                                // Si template_data diffère de preview_data ou si les pixels ont isEmpty: true, c'est un modèle à réaliser
+                                const templateDataStr = JSON.stringify(template.template_data);
+                                const previewDataStr = JSON.stringify(template.preview_data || template.template_data);
+                                const areDifferent = templateDataStr !== previewDataStr;
+                                
+                                isAnimationTemplate = allPixelsAreEmpty || (areDifferent && nonEmptyPixels.length > 0);
+                                
+                                console.log('🔍 Détection type animation:', {
+                                    templateId: template.id,
+                                    templateName: template.name,
+                                    allPixelsAreEmpty,
+                                    areDifferent,
+                                    isAnimationTemplate
+                                });
                             }
                         }
                         
@@ -1308,6 +1326,7 @@
                 console.log('✅ Frames préparées pour publication:', {
                     nombreFramesOriginal: frames.length,
                     nombreFramesPreparees: templateData_withColors.length,
+                    isAnimationTemplate: isAnimationTemplate,
                     frames: templateData_withColors.map((f, i) => ({
                         index: i,
                         length: f.length,
@@ -1315,8 +1334,26 @@
                     }))
                 });
                 
-                // previewData est identique à templateData (animation complète)
-                previewData_complete = templateData_withColors;
+                // Pour les animations à réaliser : previewData doit contenir les pixels colorés (pour l'aperçu)
+                // Pour les animations complètes : previewData = templateData (même contenu)
+                if (isAnimationTemplate) {
+                    // Créer previewData avec les pixels colorés (pour l'aperçu dans la galerie)
+                    previewData_complete = frames.map(frame => {
+                        if (!frame || !Array.isArray(frame) || frame.length === 0) {
+                            return createEmptyFrame().map(pixel => ({
+                                color: pixel.color,
+                                isEmpty: false
+                            }));
+                        }
+                        return frame.map(pixel => ({
+                            color: pixel && pixel.color ? pixel.color : '#FFFFFF',
+                            isEmpty: false // Version colorée pour l'aperçu
+                        }));
+                    });
+                } else {
+                    // Animation complète : previewData = templateData
+                    previewData_complete = templateData_withColors;
+                }
                 
                 // Générer la miniature depuis la première frame pour l'aperçu dans la galerie
                 if (frames[0] && frames[0].length > 0) {
@@ -1463,7 +1500,23 @@
                 if (template.templateData && Array.isArray(template.templateData[0])) {
                     const firstFrame = template.templateData[0];
                     const nonEmptyPixels = firstFrame.filter(p => p && p.color && p.color !== '#FFFFFF');
-                    templateIsAnimationTemplate = nonEmptyPixels.length > 0 && nonEmptyPixels.every(p => p.isEmpty === true);
+                    // Vérifier si tous les pixels non-vides ont isEmpty: true (nouveaux modèles)
+                    const allPixelsAreEmpty = nonEmptyPixels.length > 0 && nonEmptyPixels.every(p => p.isEmpty === true);
+                    
+                    // Pour les anciens modèles : si template_data et preview_data sont identiques,
+                    // on considère que c'est une animation complète (pas un modèle à réaliser)
+                    const templateDataStr = JSON.stringify(template.templateData);
+                    const previewDataStr = JSON.stringify(template.preview);
+                    const areDifferent = templateDataStr !== previewDataStr;
+                    
+                    templateIsAnimationTemplate = allPixelsAreEmpty || (areDifferent && nonEmptyPixels.length > 0);
+                    
+                    console.log('🔍 Détection type animation dans loadTemplate:', {
+                        templateId: template.id,
+                        allPixelsAreEmpty,
+                        areDifferent,
+                        isAnimationTemplate: templateIsAnimationTemplate
+                    });
                 }
             } else if (firstElement && typeof firstElement === 'object' && 'color' in firstElement) {
                 templateIsAnimation = false; // Frame unique
@@ -1473,6 +1526,7 @@
         console.log('📌 Type de modèle détecté:', {
             templateId: currentTemplate.id,
             isAnimation: templateIsAnimation,
+            isAnimationTemplate: templateIsAnimationTemplate,
             previewLength: Array.isArray(template.preview) ? template.preview.length : 0,
             firstElementType: Array.isArray(template.preview) && template.preview.length > 0 ? 
                 (Array.isArray(template.preview[0]) ? 'array (animation)' : typeof template.preview[0] + ' (frame unique)') : 'none'
