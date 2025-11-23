@@ -26,8 +26,16 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 -- S'assurer que toutes les colonnes existent (au cas où la table aurait été créée partiellement)
 DO $$
 BEGIN
-    -- Ajouter username si elle n'existe pas
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_profiles') THEN
+        -- Ajouter user_email si elle n'existe pas (pour compatibilité)
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'user_profiles' AND column_name = 'user_email'
+        ) THEN
+            ALTER TABLE user_profiles ADD COLUMN user_email TEXT;
+        END IF;
+        
+        -- Ajouter username si elle n'existe pas
         IF NOT EXISTS (
             SELECT 1 FROM information_schema.columns 
             WHERE table_name = 'user_profiles' AND column_name = 'username'

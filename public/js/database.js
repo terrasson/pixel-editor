@@ -1534,6 +1534,10 @@ class DatabaseService {
                 updated_at: new Date().toISOString()
             };
             
+            // Ajouter user_email seulement si la colonne existe (pour compatibilité)
+            // Ne pas l'ajouter dans update car elle pourrait ne pas exister
+            // (user_email est optionnel dans certaines versions du schéma)
+            
             // Ajouter l'avatar si fourni
             if (avatarData !== null) {
                 updateData.avatar_data = avatarData;
@@ -1562,9 +1566,14 @@ class DatabaseService {
                 // Créer un nouveau profil
                 const insertData = {
                     user_id: userId,
-                    user_email: userEmail,
                     username: username.trim()
                 };
+                
+                // Ajouter user_email seulement si la colonne existe
+                // (pour compatibilité avec les anciennes versions du schéma)
+                if (userEmail) {
+                    insertData.user_email = userEmail;
+                }
                 
                 // Ajouter l'avatar si fourni
                 if (avatarData !== null) {

@@ -2883,9 +2883,12 @@
                     <div id="currentAvatarPreview" style="display: inline-block; margin-bottom: 10px;">
                         ${generateAvatarPreview(currentAvatar, currentAvatarSize, 64)}
                     </div>
-                    <div>
+                    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
                         <button id="editAvatarBtn" style="padding: 8px 16px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; font-size: 0.9em;">
                             ${currentAvatar ? '✏️ Modifier l\'avatar' : '🎨 Créer un avatar'}
+                        </button>
+                        <button id="loadProjectAsAvatarBtn" style="padding: 8px 16px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(76, 175, 80, 0.3); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; font-size: 0.9em;">
+                            📂 Charger un projet
                         </button>
                     </div>
                 </div>
@@ -2929,12 +2932,218 @@
         
         const usernameInput = document.getElementById('usernameInput');
         const editAvatarBtn = document.getElementById('editAvatarBtn');
+        const loadProjectAsAvatarBtn = document.getElementById('loadProjectAsAvatarBtn');
         const currentAvatarPreview = document.getElementById('currentAvatarPreview');
         const cancelBtn = document.getElementById('cancelUsernameBtn');
         const saveBtn = document.getElementById('saveUsernameBtn');
         
         let currentAvatarData = currentAvatar;
         let currentAvatarSizeValue = currentAvatarSize;
+        
+        /**
+         * Convertit une frame 32x32 en avatar 16x16 (redimensionnement)
+         */
+        function resizeFrameToAvatar(frame32x32) {
+            if (!frame32x32 || !Array.isArray(frame32x32)) {
+                return null;
+            }
+            
+            const sourceSize = 32;
+            const targetSize = 16;
+            const avatarPixels = [];
+            
+            // Pour chaque pixel de l'avatar 16x16, prendre le pixel correspondant de la frame 32x32
+            for (let y = 0; y < targetSize; y++) {
+                for (let x = 0; x < targetSize; x++) {
+                    // Calculer la position dans la frame 32x32 (échantillonnage)
+                    const sourceX = Math.floor((x * sourceSize) / targetSize);
+                    const sourceY = Math.floor((y * sourceSize) / targetSize);
+                    const sourceIndex = sourceY * sourceSize + sourceX;
+                    
+                    if (sourceIndex < frame32x32.length && frame32x32[sourceIndex]) {
+                        const sourcePixel = frame32x32[sourceIndex];
+                        avatarPixels.push({
+                            color: sourcePixel.color || '#FFFFFF',
+                            isEmpty: sourcePixel.isEmpty || false
+                        });
+                    } else {
+                        avatarPixels.push({
+                            color: '#FFFFFF',
+                            isEmpty: true
+                        });
+                    }
+                }
+            }
+            
+            return avatarPixels;
+        }
+        
+        /**
+         * Charge un projet existant comme avatar
+         */
+        async function loadProjectAsAvatar() {
+            if (!window.dbService) {
+                alert('❌ Service de base de données non disponible.');
+                return;
+            }
+            
+            try {
+                // Récupérer tous les projets de l'utilisateur
+                const result = await window.dbService.getAllProjects();
+                
+                if (!result.success) {
+                    alert('❌ Erreur lors du chargement des projets : ' + (result.error || 'Erreur inconnue'));
+                    return;
+                }
+                
+                const projects = result.data || [];
+                
+                if (projects.length === 0) {
+                    alert('📭 Vous n\'avez aucun projet sauvegardé.\n\nCréez et sauvegardez un projet d\'abord, puis vous pourrez l\'utiliser comme avatar.');
+                    return;
+                }
+                
+                // Créer une liste de projets avec aperçu
+                const projectsList = projects.map((project, index) => {
+                    const projectName = project.name || 'Projet sans nom';
+                    const lastModified = project.updated_at || project.created_at;
+                    const date = new Date(lastModified).toLocaleDateString('fr-FR');
+                    const time = new Date(lastModified).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+                    
+                    // Générer un aperçu de la première frame si disponible
+                    let previewHTML = '<div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🎨</div>';
+                    
+                    try {
+                        const frames = typeof project.frames === 'string' ? JSON.parse(project.frames) : project.frames;
+                        if (frames && Array.isArray(frames) && frames.length > 0 && frames[0]) {
+                            // Utiliser generateTemplatePreview pour créer un aperçu
+                            previewHTML = generateTemplatePreview(frames[0]);
+                        }
+                    } catch (e) {
+                        console.warn('Impossible de générer l\'aperçu:', e);
+                    }
+                    
+                    return `
+                        <div class="project-avatar-item" data-project-index="${index}" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: all 0.2s; margin-bottom: 10px;">
+                            <div style="flex-shrink: 0;">
+                                ${previewHTML}
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: rgba(255, 255, 255, 0.95); margin-bottom: 4px;">${projectName}</div>
+                                <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">${date} à ${time}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                const dialogContent = `
+                    <div style="padding: 20px; color: rgba(255, 255, 255, 0.95); max-height: 80vh; overflow-y: auto;">
+                        <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98);">📂 Charger un projet comme avatar</h3>
+                        <p style="text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85); font-size: 0.9em;">
+                            Sélectionnez un projet. La première frame sera redimensionnée en 16x16 pixels pour votre avatar.
+                        </p>
+                        
+                        <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+                            ${projectsList}
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button id="cancelLoadAvatarBtn" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
+                                Annuler
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                const selectModal = document.createElement('div');
+                selectModal.className = 'modal';
+                selectModal.style.display = 'flex';
+                selectModal.innerHTML = `
+                    <div class="modal-content" style="max-width: 500px; width: 90%; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.95);">
+                        ${dialogContent}
+                    </div>
+                `;
+                
+                document.body.appendChild(selectModal);
+                
+                // Ajouter les effets hover
+                selectModal.querySelectorAll('.project-avatar-item').forEach(item => {
+                    item.addEventListener('mouseenter', function() {
+                        this.style.background = 'rgba(255,255,255,0.1)';
+                        this.style.borderColor = 'rgba(76, 175, 80, 0.5)';
+                    });
+                    item.addEventListener('mouseleave', function() {
+                        this.style.background = 'rgba(255,255,255,0.05)';
+                        this.style.borderColor = 'rgba(255,255,255,0.2)';
+                    });
+                });
+                
+                // Gérer la sélection d'un projet
+                selectModal.querySelectorAll('.project-avatar-item').forEach(item => {
+                    item.addEventListener('click', async () => {
+                        const projectIndex = parseInt(item.dataset.projectIndex);
+                        const selectedProject = projects[projectIndex];
+                        
+                        if (!selectedProject) {
+                            alert('❌ Projet non trouvé.');
+                            return;
+                        }
+                        
+                        // Charger le projet complet pour obtenir les frames
+                        const loadResult = await window.dbService.loadProject(selectedProject.name);
+                        
+                        if (!loadResult.success) {
+                            alert('❌ Erreur lors du chargement du projet : ' + (loadResult.error || 'Erreur inconnue'));
+                            return;
+                        }
+                        
+                        const projectData = loadResult.data;
+                        let frames = projectData.frames;
+                        
+                        // Parser les frames si nécessaire
+                        if (typeof frames === 'string') {
+                            frames = JSON.parse(frames);
+                        }
+                        
+                        if (!frames || !Array.isArray(frames) || frames.length === 0) {
+                            alert('❌ Ce projet ne contient aucune frame.');
+                            selectModal.remove();
+                            return;
+                        }
+                        
+                        // Utiliser la première frame et la redimensionner en 16x16
+                        const firstFrame = frames[0];
+                        const avatarData = resizeFrameToAvatar(firstFrame);
+                        
+                        if (avatarData) {
+                            currentAvatarData = avatarData;
+                            currentAvatarSizeValue = 16;
+                            currentAvatarPreview.innerHTML = generateAvatarPreview(avatarData, 16, 64);
+                            selectModal.remove();
+                            alert('✅ Avatar chargé depuis le projet "' + selectedProject.name + '" !\n\nN\'oubliez pas de cliquer sur "Enregistrer" pour sauvegarder votre profil.');
+                        } else {
+                            alert('❌ Impossible de convertir ce projet en avatar.');
+                        }
+                    });
+                });
+                
+                // Annuler
+                document.getElementById('cancelLoadAvatarBtn')?.addEventListener('click', () => {
+                    selectModal.remove();
+                });
+                
+                // Fermer en cliquant en dehors
+                selectModal.addEventListener('click', (e) => {
+                    if (e.target === selectModal) {
+                        selectModal.remove();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Erreur lors du chargement des projets:', error);
+                alert('❌ Erreur inattendue : ' + (error.message || 'Erreur inconnue'));
+            }
+        }
         
         // Éditer l'avatar
         editAvatarBtn?.addEventListener('click', async () => {
@@ -2944,6 +3153,11 @@
                 currentAvatarSizeValue = 16; // Taille fixe pour l'avatar
                 currentAvatarPreview.innerHTML = generateAvatarPreview(avatarData, 16, 64);
             }
+        });
+        
+        // Charger un projet comme avatar
+        loadProjectAsAvatarBtn?.addEventListener('click', () => {
+            loadProjectAsAvatar();
         });
         
         // Focus sur l'input
