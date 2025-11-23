@@ -1176,7 +1176,6 @@ class DatabaseService {
         const appUrl = window.APP_URL || window.location.origin;
         return `${appUrl}/shared.html?token=${shareToken}`;
     }
-}
 
     // =====================================================
     // TEMPLATES SYSTEM - Modèles à Réaliser
