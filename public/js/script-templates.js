@@ -737,16 +737,21 @@
             
             // Si le template a une couleur à cet endroit, afficher l'indicateur
             if (templatePixel && !templatePixel.isEmpty && templatePixel.color) {
+                const expectedColor = templatePixel.color;
+                
+                // Vérifier que le pixel est valide et dans le DOM
+                if (!pixel || !pixel.parentNode) {
+                    return; // Sortir de cette itération du forEach
+                }
+                
                 try {
-                    const expectedColor = templatePixel.color;
-                    
                     // Créer le SVG avec le triangle indicateur
                     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                     svg.setAttribute('width', '100%');
                     svg.setAttribute('height', '100%');
                     svg.setAttribute('viewBox', '0 0 100 100');
                     svg.setAttribute('preserveAspectRatio', 'none');
-                    svg.className = 'template-indicator-svg';
+                    svg.setAttribute('class', 'template-indicator-svg');
                     svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
                     
                     // Triangle du bas (coin inférieur gauche, coin inférieur droit, point milieu-haut)
@@ -758,15 +763,39 @@
                     polygon.setAttribute('stroke-width', '1.5');
                     
                     svg.appendChild(polygon);
-                    pixel.appendChild(svg);
                     
-                    // Ajouter les classes et attributs
-                    pixel.classList.add('has-template-indicator');
-                    pixel.setAttribute('data-expected-color', expectedColor);
+                    // Ajouter le SVG au pixel
+                    try {
+                        pixel.appendChild(svg);
+                    } catch (e) {
+                        console.warn(`  ⚠️ Impossible d'ajouter le SVG au pixel ${index}:`, e);
+                        return; // Sortir de cette itération
+                    }
+                    
+                    // Ajouter les classes et attributs en utilisant setAttribute au lieu de classList
+                    // pour éviter les erreurs de propriété en lecture seule
+                    try {
+                        // Utiliser getAttribute et setAttribute au lieu de classList
+                        const currentClass = pixel.getAttribute('class') || '';
+                        const newClass = currentClass.includes('has-template-indicator') 
+                            ? currentClass 
+                            : currentClass + ' has-template-indicator';
+                        pixel.setAttribute('class', newClass.trim());
+                        pixel.setAttribute('data-expected-color', expectedColor);
+                    } catch (e) {
+                        console.warn(`  ⚠️ Impossible d'ajouter les classes au pixel ${index}:`, e);
+                        // Continuer quand même car le SVG est déjà ajouté
+                    }
                     
                     indicatorsAdded++;
                 } catch (error) {
                     console.error(`  ❌ Erreur lors de l'ajout de l'indicateur au pixel ${index}:`, error);
+                    console.error(`  📍 Détails de l'erreur:`, {
+                        errorName: error.name,
+                        errorMessage: error.message,
+                        pixelExists: !!pixel,
+                        pixelParent: !!pixel?.parentNode
+                    });
                 }
             }
         });
