@@ -214,7 +214,7 @@ CREATE POLICY "Users can create their own completions"
     ON template_completions FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
-COMMENT ON TABLE pixel_templates IS 'Modèles de pixel art partagés par les utilisateurs pour que d'autres puissent les réaliser';
+COMMENT ON TABLE pixel_templates IS 'Modèles de pixel art partagés par les utilisateurs pour que d''autres puissent les réaliser';
 COMMENT ON TABLE template_favorites IS 'Favoris des utilisateurs pour les modèles';
 COMMENT ON TABLE template_completions IS 'Suivi des complétions de modèles par les utilisateurs';
 
