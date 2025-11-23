@@ -17,6 +17,10 @@
     let currentTemplate = null;
     let isTemplateMode = false;
     
+    // Rendre accessible globalement pour pouvoir les réinitialiser lors du chargement de projets
+    window.currentTemplate = currentTemplate;
+    window.isTemplateMode = isTemplateMode;
+    
     // Attendre que le DOM et script.js soient chargés
     function waitForScript() {
         if (typeof frames === 'undefined' || typeof GRID_SIZE === 'undefined') {
@@ -1240,23 +1244,57 @@
                     return;
                 }
                 
-                // Créer template_data avec toutes les frames (pour l'animation complète)
-                templateData_withColors = frames.map(frame => 
-                    frame.map(pixel => ({
-                        color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
-                        isEmpty: false // Toutes les frames sont complètes pour l'animation
+                console.log('🎬 Publication d\'une animation complète:', {
+                    nombreFrames: frames.length,
+                    frames: frames.map((f, i) => ({
+                        index: i,
+                        length: f ? f.length : 0,
+                        hasContent: f ? f.some(p => p && !p.isEmpty) : false
                     }))
-                );
+                });
+                
+                // Créer template_data avec toutes les frames (pour l'animation complète)
+                // IMPORTANT : Ne pas filtrer les frames, même si elles sont vides, pour préserver l'ordre et le nombre
+                templateData_withColors = frames.map((frame, frameIndex) => {
+                    // Si la frame est invalide, créer une frame vide
+                    if (!frame || !Array.isArray(frame) || frame.length === 0) {
+                        console.warn(`⚠️ Frame ${frameIndex} invalide, création d'une frame vide`);
+                        return createEmptyFrame().map(pixel => ({
+                            color: pixel.color,
+                            isEmpty: false // Même les frames vides sont marquées comme complètes pour l'animation
+                        }));
+                    }
+                    
+                    // Convertir chaque pixel de la frame
+                    return frame.map(pixel => ({
+                        color: pixel && pixel.color ? pixel.color : '#FFFFFF',
+                        isEmpty: false // Toutes les frames sont complètes pour l'animation
+                    }));
+                });
+                
+                console.log('✅ Frames préparées pour publication:', {
+                    nombreFramesOriginal: frames.length,
+                    nombreFramesPreparees: templateData_withColors.length,
+                    frames: templateData_withColors.map((f, i) => ({
+                        index: i,
+                        length: f.length,
+                        firstPixel: f.length > 0 ? f[0] : null
+                    }))
+                });
                 
                 // previewData est identique à templateData (animation complète)
                 previewData_complete = templateData_withColors;
                 
                 // Générer la miniature depuis la première frame pour l'aperçu dans la galerie
-                const firstFrameForThumbnail = frames[0].map(pixel => ({
-                    color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
-                    isEmpty: false
-                }));
-                thumbnail = generateThumbnail(firstFrameForThumbnail);
+                if (frames[0] && frames[0].length > 0) {
+                    const firstFrameForThumbnail = frames[0].map(pixel => ({
+                        color: pixel && pixel.color ? pixel.color : '#FFFFFF',
+                        isEmpty: false
+                    }));
+                    thumbnail = generateThumbnail(firstFrameForThumbnail);
+                } else {
+                    thumbnail = null;
+                }
             } else {
                 // Mode Frame unique : publier seulement la frame actuelle
                 const currentFrameData = frames[currentFrame];
@@ -1369,6 +1407,7 @@
         
         // Stocker le modèle actuel
         currentTemplate = template;
+        window.currentTemplate = template;
         
         // Vérifier si c'est une animation complète ou une frame unique
         // Une animation est un tableau de frames, où chaque frame est un array de pixels
@@ -1401,6 +1440,8 @@
         if (templateIsAnimation) {
             // Mode Animation : charger toutes les frames
             isTemplateMode = false; // Pas de mode template pour les animations (elles sont complètes)
+            window.isTemplateMode = false;
+            window.currentTemplate = null;
             
             const frameCount = Array.isArray(template.preview) ? template.preview.length : 1;
             const confirmMessage = 
@@ -1415,8 +1456,16 @@
             }
             
             // Convertir toutes les frames en format normalisé
-            frames = template.preview.map(frame => {
+            console.log('📥 Chargement animation - Données reçues:', {
+                previewType: Array.isArray(template.preview) ? 'array' : typeof template.preview,
+                previewLength: Array.isArray(template.preview) ? template.preview.length : 0,
+                firstElementType: Array.isArray(template.preview) && template.preview.length > 0 ? 
+                    (Array.isArray(template.preview[0]) ? 'array (frames)' : typeof template.preview[0]) : 'none'
+            });
+            
+            frames = template.preview.map((frame, frameIndex) => {
                 if (!Array.isArray(frame)) {
+                    console.warn(`⚠️ Frame ${frameIndex} n'est pas un array, création d'une frame vide`);
                     return createEmptyFrame();
                 }
                 // Chaque frame est un array de pixels
@@ -1434,6 +1483,15 @@
                         isEmpty: true
                     };
                 });
+            });
+            
+            console.log('✅ Animation chargée:', {
+                nombreFrames: frames.length,
+                frames: frames.map((f, i) => ({
+                    index: i,
+                    length: f.length,
+                    hasContent: f.some(p => !p.isEmpty)
+                }))
             });
             
             currentFrame = 0;
@@ -1459,6 +1517,7 @@
         } else {
             // Mode Frame unique : modèle à réaliser avec indicateurs
             isTemplateMode = true;
+            window.isTemplateMode = true;
             
             // Créer une nouvelle frame vide
             const newFrame = createEmptyFrame();

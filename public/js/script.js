@@ -638,6 +638,12 @@ async function showLocalProjects() {
                 type: typeof data.frames
             });
 
+            // Désactiver le mode template si actif
+            if (typeof window.isTemplateMode !== 'undefined' && window.isTemplateMode) {
+                window.isTemplateMode = false;
+                window.currentTemplate = null;
+            }
+            
             frames = normaliseFrames(data.frames);
             currentFrame = data.current_frame ?? data.currentFrame ?? 0;
             if (currentFrame >= frames.length) {
@@ -2561,6 +2567,23 @@ function cleanUpMarkers() {
     document.querySelectorAll('.previous-pixel-marker, .next-pixel-marker-1, .next-pixel-marker-2').forEach(marker => {
         marker.remove();
     });
+    
+    // Supprimer tous les indicateurs de template (triangles SVG)
+    document.querySelectorAll('.template-indicator-svg').forEach(indicator => {
+        indicator.remove();
+    });
+    
+    // Supprimer les classes et attributs de template des pixels
+    document.querySelectorAll('.pixel').forEach(pixel => {
+        // Supprimer la classe has-template-indicator
+        if (pixel.classList.contains('has-template-indicator')) {
+            pixel.classList.remove('has-template-indicator');
+        }
+        // Supprimer l'attribut data-expected-color
+        if (pixel.hasAttribute('data-expected-color')) {
+            pixel.removeAttribute('data-expected-color');
+        }
+    });
 }
 
 function cleanUpOutsideElements() {
@@ -2665,8 +2688,21 @@ function loadFrame(frameIndex) {
     // Nettoyage de sécurité : supprimer tout élément indésirable en dehors de la grille
     cleanUpOutsideElements();
     
-    // Réinitialiser les pixels
+    // Réinitialiser les pixels (nettoyer complètement, y compris les indicateurs de template)
     pixels.forEach(pixel => {
+        // Supprimer les indicateurs SVG de template s'ils existent
+        const templateIndicators = pixel.querySelectorAll('.template-indicator-svg');
+        templateIndicators.forEach(indicator => indicator.remove());
+        
+        // Supprimer les classes et attributs de template
+        if (pixel.classList.contains('has-template-indicator')) {
+            pixel.classList.remove('has-template-indicator');
+        }
+        if (pixel.hasAttribute('data-expected-color')) {
+            pixel.removeAttribute('data-expected-color');
+        }
+        
+        // Réinitialiser la couleur et l'état
         pixel.style.backgroundColor = '#FFFFFF';
         pixel.classList.add('empty');
     });
@@ -3718,6 +3754,14 @@ async function loadFromServer() {
                         currentFrame: data.current_frame ?? data.currentFrame
                     });
 
+                    // Désactiver le mode template si actif et nettoyer les indicateurs
+                    if (typeof window.isTemplateMode !== 'undefined' && window.isTemplateMode) {
+                        window.isTemplateMode = false;
+                        window.currentTemplate = null;
+                        // Nettoyer les indicateurs de template
+                        cleanUpMarkers();
+                    }
+                    
                     const parsedFrames = typeof data.frames === 'string' ? JSON.parse(data.frames) : data.frames;
                     frames = normaliseFrames(parsedFrames);
                     currentFrame = data.current_frame ?? data.currentFrame ?? 0;
