@@ -5636,6 +5636,9 @@ function showProfileMenu() {
     });
 }
 
+// Exposer la fonction globalement
+window.showProfileMenu = showProfileMenu;
+
 function openProfileModal(manual = false) {
     initProfileModal();
     profilePromptHasBeenShown = profilePromptHasBeenShown || manual;
@@ -5764,15 +5767,17 @@ async function updateUserProfileDisplay() {
             return;
         }
         
-        // Ajouter l'event listener pour ouvrir le profil au clic (une seule fois)
+        // Ajouter l'event listener pour ouvrir le menu de profil au clic (une seule fois)
         if (!userProfileDisplay.dataset.clickListenerAdded) {
             userProfileDisplay.style.cursor = 'pointer';
             userProfileDisplay.title = 'Cliquez pour gérer votre profil';
             userProfileDisplay.addEventListener('click', () => {
-                if (typeof window.initUserProfileFlow === 'function') {
+                if (typeof showProfileMenu === 'function') {
+                    showProfileMenu();
+                } else if (typeof window.showProfileMenu === 'function') {
+                    window.showProfileMenu();
+                } else if (typeof window.initUserProfileFlow === 'function') {
                     window.initUserProfileFlow(true);
-                } else if (typeof window.showUsernameDialog === 'function') {
-                    window.showUsernameDialog();
                 }
             });
             userProfileDisplay.dataset.clickListenerAdded = 'true';
