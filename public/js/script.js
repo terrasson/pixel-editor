@@ -3456,6 +3456,136 @@ function pasteFrame() {
     }
 }
 
+// Système de raccourcis clavier centralisé
+function handleKeyboardShortcuts(e) {
+    // Ne pas activer si on est dans un input, textarea ou si une modal est ouverte
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        return;
+    }
+    
+    // Vérifier si une modal est ouverte (ne pas interférer)
+    const openModal = document.querySelector('.modal[style*="flex"], .modal[style*="block"]');
+    if (openModal && !openModal.classList.contains('custom-color-modal')) {
+        return;
+    }
+    
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
+    
+    // Raccourcis avec Ctrl/Cmd
+    if (ctrlKey) {
+        switch (e.key.toLowerCase()) {
+            case 'c':
+                e.preventDefault();
+                copyCurrentFrame();
+                if (typeof showNotification === 'function') {
+                    showNotification('Frame copiée 📋', 'success');
+                }
+                return;
+                
+            case 'v':
+                e.preventDefault();
+                if (copiedFrame) {
+                    pasteFrame();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Frame collée 📋', 'success');
+                    }
+                }
+                return;
+                
+            case 'z':
+                e.preventDefault();
+                if (e.shiftKey) {
+                    redo();
+                } else {
+                    undo();
+                }
+                return;
+                
+            case 'y':
+                e.preventDefault();
+                redo();
+                return;
+                
+            case 's':
+                e.preventDefault();
+                saveProjectSmart();
+                return;
+                
+            case 'n':
+                e.preventDefault();
+                addFrame();
+                if (typeof showNotification === 'function') {
+                    showNotification('Nouvelle frame créée ➕', 'success');
+                }
+                return;
+        }
+    }
+    
+    // Raccourcis sans modificateur
+    switch (e.key.toLowerCase()) {
+        case 'i':
+            e.preventDefault();
+            toggleEyedropper();
+            return;
+            
+        case 'e':
+            e.preventDefault();
+            toggleEraser();
+            return;
+            
+        case ' ': // Espace pour play/pause
+            e.preventDefault();
+            if (isAnimationPlaying) {
+                stopAnimation();
+            } else {
+                previewAnimation();
+            }
+            return;
+            
+        case 'delete':
+        case 'backspace':
+            // Supprimer la frame actuelle seulement si on n'est pas en train de dessiner
+            if (!isDrawing) {
+                e.preventDefault();
+                if (frames.length > 1) {
+                    deleteCurrentFrame();
+                } else {
+                    clearAllFrames();
+                }
+            }
+            return;
+            
+        case 'arrowleft':
+            // Frame précédente
+            if (currentFrame > 0) {
+                e.preventDefault();
+                saveCurrentFrame();
+                loadFrame(currentFrame - 1);
+            }
+            return;
+            
+        case 'arrowright':
+            // Frame suivante
+            if (currentFrame < frames.length - 1) {
+                e.preventDefault();
+                saveCurrentFrame();
+                loadFrame(currentFrame + 1);
+            }
+            return;
+            
+        case 'escape':
+            // Fermer les modals ou désactiver les outils
+            if (isEyedropperMode) {
+                toggleEyedropper();
+            }
+            if (isEraserMode) {
+                toggleEraser();
+            }
+            return;
+    }
+}
+
 // Fonction pour afficher l'aide complète
 function showHelp() {
     logUsageEvent('help_opened');
@@ -3473,9 +3603,24 @@ function showHelp() {
             <div class="help-section">
             <h3>🧱 Frames & animation</h3>
             <div class="help-item"><strong>+ Nouvelle Frame :</strong> ajoute une frame vide (ou duplique la sélection si elle contient des pixels).</div>
-            <div class="help-item"><strong>C / V :</strong> copier-collez rapidement une frame.</div>
             <div class="help-item"><strong>Play :</strong> lance/arrête l'aperçu.</div>
             <div class="help-item"><strong>Vitesse :</strong> ajustez les FPS via le bouton "Vitesse" (sidebar desktop ou panneau mobile) pour tester plusieurs rythmes.</div>
+                </div>
+            <div class="help-section">
+            <h3>⌨️ Raccourcis clavier</h3>
+            <div class="help-item"><strong>Ctrl/Cmd + C :</strong> copier la frame actuelle</div>
+            <div class="help-item"><strong>Ctrl/Cmd + V :</strong> coller la frame copiée</div>
+            <div class="help-item"><strong>Ctrl/Cmd + Z :</strong> annuler la dernière action</div>
+            <div class="help-item"><strong>Ctrl/Cmd + Shift + Z :</strong> rétablir l'action annulée</div>
+            <div class="help-item"><strong>Ctrl/Cmd + Y :</strong> rétablir l'action annulée (alternative)</div>
+            <div class="help-item"><strong>Ctrl/Cmd + S :</strong> sauvegarder le projet</div>
+            <div class="help-item"><strong>Ctrl/Cmd + N :</strong> créer une nouvelle frame</div>
+            <div class="help-item"><strong>I :</strong> activer/désactiver la pipette</div>
+            <div class="help-item"><strong>E :</strong> activer/désactiver la gomme</div>
+            <div class="help-item"><strong>Espace :</strong> lancer/arrêter l'animation</div>
+            <div class="help-item"><strong>← → :</strong> naviguer entre les frames</div>
+            <div class="help-item"><strong>Suppr/Backspace :</strong> supprimer la frame actuelle</div>
+            <div class="help-item"><strong>Échap :</strong> désactiver les outils (pipette, gomme)</div>
                 </div>
             <div class="help-section">
             <h3>💾 Sauvegarde & chargement</h3>
@@ -4206,17 +4351,7 @@ function initEventListeners() {
         btn.addEventListener('click', toggleEyedropper);
     });
     
-    // Raccourci clavier pour la pipette (touche I)
-    document.addEventListener('keydown', (e) => {
-        // Ne pas activer si on est dans un input ou textarea
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-            return;
-        }
-        if (e.key === 'i' || e.key === 'I') {
-            e.preventDefault();
-            toggleEyedropper();
-        }
-    });
+    // Les raccourcis clavier sont gérés par handleKeyboardShortcuts()
     
     // Menu hamburger
     document.getElementById('menuToggle')?.addEventListener('click', toggleToolbar);
@@ -4325,21 +4460,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFramesList();
     loadFrame(0);
     
-    // Raccourcis clavier pour undo/redo
-    document.addEventListener('keydown', (e) => {
-        // Éviter d'interférer avec les champs de saisie
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-            return;
-        }
-        
-        if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
-            e.preventDefault();
-            undo();
-        } else if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-            e.preventDefault();
-            redo();
-        }
-    });
+    // Système de raccourcis clavier complet
+    document.addEventListener('keydown', handleKeyboardShortcuts);
     
     // Gérer le drag & drop pour importer des projets
     initDragAndDrop();
