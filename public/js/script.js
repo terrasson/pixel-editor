@@ -571,9 +571,24 @@ async function showLocalProjects() {
         const lastModified = p.lastModified || p.updated_at || p.created_at;
         const deviceInfo = p.device_info ? ` 📱 ${p.device_info.includes('iPhone') ? 'iPhone' : p.device_info.includes('Android') ? 'Android' : 'Web'}` : '';
         
+        // Générer l'aperçu visuel
+        let previewHTML = '';
+        if (p.thumbnail) {
+            // Utiliser le thumbnail existant (image base64)
+            previewHTML = `<img src="${p.thumbnail}" alt="${projectName}" class="project-preview-img" style="width: 48px; height: 48px; object-fit: contain; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">`;
+        } else {
+            // Placeholder si pas de thumbnail
+            previewHTML = `<div class="project-preview-placeholder" style="width: 48px; height: 48px; background: rgba(255,255,255,0.1); border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px;">🎨</div>`;
+        }
+        
         return `<div class="project-item" data-project-id="${projectId}" data-index="${index}">
-            <div class="project-name">${projectName}${deviceInfo}</div>
-            <div class="project-date">${new Date(lastModified).toLocaleDateString('fr-FR')} à ${new Date(lastModified).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</div>
+            <div class="project-preview-container" style="display: flex; align-items: center; gap: 12px;">
+                ${previewHTML}
+                <div class="project-info" style="flex: 1; min-width: 0;">
+                    <div class="project-name">${projectName}${deviceInfo}</div>
+                    <div class="project-date">${new Date(lastModified).toLocaleDateString('fr-FR')} à ${new Date(lastModified).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</div>
+                </div>
+            </div>
         </div>`;
     }).join('');
 
