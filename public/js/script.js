@@ -3512,7 +3512,14 @@ function handleKeyboardShortcuts(e) {
                 saveProjectSmart();
                 return;
                 
-            case 'n':
+        }
+    }
+    
+    // Raccourcis avec Ctrl/Cmd + Shift
+    if (ctrlKey && e.shiftKey) {
+        switch (e.key.toLowerCase()) {
+            case 'f':
+                // Ctrl/Cmd + Shift + F pour créer une nouvelle Frame (évite les conflits avec les raccourcis navigateur)
                 e.preventDefault();
                 addFrame();
                 if (typeof showNotification === 'function') {
@@ -3614,7 +3621,7 @@ function showHelp() {
             <div class="help-item"><strong>Ctrl/Cmd + Shift + Z :</strong> rétablir l'action annulée</div>
             <div class="help-item"><strong>Ctrl/Cmd + Y :</strong> rétablir l'action annulée (alternative)</div>
             <div class="help-item"><strong>Ctrl/Cmd + S :</strong> sauvegarder le projet</div>
-            <div class="help-item"><strong>Ctrl/Cmd + N :</strong> créer une nouvelle frame</div>
+            <div class="help-item"><strong>Ctrl/Cmd + Shift + F :</strong> créer une nouvelle frame</div>
             <div class="help-item"><strong>I :</strong> activer/désactiver la pipette</div>
             <div class="help-item"><strong>E :</strong> activer/désactiver la gomme</div>
             <div class="help-item"><strong>Espace :</strong> lancer/arrêter l'animation</div>
