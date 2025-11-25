@@ -411,12 +411,8 @@
                     const profile = profileResult.data;
                     const username = profile && profile.username ? profile.username.trim() : '';
                     
-                    // Vérifier si le pseudo est configuré (pas de valeur par défaut)
-                    // Les valeurs par défaut à exclure : "user", "utilisateur", etc.
-                    const defaultUsernames = ['user', 'utilisateur', 'anonymous', 'anonyme'];
-                    const hasCustomUsername = username && 
-                                             username.length >= 2 && 
-                                             !defaultUsernames.includes(username.toLowerCase());
+                    // Vérifier si le pseudo est configuré
+                    const hasCustomUsername = username && username.length >= 2;
                     
                     if (!hasCustomUsername) {
                         // Afficher une modal obligatoire pour configurer le profil
@@ -493,10 +489,7 @@
                         if (profileResult.success) {
                         const profile = profileResult.data;
                         const username = profile && profile.username ? profile.username.trim() : '';
-                        const defaultUsernames = ['user', 'utilisateur', 'anonymous', 'anonyme'];
-                        const hasCustomUsername = username && 
-                                                 username.length >= 2 && 
-                                                 !defaultUsernames.includes(username.toLowerCase());
+                        const hasCustomUsername = username && username.length >= 2;
                             
                             if (hasCustomUsername) {
                                 // Le profil est configuré, ne plus afficher la modal
@@ -520,10 +513,7 @@
                         if (profileResult.success) {
                             const profile = profileResult.data;
                             const username = profile && profile.username ? profile.username.trim() : '';
-                            const defaultUsernames = ['user', 'utilisateur', 'anonymous', 'anonyme'];
-                            const hasCustomUsername = username && 
-                                                     username.length >= 2 && 
-                                                     !defaultUsernames.includes(username.toLowerCase());
+                            const hasCustomUsername = username && username.length >= 2;
                             
                             if (hasCustomUsername) {
                                 clearInterval(checkInterval);

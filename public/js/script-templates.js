@@ -2853,6 +2853,167 @@
     }
     
     /**
+     * Avatars prédéfinis (16x16)
+     */
+    const PRESET_AVATARS = [
+        // 1. Visage souriant (Jaune)
+        {
+            name: 'Smile',
+            pixels: (() => {
+                const p = Array(256).fill({color: '#FFFFFF', isEmpty: true});
+                // Visage rond jaune
+                const yellow = '#FFD700';
+                const black = '#000000';
+                
+                // Cercle
+                for(let y=2; y<14; y++) {
+                    for(let x=2; x<14; x++) {
+                        if((x===2 || x===13) && (y===2 || y===13)) continue; // Coins
+                        p[y*16+x] = {color: yellow, isEmpty: false};
+                    }
+                }
+                // Yeux
+                p[5*16+5] = {color: black, isEmpty: false};
+                p[5*16+10] = {color: black, isEmpty: false};
+                // Sourire
+                p[9*16+4] = {color: black, isEmpty: false};
+                p[10*16+5] = {color: black, isEmpty: false};
+                p[10*16+6] = {color: black, isEmpty: false};
+                p[10*16+7] = {color: black, isEmpty: false};
+                p[10*16+8] = {color: black, isEmpty: false};
+                p[10*16+9] = {color: black, isEmpty: false};
+                p[10*16+10] = {color: black, isEmpty: false};
+                p[9*16+11] = {color: black, isEmpty: false};
+                
+                return p;
+            })()
+        },
+        // 2. Coeur (Rouge)
+        {
+            name: 'Heart',
+            pixels: (() => {
+                const p = Array(256).fill({color: '#FFFFFF', isEmpty: true});
+                const red = '#FF0000';
+                
+                const coords = [
+                    [2,5],[3,4],[4,3],[5,2],[6,2],[7,3],
+                    [8,3],[9,2],[10,2],[11,3],[12,4],[13,5],
+                    [13,6],[13,7],[12,8],[11,9],[10,10],[9,11],
+                    [8,12],[7,11],[6,10],[5,9],[4,8],[3,7],[2,6]
+                ];
+                
+                // Remplissage
+                for(let y=0; y<16; y++) {
+                    for(let x=0; x<16; x++) {
+                        // Forme simplifiée pour le remplissage
+                        if(y>=4 && y<=8 && x>=3 && x<=12) p[y*16+x] = {color: red, isEmpty: false};
+                        if(y>=8 && y<=11 && x>=5 && x<=10) p[y*16+x] = {color: red, isEmpty: false};
+                        if(y===12 && x>=7 && x<=8) p[y*16+x] = {color: red, isEmpty: false};
+                        if(y===3 && (x>=4 && x<=6 || x>=9 && x<=11)) p[y*16+x] = {color: red, isEmpty: false};
+                    }
+                }
+                
+                return p;
+            })()
+        },
+        // 3. Fantôme (Bleu/Blanc)
+        {
+            name: 'Ghost',
+            pixels: (() => {
+                const p = Array(256).fill({color: '#FFFFFF', isEmpty: true});
+                const body = '#E0F7FA';
+                const eyes = '#000000';
+                
+                for(let y=3; y<14; y++) {
+                    for(let x=4; x<12; x++) {
+                        p[y*16+x] = {color: body, isEmpty: false};
+                    }
+                }
+                // Tête arrondie
+                p[3*16+4] = {color: '#FFFFFF', isEmpty: true};
+                p[3*16+11] = {color: '#FFFFFF', isEmpty: true};
+                
+                // Yeux
+                p[6*16+6] = {color: eyes, isEmpty: false};
+                p[6*16+9] = {color: eyes, isEmpty: false};
+                
+                // Bas ondulé
+                p[13*16+4] = {color: body, isEmpty: false};
+                p[13*16+5] = {color: '#FFFFFF', isEmpty: true};
+                p[13*16+6] = {color: body, isEmpty: false};
+                p[13*16+7] = {color: '#FFFFFF', isEmpty: true};
+                p[13*16+8] = {color: body, isEmpty: false};
+                p[13*16+9] = {color: '#FFFFFF', isEmpty: true};
+                p[13*16+10] = {color: body, isEmpty: false};
+                p[13*16+11] = {color: '#FFFFFF', isEmpty: true};
+                
+                return p;
+            })()
+        },
+        // 4. Etoile (Jaune/Orange)
+        {
+            name: 'Star',
+            pixels: (() => {
+                const p = Array(256).fill({color: '#FFFFFF', isEmpty: true});
+                const gold = '#FFD700';
+                
+                const coords = [
+                    [8,1],[8,2],[7,3],[8,3],[9,3],
+                    [6,4],[7,4],[8,4],[9,4],[10,4],
+                    [5,5],[6,5],[7,5],[8,5],[9,5],[10,5],[11,5],
+                    [4,6],[5,6],[6,6],[7,6],[8,6],[9,6],[10,6],[11,6],[12,6],
+                    [2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],
+                    [3,8],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],[10,8],[11,8],[12,8],
+                    [4,9],[5,9],[6,9],[7,9],[8,9],[9,9],[10,9],[11,9],
+                    [5,10],[6,10],[7,10],[8,10],[9,10],[10,10],
+                    [5,11],[6,11],[9,11],[10,11],
+                    [4,12],[5,12],[10,12],[11,12],
+                    [3,13],[4,13],[11,13],[12,13]
+                ];
+                
+                coords.forEach(c => {
+                    if(c[1]*16+c[0] < 256) p[c[1]*16+c[0]] = {color: gold, isEmpty: false};
+                });
+                
+                return p;
+            })()
+        },
+        // 5. Robot (Gris/Vert)
+        {
+            name: 'Robot',
+            pixels: (() => {
+                const p = Array(256).fill({color: '#FFFFFF', isEmpty: true});
+                const metal = '#A0A0A0';
+                const eye = '#00FF00';
+                
+                // Tête
+                for(let y=4; y<12; y++) {
+                    for(let x=4; x<12; x++) {
+                        p[y*16+x] = {color: metal, isEmpty: false};
+                    }
+                }
+                // Yeux
+                p[6*16+6] = {color: eye, isEmpty: false};
+                p[6*16+9] = {color: eye, isEmpty: false};
+                
+                // Bouche
+                p[9*16+6] = {color: '#000000', isEmpty: false};
+                p[9*16+7] = {color: '#000000', isEmpty: false};
+                p[9*16+8] = {color: '#000000', isEmpty: false};
+                p[9*16+9] = {color: '#000000', isEmpty: false};
+                
+                // Antennes
+                p[3*16+5] = {color: metal, isEmpty: false};
+                p[2*16+4] = {color: metal, isEmpty: false};
+                p[3*16+10] = {color: metal, isEmpty: false};
+                p[2*16+11] = {color: metal, isEmpty: false};
+                
+                return p;
+            })()
+        }
+    ];
+
+    /**
      * Affiche une interface pour gérer le pseudo et l'avatar de l'utilisateur
      */
     async function showUsernameDialog() {
@@ -2864,9 +3025,26 @@
         // Récupérer le profil actuel
         const profileResult = await window.dbService.getUserProfile();
         const currentProfile = profileResult.success ? profileResult.data : null;
-        const currentUsername = currentProfile?.username || '';
+        let currentUsername = currentProfile?.username || '';
         const currentAvatar = currentProfile?.avatar_data || null;
         const currentAvatarSize = currentProfile?.avatar_size || 16;
+        
+        // Si le pseudo est une valeur par défaut, on le vide pour forcer la saisie
+        const defaultUsernames = ['user', 'utilisateur', 'anonymous', 'anonyme'];
+        if (defaultUsernames.includes(currentUsername.toLowerCase())) {
+            currentUsername = '';
+        }
+        
+        // Générer le HTML pour les avatars prédéfinis
+        const presetAvatarsHtml = PRESET_AVATARS.map((avatar, index) => {
+            const preview = generateAvatarPreview(avatar.pixels, 16, 48);
+            return `
+                <div class="preset-avatar-item" data-index="${index}" title="${avatar.name}" 
+                     style="flex-shrink: 0; cursor: pointer; padding: 4px; border: 2px solid rgba(255,255,255,0.1); border-radius: 8px; transition: all 0.2s;">
+                    ${preview}
+                </div>
+            `;
+        }).join('');
         
         const dialogContent = `
             <div style="padding: 20px; color: rgba(255, 255, 255, 0.95);">
@@ -2876,19 +3054,26 @@
                 </p>
                 
                 <!-- Avatar -->
-                <div style="margin: 20px 0; text-align: center;">
-                    <label style="display: block; margin-bottom: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.95);">
+                <div style="margin: 20px 0;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.95); text-align: center;">
                         Avatar :
                     </label>
-                    <div id="currentAvatarPreview" style="display: inline-block; margin-bottom: 10px;">
-                        ${generateAvatarPreview(currentAvatar, currentAvatarSize, 64)}
-                    </div>
-                    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                    
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                        <!-- Avatar actuel -->
+                        <div id="currentAvatarPreview" style="display: inline-block; padding: 5px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);">
+                            ${generateAvatarPreview(currentAvatar, currentAvatarSize, 80)}
+                        </div>
+                        
+                        <!-- Sélection rapide d'avatars (Scroll Horizontal) -->
+                        <div style="width: 100%; overflow-x: auto; padding: 10px 0; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div style="display: flex; gap: 12px; padding: 0 10px; min-width: min-content;">
+                                ${presetAvatarsHtml}
+                            </div>
+                        </div>
+                        
                         <button id="editAvatarBtn" style="padding: 8px 16px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; font-size: 0.9em;">
-                            ${currentAvatar ? '✏️ Modifier l\'avatar' : '🎨 Créer un avatar'}
-                        </button>
-                        <button id="loadProjectAsAvatarBtn" style="padding: 8px 16px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(76, 175, 80, 0.3); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; font-size: 0.9em;">
-                            📂 Charger un projet
+                            ${currentAvatar ? '✏️ Modifier l\'avatar' : '🎨 Créer un avatar personnalisé'}
                         </button>
                     </div>
                 </div>
@@ -2932,10 +3117,10 @@
         
         const usernameInput = document.getElementById('usernameInput');
         const editAvatarBtn = document.getElementById('editAvatarBtn');
-        const loadProjectAsAvatarBtn = document.getElementById('loadProjectAsAvatarBtn');
         const currentAvatarPreview = document.getElementById('currentAvatarPreview');
         const cancelBtn = document.getElementById('cancelUsernameBtn');
         const saveBtn = document.getElementById('saveUsernameBtn');
+        const presetItems = modal.querySelectorAll('.preset-avatar-item');
         
         let currentAvatarData = currentAvatar;
         let currentAvatarSizeValue = currentAvatarSize;
@@ -2978,172 +3163,41 @@
             return avatarPixels;
         }
         
-        /**
-         * Charge un projet existant comme avatar
-         */
-        async function loadProjectAsAvatar() {
-            if (!window.dbService) {
-                alert('❌ Service de base de données non disponible.');
-                return;
-            }
+        // Gestion de la sélection d'un avatar prédéfini
+        presetItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // Retirer la sélection des autres
+                presetItems.forEach(i => {
+                    i.style.borderColor = 'rgba(255,255,255,0.1)';
+                    i.style.background = 'transparent';
+                });
+                
+                // Sélectionner celui-ci
+                item.style.borderColor = '#667eea';
+                item.style.background = 'rgba(102, 126, 234, 0.2)';
+                
+                const index = parseInt(item.dataset.index);
+                const selectedAvatar = PRESET_AVATARS[index];
+                
+                if (selectedAvatar) {
+                    currentAvatarData = selectedAvatar.pixels;
+                    currentAvatarSizeValue = 16;
+                    currentAvatarPreview.innerHTML = generateAvatarPreview(currentAvatarData, 16, 80);
+                }
+            });
             
-            try {
-                // Récupérer tous les projets de l'utilisateur
-                const result = await window.dbService.getAllProjects();
-                
-                if (!result.success) {
-                    alert('❌ Erreur lors du chargement des projets : ' + (result.error || 'Erreur inconnue'));
-                    return;
+            // Effet hover
+            item.addEventListener('mouseenter', () => {
+                if (item.style.borderColor !== 'rgb(102, 126, 234)') { // Si pas sélectionné
+                    item.style.borderColor = 'rgba(255,255,255,0.5)';
                 }
-                
-                const projects = result.data || [];
-                
-                if (projects.length === 0) {
-                    alert('📭 Vous n\'avez aucun projet sauvegardé.\n\nCréez et sauvegardez un projet d\'abord, puis vous pourrez l\'utiliser comme avatar.');
-                    return;
+            });
+            item.addEventListener('mouseleave', () => {
+                if (item.style.borderColor !== 'rgb(102, 126, 234)') { // Si pas sélectionné
+                    item.style.borderColor = 'rgba(255,255,255,0.1)';
                 }
-                
-                // Créer une liste de projets avec aperçu
-                const projectsList = projects.map((project, index) => {
-                    const projectName = project.name || 'Projet sans nom';
-                    const lastModified = project.updated_at || project.created_at;
-                    const date = new Date(lastModified).toLocaleDateString('fr-FR');
-                    const time = new Date(lastModified).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
-                    
-                    // Générer un aperçu de la première frame si disponible
-                    let previewHTML = '<div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🎨</div>';
-                    
-                    try {
-                        const frames = typeof project.frames === 'string' ? JSON.parse(project.frames) : project.frames;
-                        if (frames && Array.isArray(frames) && frames.length > 0 && frames[0]) {
-                            // Utiliser generateTemplatePreview pour créer un aperçu
-                            previewHTML = generateTemplatePreview(frames[0]);
-                        }
-                    } catch (e) {
-                        console.warn('Impossible de générer l\'aperçu:', e);
-                    }
-                    
-                    return `
-                        <div class="project-avatar-item" data-project-index="${index}" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: all 0.2s; margin-bottom: 10px;">
-                            <div style="flex-shrink: 0;">
-                                ${previewHTML}
-                            </div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; color: rgba(255, 255, 255, 0.95); margin-bottom: 4px;">${projectName}</div>
-                                <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">${date} à ${time}</div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                
-                const dialogContent = `
-                    <div style="padding: 20px; color: rgba(255, 255, 255, 0.95); max-height: 80vh; overflow-y: auto;">
-                        <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98);">📂 Charger un projet comme avatar</h3>
-                        <p style="text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85); font-size: 0.9em;">
-                            Sélectionnez un projet. La première frame sera redimensionnée en 16x16 pixels pour votre avatar.
-                        </p>
-                        
-                        <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
-                            ${projectsList}
-                        </div>
-                        
-                        <div style="display: flex; gap: 10px; margin-top: 20px;">
-                            <button id="cancelLoadAvatarBtn" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
-                                Annuler
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                const selectModal = document.createElement('div');
-                selectModal.className = 'modal';
-                selectModal.style.display = 'flex';
-                selectModal.innerHTML = `
-                    <div class="modal-content" style="max-width: 500px; width: 90%; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.95);">
-                        ${dialogContent}
-                    </div>
-                `;
-                
-                document.body.appendChild(selectModal);
-                
-                // Ajouter les effets hover
-                selectModal.querySelectorAll('.project-avatar-item').forEach(item => {
-                    item.addEventListener('mouseenter', function() {
-                        this.style.background = 'rgba(255,255,255,0.1)';
-                        this.style.borderColor = 'rgba(76, 175, 80, 0.5)';
-                    });
-                    item.addEventListener('mouseleave', function() {
-                        this.style.background = 'rgba(255,255,255,0.05)';
-                        this.style.borderColor = 'rgba(255,255,255,0.2)';
-                    });
-                });
-                
-                // Gérer la sélection d'un projet
-                selectModal.querySelectorAll('.project-avatar-item').forEach(item => {
-                    item.addEventListener('click', async () => {
-                        const projectIndex = parseInt(item.dataset.projectIndex);
-                        const selectedProject = projects[projectIndex];
-                        
-                        if (!selectedProject) {
-                            alert('❌ Projet non trouvé.');
-                            return;
-                        }
-                        
-                        // Charger le projet complet pour obtenir les frames
-                        const loadResult = await window.dbService.loadProject(selectedProject.name);
-                        
-                        if (!loadResult.success) {
-                            alert('❌ Erreur lors du chargement du projet : ' + (loadResult.error || 'Erreur inconnue'));
-                            return;
-                        }
-                        
-                        const projectData = loadResult.data;
-                        let frames = projectData.frames;
-                        
-                        // Parser les frames si nécessaire
-                        if (typeof frames === 'string') {
-                            frames = JSON.parse(frames);
-                        }
-                        
-                        if (!frames || !Array.isArray(frames) || frames.length === 0) {
-                            alert('❌ Ce projet ne contient aucune frame.');
-                            selectModal.remove();
-                            return;
-                        }
-                        
-                        // Utiliser la première frame et la redimensionner en 16x16
-                        const firstFrame = frames[0];
-                        const avatarData = resizeFrameToAvatar(firstFrame);
-                        
-                        if (avatarData) {
-                            currentAvatarData = avatarData;
-                            currentAvatarSizeValue = 16;
-                            currentAvatarPreview.innerHTML = generateAvatarPreview(avatarData, 16, 64);
-                            selectModal.remove();
-                            alert('✅ Avatar chargé depuis le projet "' + selectedProject.name + '" !\n\nN\'oubliez pas de cliquer sur "Enregistrer" pour sauvegarder votre profil.');
-                        } else {
-                            alert('❌ Impossible de convertir ce projet en avatar.');
-                        }
-                    });
-                });
-                
-                // Annuler
-                document.getElementById('cancelLoadAvatarBtn')?.addEventListener('click', () => {
-                    selectModal.remove();
-                });
-                
-                // Fermer en cliquant en dehors
-                selectModal.addEventListener('click', (e) => {
-                    if (e.target === selectModal) {
-                        selectModal.remove();
-                    }
-                });
-                
-            } catch (error) {
-                console.error('Erreur lors du chargement des projets:', error);
-                alert('❌ Erreur inattendue : ' + (error.message || 'Erreur inconnue'));
-            }
-        }
+            });
+        });
         
         // Éditer l'avatar
         editAvatarBtn?.addEventListener('click', async () => {
@@ -3151,13 +3205,14 @@
             if (avatarData !== null) {
                 currentAvatarData = avatarData;
                 currentAvatarSizeValue = 16; // Taille fixe pour l'avatar
-                currentAvatarPreview.innerHTML = generateAvatarPreview(avatarData, 16, 64);
+                currentAvatarPreview.innerHTML = generateAvatarPreview(avatarData, 16, 80);
+                
+                // Désélectionner les presets
+                presetItems.forEach(i => {
+                    i.style.borderColor = 'rgba(255,255,255,0.1)';
+                    i.style.background = 'transparent';
+                });
             }
-        });
-        
-        // Charger un projet comme avatar
-        loadProjectAsAvatarBtn?.addEventListener('click', () => {
-            loadProjectAsAvatar();
         });
         
         // Focus sur l'input
