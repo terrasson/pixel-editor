@@ -1,0 +1,148 @@
+/* Avatar Cover Flow Carousel Styles */
+
+.avatar-carousel-wrapper {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    perspective: 1000px;
+    overflow: hidden;
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Add a subtle gradient mask to fade out edges */
+    -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+    mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+}
+
+.avatar-carousel-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform-style: preserve-3d;
+}
+
+.avatar-carousel-item {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
+    /* Ensure content doesn't leak during 3D transforms */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.avatar-carousel-item canvas,
+.avatar-carousel-item img,
+.avatar-carousel-item svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated; /* Important for pixel art */
+    pointer-events: none; /* Let clicks pass to the container */
+}
+
+/* Active Item (Center) */
+.avatar-carousel-item.active {
+    transform: translateX(0) translateZ(100px) rotateY(0deg);
+    opacity: 1;
+    z-index: 10;
+    border-color: #667eea;
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+    filter: brightness(1.1);
+}
+
+/* Previous Items (Left) */
+.avatar-carousel-item.prev-1 {
+    transform: translateX(-100px) translateZ(0px) rotateY(25deg);
+    opacity: 0.7;
+    z-index: 5;
+    filter: brightness(0.7);
+}
+
+.avatar-carousel-item.prev-2 {
+    transform: translateX(-180px) translateZ(-50px) rotateY(35deg);
+    opacity: 0.4;
+    z-index: 1;
+    filter: brightness(0.5);
+}
+
+/* Next Items (Right) */
+.avatar-carousel-item.next-1 {
+    transform: translateX(100px) translateZ(0px) rotateY(-25deg);
+    opacity: 0.7;
+    z-index: 5;
+    filter: brightness(0.7);
+}
+
+.avatar-carousel-item.next-2 {
+    transform: translateX(180px) translateZ(-50px) rotateY(-35deg);
+    opacity: 0.4;
+    z-index: 1;
+    filter: brightness(0.5);
+}
+
+/* Hidden Items */
+.avatar-carousel-item.hidden-left {
+    transform: translateX(-250px) translateZ(-100px) rotateY(45deg);
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.avatar-carousel-item.hidden-right {
+    transform: translateX(250px) translateZ(-100px) rotateY(-45deg);
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Hover Effects */
+.avatar-carousel-item:hover:not(.active) {
+    filter: brightness(0.9);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Navigation Controls (Optional but good for UX) */
+.avatar-carousel-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: white;
+    font-size: 20px;
+    z-index: 20;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: background 0.2s;
+}
+
+.avatar-carousel-nav:hover {
+    background: rgba(102, 126, 234, 0.8);
+}
+
+.avatar-carousel-nav.prev {
+    left: 10px;
+}
+
+.avatar-carousel-nav.next {
+    right: 10px;
+}

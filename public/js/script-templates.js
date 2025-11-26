@@ -10,17 +10,17 @@
  * ⚠️ VERSION BETA - Pour index-beta.html uniquement
  */
 
-(function() {
+(function () {
     'use strict';
-    
+
     // Variable pour stocker le modèle actuellement chargé
     let currentTemplate = null;
     let isTemplateMode = false;
-    
+
     // Rendre accessible globalement pour pouvoir les réinitialiser lors du chargement de projets
     window.currentTemplate = currentTemplate;
     window.isTemplateMode = isTemplateMode;
-    
+
     // Attendre que le DOM et script.js soient chargés
     function waitForScript() {
         if (typeof frames === 'undefined' || typeof GRID_SIZE === 'undefined') {
@@ -29,13 +29,13 @@
         }
         initTemplateFeature();
     }
-    
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', waitForScript);
     } else {
         waitForScript();
     }
-    
+
     /**
      * Base de données des modèles par thème
      * Chaque modèle contient :
@@ -89,7 +89,7 @@
             difficulty: 3
         }
     ];
-    
+
     /**
      * Liste des catégories disponibles
      */
@@ -114,7 +114,7 @@
         { value: 'Horreur', label: '🧟 Horreur' },
         { value: 'Autre', label: '🎨 Autre' }
     ];
-    
+
     /**
      * Liste des styles/tags disponibles avec groupes
      */
@@ -175,7 +175,7 @@
             { value: 'electronique', label: 'Électronique' }
         ]
     };
-    
+
     /**
      * Génère une frame vide avec la bonne taille
      */
@@ -185,7 +185,7 @@
             isEmpty: true
         }));
     }
-    
+
     /**
      * Génère le modèle du cœur
      */
@@ -193,7 +193,7 @@
         const frame = createEmptyFrame();
         const centerX = 16;
         const centerY = 16;
-        
+
         // Dessin d'un cœur simple
         const heartPixels = [
             [14, 8], [15, 8], [17, 8], [18, 8],
@@ -203,17 +203,17 @@
             [15, 12], [16, 12], [17, 12],
             [16, 13], [16, 14], [16, 15], [16, 16], [16, 17], [16, 18], [16, 19], [16, 20], [16, 21]
         ];
-        
+
         heartPixels.forEach(([x, y]) => {
             const index = y * GRID_SIZE + x;
             if (index >= 0 && index < frame.length) {
                 frame[index] = { color: '#FF1493', isEmpty: false };
             }
         });
-        
+
         return frame;
     }
-    
+
     /**
      * Génère le modèle de l'étoile
      */
@@ -221,7 +221,7 @@
         const frame = createEmptyFrame();
         const centerX = 16;
         const centerY = 16;
-        
+
         // Étoile simple
         const starPixels = [
             [16, 6],
@@ -236,23 +236,23 @@
             [14, 19], [16, 19], [18, 19],
             [16, 21]
         ];
-        
+
         starPixels.forEach(([x, y]) => {
             const index = y * GRID_SIZE + x;
             if (index >= 0 && index < frame.length) {
                 frame[index] = { color: '#FFD700', isEmpty: false };
             }
         });
-        
+
         return frame;
     }
-    
+
     /**
      * Génère le modèle du smiley
      */
     function generateSmileyFrame() {
         const frame = createEmptyFrame();
-        
+
         // Visage jaune
         for (let y = 8; y < 24; y++) {
             for (let x = 8; x < 24; x++) {
@@ -265,13 +265,13 @@
                 }
             }
         }
-        
+
         // Yeux
         frame[11 * GRID_SIZE + 12] = { color: '#000000', isEmpty: false };
         frame[11 * GRID_SIZE + 13] = { color: '#000000', isEmpty: false };
         frame[11 * GRID_SIZE + 19] = { color: '#000000', isEmpty: false };
         frame[11 * GRID_SIZE + 20] = { color: '#000000', isEmpty: false };
-        
+
         // Bouche souriante
         for (let x = 12; x <= 20; x++) {
             const y = 18 + Math.floor(Math.sin((x - 12) * Math.PI / 8) * 2);
@@ -280,16 +280,16 @@
                 frame[index] = { color: '#000000', isEmpty: false };
             }
         }
-        
+
         return frame;
     }
-    
+
     /**
      * Génère le modèle du chat
      */
     function generateCatFrame() {
         const frame = createEmptyFrame();
-        
+
         // Corps du chat (orange)
         for (let y = 14; y < 22; y++) {
             for (let x = 10; x < 22; x++) {
@@ -299,7 +299,7 @@
                 }
             }
         }
-        
+
         // Tête du chat
         for (let y = 10; y < 14; y++) {
             for (let x = 12; x < 20; x++) {
@@ -307,34 +307,34 @@
                 frame[index] = { color: '#FF8C00', isEmpty: false };
             }
         }
-        
+
         // Oreilles
         frame[9 * GRID_SIZE + 11] = { color: '#FF8C00', isEmpty: false };
         frame[9 * GRID_SIZE + 13] = { color: '#FF8C00', isEmpty: false };
         frame[9 * GRID_SIZE + 19] = { color: '#FF8C00', isEmpty: false };
         frame[9 * GRID_SIZE + 21] = { color: '#FF8C00', isEmpty: false };
-        
+
         // Yeux
         frame[11 * GRID_SIZE + 14] = { color: '#000000', isEmpty: false };
         frame[11 * GRID_SIZE + 17] = { color: '#000000', isEmpty: false };
-        
+
         // Nez
         frame[12 * GRID_SIZE + 15] = { color: '#FF69B4', isEmpty: false };
         frame[12 * GRID_SIZE + 16] = { color: '#FF69B4', isEmpty: false };
-        
+
         // Bouche
         frame[13 * GRID_SIZE + 15] = { color: '#000000', isEmpty: false };
         frame[13 * GRID_SIZE + 16] = { color: '#000000', isEmpty: false };
-        
+
         return frame;
     }
-    
+
     /**
      * Génère le modèle de l'arbre
      */
     function generateTreeFrame() {
         const frame = createEmptyFrame();
-        
+
         // Tronc (marron)
         for (let y = 18; y < 26; y++) {
             for (let x = 14; x < 18; x++) {
@@ -342,7 +342,7 @@
                 frame[index] = { color: '#8B4513', isEmpty: false };
             }
         }
-        
+
         // Feuillage (vert)
         for (let y = 10; y < 20; y++) {
             for (let x = 10; x < 22; x++) {
@@ -355,16 +355,16 @@
                 }
             }
         }
-        
+
         return frame;
     }
-    
+
     /**
      * Génère le modèle de la maison
      */
     function generateHouseFrame() {
         const frame = createEmptyFrame();
-        
+
         // Corps de la maison (beige)
         for (let y = 16; y < 24; y++) {
             for (let x = 10; x < 22; x++) {
@@ -372,7 +372,7 @@
                 frame[index] = { color: '#DEB887', isEmpty: false };
             }
         }
-        
+
         // Toit (rouge)
         for (let y = 12; y < 16; y++) {
             for (let x = 12 - (y - 12); x < 20 + (y - 12); x++) {
@@ -382,7 +382,7 @@
                 }
             }
         }
-        
+
         // Porte (marron)
         for (let y = 18; y < 24; y++) {
             for (let x = 14; x < 18; x++) {
@@ -390,7 +390,7 @@
                 frame[index] = { color: '#654321', isEmpty: false };
             }
         }
-        
+
         // Fenêtre (bleu)
         for (let y = 17; y < 19; y++) {
             for (let x = 11; x < 13; x++) {
@@ -402,32 +402,32 @@
                 frame[index] = { color: '#4169E1', isEmpty: false };
             }
         }
-        
+
         return frame;
     }
-    
+
     /**
      * Initialise la fonctionnalité des modèles
      */
     function initTemplateFeature() {
         console.log('🎨 ========== INITIALISATION TEMPLATES ==========');
         console.log('🎨 Fonctionnalité Modèles à Réaliser BETA initialisée');
-        
+
         // Ajouter les event listeners pour les boutons
         const templateBtn = document.getElementById('templateBtn');
         const templateBtn2 = document.getElementById('templateBtn2');
         const publishTemplateBtn = document.getElementById('publishTemplateBtn');
         const publishTemplateBtnMobile = document.getElementById('publishTemplateBtnMobile');
-        
+
         console.log('🔍 Recherche des boutons:', {
             templateBtn: !!templateBtn,
             templateBtn2: !!templateBtn2,
             publishTemplateBtn: !!publishTemplateBtn,
             publishTemplateBtnMobile: !!publishTemplateBtnMobile
         });
-        
+
         if (templateBtn) {
-            templateBtn.addEventListener('click', function() {
+            templateBtn.addEventListener('click', function () {
                 console.log('🖱️ Bouton templateBtn cliqué !');
                 showTemplateGallery();
             });
@@ -435,9 +435,9 @@
         } else {
             console.warn('⚠️ templateBtn non trouvé !');
         }
-        
+
         if (templateBtn2) {
-            templateBtn2.addEventListener('click', function() {
+            templateBtn2.addEventListener('click', function () {
                 console.log('🖱️ Bouton templateBtn2 cliqué !');
                 showTemplateGallery();
             });
@@ -445,26 +445,26 @@
         } else {
             console.warn('⚠️ templateBtn2 non trouvé !');
         }
-        
+
         if (publishTemplateBtn) {
-            publishTemplateBtn.addEventListener('click', function() {
+            publishTemplateBtn.addEventListener('click', function () {
                 console.log('🖱️ Bouton publishTemplateBtn cliqué !');
                 showPublishTemplateDialog();
             });
             console.log('✅ Event listener ajouté à publishTemplateBtn');
         }
-        
+
         if (publishTemplateBtnMobile) {
-            publishTemplateBtnMobile.addEventListener('click', function() {
+            publishTemplateBtnMobile.addEventListener('click', function () {
                 console.log('🖱️ Bouton publishTemplateBtnMobile cliqué !');
                 showPublishTemplateDialog();
             });
             console.log('✅ Event listener ajouté à publishTemplateBtnMobile');
         }
-        
+
         // Configurer les intercepteurs
         interceptDrawingEvents();
-        
+
         // Essayer de configurer l'intercepteur de loadFrame
         setTimeout(() => {
             if (typeof loadFrame !== 'undefined' && !window.templateLoadFrameIntercepted) {
@@ -472,14 +472,14 @@
             }
         }, 500);
     }
-    
+
     /**
      * Affiche la galerie de modèles par thème (modèles locaux + modèles partagés)
      */
     async function showTemplateGallery() {
         console.log('🖼️ ========== showTemplateGallery DÉBUT ==========');
         console.log('🖼️ Ouverture de la galerie de modèles...');
-        
+
         try {
             // Charger les modèles depuis Supabase
             let sharedTemplates = [];
@@ -490,7 +490,7 @@
                     orderDirection: 'desc',
                     limit: 100
                 });
-                
+
                 if (result.success && result.data) {
                     sharedTemplates = result.data.map(template => {
                         // Détecter si c'est une animation "à réaliser" en vérifiant template_data
@@ -503,16 +503,16 @@
                                 // Vérifier si tous les pixels non-vides ont isEmpty: true (nouveaux modèles)
                                 const nonEmptyPixels = firstFrame.filter(p => p && p.color && p.color !== '#FFFFFF');
                                 const allPixelsAreEmpty = nonEmptyPixels.length > 0 && nonEmptyPixels.every(p => p.isEmpty === true);
-                                
+
                                 // Pour les anciens modèles : si template_data et preview_data sont identiques,
                                 // on considère que c'est une animation complète (pas un modèle à réaliser)
                                 // Si template_data diffère de preview_data ou si les pixels ont isEmpty: true, c'est un modèle à réaliser
                                 const templateDataStr = JSON.stringify(template.template_data);
                                 const previewDataStr = JSON.stringify(template.preview_data || template.template_data);
                                 const areDifferent = templateDataStr !== previewDataStr;
-                                
+
                                 isAnimationTemplate = allPixelsAreEmpty || (areDifferent && nonEmptyPixels.length > 0);
-                                
+
                                 console.log('🔍 Détection type animation:', {
                                     templateId: template.id,
                                     templateName: template.name,
@@ -522,7 +522,7 @@
                                 });
                             }
                         }
-                        
+
                         return {
                             id: template.id,
                             name: template.name,
@@ -548,10 +548,10 @@
                     console.warn('⚠️ Impossible de charger les modèles partagés:', result.error);
                 }
             }
-            
+
             // Combiner les modèles locaux et partagés
-            const allTemplates = [...TEMPLATES_DATABASE.map(t => ({...t, isShared: false})), ...sharedTemplates];
-            
+            const allTemplates = [...TEMPLATES_DATABASE.map(t => ({ ...t, isShared: false })), ...sharedTemplates];
+
             // Grouper les modèles par thème/catégorie
             const templatesByTheme = {};
             allTemplates.forEach(template => {
@@ -561,9 +561,9 @@
                 }
                 templatesByTheme[theme].push(template);
             });
-            
+
             const themes = Object.keys(templatesByTheme).sort();
-            
+
             // Créer le contenu de la modal avec filtres
             let modalContent = `
                 <div style="position: relative; padding: 20px; color: rgba(255, 255, 255, 0.95); max-height: 80vh; overflow-y: auto;">
@@ -615,21 +615,21 @@
                     
                     <div id="templatesContainer">
             `;
-            
+
             // Obtenir l'email de l'utilisateur connecté pour afficher le bouton de suppression
             const currentUserEmail = window.authService?.getUserEmail() || '';
-            
+
             // Récupérer les avatars de tous les auteurs en une seule requête
             const allAuthorIds = [...new Set(sharedTemplates.map(t => t.author_id).filter(Boolean))];
             const avatarMap = new Map();
-            
+
             if (allAuthorIds.length > 0 && window.dbService && window.dbService.supabase) {
                 try {
                     const { data: profiles } = await window.dbService.supabase
                         .from('user_profiles')
                         .select('user_id, avatar_data, avatar_size')
                         .in('user_id', allAuthorIds);
-                    
+
                     if (profiles) {
                         profiles.forEach(profile => {
                             avatarMap.set(profile.user_id, {
@@ -642,7 +642,7 @@
                     console.warn('Impossible de récupérer les avatars:', e);
                 }
             }
-            
+
             // Parcourir chaque thème
             themes.forEach(theme => {
                 modalContent += `
@@ -652,7 +652,7 @@
                         </h4>
                         <div class="templates-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px;">
                 `;
-                
+
                 templatesByTheme[theme].forEach(template => {
                     // Utiliser la miniature si disponible, sinon générer un aperçu
                     let previewHTML = '';
@@ -668,16 +668,16 @@
                     } else {
                         previewHTML = '<div style="color: #999; text-align: center; padding: 20px;">Aperçu indisponible</div>';
                     }
-                    
+
                     const isAnimationModel = template.isAnimation || (template.preview && Array.isArray(template.preview) && template.preview.length > 0 && Array.isArray(template.preview[0]));
                     const animationBadge = isAnimationModel ? '<div style="font-size: 0.7em; color: #FFC107; margin-top: 4px; font-weight: 500;">🎬 Animation</div>' : '';
-                    
+
                     // Récupérer l'avatar depuis la map
                     const authorAvatarData = template.author_id ? avatarMap.get(template.author_id) : null;
-                    const avatarHTML = authorAvatarData?.avatar ? 
-                        generateAvatarPreview(authorAvatarData.avatar, authorAvatarData.size, 20) : 
+                    const avatarHTML = authorAvatarData?.avatar ?
+                        generateAvatarPreview(authorAvatarData.avatar, authorAvatarData.size, 20) :
                         '<div style="width: 20px; height: 20px; background: rgba(255,255,255,0.2); border-radius: 3px; display: inline-block; vertical-align: middle; font-size: 12px; line-height: 20px; text-align: center;">👤</div>';
-                    
+
                     const authorInfo = template.isShared ? `
                         <div style="font-size: 0.75em; color: rgba(255, 255, 255, 0.6); margin-top: 4px; display: flex; align-items: center; gap: 6px;">
                             <span style="display: inline-block; vertical-align: middle;">${avatarHTML}</span>
@@ -685,7 +685,7 @@
                         </div>
                     ` : '';
                     const viewInfo = template.view_count > 0 ? `<div style="font-size: 0.75em; color: rgba(255, 255, 255, 0.6);">👁️ ${template.view_count}</div>` : '';
-                    
+
                     // Vérifier si l'utilisateur connecté est l'auteur du modèle
                     const isOwner = template.isShared && template.author_email && currentUserEmail && template.author_email.toLowerCase() === currentUserEmail.toLowerCase();
                     const deleteButton = isOwner ? `
@@ -695,7 +695,7 @@
                             ×
                         </button>
                     ` : '';
-                    
+
                     modalContent += `
                         <div class="template-item" data-template-id="${template.id}" 
                              data-template-theme="${theme}"
@@ -717,13 +717,13 @@
                         </div>
                     `;
                 });
-                
+
                 modalContent += `
                         </div>
                     </div>
                 `;
             });
-            
+
             modalContent += `
                     </div>
                     <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
@@ -733,7 +733,7 @@
                     </div>
                 </div>
             `;
-            
+
             // Créer le modal
             const modal = document.createElement('div');
             modal.className = 'modal';
@@ -743,7 +743,7 @@
                     ${modalContent}
                 </div>
             `;
-            
+
             // Ajouter des styles CSS pour les éléments de formulaire dans cette modal
             const styleSheet = document.createElement('style');
             styleSheet.textContent = `
@@ -761,10 +761,10 @@
                 }
             `;
             document.head.appendChild(styleSheet);
-            
+
             document.body.appendChild(modal);
             window.currentTemplateGallery = modal; // Stocker pour rafraîchissement
-            
+
             // Fonction pour charger un modèle (locale ou partagée)
             function loadTemplateFromGallery(templateId, isShared) {
                 if (isShared) {
@@ -780,17 +780,17 @@
                     }
                 }
             }
-            
+
             // Event listeners pour les modèles
             const templateItems = modal.querySelectorAll('.template-item');
             console.log('🔍 Nombre de modèles trouvés dans la modal:', templateItems.length);
-            
+
             templateItems.forEach((item, index) => {
                 const templateId = item.dataset.templateId;
                 const isShared = item.dataset.isShared === 'true';
-                
+
                 // Effets hover
-                item.addEventListener('mouseenter', function() {
+                item.addEventListener('mouseenter', function () {
                     try {
                         this.style.background = 'rgba(255,255,255,0.2)';
                         this.style.borderColor = '#4CAF50';
@@ -798,8 +798,8 @@
                         console.warn('Erreur hover enter:', e);
                     }
                 });
-                
-                item.addEventListener('mouseleave', function() {
+
+                item.addEventListener('mouseleave', function () {
                     try {
                         this.style.background = 'rgba(255,255,255,0.1)';
                         const isShared = this.dataset.isShared === 'true';
@@ -808,14 +808,14 @@
                         console.warn('Erreur hover leave:', e);
                     }
                 });
-                
-                item.addEventListener('click', function(e) {
+
+                item.addEventListener('click', function (e) {
                     try {
                         // Ne pas charger le modèle si on a cliqué sur le bouton de suppression
                         if (e.target.classList.contains('delete-template-btn') || e.target.closest('.delete-template-btn')) {
                             return;
                         }
-                        
+
                         console.log('🖱️ Clic sur un modèle détecté !', { templateId, isShared });
                         loadTemplateFromGallery(templateId, isShared);
                         modal.remove();
@@ -826,46 +826,46 @@
                     }
                 });
             });
-            
+
             // Event listeners pour les boutons de suppression
             const deleteButtons = modal.querySelectorAll('.delete-template-btn');
             deleteButtons.forEach(button => {
                 // Effets hover pour les boutons de suppression
-                button.addEventListener('mouseenter', function() {
+                button.addEventListener('mouseenter', function () {
                     this.style.background = 'rgba(244, 67, 54, 1)';
                     this.style.transform = 'scale(1.1)';
                 });
-                
-                button.addEventListener('mouseleave', function() {
+
+                button.addEventListener('mouseleave', function () {
                     this.style.background = 'rgba(244, 67, 54, 0.9)';
                     this.style.transform = 'scale(1)';
                 });
-                
-                button.addEventListener('click', async function(e) {
+
+                button.addEventListener('click', async function (e) {
                     e.stopPropagation(); // Empêcher le clic de déclencher le chargement du modèle
-                    
+
                     const templateId = this.dataset.templateId;
                     const templateName = this.dataset.templateName || 'ce modèle';
-                    
+
                     // Demander confirmation
                     const confirmed = confirm(
                         `🗑️ Êtes-vous sûr de vouloir supprimer "${templateName}" ?\n\n` +
                         `Cette action est irréversible.`
                     );
-                    
+
                     if (!confirmed) {
                         return;
                     }
-                    
+
                     try {
                         // Désactiver le bouton pendant la suppression
                         this.disabled = true;
                         this.style.opacity = '0.5';
                         this.style.cursor = 'not-allowed';
-                        
+
                         // Supprimer le modèle
                         const result = await window.dbService.deleteTemplate(templateId);
-                        
+
                         if (result.success) {
                             // Retirer l'élément de la liste visuellement
                             const templateItem = this.closest('.template-item');
@@ -874,7 +874,7 @@
                                 templateItem.style.opacity = '0';
                                 setTimeout(() => {
                                     templateItem.remove();
-                                    
+
                                     // Vérifier si la section de thème est maintenant vide
                                     const themeSection = templateItem.closest('.theme-section');
                                     if (themeSection) {
@@ -885,7 +885,7 @@
                                     }
                                 }, 300);
                             }
-                            
+
                             alert(`✅ Modèle "${templateName}" supprimé avec succès !`);
                         } else {
                             alert(`❌ Erreur lors de la suppression : ${result.error || 'Erreur inconnue'}`);
@@ -902,38 +902,38 @@
                     }
                 });
             });
-            
+
             // Fonction de filtrage
             function applyFilters() {
                 const categoryFilter = document.getElementById('filterCategory').value.toLowerCase();
                 const styleFilter = document.getElementById('filterStyle').value.toLowerCase().trim();
-                
+
                 const themeSections = modal.querySelectorAll('.theme-section');
                 const templateItems = modal.querySelectorAll('.template-item');
-                
+
                 let visibleCount = 0;
-                
+
                 themeSections.forEach(section => {
                     const theme = section.dataset.theme.toLowerCase();
                     let sectionVisible = false;
-                    
+
                     const items = section.querySelectorAll('.template-item');
                     items.forEach(item => {
                         const itemTheme = item.dataset.templateTheme.toLowerCase();
                         const itemStyles = (item.dataset.templateStyles || '').toLowerCase();
-                        
+
                         let itemVisible = true;
-                        
+
                         // Filtre par catégorie
                         if (categoryFilter && itemTheme !== categoryFilter) {
                             itemVisible = false;
                         }
-                        
+
                         // Filtre par style
                         if (styleFilter && itemStyles && !itemStyles.includes(styleFilter)) {
                             itemVisible = false;
                         }
-                        
+
                         if (itemVisible) {
                             item.style.display = '';
                             sectionVisible = true;
@@ -942,16 +942,16 @@
                             item.style.display = 'none';
                         }
                     });
-                    
+
                     // Masquer la section si aucun modèle visible
                     section.style.display = sectionVisible ? '' : 'none';
                 });
-                
+
                 // Afficher un message si aucun résultat
                 const container = document.getElementById('templatesContainer');
                 let noResultsMsg = container.querySelector('.no-results-msg');
                 if (visibleCount === 0) {
-                                if (!noResultsMsg) {
+                    if (!noResultsMsg) {
                         noResultsMsg = document.createElement('div');
                         noResultsMsg.className = 'no-results-msg';
                         noResultsMsg.style.cssText = 'text-align: center; padding: 40px; color: rgba(255,255,255,0.85);';
@@ -963,39 +963,39 @@
                         noResultsMsg.remove();
                     }
                 }
-                
+
                 console.log(`🔍 ${visibleCount} modèles visibles après filtrage`);
             }
-            
+
             // Ajouter des styles hover pour les boutons de filtre
             const applyFiltersBtn = document.getElementById('applyFiltersBtn');
             const resetFiltersBtn = document.getElementById('resetFiltersBtn');
-            
+
             if (applyFiltersBtn) {
-                applyFiltersBtn.addEventListener('mouseenter', function() {
+                applyFiltersBtn.addEventListener('mouseenter', function () {
                     this.style.opacity = '0.9';
                     this.style.transform = 'translateY(-1px)';
                 });
-                applyFiltersBtn.addEventListener('mouseleave', function() {
+                applyFiltersBtn.addEventListener('mouseleave', function () {
                     this.style.opacity = '1';
                     this.style.transform = 'translateY(0)';
                 });
             }
-            
+
             if (resetFiltersBtn) {
-                resetFiltersBtn.addEventListener('mouseenter', function() {
+                resetFiltersBtn.addEventListener('mouseenter', function () {
                     this.style.background = 'rgba(255,255,255,0.2)';
                 });
-                resetFiltersBtn.addEventListener('mouseleave', function() {
+                resetFiltersBtn.addEventListener('mouseleave', function () {
                     this.style.background = 'rgba(255,255,255,0.1)';
                 });
             }
-            
+
             // Event listeners pour les filtres
             if (applyFiltersBtn) {
                 applyFiltersBtn.addEventListener('click', applyFilters);
             }
-            
+
             if (resetFiltersBtn) {
                 resetFiltersBtn.addEventListener('click', () => {
                     const categoryFilter = document.getElementById('filterCategory');
@@ -1005,7 +1005,7 @@
                     applyFilters();
                 });
             }
-            
+
             // Appliquer le filtre automatiquement sur Enter dans le champ style
             const filterStyleInput = document.getElementById('filterStyle');
             if (filterStyleInput) {
@@ -1015,37 +1015,37 @@
                     }
                 });
             }
-            
+
             // Event listener pour le bouton de fermeture (croix) en haut
             const closeBtn = document.getElementById('closeTemplateGalleryBtn');
             if (closeBtn) {
                 // Effets hover pour le bouton de fermeture
-                closeBtn.addEventListener('mouseenter', function() {
+                closeBtn.addEventListener('mouseenter', function () {
                     this.style.background = 'rgba(255, 255, 255, 0.2)';
                     this.style.borderColor = 'rgba(255, 255, 255, 0.5)';
                     this.style.transform = 'scale(1.1)';
                 });
-                
-                closeBtn.addEventListener('mouseleave', function() {
+
+                closeBtn.addEventListener('mouseleave', function () {
                     this.style.background = 'rgba(255, 255, 255, 0.1)';
                     this.style.borderColor = 'rgba(255, 255, 255, 0.3)';
                     this.style.transform = 'scale(1)';
                 });
-                
+
                 closeBtn.addEventListener('click', () => {
                     console.log('❌ Fermeture de la galerie de modèles (croix)');
                     modal.remove();
                     window.currentTemplateGallery = null;
                 });
             }
-            
+
             // Bouton annuler (gardé en bas pour accessibilité)
             const cancelBtn = document.getElementById('cancelTemplateBtn');
             if (cancelBtn) {
-                cancelBtn.addEventListener('mouseenter', function() {
+                cancelBtn.addEventListener('mouseenter', function () {
                     this.style.background = 'rgba(255,255,255,0.2)';
                 });
-                cancelBtn.addEventListener('mouseleave', function() {
+                cancelBtn.addEventListener('mouseleave', function () {
                     this.style.background = 'rgba(255,255,255,0.1)';
                 });
                 cancelBtn.addEventListener('click', () => {
@@ -1054,35 +1054,35 @@
                     window.currentTemplateGallery = null;
                 });
             }
-            
+
             console.log('🖼️ ========== showTemplateGallery FIN ==========');
         } catch (error) {
             console.error('❌ ERREUR dans showTemplateGallery:', error);
             alert('❌ Erreur lors de l\'ouverture de la galerie. Vérifiez la console.');
         }
     }
-    
+
     /**
      * Charge un modèle partagé depuis Supabase
      */
     async function loadSharedTemplate(templateId) {
         console.log('📥 Chargement du modèle partagé:', templateId);
-        
+
         try {
             if (!window.dbService) {
                 alert('❌ Service de base de données non disponible.');
                 return;
             }
-            
+
             const result = await window.dbService.getTemplateById(templateId);
-            
+
             if (!result.success || !result.data) {
                 alert('❌ Impossible de charger le modèle : ' + (result.error || 'Modèle non trouvé'));
                 return;
             }
-            
+
             const templateData = result.data;
-            
+
             // Convertir le modèle partagé au format attendu
             // Utiliser template_data (version vide avec isEmpty: true mais couleurs stockées) pour le chargement
             // et preview_data pour l'aperçu dans la galerie
@@ -1091,29 +1091,29 @@
             // preview_data contient les pixels colorés (pour l'aperçu dans la galerie)
             const templateData_raw = templateData.template_data || templateData.preview_data;
             const previewData_raw = templateData.preview_data || templateData.template_data;
-            
+
             // Utiliser le champ is_animation de la base de données si disponible
             // Sinon, détecter automatiquement
             let isAnimation = templateData.is_animation || false;
             let isAnimationTemplate = templateData.is_animation_template || false;
-            
+
             if (!isAnimation && Array.isArray(templateData_raw) && templateData_raw.length > 0) {
                 // Si le premier élément est un array, c'est probablement une animation (array de frames)
                 // Sinon, c'est une frame unique (array de pixels)
                 const firstElement = templateData_raw[0];
                 isAnimation = Array.isArray(firstElement);
             }
-            
+
             console.log('📥 Données récupérées depuis Supabase:', {
                 hasTemplateData: !!templateData.template_data,
                 hasPreviewData: !!templateData.preview_data,
                 isAnimation: isAnimation,
                 isAnimationTemplate: isAnimationTemplate,
-                templateDataType: Array.isArray(templateData_raw) ? 
-                    (Array.isArray(templateData_raw[0]) ? 'array of frames' : 'single frame') : 
+                templateDataType: Array.isArray(templateData_raw) ?
+                    (Array.isArray(templateData_raw[0]) ? 'array of frames' : 'single frame') :
                     typeof templateData_raw
             });
-            
+
             const template = {
                 id: templateData.id,
                 name: templateData.name,
@@ -1128,18 +1128,18 @@
                 isAnimation: isAnimation, // Marqueur pour animation (complète ou à réaliser)
                 isAnimationTemplate: isAnimationTemplate // Marqueur pour distinguer animation complète vs à réaliser
             };
-            
+
             // Charger le modèle
             loadTemplate(template);
-            
+
             // Marquer comme complété si l'utilisateur le finit (sera géré plus tard)
-            
+
         } catch (error) {
             console.error('Erreur lors du chargement du modèle partagé:', error);
             alert('❌ Erreur lors du chargement du modèle. Vérifiez la console.');
         }
     }
-    
+
     /**
      * Génère un aperçu SVG de l'avatar
      */
@@ -1147,45 +1147,45 @@
         if (!avatarData || !Array.isArray(avatarData) || avatarData.length === 0) {
             return '<div style="width: ' + displaySize + 'px; height: ' + displaySize + 'px; background: rgba(255,255,255,0.2); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>';
         }
-        
+
         const pixelSize = displaySize / size;
         let svg = `<svg width="${displaySize}" height="${displaySize}" style="display: block; border-radius: 4px; overflow: hidden;">`;
-        
+
         avatarData.forEach((pixel, index) => {
             if (!pixel || pixel.isEmpty) return;
-            
+
             const x = (index % size) * pixelSize;
             const y = Math.floor(index / size) * pixelSize;
-            
+
             svg += `<rect x="${x}" y="${y}" width="${pixelSize}" height="${pixelSize}" fill="${pixel.color}" stroke="none"/>`;
         });
-        
+
         svg += `</svg>`;
         return svg;
     }
-    
+
     /**
      * Génère un aperçu SVG d'un modèle
      */
     function generateTemplatePreview(frame) {
         const size = 80;
         const pixelSize = size / GRID_SIZE;
-        
+
         let svg = `<svg width="${size}" height="${size}" style="display: block;">`;
-        
+
         frame.forEach((pixel, index) => {
             if (!pixel || pixel.isEmpty) return;
-            
+
             const x = (index % GRID_SIZE) * pixelSize;
             const y = Math.floor(index / GRID_SIZE) * pixelSize;
-            
+
             svg += `<rect x="${x}" y="${y}" width="${pixelSize}" height="${pixelSize}" fill="${pixel.color}" stroke="none"/>`;
         });
-        
+
         svg += `</svg>`;
         return svg;
     }
-    
+
     /**
      * Affiche le dialogue pour publier un modèle
      */
@@ -1195,15 +1195,15 @@
             alert('⚠️ Veuillez d\'abord créer quelque chose dans la grille avant de publier un modèle.');
             return;
         }
-        
+
         const currentFrameData = frames[currentFrame];
         const hasContent = currentFrameData.some(pixel => !pixel.isEmpty);
-        
+
         if (!hasContent) {
             alert('⚠️ La grille actuelle est vide. Veuillez créer quelque chose avant de publier un modèle.');
             return;
         }
-        
+
         // Créer le contenu de la modal de publication
         let styleTagsHTML = '';
         Object.entries(TEMPLATE_STYLES).forEach(([group, styles]) => {
@@ -1225,7 +1225,7 @@
                 </div>
             `;
         });
-        
+
         const modalContent = `
             <div style="padding: 20px; color: rgba(255, 255, 255, 0.95); max-height: 80vh; overflow-y: auto;">
                 <h3 style="margin-top: 0; text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.98); font-weight: 600;">
@@ -1355,7 +1355,7 @@
                 </div>
             </div>
         `;
-        
+
         // Créer le modal
         const modal = document.createElement('div');
         modal.className = 'modal';
@@ -1365,7 +1365,7 @@
                 ${modalContent}
             </div>
         `;
-        
+
         // Ajouter des styles CSS pour les éléments de formulaire dans cette modal
         const styleSheet = document.createElement('style');
         styleSheet.textContent = `
@@ -1382,71 +1382,71 @@
             }
         `;
         document.head.appendChild(styleSheet);
-        
+
         document.body.appendChild(modal);
-        
+
         // Ajouter des styles pour les labels de style tags (hover effect)
         const styleTagLabels = modal.querySelectorAll('label[style*="background: rgba(255,255,255,0.1)"]');
         styleTagLabels.forEach(label => {
-            label.addEventListener('mouseenter', function() {
+            label.addEventListener('mouseenter', function () {
                 this.style.background = 'rgba(255,255,255,0.2)';
                 this.style.borderColor = 'rgba(255,255,255,0.4)';
             });
-            label.addEventListener('mouseleave', function() {
+            label.addEventListener('mouseleave', function () {
                 this.style.background = 'rgba(255,255,255,0.1)';
                 this.style.borderColor = 'rgba(255,255,255,0.2)';
             });
         });
-        
+
         // Ajouter des styles pour les boutons (hover effect)
         const cancelBtn = document.getElementById('cancelPublishBtn');
         const publishBtn = document.getElementById('publishTemplateBtnModal');
-        
+
         if (cancelBtn) {
-            cancelBtn.addEventListener('mouseenter', function() {
+            cancelBtn.addEventListener('mouseenter', function () {
                 this.style.background = 'rgba(255,255,255,0.2)';
             });
-            cancelBtn.addEventListener('mouseleave', function() {
+            cancelBtn.addEventListener('mouseleave', function () {
                 this.style.background = 'rgba(255,255,255,0.1)';
             });
         }
-        
+
         if (publishBtn) {
-            publishBtn.addEventListener('mouseenter', function() {
+            publishBtn.addEventListener('mouseenter', function () {
                 this.style.opacity = '0.9';
                 this.style.transform = 'translateY(-1px)';
             });
-            publishBtn.addEventListener('mouseleave', function() {
+            publishBtn.addEventListener('mouseleave', function () {
                 this.style.opacity = '1';
                 this.style.transform = 'translateY(0)';
             });
         }
-        
+
         // Event listeners
         const difficultySlider = document.getElementById('templateDifficultyInput');
         const difficultyValue = document.getElementById('templateDifficultyValue');
         const difficultyLabels = ['1 ⭐', '2 ⭐⭐', '3 ⭐⭐⭐', '4 ⭐⭐⭐⭐', '5 ⭐⭐⭐⭐⭐'];
-        
+
         if (difficultySlider && difficultyValue) {
             difficultySlider.addEventListener('input', (e) => {
                 const value = parseInt(e.target.value) - 1;
                 difficultyValue.textContent = difficultyLabels[value];
             });
         }
-        
+
         if (cancelBtn) {
             cancelBtn.addEventListener('click', () => {
                 modal.remove();
             });
         }
-        
+
         if (publishBtn) {
             publishBtn.addEventListener('click', async () => {
                 await publishCurrentTemplate(modal);
             });
         }
     }
-    
+
     /**
      * Publie le modèle actuel dans la banque de modèles
      */
@@ -1456,41 +1456,41 @@
             const description = document.getElementById('templateDescriptionInput').value.trim();
             const category = document.getElementById('templateCategoryInput').value;
             const difficulty = parseInt(document.getElementById('templateDifficultyInput').value);
-            
+
             // Récupérer les tags sélectionnés
             const selectedTags = Array.from(modal.querySelectorAll('input[name="styleTags"]:checked'))
                 .map(checkbox => checkbox.value);
-            
+
             // Récupérer le type de modèle sélectionné
             const templateType = modal.querySelector('input[name="templateType"]:checked')?.value || 'single';
             const isAnimation = templateType === 'animation' || templateType === 'animation-template';
             const isAnimationTemplate = templateType === 'animation-template'; // Animation à réaliser avec indicateurs
-            
+
             // Validation
             if (!name) {
                 alert('❌ Veuillez saisir un nom pour le modèle.');
                 return;
             }
-            
+
             if (!category) {
                 alert('❌ Veuillez sélectionner une catégorie.');
                 return;
             }
-            
+
             if (!window.dbService) {
                 alert('❌ Service de base de données non disponible.');
                 return;
             }
-            
+
             let templateData_withColors, previewData_complete, thumbnail;
-            
+
             if (isAnimation) {
                 // Mode Animation : publier toutes les frames
                 if (!frames || frames.length === 0) {
                     alert('❌ Aucune frame à publier.');
                     return;
                 }
-                
+
                 console.log('🎬 Publication d\'une animation complète:', {
                     nombreFrames: frames.length,
                     frames: frames.map((f, i) => ({
@@ -1499,7 +1499,7 @@
                         hasContent: f ? f.some(p => p && !p.isEmpty) : false
                     }))
                 });
-                
+
                 // Créer template_data avec toutes les frames
                 // IMPORTANT : Ne pas filtrer les frames, même si elles sont vides, pour préserver l'ordre et le nombre
                 templateData_withColors = frames.map((frame, frameIndex) => {
@@ -1511,7 +1511,7 @@
                             isEmpty: isAnimationTemplate // Si c'est un modèle à réaliser, marquer comme vide
                         }));
                     }
-                    
+
                     // Convertir chaque pixel de la frame
                     return frame.map(pixel => {
                         // Pour les animations à réaliser, on garde la couleur même si isEmpty est true
@@ -1525,7 +1525,7 @@
                         };
                     });
                 });
-                
+
                 console.log('✅ Frames préparées pour publication:', {
                     nombreFramesOriginal: frames.length,
                     nombreFramesPreparees: templateData_withColors.length,
@@ -1536,7 +1536,7 @@
                         firstPixel: f.length > 0 ? f[0] : null
                     }))
                 });
-                
+
                 // Pour les animations à réaliser : previewData doit contenir les pixels colorés (pour l'aperçu)
                 // Pour les animations complètes : previewData = templateData (même contenu)
                 if (isAnimationTemplate) {
@@ -1557,7 +1557,7 @@
                     // Animation complète : previewData = templateData
                     previewData_complete = templateData_withColors;
                 }
-                
+
                 // Générer la miniature depuis la première frame pour l'aperçu dans la galerie
                 if (frames[0] && frames[0].length > 0) {
                     const firstFrameForThumbnail = frames[0].map(pixel => ({
@@ -1575,7 +1575,7 @@
                     alert('❌ Aucune donnée à publier.');
                     return;
                 }
-                
+
                 // Créer template_data : version avec les pixels à colorier marqués comme non-vides
                 // mais ils seront vidés lors du chargement pour que l'utilisateur doive colorier
                 // La couleur est conservée pour créer les indicateurs
@@ -1583,17 +1583,17 @@
                     color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
                     isEmpty: false // Marquer comme non-vide pour que loadTemplate crée les indicateurs
                 }));
-                
+
                 // La previewData contient la version complète pour l'aperçu dans la galerie
                 previewData_complete = currentFrameData.map(pixel => ({
                     color: pixel.isEmpty ? '#FFFFFF' : pixel.color,
                     isEmpty: false // Version complète pour l'aperçu
                 }));
-                
+
                 // Générer une miniature (thumbnail) depuis la version complète
                 thumbnail = generateThumbnail(previewData_complete);
             }
-            
+
             // Préparer les données du modèle
             const templateData = {
                 name,
@@ -1607,19 +1607,19 @@
                 isAnimation: isAnimation, // Marqueur pour savoir si c'est une animation (complète ou à réaliser)
                 isAnimationTemplate: isAnimationTemplate // Marqueur pour distinguer animation complète vs à réaliser
             };
-            
+
             // Désactiver le bouton pendant la publication
             const publishBtn = document.getElementById('publishTemplateBtnModal');
             publishBtn.disabled = true;
             publishBtn.textContent = '⏳ Publication...';
-            
+
             // Publier le modèle
             const result = await window.dbService.publishTemplate(templateData);
-            
+
             if (result.success) {
                 modal.remove();
                 alert('✅ Modèle publié avec succès !\n\nD\'autres utilisateurs pourront maintenant le découvrir et le réaliser. 🎨');
-                
+
                 // Rafraîchir la galerie si elle est ouverte
                 if (window.currentTemplateGallery) {
                     showTemplateGallery();
@@ -1639,32 +1639,32 @@
             }
         }
     }
-    
+
     /**
      * Génère une miniature (thumbnail) à partir d'une frame
      */
     function generateThumbnail(frame) {
         const size = 120;
         const pixelSize = size / GRID_SIZE;
-        
+
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d');
-        
+
         frame.forEach((pixel, index) => {
             if (!pixel || pixel.isEmpty) return;
-            
+
             const x = (index % GRID_SIZE) * pixelSize;
             const y = Math.floor(index / GRID_SIZE) * pixelSize;
-            
+
             ctx.fillStyle = pixel.color;
             ctx.fillRect(x, y, pixelSize, pixelSize);
         });
-        
+
         return canvas.toDataURL('image/png');
     }
-    
+
     /**
      * Charge un modèle dans la grille avec les indications
      */
@@ -1672,31 +1672,31 @@
         console.log('🎯 ========== loadTemplate DÉBUT ==========');
         console.log('🎯 Template ID:', template ? template.id : 'null');
         console.log('🎯 Template preview existe:', !!template?.preview);
-        
+
         if (!template || !template.preview) {
             console.error('❌ Modèle invalide:', template);
             alert('❌ Modèle invalide');
             return;
         }
-        
+
         // Stocker le modèle actuel
         currentTemplate = template;
         window.currentTemplate = template;
-        
+
         // Mettre à jour le titre du projet dès le début (pour tous les types de modèles)
         const title = document.getElementById('projectTitle');
         if (title && template.name) {
             title.textContent = template.name;
         }
-        
+
         // Vérifier si c'est une animation complète ou une frame unique
         // Une animation est un tableau de frames, où chaque frame est un array de pixels
         // Une frame unique est un array de pixels directement
-        
+
         // Vérifier d'abord le flag isAnimation si disponible
         let templateIsAnimation = template.isAnimation || false;
         let templateIsAnimationTemplate = template.isAnimationTemplate || false;
-        
+
         // Sinon, détecter automatiquement : si template.preview[0] est un objet avec 'color' et 'isEmpty', c'est une frame unique
         // Si template.preview[0] est un array, c'est une animation (array de frames)
         if (!templateIsAnimation && Array.isArray(template.preview) && template.preview.length > 0) {
@@ -1711,15 +1711,15 @@
                     const nonEmptyPixels = firstFrame.filter(p => p && p.color && p.color !== '#FFFFFF');
                     // Vérifier si tous les pixels non-vides ont isEmpty: true (nouveaux modèles)
                     const allPixelsAreEmpty = nonEmptyPixels.length > 0 && nonEmptyPixels.every(p => p.isEmpty === true);
-                    
+
                     // Pour les anciens modèles : si template_data et preview_data sont identiques,
                     // on considère que c'est une animation complète (pas un modèle à réaliser)
                     const templateDataStr = JSON.stringify(template.templateData);
                     const previewDataStr = JSON.stringify(template.preview);
                     const areDifferent = templateDataStr !== previewDataStr;
-                    
+
                     templateIsAnimationTemplate = allPixelsAreEmpty || (areDifferent && nonEmptyPixels.length > 0);
-                    
+
                     console.log('🔍 Détection type animation dans loadTemplate:', {
                         templateId: template.id,
                         allPixelsAreEmpty,
@@ -1731,51 +1731,51 @@
                 templateIsAnimation = false; // Frame unique
             }
         }
-        
+
         console.log('📌 Type de modèle détecté:', {
             templateId: currentTemplate.id,
             isAnimation: templateIsAnimation,
             isAnimationTemplate: templateIsAnimationTemplate,
             previewLength: Array.isArray(template.preview) ? template.preview.length : 0,
-            firstElementType: Array.isArray(template.preview) && template.preview.length > 0 ? 
+            firstElementType: Array.isArray(template.preview) && template.preview.length > 0 ?
                 (Array.isArray(template.preview[0]) ? 'array (animation)' : typeof template.preview[0] + ' (frame unique)') : 'none'
         });
-        
+
         if (templateIsAnimation) {
             // Vérifier si c'est une animation "à réaliser" ou une animation complète
             if (templateIsAnimationTemplate) {
                 // Mode Animation à Réaliser : charger toutes les frames avec indicateurs
                 isTemplateMode = true;
                 window.isTemplateMode = true;
-                
+
                 const frameCount = Array.isArray(template.templateData || template.preview) ? (template.templateData || template.preview).length : 1;
-                const confirmMessage = 
+                const confirmMessage =
                     '🧩 Charger cette animation à réaliser ?\n\n' +
                     `L'animation contient ${frameCount} frame(s) à compléter.\n\n` +
                     'Chaque frame aura des indications de couleur (triangles) pour vous guider.\n' +
                     'Attention : cela remplacera votre travail actuel !';
-                
+
                 if (!confirm(confirmMessage)) {
                     console.log('❌ Chargement annulé par l\'utilisateur');
                     return;
                 }
-                
+
                 // Utiliser templateData si disponible (contient les pixels avec isEmpty: true), sinon preview
                 const sourceData = template.templateData || template.preview;
-                
+
                 console.log('📥 Chargement animation à réaliser - Données source:', {
                     hasTemplateData: !!template.templateData,
                     hasPreview: !!template.preview,
                     sourceDataType: Array.isArray(sourceData) ? 'array' : typeof sourceData,
                     sourceDataLength: Array.isArray(sourceData) ? sourceData.length : 0,
-                    firstFrameSample: Array.isArray(sourceData) && sourceData.length > 0 && Array.isArray(sourceData[0]) ? 
-                        sourceData[0].slice(0, 10).map(p => ({ 
-                            color: p?.color, 
+                    firstFrameSample: Array.isArray(sourceData) && sourceData.length > 0 && Array.isArray(sourceData[0]) ?
+                        sourceData[0].slice(0, 10).map(p => ({
+                            color: p?.color,
                             isEmpty: p?.isEmpty,
                             hasColor: !!(p?.color && p?.color !== '#FFFFFF')
                         })) : 'N/A'
                 });
-                
+
                 // Créer un nouveau projet avec toutes les frames vides mais avec les couleurs pour les indicateurs
                 // Même logique que pour une frame unique : créer une frame vide, puis copier seulement les pixels colorés
                 frames = sourceData.map((frame, frameIndex) => {
@@ -1783,10 +1783,10 @@
                         console.warn(`⚠️ Frame ${frameIndex} n'est pas un array, création d'une frame vide`);
                         return createEmptyFrame();
                     }
-                    
+
                     // Créer une frame vide comme pour une frame unique
                     const newFrame = createEmptyFrame();
-                    
+
                     // Copier seulement les pixels qui ont une couleur non-blanche (comme pour une frame unique)
                     // IMPORTANT : sourceData contient tous les pixels avec leurs couleurs (même si isEmpty: true)
                     // On copie seulement ceux qui ont une couleur valide pour stocker dans la frame
@@ -1804,19 +1804,19 @@
                             }
                         }
                     });
-                    
+
                     return newFrame;
                 });
-                
+
                 // Vérifier que les couleurs sont bien présentes dans les frames
                 const framesWithColors = frames.map((frame, idx) => {
                     const pixelsWithColor = frame.filter(p => p && p.color && p.color !== '#FFFFFF').length;
                     return { frameIndex: idx, pixelsWithColor, totalPixels: frame.length };
                 });
                 console.log('🎨 Frames créées avec couleurs:', framesWithColors);
-                
+
                 currentFrame = 0;
-                
+
                 // Stocker le template avec templateData pour les indicateurs
                 // IMPORTANT : templateData contient tous les pixels avec leurs couleurs (même si isEmpty: true)
                 // C'est cette donnée qu'on utilise pour ajouter les triangles indicateurs
@@ -1826,25 +1826,25 @@
                     templateData: sourceData // Pour les indicateurs (tous les pixels avec leurs couleurs)
                 };
                 window.currentTemplate = currentTemplate;
-                
+
                 console.log('📦 Template stocké pour indicateurs:', {
                     hasTemplateData: !!currentTemplate.templateData,
                     hasPreview: !!currentTemplate.preview,
-                    templateDataType: Array.isArray(currentTemplate.templateData) ? 
-                        (Array.isArray(currentTemplate.templateData[0]) ? 'array of frames' : 'single frame') : 
+                    templateDataType: Array.isArray(currentTemplate.templateData) ?
+                        (Array.isArray(currentTemplate.templateData[0]) ? 'array of frames' : 'single frame') :
                         typeof currentTemplate.templateData
                 });
-                
+
                 // Mettre à jour l'interface des frames
                 if (typeof updateFramesList === 'function') {
                     updateFramesList();
                 }
-                
+
                 // Charger la première frame normalement
                 if (typeof loadFrame === 'function') {
                     loadFrame(currentFrame);
                 }
-                
+
                 // Ajouter les indicateurs après un court délai pour la première frame
                 // Utiliser sourceData directement (contient les pixels avec leurs couleurs)
                 setTimeout(() => {
@@ -1867,7 +1867,7 @@
                         });
                     }
                 }, 500);
-                
+
                 // Intercepter les changements de frame pour ajouter les indicateurs à chaque frame
                 // Réinitialiser le flag pour permettre la réinitialisation si nécessaire
                 if (window.templateAnimationLoadFrameIntercepted) {
@@ -1876,7 +1876,7 @@
                 } else {
                     const originalLoadFrame = window.loadFrame;
                     if (originalLoadFrame) {
-                        window.loadFrame = function(frameIndex) {
+                        window.loadFrame = function (frameIndex) {
                             const result = originalLoadFrame.apply(this, arguments);
                             // Après le chargement de la frame, ajouter les indicateurs si c'est un template animation
                             if (window.isTemplateMode && window.currentTemplate) {
@@ -1910,35 +1910,35 @@
                         console.error('❌ Impossible de configurer l\'intercepteur: loadFrame non disponible');
                     }
                 }
-                
+
                 alert(`✅ Animation "${template.name}" chargée avec ${frames.length} frame(s) à réaliser !`);
-                
+
             } else {
                 // Mode Animation Complète : charger toutes les frames terminées
                 isTemplateMode = false;
                 window.isTemplateMode = false;
                 window.currentTemplate = null;
-                
+
                 const frameCount = Array.isArray(template.preview) ? template.preview.length : 1;
-                const confirmMessage = 
+                const confirmMessage =
                     '🎬 Charger cette animation complète ?\n\n' +
                     `L'animation contient ${frameCount} frame(s).\n\n` +
                     'L\'animation sera chargée avec toutes ses frames terminées.\n' +
                     'Attention : cela remplacera votre travail actuel !';
-                
+
                 if (!confirm(confirmMessage)) {
                     console.log('❌ Chargement annulé par l\'utilisateur');
                     return;
                 }
-                
+
                 // Convertir toutes les frames en format normalisé
                 console.log('📥 Chargement animation complète - Données reçues:', {
                     previewType: Array.isArray(template.preview) ? 'array' : typeof template.preview,
                     previewLength: Array.isArray(template.preview) ? template.preview.length : 0,
-                    firstElementType: Array.isArray(template.preview) && template.preview.length > 0 ? 
+                    firstElementType: Array.isArray(template.preview) && template.preview.length > 0 ?
                         (Array.isArray(template.preview[0]) ? 'array (frames)' : typeof template.preview[0]) : 'none'
                 });
-                
+
                 frames = template.preview.map((frame, frameIndex) => {
                     if (!Array.isArray(frame)) {
                         console.warn(`⚠️ Frame ${frameIndex} n'est pas un array, création d'une frame vide`);
@@ -1960,7 +1960,7 @@
                         };
                     });
                 });
-                
+
                 console.log('✅ Animation chargée:', {
                     nombreFrames: frames.length,
                     frames: frames.map((f, i) => ({
@@ -1969,29 +1969,29 @@
                         hasContent: f.some(p => !p.isEmpty)
                     }))
                 });
-                
+
                 currentFrame = 0;
-                
+
                 // Mettre à jour l'interface des frames
                 if (typeof updateFramesList === 'function') {
                     updateFramesList();
                 }
-                
+
                 // Charger la première frame
                 if (typeof loadFrame === 'function') {
                     loadFrame(currentFrame);
                 }
-                
+
                 alert(`✅ Animation "${template.name}" chargée avec ${frames.length} frame(s) !`);
             }
         } else {
             // Mode Frame unique : modèle à réaliser avec indicateurs
             isTemplateMode = true;
             window.isTemplateMode = true;
-            
+
             // Créer une nouvelle frame vide
             const newFrame = createEmptyFrame();
-            
+
             // Copier les couleurs du modèle dans la frame
             template.preview.forEach((pixel, index) => {
                 if (pixel && !pixel.isEmpty) {
@@ -2001,47 +2001,47 @@
                     };
                 }
             });
-            
+
             // Créer un nouveau projet avec une seule frame pour le modèle
             frames = [newFrame];
             currentFrame = 0;
-            
+
             // Stocker le template preview avant de charger la frame
             const templatePreview = template.preview;
-            
+
             // Mettre à jour l'interface des frames si la fonction existe
             if (typeof updateFramesList === 'function') {
                 updateFramesList();
             }
-            
+
             // Charger la frame normalement
             if (typeof loadFrame === 'function') {
                 loadFrame(currentFrame);
             }
-            
+
             // Ajouter les indicateurs après un court délai
             console.log('⏳ Attente de la fin de loadFrame pour ajouter les indicateurs...');
-            
+
             // Première tentative après 500ms (pour laisser le temps à loadFrame de finir)
             setTimeout(() => {
                 console.log('🎨 TENTATIVE 1: Ajout des indicateurs...');
                 const success1 = addTemplateIndicators(templatePreview);
                 console.log('📋 Résultat tentative 1:', success1 ? '✅ SUCCÈS' : '❌ ÉCHEC');
-                
+
                 if (!success1) {
                     // Deuxième tentative après 300ms de plus
                     setTimeout(() => {
                         console.log('🎨 TENTATIVE 2: Ajout des indicateurs...');
                         const success2 = addTemplateIndicators(templatePreview);
                         console.log('📋 Résultat tentative 2:', success2 ? '✅ SUCCÈS' : '❌ ÉCHEC');
-                        
+
                         if (!success2) {
                             // Troisième tentative après encore 300ms
                             setTimeout(() => {
                                 console.log('🎨 TENTATIVE 3: Ajout des indicateurs...');
                                 const success3 = addTemplateIndicators(templatePreview);
                                 console.log('📋 Résultat tentative 3:', success3 ? '✅ SUCCÈS' : '❌ ÉCHEC');
-                                
+
                                 if (!success3) {
                                     console.error('❌ ÉCHEC TOTAL: Impossible d\'ajouter les indicateurs après 3 tentatives');
                                     alert('⚠️ Les indicateurs n\'ont pas pu être ajoutés. Vérifiez la console pour plus de détails.');
@@ -2051,9 +2051,9 @@
                     }, 300);
                 }
             }, 500);
-            
+
             updateFramesList();
-            
+
             // Extraire les couleurs uniques du modèle et les proposer dans la palette
             const uniqueColors = new Set();
             template.preview.forEach(pixel => {
@@ -2061,17 +2061,17 @@
                     uniqueColors.add(pixel.color);
                 }
             });
-            
+
             // Ajouter les couleurs à la palette personnalisée
             Array.from(uniqueColors).forEach(color => {
                 if (typeof addCustomColor === 'function') {
                     addCustomColor(color);
                 }
             });
-            
+
             // Intercepter les événements de dessin pour vérifier la correspondance
             interceptDrawingEvents();
-            
+
             // Retarder l'alerte pour laisser le temps aux indicateurs de s'afficher
             setTimeout(() => {
                 alert(
@@ -2085,17 +2085,17 @@
             }, 500);
         }
     }
-    
+
     /**
      * Ajoute les indicateurs de template à la grille
      */
     function addTemplateIndicators(templatePreview) {
         try {
             console.log('🎨 ===== DÉBUT addTemplateIndicators =====');
-            
+
             const pixels = document.querySelectorAll('.pixel');
             const grid = document.getElementById('pixelGrid');
-            
+
             console.log('📊 Vérifications initiales:', {
                 pixelsCount: pixels ? pixels.length : 0,
                 gridExists: !!grid,
@@ -2103,27 +2103,27 @@
                 templatePreviewIsArray: Array.isArray(templatePreview),
                 templatePreviewLength: templatePreview ? templatePreview.length : 0
             });
-            
+
             if (!pixels || pixels.length === 0) {
                 console.error('❌ Aucun pixel trouvé dans la grille');
                 return false;
             }
-            
+
             if (!grid) {
                 console.error('❌ Grille non trouvée');
                 return false;
             }
-            
+
             if (pixels.length < GRID_SIZE * GRID_SIZE) {
                 console.error('❌ Nombre de pixels insuffisant:', pixels.length, 'au lieu de', GRID_SIZE * GRID_SIZE);
                 return false;
             }
-            
+
             if (!templatePreview || !Array.isArray(templatePreview)) {
                 console.error('❌ Template preview invalide');
                 return false;
             }
-            
+
             // Pour les animations à réaliser, les pixels peuvent avoir isEmpty: true mais une couleur pour les indicateurs
             // On vérifie donc la présence d'une couleur valide plutôt que !isEmpty
             const pixelsAvecCouleur = templatePreview.filter(p => p && p.color && p.color !== '#FFFFFF').length;
@@ -2134,203 +2134,203 @@
                 nonVides: nonVides,
                 pixelsAvecCouleur: pixelsAvecCouleur
             });
-            
+
             // Vérifier qu'il y a au moins des pixels avec couleur (pour les indicateurs)
             if (pixelsAvecCouleur === 0) {
                 console.error('❌ Aucun pixel avec couleur valide dans le template !');
                 return false;
             }
-        
-        // Les pixels ont déjà position: relative dans le CSS (common.css), pas besoin de le modifier en JS
-        // Cela évite les erreurs de propriété en lecture seule
-        
-        // Nettoyer les anciens indicateurs d'abord
-        let cleaned = 0;
-        pixels.forEach(pixel => {
-            const existingSvg = pixel.querySelector('svg.template-indicator-svg');
-            if (existingSvg) {
-                existingSvg.remove();
-                cleaned++;
-            }
-            pixel.classList.remove('has-template-indicator', 'template-completed');
-            delete pixel.dataset.expectedColor;
-        });
-        
-        if (cleaned > 0) {
-            console.log('🧹 Anciens indicateurs nettoyés:', cleaned);
-        }
-        
-        let indicatorsAdded = 0;
-        
-        console.log('🎨 Parcours des pixels pour ajouter les indicateurs...');
-        const pixelsAvecCouleurCount = templatePreview.filter(p => p && p.color && p.color !== '#FFFFFF').length;
-        console.log(`📊 Template contient ${pixelsAvecCouleurCount} pixels avec couleur (pour indicateurs)`);
-        
-        pixels.forEach((pixel, index) => {
-            if (index >= templatePreview.length) return;
-            
-            const templatePixel = templatePreview[index];
-            
-            // Si le template a une couleur à cet endroit, afficher l'indicateur
-            // IMPORTANT : Pour les animations à réaliser, isEmpty peut être true mais on veut quand même afficher l'indicateur
-            // On vérifie seulement qu'il y a une couleur valide (pas blanche par défaut)
-            if (templatePixel && templatePixel.color && templatePixel.color !== '#FFFFFF') {
-                const expectedColor = templatePixel.color;
-                
-                // Vérifier que le pixel est valide et dans le DOM
-                if (!pixel || !pixel.parentNode) {
-                    return; // Sortir de cette itération du forEach
+
+            // Les pixels ont déjà position: relative dans le CSS (common.css), pas besoin de le modifier en JS
+            // Cela évite les erreurs de propriété en lecture seule
+
+            // Nettoyer les anciens indicateurs d'abord
+            let cleaned = 0;
+            pixels.forEach(pixel => {
+                const existingSvg = pixel.querySelector('svg.template-indicator-svg');
+                if (existingSvg) {
+                    existingSvg.remove();
+                    cleaned++;
                 }
-                
-                try {
-                    // Créer le SVG avec le triangle indicateur
-                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    svg.setAttribute('width', '100%');
-                    svg.setAttribute('height', '100%');
-                    svg.setAttribute('viewBox', '0 0 100 100');
-                    svg.setAttribute('preserveAspectRatio', 'none');
-                    svg.setAttribute('class', 'template-indicator-svg');
-                    svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
-                    
-                    // Triangle du bas (coin inférieur gauche, coin inférieur droit, point milieu-haut)
-                    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-                    polygon.setAttribute('points', '0,100 100,100 50,35');
-                    polygon.setAttribute('fill', expectedColor);
-                    polygon.setAttribute('opacity', '0.85');
-                    polygon.setAttribute('stroke', 'rgba(0,0,0,0.4)');
-                    polygon.setAttribute('stroke-width', '1.5');
-                    
-                    svg.appendChild(polygon);
-                    
-                    // Ajouter le SVG au pixel
-                    try {
-                        pixel.appendChild(svg);
-                    } catch (e) {
-                        console.warn(`  ⚠️ Impossible d'ajouter le SVG au pixel ${index}:`, e);
-                        return; // Sortir de cette itération
-                    }
-                    
-                    // Ajouter les classes et attributs en utilisant setAttribute au lieu de classList
-                    // pour éviter les erreurs de propriété en lecture seule
-                    try {
-                        // Utiliser getAttribute et setAttribute au lieu de classList
-                        const currentClass = pixel.getAttribute('class') || '';
-                        const newClass = currentClass.includes('has-template-indicator') 
-                            ? currentClass 
-                            : currentClass + ' has-template-indicator';
-                        pixel.setAttribute('class', newClass.trim());
-                        pixel.setAttribute('data-expected-color', expectedColor);
-                    } catch (e) {
-                        console.warn(`  ⚠️ Impossible d'ajouter les classes au pixel ${index}:`, e);
-                        // Continuer quand même car le SVG est déjà ajouté
-                    }
-                    
-                    indicatorsAdded++;
-                } catch (error) {
-                    console.error(`  ❌ Erreur lors de l'ajout de l'indicateur au pixel ${index}:`, error);
-                    console.error(`  📍 Détails de l'erreur:`, {
-                        errorName: error.name,
-                        errorMessage: error.message,
-                        pixelExists: !!pixel,
-                        pixelParent: !!pixel?.parentNode
-                    });
-                }
-            }
-        });
-        
-        console.log('✅ ===== FIN addTemplateIndicators =====');
-        console.log(`✅ ${indicatorsAdded} indicateurs ajoutés avec succès !`);
-        
-        // Vérification immédiate dans le DOM
-        const pixelsWithIndicators = document.querySelectorAll('.pixel.has-template-indicator');
-        const svgsInDOM = document.querySelectorAll('svg.template-indicator-svg');
-        
-        console.log('🔍 Vérification DOM:', {
-            pixelsAvecIndicateurs: pixelsWithIndicators.length,
-            svgsDansDOM: svgsInDOM.length,
-            indicatorsAdded: indicatorsAdded
-        });
-        
-        if (indicatorsAdded > 0 && svgsInDOM.length === indicatorsAdded) {
-            console.log('✅✅✅ SUCCÈS COMPLET : Tous les indicateurs sont dans le DOM !');
-            
-            // Vérifier visuellement le premier indicateur
-            if (svgsInDOM.length > 0) {
-                const firstSvg = svgsInDOM[0];
-                const computedStyle = window.getComputedStyle(firstSvg);
-                console.log('🔍 Premier SVG:', {
-                    display: computedStyle.display,
-                    visibility: computedStyle.visibility,
-                    zIndex: computedStyle.zIndex,
-                    position: computedStyle.position,
-                    width: computedStyle.width,
-                    height: computedStyle.height
-                });
-            }
-        } else {
-            console.error('❌ PROBLÈME : Les indicateurs ne sont pas tous dans le DOM !');
-        }
-        
-        // Vérification différée pour s'assurer qu'ils restent
-        setTimeout(() => {
-            const svgsStillThere = document.querySelectorAll('svg.template-indicator-svg');
-            console.log('🔍 Vérification après 100ms:', svgsStillThere.length, 'SVG trouvés');
-            
-            if (svgsStillThere.length !== indicatorsAdded) {
-                console.error('❌ PROBLÈME : Des indicateurs ont disparu !');
-            }
-            
-            // Si les nombres ne correspondent pas, il y a un problème
-            if (pixelsWithIndicators.length !== indicatorsAdded || svgsInDOM.length !== indicatorsAdded) {
-                console.warn('⚠️ Incohérence détectée entre indicateurs ajoutés et éléments dans le DOM');
-                
-                // Essayer de réparer en réajoutant les indicateurs manquants
-                if (svgsInDOM.length < indicatorsAdded) {
-                    console.log('🔧 Tentative de réparation : réajout des indicateurs manquants...');
-                    // Réajouter les indicateurs pour les pixels qui n'en ont pas
-                    pixelsWithIndicators.forEach(pixel => {
-                        if (!pixel.querySelector('svg.template-indicator-svg')) {
-                            const expectedColor = pixel.dataset.expectedColor;
-                            if (expectedColor) {
-                                // Réajouter l'indicateur
-                                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                                svg.setAttribute('width', '100%');
-                                svg.setAttribute('height', '100%');
-                                svg.setAttribute('viewBox', '0 0 100 100');
-                                svg.setAttribute('preserveAspectRatio', 'none');
-                                svg.className = 'template-indicator-svg';
-                svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
-                                
-                                const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-                                polygon.setAttribute('points', '0,100 100,100 50,35');
-                                polygon.setAttribute('fill', expectedColor);
-                                polygon.setAttribute('opacity', '0.85');
-                                polygon.setAttribute('stroke', 'rgba(0,0,0,0.4)');
-                                polygon.setAttribute('stroke-width', '1.5');
-                                
-                                svg.appendChild(polygon);
-                                pixel.appendChild(svg);
-                            }
-                        }
-                    });
-                }
-            }
-        }, 100);
-        
-        if (indicatorsAdded === 0) {
-            console.error('❌ Aucun indicateur ajouté !');
-            console.error('Détails du template:', {
-                templateLength: templatePreview.length,
-                templatePixelsNonVides: templatePreview.filter(p => p && !p.isEmpty).length,
-                premiersPixels: templatePreview.slice(0, 10).map((p, i) => ({
-                    index: i,
-                    isEmpty: p ? p.isEmpty : 'null',
-                    color: p ? p.color : 'null'
-                }))
+                pixel.classList.remove('has-template-indicator', 'template-completed');
+                delete pixel.dataset.expectedColor;
             });
+
+            if (cleaned > 0) {
+                console.log('🧹 Anciens indicateurs nettoyés:', cleaned);
+            }
+
+            let indicatorsAdded = 0;
+
+            console.log('🎨 Parcours des pixels pour ajouter les indicateurs...');
+            const pixelsAvecCouleurCount = templatePreview.filter(p => p && p.color && p.color !== '#FFFFFF').length;
+            console.log(`📊 Template contient ${pixelsAvecCouleurCount} pixels avec couleur (pour indicateurs)`);
+
+            pixels.forEach((pixel, index) => {
+                if (index >= templatePreview.length) return;
+
+                const templatePixel = templatePreview[index];
+
+                // Si le template a une couleur à cet endroit, afficher l'indicateur
+                // IMPORTANT : Pour les animations à réaliser, isEmpty peut être true mais on veut quand même afficher l'indicateur
+                // On vérifie seulement qu'il y a une couleur valide (pas blanche par défaut)
+                if (templatePixel && templatePixel.color && templatePixel.color !== '#FFFFFF') {
+                    const expectedColor = templatePixel.color;
+
+                    // Vérifier que le pixel est valide et dans le DOM
+                    if (!pixel || !pixel.parentNode) {
+                        return; // Sortir de cette itération du forEach
+                    }
+
+                    try {
+                        // Créer le SVG avec le triangle indicateur
+                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        svg.setAttribute('width', '100%');
+                        svg.setAttribute('height', '100%');
+                        svg.setAttribute('viewBox', '0 0 100 100');
+                        svg.setAttribute('preserveAspectRatio', 'none');
+                        svg.setAttribute('class', 'template-indicator-svg');
+                        svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
+
+                        // Triangle du bas (coin inférieur gauche, coin inférieur droit, point milieu-haut)
+                        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                        polygon.setAttribute('points', '0,100 100,100 50,35');
+                        polygon.setAttribute('fill', expectedColor);
+                        polygon.setAttribute('opacity', '0.85');
+                        polygon.setAttribute('stroke', 'rgba(0,0,0,0.4)');
+                        polygon.setAttribute('stroke-width', '1.5');
+
+                        svg.appendChild(polygon);
+
+                        // Ajouter le SVG au pixel
+                        try {
+                            pixel.appendChild(svg);
+                        } catch (e) {
+                            console.warn(`  ⚠️ Impossible d'ajouter le SVG au pixel ${index}:`, e);
+                            return; // Sortir de cette itération
+                        }
+
+                        // Ajouter les classes et attributs en utilisant setAttribute au lieu de classList
+                        // pour éviter les erreurs de propriété en lecture seule
+                        try {
+                            // Utiliser getAttribute et setAttribute au lieu de classList
+                            const currentClass = pixel.getAttribute('class') || '';
+                            const newClass = currentClass.includes('has-template-indicator')
+                                ? currentClass
+                                : currentClass + ' has-template-indicator';
+                            pixel.setAttribute('class', newClass.trim());
+                            pixel.setAttribute('data-expected-color', expectedColor);
+                        } catch (e) {
+                            console.warn(`  ⚠️ Impossible d'ajouter les classes au pixel ${index}:`, e);
+                            // Continuer quand même car le SVG est déjà ajouté
+                        }
+
+                        indicatorsAdded++;
+                    } catch (error) {
+                        console.error(`  ❌ Erreur lors de l'ajout de l'indicateur au pixel ${index}:`, error);
+                        console.error(`  📍 Détails de l'erreur:`, {
+                            errorName: error.name,
+                            errorMessage: error.message,
+                            pixelExists: !!pixel,
+                            pixelParent: !!pixel?.parentNode
+                        });
+                    }
+                }
+            });
+
+            console.log('✅ ===== FIN addTemplateIndicators =====');
+            console.log(`✅ ${indicatorsAdded} indicateurs ajoutés avec succès !`);
+
+            // Vérification immédiate dans le DOM
+            const pixelsWithIndicators = document.querySelectorAll('.pixel.has-template-indicator');
+            const svgsInDOM = document.querySelectorAll('svg.template-indicator-svg');
+
+            console.log('🔍 Vérification DOM:', {
+                pixelsAvecIndicateurs: pixelsWithIndicators.length,
+                svgsDansDOM: svgsInDOM.length,
+                indicatorsAdded: indicatorsAdded
+            });
+
+            if (indicatorsAdded > 0 && svgsInDOM.length === indicatorsAdded) {
+                console.log('✅✅✅ SUCCÈS COMPLET : Tous les indicateurs sont dans le DOM !');
+
+                // Vérifier visuellement le premier indicateur
+                if (svgsInDOM.length > 0) {
+                    const firstSvg = svgsInDOM[0];
+                    const computedStyle = window.getComputedStyle(firstSvg);
+                    console.log('🔍 Premier SVG:', {
+                        display: computedStyle.display,
+                        visibility: computedStyle.visibility,
+                        zIndex: computedStyle.zIndex,
+                        position: computedStyle.position,
+                        width: computedStyle.width,
+                        height: computedStyle.height
+                    });
+                }
+            } else {
+                console.error('❌ PROBLÈME : Les indicateurs ne sont pas tous dans le DOM !');
+            }
+
+            // Vérification différée pour s'assurer qu'ils restent
+            setTimeout(() => {
+                const svgsStillThere = document.querySelectorAll('svg.template-indicator-svg');
+                console.log('🔍 Vérification après 100ms:', svgsStillThere.length, 'SVG trouvés');
+
+                if (svgsStillThere.length !== indicatorsAdded) {
+                    console.error('❌ PROBLÈME : Des indicateurs ont disparu !');
+                }
+
+                // Si les nombres ne correspondent pas, il y a un problème
+                if (pixelsWithIndicators.length !== indicatorsAdded || svgsInDOM.length !== indicatorsAdded) {
+                    console.warn('⚠️ Incohérence détectée entre indicateurs ajoutés et éléments dans le DOM');
+
+                    // Essayer de réparer en réajoutant les indicateurs manquants
+                    if (svgsInDOM.length < indicatorsAdded) {
+                        console.log('🔧 Tentative de réparation : réajout des indicateurs manquants...');
+                        // Réajouter les indicateurs pour les pixels qui n'en ont pas
+                        pixelsWithIndicators.forEach(pixel => {
+                            if (!pixel.querySelector('svg.template-indicator-svg')) {
+                                const expectedColor = pixel.dataset.expectedColor;
+                                if (expectedColor) {
+                                    // Réajouter l'indicateur
+                                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                                    svg.setAttribute('width', '100%');
+                                    svg.setAttribute('height', '100%');
+                                    svg.setAttribute('viewBox', '0 0 100 100');
+                                    svg.setAttribute('preserveAspectRatio', 'none');
+                                    svg.className = 'template-indicator-svg';
+                                    svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
+
+                                    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                                    polygon.setAttribute('points', '0,100 100,100 50,35');
+                                    polygon.setAttribute('fill', expectedColor);
+                                    polygon.setAttribute('opacity', '0.85');
+                                    polygon.setAttribute('stroke', 'rgba(0,0,0,0.4)');
+                                    polygon.setAttribute('stroke-width', '1.5');
+
+                                    svg.appendChild(polygon);
+                                    pixel.appendChild(svg);
+                                }
+                            }
+                        });
+                    }
+                }
+            }, 100);
+
+            if (indicatorsAdded === 0) {
+                console.error('❌ Aucun indicateur ajouté !');
+                console.error('Détails du template:', {
+                    templateLength: templatePreview.length,
+                    templatePixelsNonVides: templatePreview.filter(p => p && !p.isEmpty).length,
+                    premiersPixels: templatePreview.slice(0, 10).map((p, i) => ({
+                        index: i,
+                        isEmpty: p ? p.isEmpty : 'null',
+                        color: p ? p.color : 'null'
+                    }))
+                });
                 return false;
             }
-            
+
             return true;
         } catch (error) {
             console.error('❌ ERREUR CRITIQUE lors de l\'ajout des indicateurs:', error);
@@ -2341,7 +2341,7 @@
             return false;
         }
     }
-    
+
     /**
      * Charge une frame avec les indicateurs de template (ancienne méthode - conservée pour compatibilité)
      */
@@ -2350,18 +2350,18 @@
             console.warn('⚠️ Index de frame invalide:', frameIndex);
             return;
         }
-        
+
         const pixels = document.querySelectorAll('.pixel');
-        
+
         if (!pixels || pixels.length === 0) {
             console.warn('⚠️ Aucun pixel trouvé dans la grille');
             return;
         }
-        
+
         console.log('🎨 Chargement des indicateurs:', pixels.length, 'pixels, template:', templatePreview.length);
-        
+
         // Les pixels ont déjà position: relative dans le CSS, pas besoin de le modifier en JS
-        
+
         // Nettoyer les anciens indicateurs d'abord
         pixels.forEach(pixel => {
             const existingSvg = pixel.querySelector('svg.template-indicator-svg');
@@ -2371,18 +2371,18 @@
             pixel.classList.remove('has-template-indicator', 'template-completed');
             delete pixel.dataset.expectedColor;
         });
-        
+
         let indicatorsAdded = 0;
-        
+
         pixels.forEach((pixel, index) => {
             if (index >= templatePreview.length) return;
-            
+
             const templatePixel = templatePreview[index];
-            
+
             // Si le template a une couleur à cet endroit, afficher l'indicateur
             if (templatePixel && !templatePixel.isEmpty) {
                 const expectedColor = templatePixel.color;
-                
+
                 // Utiliser un SVG pour un meilleur contrôle du triangle
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('width', '100%');
@@ -2390,8 +2390,8 @@
                 svg.setAttribute('viewBox', '0 0 100 100');
                 svg.setAttribute('preserveAspectRatio', 'none');
                 svg.className = 'template-indicator-svg';
-                                svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
-                
+                svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
+
                 // Triangle du bas : coin inférieur gauche, coin inférieur droit, point milieu-haut
                 // Cela forme un triangle qui occupe la moitié inférieure du pixel
                 const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
@@ -2402,20 +2402,20 @@
                 polygon.setAttribute('opacity', '0.85');
                 polygon.setAttribute('stroke', 'rgba(0,0,0,0.4)');
                 polygon.setAttribute('stroke-width', '1.5');
-                
+
                 svg.appendChild(polygon);
                 pixel.appendChild(svg);
-                
+
                 // Ajouter une classe pour identifier les pixels avec template
                 pixel.classList.add('has-template-indicator');
                 pixel.dataset.expectedColor = expectedColor;
-                
+
                 indicatorsAdded++;
             }
         });
-        
+
         console.log('✅ Indicateurs ajoutés:', indicatorsAdded);
-        
+
         // Si aucun indicateur n'a été ajouté, il y a un problème
         if (indicatorsAdded === 0) {
             console.error('❌ Aucun indicateur ajouté !');
@@ -2430,22 +2430,22 @@
             const pixelsWithIndicators = document.querySelectorAll('.pixel.has-template-indicator');
             console.log('🔍 Vérification:', pixelsWithIndicators.length, 'pixels avec indicateurs trouvés dans le DOM');
         }
-        
+
         return indicatorsAdded > 0;
     }
-    
+
     /**
      * Vérifie si un pixel correspond à la couleur attendue du template
      */
     function checkTemplatePixel(pixelElement) {
         if (!currentTemplate || !isTemplateMode || !pixelElement) return;
-        
+
         const expectedColor = pixelElement.dataset.expectedColor;
         if (!expectedColor) return;
-        
+
         const currentColor = pixelElement.style.backgroundColor || '#FFFFFF';
         let hexColor;
-        
+
         // Utiliser la fonction rgbToHex si disponible
         if (typeof rgbToHex === 'function') {
             hexColor = rgbToHex(currentColor);
@@ -2464,11 +2464,11 @@
                 hexColor = '#FFFFFF';
             }
         }
-        
+
         // Normaliser les couleurs pour la comparaison
         const normalizedExpected = expectedColor.toUpperCase().trim();
         const normalizedCurrent = hexColor.toUpperCase().trim();
-        
+
         // Si la couleur correspond, retirer l'indicateur
         if (normalizedCurrent === normalizedExpected && !pixelElement.classList.contains('empty')) {
             const indicatorSvg = pixelElement.querySelector('svg.template-indicator-svg');
@@ -2480,7 +2480,7 @@
             delete pixelElement.dataset.expectedColor;
         }
     }
-    
+
     /**
      * Intercepte les événements de dessin pour vérifier la correspondance
      */
@@ -2498,17 +2498,17 @@
                                     setTimeout(() => checkTemplatePixel(node), 10);
                                 }
                             });
-                            
+
                             // Vérifier les changements de style (couleur)
-                            if (mutation.type === 'attributes' && 
-                                mutation.target.classList && 
+                            if (mutation.type === 'attributes' &&
+                                mutation.target.classList &&
                                 mutation.target.classList.contains('pixel')) {
                                 setTimeout(() => checkTemplatePixel(mutation.target), 10);
                             }
                         });
                     }
                 });
-                
+
                 window.templateMutationObserver.observe(grid, {
                     childList: true,
                     attributes: true,
@@ -2517,13 +2517,13 @@
                 });
             }
         }
-        
+
         // Intercepter aussi la fonction saveCurrentFrame pour vérifier après chaque sauvegarde
         if (typeof saveCurrentFrame !== 'undefined' && !window.templateSaveCurrentFrameIntercepted) {
             const originalSaveCurrentFrame = saveCurrentFrame;
-            window.saveCurrentFrame = function(...args) {
+            window.saveCurrentFrame = function (...args) {
                 const result = originalSaveCurrentFrame.apply(this, args);
-                
+
                 // Vérifier tous les pixels avec indicateurs après la sauvegarde
                 if (isTemplateMode) {
                     setTimeout(() => {
@@ -2533,18 +2533,18 @@
                         });
                     }, 50);
                 }
-                
+
                 return result;
             };
             window.templateSaveCurrentFrameIntercepted = true;
         }
-        
+
         // Intercepter aussi stopDrawing pour vérifier immédiatement après le dessin
         if (typeof stopDrawing !== 'undefined' && !window.templateStopDrawingIntercepted) {
             const originalStopDrawing = stopDrawing;
-            window.stopDrawing = function(...args) {
+            window.stopDrawing = function (...args) {
                 const result = originalStopDrawing.apply(this, args);
-                
+
                 // Vérifier tous les pixels avec indicateurs après le dessin
                 if (isTemplateMode) {
                     setTimeout(() => {
@@ -2554,16 +2554,16 @@
                         });
                     }, 10);
                 }
-                
+
                 return result;
             };
             window.templateStopDrawingIntercepted = true;
         }
-        
+
         // Améliorer la pipette pour extraire la couleur depuis les indicateurs
         if (typeof pickColorFromPixel !== 'undefined' && !window.templatePickColorIntercepted) {
             const originalPickColorFromPixel = pickColorFromPixel;
-            window.pickColorFromPixel = function(pixelElement) {
+            window.pickColorFromPixel = function (pixelElement) {
                 // Si le pixel a un indicateur de template, utiliser la couleur attendue
                 if (pixelElement && pixelElement.dataset && pixelElement.dataset.expectedColor) {
                     const expectedColor = pixelElement.dataset.expectedColor;
@@ -2578,38 +2578,38 @@
                         if (typeof setEraserState === 'function') {
                             setEraserState(false);
                         }
-                        
+
                         // Afficher une notification
                         if (typeof showEyedropperNotification === 'function') {
                             showEyedropperNotification(`Couleur du modèle : ${expectedColor}`);
                         }
-                        
+
                         return;
                     }
                 }
-                
+
                 // Sinon, utiliser la fonction originale
                 return originalPickColorFromPixel(pixelElement);
             };
             window.templatePickColorIntercepted = true;
         }
     }
-    
+
     // Intercepter les appels à loadFrame pour ajouter les indicateurs
     // Utiliser une approche non-invasive : observer plutôt que remplacer
     function setupLoadFrameInterceptor() {
         if (typeof loadFrame === 'undefined' || window.templateLoadFrameIntercepted) {
             return;
         }
-        
+
         // Sauvegarder la fonction originale
         const originalLoadFrame = loadFrame;
         window._originalLoadFrame = originalLoadFrame;
-        
+
         // Intercepter via un proxy ou en modifiant la fonction
-        window.loadFrame = function(frameIndex) {
+        window.loadFrame = function (frameIndex) {
             const result = originalLoadFrame.apply(this, arguments);
-            
+
             // Si on est en mode template, ajouter les indicateurs APRÈS que loadFrame ait terminé
             if (isTemplateMode && currentTemplate && currentTemplate.preview) {
                 // Utiliser un délai pour s'assurer que loadFrame a complètement terminé
@@ -2618,13 +2618,13 @@
                     addTemplateIndicators(currentTemplate.preview);
                 }, 200);
             }
-            
+
             return result;
         };
-        
+
         window.templateLoadFrameIntercepted = true;
     }
-    
+
     // Essayer de configurer l'intercepteur immédiatement, ou attendre que loadFrame soit disponible
     if (typeof loadFrame !== 'undefined') {
         setupLoadFrameInterceptor();
@@ -2636,11 +2636,11 @@
                 clearInterval(checkLoadFrame);
             }
         }, 100);
-        
+
         // Arrêter de vérifier après 10 secondes
         setTimeout(() => clearInterval(checkLoadFrame), 10000);
     }
-    
+
     /**
      * Crée un éditeur d'avatar (petit éditeur pixel art)
      */
@@ -2649,13 +2649,13 @@
             const editorSize = avatarSize;
             const displaySize = 200; // Taille d'affichage de l'éditeur
             const pixelSize = displaySize / editorSize;
-            
+
             // Créer une frame vide si pas d'avatar initial
             let avatarPixels = initialAvatarData || Array(editorSize * editorSize).fill(null).map(() => ({
                 color: '#FFFFFF',
                 isEmpty: true
             }));
-            
+
             // Si l'avatar initial a une taille différente, créer une nouvelle frame vide
             if (initialAvatarData && initialAvatarData.length !== editorSize * editorSize) {
                 avatarPixels = Array(editorSize * editorSize).fill(null).map(() => ({
@@ -2663,10 +2663,10 @@
                     isEmpty: true
                 }));
             }
-            
+
             let currentColor = '#000000';
             let isDrawing = false;
-            
+
             const editorContent = `
                 <div style="padding: 20px; color: rgba(255, 255, 255, 0.95); max-height: 90vh; overflow-y: auto;">
                     <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98);">🎨 Créer votre Avatar</h3>
@@ -2703,9 +2703,9 @@
                             <div style="display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap;">
                                 <input type="color" id="avatarColorPicker" value="${currentColor}" style="width: 60px; height: 40px; border-radius: 6px; border: 2px solid rgba(255,255,255,0.3); cursor: pointer;">
                                 <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                                    ${['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080', '#FFC0CB', '#A52A2A'].map(color => 
-                                        `<div class="avatar-color-swatch" data-color="${color}" style="width: 30px; height: 30px; background: ${color}; border: 2px solid ${color === currentColor ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)'}; border-radius: 4px; cursor: pointer; transition: transform 0.2s;"></div>`
-                                    ).join('')}
+                                    ${['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080', '#FFC0CB', '#A52A2A'].map(color =>
+                `<div class="avatar-color-swatch" data-color="${color}" style="width: 30px; height: 30px; background: ${color}; border: 2px solid ${color === currentColor ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)'}; border-radius: 4px; cursor: pointer; transition: transform 0.2s;"></div>`
+            ).join('')}
                                 </div>
                             </div>
                         </div>
@@ -2725,7 +2725,7 @@
                     </div>
                 </div>
             `;
-            
+
             const modal = document.createElement('div');
             modal.className = 'modal';
             modal.style.display = 'flex';
@@ -2734,22 +2734,22 @@
                     ${editorContent}
                 </div>
             `;
-            
+
             document.body.appendChild(modal);
-            
+
             const editor = document.getElementById('avatarEditor');
             const preview = document.getElementById('avatarPreview');
             const colorPicker = document.getElementById('avatarColorPicker');
             const clearBtn = document.getElementById('avatarClearBtn');
             const cancelBtn = document.getElementById('avatarCancelBtn');
             const saveBtn = document.getElementById('avatarSaveBtn');
-            
+
             // Créer la grille
             editor.innerHTML = '';
             editor.style.width = displaySize + 'px';
             editor.style.height = displaySize + 'px';
             editor.style.position = 'relative';
-            
+
             avatarPixels.forEach((pixel, index) => {
                 const pixelEl = document.createElement('div');
                 pixelEl.className = 'avatar-pixel';
@@ -2763,46 +2763,46 @@
                 pixelEl.style.border = '1px solid rgba(0,0,0,0.1)';
                 pixelEl.style.cursor = 'pointer';
                 pixelEl.style.boxSizing = 'border-box';
-                
+
                 pixelEl.addEventListener('mousedown', (e) => {
                     e.preventDefault();
                     isDrawing = true;
                     drawPixel(index);
                 });
-                
+
                 pixelEl.addEventListener('mouseenter', () => {
                     if (isDrawing) {
                         drawPixel(index);
                     }
                 });
-                
+
                 editor.appendChild(pixelEl);
             });
-            
+
             function drawPixel(index) {
                 const pixelEl = editor.querySelector(`[data-index="${index}"]`);
                 if (!pixelEl) return;
-                
+
                 avatarPixels[index] = {
                     color: currentColor,
                     isEmpty: false
                 };
                 pixelEl.style.backgroundColor = currentColor;
-                
+
                 // Mettre à jour l'aperçu
                 updatePreview();
             }
-            
+
             function updatePreview() {
                 preview.innerHTML = generateAvatarPreview(avatarPixels, editorSize, 64);
             }
-            
+
             // Gestion de la couleur
             colorPicker.addEventListener('input', (e) => {
                 currentColor = e.target.value;
                 updateColorSwatches();
             });
-            
+
             document.querySelectorAll('.avatar-color-swatch').forEach(swatch => {
                 swatch.addEventListener('click', () => {
                     currentColor = swatch.dataset.color;
@@ -2810,13 +2810,13 @@
                     updateColorSwatches();
                 });
             });
-            
+
             function updateColorSwatches() {
                 document.querySelectorAll('.avatar-color-swatch').forEach(swatch => {
                     swatch.style.borderColor = swatch.dataset.color === currentColor ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)';
                 });
             }
-            
+
             // Effacer
             clearBtn.addEventListener('click', () => {
                 if (confirm('Effacer tout l\'avatar ?')) {
@@ -2824,34 +2824,34 @@
                         color: '#FFFFFF',
                         isEmpty: true
                     }));
-                    
+
                     editor.querySelectorAll('.avatar-pixel').forEach((pixelEl, index) => {
                         pixelEl.style.backgroundColor = '#FFFFFF';
                     });
-                    
+
                     updatePreview();
                 }
             });
-            
+
             // Annuler
             cancelBtn.addEventListener('click', () => {
                 modal.remove();
                 resolve(null);
             });
-            
+
             // Enregistrer
             saveBtn.addEventListener('click', () => {
                 modal.remove();
                 resolve(avatarPixels);
             });
-            
+
             // Arrêter le dessin quand on relâche la souris
             document.addEventListener('mouseup', () => {
                 isDrawing = false;
             });
         });
     }
-    
+
     /**
      * Avatars prédéfinis (16x16)
      */
@@ -2860,31 +2860,31 @@
         {
             name: 'Smile',
             pixels: (() => {
-                const p = Array(256).fill({color: '#FFFFFF', isEmpty: true});
+                const p = Array(256).fill({ color: '#FFFFFF', isEmpty: true });
                 // Visage rond jaune
                 const yellow = '#FFD700';
                 const black = '#000000';
-                
+
                 // Cercle
-                for(let y=2; y<14; y++) {
-                    for(let x=2; x<14; x++) {
-                        if((x===2 || x===13) && (y===2 || y===13)) continue; // Coins
-                        p[y*16+x] = {color: yellow, isEmpty: false};
+                for (let y = 2; y < 14; y++) {
+                    for (let x = 2; x < 14; x++) {
+                        if ((x === 2 || x === 13) && (y === 2 || y === 13)) continue; // Coins
+                        p[y * 16 + x] = { color: yellow, isEmpty: false };
                     }
                 }
                 // Yeux
-                p[5*16+5] = {color: black, isEmpty: false};
-                p[5*16+10] = {color: black, isEmpty: false};
+                p[5 * 16 + 5] = { color: black, isEmpty: false };
+                p[5 * 16 + 10] = { color: black, isEmpty: false };
                 // Sourire
-                p[9*16+4] = {color: black, isEmpty: false};
-                p[10*16+5] = {color: black, isEmpty: false};
-                p[10*16+6] = {color: black, isEmpty: false};
-                p[10*16+7] = {color: black, isEmpty: false};
-                p[10*16+8] = {color: black, isEmpty: false};
-                p[10*16+9] = {color: black, isEmpty: false};
-                p[10*16+10] = {color: black, isEmpty: false};
-                p[9*16+11] = {color: black, isEmpty: false};
-                
+                p[9 * 16 + 4] = { color: black, isEmpty: false };
+                p[10 * 16 + 5] = { color: black, isEmpty: false };
+                p[10 * 16 + 6] = { color: black, isEmpty: false };
+                p[10 * 16 + 7] = { color: black, isEmpty: false };
+                p[10 * 16 + 8] = { color: black, isEmpty: false };
+                p[10 * 16 + 9] = { color: black, isEmpty: false };
+                p[10 * 16 + 10] = { color: black, isEmpty: false };
+                p[9 * 16 + 11] = { color: black, isEmpty: false };
+
                 return p;
             })()
         },
@@ -2892,27 +2892,27 @@
         {
             name: 'Heart',
             pixels: (() => {
-                const p = Array(256).fill({color: '#FFFFFF', isEmpty: true});
+                const p = Array(256).fill({ color: '#FFFFFF', isEmpty: true });
                 const red = '#FF0000';
-                
+
                 const coords = [
-                    [2,5],[3,4],[4,3],[5,2],[6,2],[7,3],
-                    [8,3],[9,2],[10,2],[11,3],[12,4],[13,5],
-                    [13,6],[13,7],[12,8],[11,9],[10,10],[9,11],
-                    [8,12],[7,11],[6,10],[5,9],[4,8],[3,7],[2,6]
+                    [2, 5], [3, 4], [4, 3], [5, 2], [6, 2], [7, 3],
+                    [8, 3], [9, 2], [10, 2], [11, 3], [12, 4], [13, 5],
+                    [13, 6], [13, 7], [12, 8], [11, 9], [10, 10], [9, 11],
+                    [8, 12], [7, 11], [6, 10], [5, 9], [4, 8], [3, 7], [2, 6]
                 ];
-                
+
                 // Remplissage
-                for(let y=0; y<16; y++) {
-                    for(let x=0; x<16; x++) {
+                for (let y = 0; y < 16; y++) {
+                    for (let x = 0; x < 16; x++) {
                         // Forme simplifiée pour le remplissage
-                        if(y>=4 && y<=8 && x>=3 && x<=12) p[y*16+x] = {color: red, isEmpty: false};
-                        if(y>=8 && y<=11 && x>=5 && x<=10) p[y*16+x] = {color: red, isEmpty: false};
-                        if(y===12 && x>=7 && x<=8) p[y*16+x] = {color: red, isEmpty: false};
-                        if(y===3 && (x>=4 && x<=6 || x>=9 && x<=11)) p[y*16+x] = {color: red, isEmpty: false};
+                        if (y >= 4 && y <= 8 && x >= 3 && x <= 12) p[y * 16 + x] = { color: red, isEmpty: false };
+                        if (y >= 8 && y <= 11 && x >= 5 && x <= 10) p[y * 16 + x] = { color: red, isEmpty: false };
+                        if (y === 12 && x >= 7 && x <= 8) p[y * 16 + x] = { color: red, isEmpty: false };
+                        if (y === 3 && (x >= 4 && x <= 6 || x >= 9 && x <= 11)) p[y * 16 + x] = { color: red, isEmpty: false };
                     }
                 }
-                
+
                 return p;
             })()
         },
@@ -2920,33 +2920,33 @@
         {
             name: 'Ghost',
             pixels: (() => {
-                const p = Array(256).fill({color: '#FFFFFF', isEmpty: true});
+                const p = Array(256).fill({ color: '#FFFFFF', isEmpty: true });
                 const body = '#E0F7FA';
                 const eyes = '#000000';
-                
-                for(let y=3; y<14; y++) {
-                    for(let x=4; x<12; x++) {
-                        p[y*16+x] = {color: body, isEmpty: false};
+
+                for (let y = 3; y < 14; y++) {
+                    for (let x = 4; x < 12; x++) {
+                        p[y * 16 + x] = { color: body, isEmpty: false };
                     }
                 }
                 // Tête arrondie
-                p[3*16+4] = {color: '#FFFFFF', isEmpty: true};
-                p[3*16+11] = {color: '#FFFFFF', isEmpty: true};
-                
+                p[3 * 16 + 4] = { color: '#FFFFFF', isEmpty: true };
+                p[3 * 16 + 11] = { color: '#FFFFFF', isEmpty: true };
+
                 // Yeux
-                p[6*16+6] = {color: eyes, isEmpty: false};
-                p[6*16+9] = {color: eyes, isEmpty: false};
-                
+                p[6 * 16 + 6] = { color: eyes, isEmpty: false };
+                p[6 * 16 + 9] = { color: eyes, isEmpty: false };
+
                 // Bas ondulé
-                p[13*16+4] = {color: body, isEmpty: false};
-                p[13*16+5] = {color: '#FFFFFF', isEmpty: true};
-                p[13*16+6] = {color: body, isEmpty: false};
-                p[13*16+7] = {color: '#FFFFFF', isEmpty: true};
-                p[13*16+8] = {color: body, isEmpty: false};
-                p[13*16+9] = {color: '#FFFFFF', isEmpty: true};
-                p[13*16+10] = {color: body, isEmpty: false};
-                p[13*16+11] = {color: '#FFFFFF', isEmpty: true};
-                
+                p[13 * 16 + 4] = { color: body, isEmpty: false };
+                p[13 * 16 + 5] = { color: '#FFFFFF', isEmpty: true };
+                p[13 * 16 + 6] = { color: body, isEmpty: false };
+                p[13 * 16 + 7] = { color: '#FFFFFF', isEmpty: true };
+                p[13 * 16 + 8] = { color: body, isEmpty: false };
+                p[13 * 16 + 9] = { color: '#FFFFFF', isEmpty: true };
+                p[13 * 16 + 10] = { color: body, isEmpty: false };
+                p[13 * 16 + 11] = { color: '#FFFFFF', isEmpty: true };
+
                 return p;
             })()
         },
@@ -2954,27 +2954,27 @@
         {
             name: 'Star',
             pixels: (() => {
-                const p = Array(256).fill({color: '#FFFFFF', isEmpty: true});
+                const p = Array(256).fill({ color: '#FFFFFF', isEmpty: true });
                 const gold = '#FFD700';
-                
+
                 const coords = [
-                    [8,1],[8,2],[7,3],[8,3],[9,3],
-                    [6,4],[7,4],[8,4],[9,4],[10,4],
-                    [5,5],[6,5],[7,5],[8,5],[9,5],[10,5],[11,5],
-                    [4,6],[5,6],[6,6],[7,6],[8,6],[9,6],[10,6],[11,6],[12,6],
-                    [2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],
-                    [3,8],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],[10,8],[11,8],[12,8],
-                    [4,9],[5,9],[6,9],[7,9],[8,9],[9,9],[10,9],[11,9],
-                    [5,10],[6,10],[7,10],[8,10],[9,10],[10,10],
-                    [5,11],[6,11],[9,11],[10,11],
-                    [4,12],[5,12],[10,12],[11,12],
-                    [3,13],[4,13],[11,13],[12,13]
+                    [8, 1], [8, 2], [7, 3], [8, 3], [9, 3],
+                    [6, 4], [7, 4], [8, 4], [9, 4], [10, 4],
+                    [5, 5], [6, 5], [7, 5], [8, 5], [9, 5], [10, 5], [11, 5],
+                    [4, 6], [5, 6], [6, 6], [7, 6], [8, 6], [9, 6], [10, 6], [11, 6], [12, 6],
+                    [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [8, 7], [9, 7], [10, 7], [11, 7], [12, 7], [13, 7],
+                    [3, 8], [4, 8], [5, 8], [6, 8], [7, 8], [8, 8], [9, 8], [10, 8], [11, 8], [12, 8],
+                    [4, 9], [5, 9], [6, 9], [7, 9], [8, 9], [9, 9], [10, 9], [11, 9],
+                    [5, 10], [6, 10], [7, 10], [8, 10], [9, 10], [10, 10],
+                    [5, 11], [6, 11], [9, 11], [10, 11],
+                    [4, 12], [5, 12], [10, 12], [11, 12],
+                    [3, 13], [4, 13], [11, 13], [12, 13]
                 ];
-                
+
                 coords.forEach(c => {
-                    if(c[1]*16+c[0] < 256) p[c[1]*16+c[0]] = {color: gold, isEmpty: false};
+                    if (c[1] * 16 + c[0] < 256) p[c[1] * 16 + c[0]] = { color: gold, isEmpty: false };
                 });
-                
+
                 return p;
             })()
         },
@@ -2982,32 +2982,32 @@
         {
             name: 'Robot',
             pixels: (() => {
-                const p = Array(256).fill({color: '#FFFFFF', isEmpty: true});
+                const p = Array(256).fill({ color: '#FFFFFF', isEmpty: true });
                 const metal = '#A0A0A0';
                 const eye = '#00FF00';
-                
+
                 // Tête
-                for(let y=4; y<12; y++) {
-                    for(let x=4; x<12; x++) {
-                        p[y*16+x] = {color: metal, isEmpty: false};
+                for (let y = 4; y < 12; y++) {
+                    for (let x = 4; x < 12; x++) {
+                        p[y * 16 + x] = { color: metal, isEmpty: false };
                     }
                 }
                 // Yeux
-                p[6*16+6] = {color: eye, isEmpty: false};
-                p[6*16+9] = {color: eye, isEmpty: false};
-                
+                p[6 * 16 + 6] = { color: eye, isEmpty: false };
+                p[6 * 16 + 9] = { color: eye, isEmpty: false };
+
                 // Bouche
-                p[9*16+6] = {color: '#000000', isEmpty: false};
-                p[9*16+7] = {color: '#000000', isEmpty: false};
-                p[9*16+8] = {color: '#000000', isEmpty: false};
-                p[9*16+9] = {color: '#000000', isEmpty: false};
-                
+                p[9 * 16 + 6] = { color: '#000000', isEmpty: false };
+                p[9 * 16 + 7] = { color: '#000000', isEmpty: false };
+                p[9 * 16 + 8] = { color: '#000000', isEmpty: false };
+                p[9 * 16 + 9] = { color: '#000000', isEmpty: false };
+
                 // Antennes
-                p[3*16+5] = {color: metal, isEmpty: false};
-                p[2*16+4] = {color: metal, isEmpty: false};
-                p[3*16+10] = {color: metal, isEmpty: false};
-                p[2*16+11] = {color: metal, isEmpty: false};
-                
+                p[3 * 16 + 5] = { color: metal, isEmpty: false };
+                p[2 * 16 + 4] = { color: metal, isEmpty: false };
+                p[3 * 16 + 10] = { color: metal, isEmpty: false };
+                p[2 * 16 + 11] = { color: metal, isEmpty: false };
+
                 return p;
             })()
         }
@@ -3021,31 +3021,30 @@
             alert('❌ Service de base de données non disponible.');
             return;
         }
-        
+
         // Récupérer le profil actuel
         const profileResult = await window.dbService.getUserProfile();
         const currentProfile = profileResult.success ? profileResult.data : null;
         let currentUsername = currentProfile?.username || '';
         const currentAvatar = currentProfile?.avatar_data || null;
         const currentAvatarSize = currentProfile?.avatar_size || 16;
-        
+
         // Si le pseudo est une valeur par défaut, on le vide pour forcer la saisie
         const defaultUsernames = ['user', 'utilisateur', 'anonymous', 'anonyme'];
         if (defaultUsernames.includes(currentUsername.toLowerCase())) {
             currentUsername = '';
         }
-        
-        // Générer le HTML pour les avatars prédéfinis
-        const presetAvatarsHtml = PRESET_AVATARS.map((avatar, index) => {
-            const preview = generateAvatarPreview(avatar.pixels, 16, 48);
+
+        // Générer le HTML pour les avatars prédéfinis (Carousel Items)
+        const carouselItemsHtml = PRESET_AVATARS.map((avatar, index) => {
+            const preview = generateAvatarPreview(avatar.pixels, 16, 64);
             return `
-                <div class="preset-avatar-item" data-index="${index}" title="${avatar.name}" 
-                     style="flex-shrink: 0; cursor: pointer; padding: 4px; border: 2px solid rgba(255,255,255,0.1); border-radius: 8px; transition: all 0.2s;">
+                <div class="avatar-carousel-item" data-index="${index}" title="${avatar.name}">
                     ${preview}
                 </div>
             `;
         }).join('');
-        
+
         const dialogContent = `
             <div style="padding: 20px; color: rgba(255, 255, 255, 0.95);">
                 <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98);">👤 Mon Profil Public</h3>
@@ -3065,11 +3064,13 @@
                             ${generateAvatarPreview(currentAvatar, currentAvatarSize, 80)}
                         </div>
                         
-                        <!-- Sélection rapide d'avatars (Scroll Horizontal) -->
-                        <div style="width: 100%; overflow-x: auto; padding: 10px 0; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                            <div style="display: flex; gap: 12px; padding: 0 10px; min-width: min-content;">
-                                ${presetAvatarsHtml}
+                        <!-- Cover Flow Carousel -->
+                        <div class="avatar-carousel-wrapper">
+                            <div class="avatar-carousel-nav prev">‹</div>
+                            <div class="avatar-carousel-track" id="avatarCarouselTrack">
+                                ${carouselItemsHtml}
                             </div>
+                            <div class="avatar-carousel-nav next">›</div>
                         </div>
                         
                         <button id="editAvatarBtn" style="padding: 8px 16px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; font-size: 0.9em;">
@@ -3103,7 +3104,7 @@
                 </div>
             </div>
         `;
-        
+
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.style.display = 'flex';
@@ -3112,19 +3113,19 @@
                 ${dialogContent}
             </div>
         `;
-        
+
         document.body.appendChild(modal);
-        
+
         const usernameInput = document.getElementById('usernameInput');
         const editAvatarBtn = document.getElementById('editAvatarBtn');
         const currentAvatarPreview = document.getElementById('currentAvatarPreview');
         const cancelBtn = document.getElementById('cancelUsernameBtn');
         const saveBtn = document.getElementById('saveUsernameBtn');
         const presetItems = modal.querySelectorAll('.preset-avatar-item');
-        
+
         let currentAvatarData = currentAvatar;
         let currentAvatarSizeValue = currentAvatarSize;
-        
+
         /**
          * Convertit une frame 32x32 en avatar 16x16 (redimensionnement)
          */
@@ -3132,11 +3133,11 @@
             if (!frame32x32 || !Array.isArray(frame32x32)) {
                 return null;
             }
-            
+
             const sourceSize = 32;
             const targetSize = 16;
             const avatarPixels = [];
-            
+
             // Pour chaque pixel de l'avatar 16x16, prendre le pixel correspondant de la frame 32x32
             for (let y = 0; y < targetSize; y++) {
                 for (let x = 0; x < targetSize; x++) {
@@ -3144,7 +3145,7 @@
                     const sourceX = Math.floor((x * sourceSize) / targetSize);
                     const sourceY = Math.floor((y * sourceSize) / targetSize);
                     const sourceIndex = sourceY * sourceSize + sourceX;
-                    
+
                     if (sourceIndex < frame32x32.length && frame32x32[sourceIndex]) {
                         const sourcePixel = frame32x32[sourceIndex];
                         avatarPixels.push({
@@ -3159,46 +3160,115 @@
                     }
                 }
             }
-            
+
             return avatarPixels;
         }
-        
-        // Gestion de la sélection d'un avatar prédéfini
-        presetItems.forEach(item => {
-            item.addEventListener('click', () => {
-                // Retirer la sélection des autres
-                presetItems.forEach(i => {
-                    i.style.borderColor = 'rgba(255,255,255,0.1)';
-                    i.style.background = 'transparent';
-                });
-                
-                // Sélectionner celui-ci
-                item.style.borderColor = '#667eea';
-                item.style.background = 'rgba(102, 126, 234, 0.2)';
-                
-                const index = parseInt(item.dataset.index);
-                const selectedAvatar = PRESET_AVATARS[index];
-                
-                if (selectedAvatar) {
-                    currentAvatarData = selectedAvatar.pixels;
-                    currentAvatarSizeValue = 16;
-                    currentAvatarPreview.innerHTML = generateAvatarPreview(currentAvatarData, 16, 80);
+
+
+        // --- Logic for Cover Flow Carousel ---
+        const track = document.getElementById('avatarCarouselTrack');
+        const items = Array.from(track.querySelectorAll('.avatar-carousel-item'));
+        const prevBtn = modal.querySelector('.avatar-carousel-nav.prev');
+        const nextBtn = modal.querySelector('.avatar-carousel-nav.next');
+
+        let carouselIndex = 0; // Start at the first item
+
+        function updateCarousel() {
+            items.forEach((item, i) => {
+                // Reset classes
+                item.className = 'avatar-carousel-item';
+
+                const diff = i - carouselIndex;
+
+                if (diff === 0) {
+                    item.classList.add('active');
+                } else if (diff === -1) {
+                    item.classList.add('prev-1');
+                } else if (diff === -2) {
+                    item.classList.add('prev-2');
+                } else if (diff === 1) {
+                    item.classList.add('next-1');
+                } else if (diff === 2) {
+                    item.classList.add('next-2');
+                } else if (diff < -2) {
+                    item.classList.add('hidden-left');
+                } else if (diff > 2) {
+                    item.classList.add('hidden-right');
                 }
+
+                // Click to select
+                item.onclick = () => {
+                    if (i !== carouselIndex) {
+                        carouselIndex = i;
+                        updateCarousel();
+                        selectAvatar(i);
+                    }
+                };
             });
-            
-            // Effet hover
-            item.addEventListener('mouseenter', () => {
-                if (item.style.borderColor !== 'rgb(102, 126, 234)') { // Si pas sélectionné
-                    item.style.borderColor = 'rgba(255,255,255,0.5)';
-                }
-            });
-            item.addEventListener('mouseleave', () => {
-                if (item.style.borderColor !== 'rgb(102, 126, 234)') { // Si pas sélectionné
-                    item.style.borderColor = 'rgba(255,255,255,0.1)';
-                }
-            });
+        }
+
+        function selectAvatar(index) {
+            const selectedAvatar = PRESET_AVATARS[index];
+            if (selectedAvatar) {
+                currentAvatarData = selectedAvatar.pixels;
+                currentAvatarSizeValue = 16;
+                currentAvatarPreview.innerHTML = generateAvatarPreview(currentAvatarData, 16, 80);
+            }
+        }
+
+        // Initial update
+        updateCarousel();
+
+        // Navigation buttons
+        prevBtn.addEventListener('click', () => {
+            if (carouselIndex > 0) {
+                carouselIndex--;
+                updateCarousel();
+                selectAvatar(carouselIndex);
+            }
         });
-        
+
+        nextBtn.addEventListener('click', () => {
+            if (carouselIndex < items.length - 1) {
+                carouselIndex++;
+                updateCarousel();
+                selectAvatar(carouselIndex);
+            }
+        });
+
+        // Mouse wheel / Trackpad scroll
+        const carouselWrapper = modal.querySelector('.avatar-carousel-wrapper');
+        let isScrolling = false;
+
+        carouselWrapper.addEventListener('wheel', (e) => {
+            e.preventDefault();
+
+            if (isScrolling) return;
+
+            if (e.deltaY > 0 || e.deltaX > 0) {
+                // Scroll right/down -> Next
+                if (carouselIndex < items.length - 1) {
+                    carouselIndex++;
+                    updateCarousel();
+                    selectAvatar(carouselIndex);
+
+                    isScrolling = true;
+                    setTimeout(() => isScrolling = false, 200); // Debounce
+                }
+            } else if (e.deltaY < 0 || e.deltaX < 0) {
+                // Scroll left/up -> Prev
+                if (carouselIndex > 0) {
+                    carouselIndex--;
+                    updateCarousel();
+                    selectAvatar(carouselIndex);
+
+                    isScrolling = true;
+                    setTimeout(() => isScrolling = false, 200); // Debounce
+                }
+            }
+        }, { passive: false });
+
+
         // Éditer l'avatar
         editAvatarBtn?.addEventListener('click', async () => {
             const avatarData = await createAvatarEditor(currentAvatarData, currentAvatarSizeValue);
@@ -3206,7 +3276,7 @@
                 currentAvatarData = avatarData;
                 currentAvatarSizeValue = 16; // Taille fixe pour l'avatar
                 currentAvatarPreview.innerHTML = generateAvatarPreview(avatarData, 16, 80);
-                
+
                 // Désélectionner les presets
                 presetItems.forEach(i => {
                     i.style.borderColor = 'rgba(255,255,255,0.1)';
@@ -3214,51 +3284,51 @@
                 });
             }
         });
-        
+
         // Focus sur l'input
         setTimeout(() => usernameInput?.focus(), 100);
-        
+
         // Annuler
         cancelBtn?.addEventListener('click', () => {
             modal.remove();
         });
-        
+
         // Enregistrer
         saveBtn?.addEventListener('click', async () => {
             const username = usernameInput?.value.trim() || '';
-            
+
             if (!username) {
                 alert('❌ Veuillez entrer un pseudo.');
                 return;
             }
-            
+
             if (username.length < 2 || username.length > 30) {
                 alert('❌ Le pseudo doit contenir entre 2 et 30 caractères.');
                 return;
             }
-            
+
             if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
                 alert('❌ Le pseudo ne peut contenir que des lettres, chiffres, tirets et underscores.');
                 return;
             }
-            
+
             saveBtn.disabled = true;
             saveBtn.textContent = '⏳ Enregistrement...';
-            
+
             const result = await window.dbService.setUserProfile(username, currentAvatarData, currentAvatarSizeValue);
-            
+
             if (result.success) {
                 modal.remove();
                 alert('✅ Profil enregistré avec succès !\n\nVotre pseudo et avatar seront maintenant affichés sur tous vos modèles publiés.');
-                
+
                 // Mettre à jour l'affichage du profil dans la barre du haut
                 if (typeof window.updateUserProfileDisplay === 'function') {
                     window.updateUserProfileDisplay();
                 }
-                
+
                 // Déclencher un événement pour notifier que le profil est maintenant configuré
                 window.dispatchEvent(new CustomEvent('userProfileConfigured'));
-                
+
                 // Rafraîchir la galerie si elle est ouverte
                 if (window.currentTemplateGallery) {
                     showTemplateGallery();
@@ -3269,7 +3339,7 @@
                 saveBtn.textContent = 'Enregistrer';
             }
         });
-        
+
         // Fermer en cliquant en dehors
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
@@ -3277,13 +3347,13 @@
             }
         });
     }
-    
+
     // Exposer la fonction globalement pour qu'elle soit accessible depuis les boutons profil
     window.showUsernameDialog = showUsernameDialog;
-    
+
     // Exposer generateAvatarPreview pour utilisation dans script.js
     window.generateAvatarPreview = generateAvatarPreview;
-    
+
     // Exposer les fonctions globalement si nécessaire
     window.templateFeature = {
         loadTemplate,
