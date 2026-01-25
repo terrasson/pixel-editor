@@ -6063,12 +6063,17 @@ async function updateUserProfileDisplay() {
                 const avatarData = profile.avatar_data || null;
                 const avatarSize = profile.avatar_size || 16;
                 
-                // Afficher l'avatar
+                // Afficher l'avatar (desktop + mobile)
+                const mobileUserAvatar = document.getElementById('mobileUserAvatar');
                 if (window.generateAvatarPreview && avatarData) {
-                    userAvatar.innerHTML = window.generateAvatarPreview(avatarData, avatarSize, 32);
+                    const avatarHTML = window.generateAvatarPreview(avatarData, avatarSize, 32);
+                    userAvatar.innerHTML = avatarHTML;
+                    if (mobileUserAvatar) mobileUserAvatar.innerHTML = avatarHTML;
                 } else {
                     // Fallback : icône par défaut
-                    userAvatar.innerHTML = '<div style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>';
+                    const fallbackAvatar = '<div style="width: 32px; height: 32px; background: #F0F0F2; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px;">👤</div>';
+                    userAvatar.innerHTML = fallbackAvatar;
+                    if (mobileUserAvatar) mobileUserAvatar.innerHTML = fallbackAvatar;
                 }
                 
                 // Afficher le pseudo
@@ -6082,7 +6087,11 @@ async function updateUserProfileDisplay() {
                 }
             } else {
                 // Pas de profil, afficher l'email
-                userAvatar.innerHTML = '<div style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>';
+                const fallbackAvatar = '<div style="width: 32px; height: 32px; background: #F0F0F2; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px;">👤</div>';
+                userAvatar.innerHTML = fallbackAvatar;
+                const mobileUserAvatar = document.getElementById('mobileUserAvatar');
+                if (mobileUserAvatar) mobileUserAvatar.innerHTML = fallbackAvatar;
+                
                 const fallbackUsername = userEmail.split('@')[0] || 'Utilisateur';
                 userName.textContent = fallbackUsername;
                 userName.title = userEmail;
@@ -6095,7 +6104,11 @@ async function updateUserProfileDisplay() {
             }
         } else {
             // Fallback si dbService n'est pas disponible
-            userAvatar.innerHTML = '<div style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>';
+            const fallbackAvatar = '<div style="width: 32px; height: 32px; background: #F0F0F2; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px;">👤</div>';
+            userAvatar.innerHTML = fallbackAvatar;
+            const mobileUserAvatar = document.getElementById('mobileUserAvatar');
+            if (mobileUserAvatar) mobileUserAvatar.innerHTML = fallbackAvatar;
+            
             const fallbackUsername = userEmail.split('@')[0] || 'Utilisateur';
             userName.textContent = fallbackUsername;
             userName.title = userEmail;
