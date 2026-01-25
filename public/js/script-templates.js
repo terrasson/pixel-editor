@@ -1145,11 +1145,16 @@
      */
     function generateAvatarPreview(avatarData, size = 16, displaySize = 48) {
         if (!avatarData || !Array.isArray(avatarData) || avatarData.length === 0) {
-            return '<div style="width: ' + displaySize + 'px; height: ' + displaySize + 'px; background: rgba(255,255,255,0.2); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>';
+            return '<div style="width: ' + displaySize + 'px; height: ' + displaySize + 'px; background: #F0F0F2; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>';
         }
 
         const pixelSize = displaySize / size;
-        let svg = `<svg width="${displaySize}" height="${displaySize}" style="display: block; border-radius: 4px; overflow: hidden;">`;
+        // SVG avec clip-path circulaire pour s'adapter au conteneur avatar
+        let svg = `<svg width="${displaySize}" height="${displaySize}" viewBox="0 0 ${displaySize} ${displaySize}" style="display: block; border-radius: 50%; overflow: hidden;">`;
+        
+        // Définir le clip-path circulaire
+        svg += `<defs><clipPath id="avatarClip${displaySize}"><circle cx="${displaySize/2}" cy="${displaySize/2}" r="${displaySize/2}"/></clipPath></defs>`;
+        svg += `<g clip-path="url(#avatarClip${displaySize})">`;
 
         avatarData.forEach((pixel, index) => {
             if (!pixel || pixel.isEmpty) return;
@@ -1160,7 +1165,7 @@
             svg += `<rect x="${x}" y="${y}" width="${pixelSize}" height="${pixelSize}" fill="${pixel.color}" stroke="none"/>`;
         });
 
-        svg += `</svg>`;
+        svg += `</g></svg>`;
         return svg;
     }
 

@@ -1,4 +1,4 @@
-/* CSS Reset et base - Liquid Glass iOS 26 */
+/* CSS Reset et base - Style Simple */
 
 /* Cacher extra-tools sur mobile par défaut */
 .extra-tools {
@@ -10,14 +10,8 @@ html, body {
     padding: 0;
     width: 100%;
     height: 100%;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    /* Fond avec fallback pour navigateurs ne supportant pas backdrop-filter */
-    background: linear-gradient(180deg, 
-        #4a90e2 0%, 
-        #7b68ee 25%, 
-        #9966cc 50%, 
-        #ba55d3 75%, 
-        #da70d6 100%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #FFFFFF;
     overflow-x: hidden;
     overflow-y: auto;
     touch-action: manipulation;
@@ -28,50 +22,11 @@ html, body {
     padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
 }
 
-
 *, *:before, *:after {
     box-sizing: border-box;
 }
 
-/* Particules flottantes pour effet liquid glass */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: 
-        radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 20%),
-        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.08) 0%, transparent 25%),
-        radial-gradient(circle at 40% 60%, rgba(103, 126, 234, 0.06) 0%, transparent 30%),
-        radial-gradient(circle at 70% 30%, rgba(118, 75, 162, 0.04) 0%, transparent 35%),
-        radial-gradient(circle at 20% 80%, rgba(240, 147, 251, 0.05) 0%, transparent 20%);
-    animation: particlesFloat 20s ease-in-out infinite;
-    pointer-events: none;
-    z-index: -1;
-}
-
-@keyframes particlesFloat {
-    0%, 100% {
-        transform: translateY(0px) translateX(0px) scale(1);
-        opacity: 0.8;
-    }
-    25% {
-        transform: translateY(-20px) translateX(10px) scale(1.1);
-        opacity: 0.9;
-    }
-    50% {
-        transform: translateY(-10px) translateX(-15px) scale(0.9);
-        opacity: 1;
-    }
-    75% {
-        transform: translateY(-30px) translateX(8px) scale(1.05);
-        opacity: 0.85;
-    }
-}
-
-/* Container principal - Liquid Glass */
+/* Container principal - Style Simple */
 .editor-container {
     display: flex;
     flex-direction: column;
@@ -81,14 +36,9 @@ body::before {
     min-height: 100dvh; /* Navigateurs modernes */
     width: 100vw;
     width: -webkit-fill-available;
-    /* Fallback avec couleur opaque pour navigateurs sans backdrop-filter */
-    background: rgba(240, 240, 255, 0.95);
-    /* Backdrop-filter avec préfixes pour compatibilité */
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    /* Amélioration avec @supports pour navigateurs modernes */
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 24px;
+    background: #FFFFFF;
+    border: none;
+    border-radius: 0;
     position: relative;
     overflow-x: hidden;
     overflow-y: auto;
@@ -100,66 +50,20 @@ body::before {
              max(6px, env(safe-area-inset-bottom, 0px)) 
              max(4px, env(safe-area-inset-left, 4px));
     margin: 0;
-    box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.1),
-        0 2px 8px rgba(0, 0, 0, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    animation: containerGlow 3s ease-in-out infinite alternate;
 }
 
-/* Amélioration pour navigateurs supportant backdrop-filter */
-@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
-    .editor-container {
-        background: rgba(255, 255, 255, 0.1);
-    }
-}
-
-@keyframes containerGlow {
-    0% { 
-        box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.1),
-            0 2px 8px rgba(0, 0, 0, 0.05),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    }
-    100% { 
-        box-shadow: 
-            0 12px 48px rgba(103, 126, 234, 0.2),
-            0 4px 16px rgba(118, 75, 162, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.4);
-    }
-}
-
-/* Project info optimisé avec menu hamburger - Liquid Glass */
+/* Project info optimisé avec menu hamburger - Style Simple */
 .project-info {
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    padding: 6px 10px;
-    /* Fallback pour navigateurs sans backdrop-filter */
-    background: linear-gradient(135deg,
-        rgba(28, 58, 148, 0.9),
-        rgba(123, 31, 162, 0.85)
-    );
-    backdrop-filter: blur(15px) saturate(200%);
-    -webkit-backdrop-filter: blur(15px) saturate(200%);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 16px;
-    margin: calc(2px + env(safe-area-inset-top, 0px)) 4px 4px;
-    color: #f4f6ff;
-    box-shadow: 
-        0 4px 16px rgba(0, 0, 0, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-/* Amélioration pour navigateurs supportant backdrop-filter */
-@supports (backdrop-filter: blur(15px)) or (-webkit-backdrop-filter: blur(15px)) {
-    .project-info {
-        background: linear-gradient(135deg,
-            rgba(28, 58, 148, 0.75),
-            rgba(123, 31, 162, 0.7)
-        );
-    }
+    padding: 10px 16px;
+    background: #FFFFFF;
+    border-bottom: 1px solid var(--border-color, #E5E5EA);
+    border-radius: 0;
+    margin: 0;
+    color: var(--text-primary, #1D1D1F);
 }
 
 .menu-hamburger {
@@ -167,11 +71,9 @@ body::before {
     left: 16px;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
+    background: var(--bg-secondary, #F5F5F7);
+    border: 1px solid var(--border-color, #E5E5EA);
+    color: var(--text-primary, #1D1D1F);
     font-size: 0; /* Masquer le texte */
     width: 44px;
     height: 44px;
@@ -180,11 +82,7 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 
-        0 4px 16px rgba(0, 0, 0, 0.1),
-        0 2px 8px rgba(0, 0, 0, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: all 0.15s ease;
     z-index: 10;
 }
 
@@ -196,22 +94,22 @@ body::before {
     left: 50%;
     width: 18px;
     height: 2px;
-    background: white;
+    background: var(--text-primary, #1D1D1F);
     transform: translate(-50%, -50%);
     transform-origin: center center;
     -webkit-transform: translate(-50%, -50%);
     -webkit-transform-origin: center center;
     box-shadow: 
-        0 -6px 0 white,
-        0 6px 0 white;
-    transition: all 0.3s ease;
+        0 -6px 0 var(--text-primary, #1D1D1F),
+        0 6px 0 var(--text-primary, #1D1D1F);
+    transition: all 0.2s ease;
     margin: 0;
     padding: 0;
 }
 
 /* Style quand le menu est ouvert (croix) */
 .menu-hamburger.open::before {
-    background: white;
+    background: var(--text-primary, #1D1D1F);
     box-shadow: none;
     transform: translate(-50%, -50%) rotate(45deg);
     -webkit-transform: translate(-50%, -50%) rotate(45deg);
@@ -226,7 +124,7 @@ body::before {
     left: 50%;
     width: 18px;
     height: 2px;
-    background: white;
+    background: var(--text-primary, #1D1D1F);
     transform: translate(-50%, -50%) rotate(-45deg);
     -webkit-transform: translate(-50%, -50%) rotate(-45deg);
     transform-origin: center center;
@@ -236,24 +134,18 @@ body::before {
 }
 
 .menu-hamburger:hover, .menu-hamburger:active {
-    background: rgba(255, 255, 255, 0.3);
-    color: white;
+    background: var(--bg-hover, #F0F0F2);
     transform: translateY(-50%) scale(1.05);
-    box-shadow: 
-        0 8px 24px rgba(103, 126, 234, 0.3),
-        0 4px 12px rgba(118, 75, 162, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 
 .project-info h2 {
     font-size: 1.1rem;
     margin: 8px 0;
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--text-primary, #1D1D1F);
     font-weight: 600;
     flex: 1;
     text-align: center;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     letter-spacing: 0.3px;
 }
 
@@ -262,35 +154,27 @@ body::before {
     display: none !important;
 }
 
-/* Toolbar principal avec boutons liquid glass - cachée par défaut */
+/* Toolbar principal - Style Simple */
 .toolbar {
     padding: 0 8px;
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 18px;
+    background: #FFFFFF;
+    border: 1px solid var(--border-color, #E5E5EA);
+    border-radius: var(--radius-md, 12px);
     margin: 6px;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.2s ease;
     overflow: hidden;
     max-height: 0;
     opacity: 0;
     transform: translateY(-10px);
-    box-shadow: 
-        0 4px 16px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .toolbar.visible {
-    padding: 8px 6px;
+    padding: 12px 8px;
     max-height: clamp(200px, 60vh, 400px);
     overflow: visible;
     opacity: 1;
     transform: translateY(0);
-    box-shadow: 
-        0 8px 24px rgba(0, 0, 0, 0.15),
-        0 4px 12px rgba(103, 126, 234, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.08));
 }
 
 /* Outils avec boutons optimisés et compacts */
@@ -305,27 +189,22 @@ body::before {
 }
 
 .tools button {
-    padding: 8px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
-    color: white;
+    padding: 10px 12px;
+    border: none;
+    border-bottom: 1px solid var(--border-color, #E5E5EA);
+    border-radius: 0;
+    background: #FFFFFF;
+    color: var(--text-primary, #1D1D1F);
     cursor: pointer;
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.85rem;
+    font-weight: 500;
     touch-action: manipulation;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    min-height: 36px;
+    transition: background 0.15s ease;
+    min-height: 44px;
     line-height: 1.2;
     white-space: normal;
     overflow-wrap: anywhere;
-    text-align: center;
-    box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    text-align: left;
 }
 
 .tools .logout-btn-mobile {
@@ -334,31 +213,22 @@ body::before {
     min-height: 44px;
     font-size: 0.85rem;
     letter-spacing: 0.3px;
-    background: linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%);
+    background: #FF453A;
+    color: #FFFFFF;
     border: none;
-    box-shadow: 0 8px 24px rgba(255, 95, 109, 0.35);
+    border-radius: var(--radius-sm, 8px);
 }
 
 .tools .logout-btn-mobile:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 28px rgba(255, 95, 109, 0.4);
+    background: #E03E35;
 }
 
 .tools button:hover {
-    transform: translateY(-2px) scale(1.02);
-    background: rgba(255, 255, 255, 0.3);
-    box-shadow: 
-        0 6px 20px rgba(103, 126, 234, 0.3),
-        0 3px 10px rgba(118, 75, 162, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    background: var(--bg-hover, #F0F0F2);
 }
 
 .tools button:active {
-    transform: translateY(0) scale(0.98);
-    background: rgba(255, 255, 255, 0.25);
-    box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background: var(--bg-secondary, #F5F5F7);
 }
 
 /* Style spécial pour le bouton play/stop - Liquid Glass */
@@ -413,26 +283,20 @@ body::before {
     100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
 }
 
-/* Interface compacte mobile - Liquid Glass */
+/* Interface compacte mobile - Style Simple */
 .tools-compact {
     position: relative;
     top: auto;
     left: auto;
     width: 100%;
-    padding: 8px;
-    padding-left: calc(8px + env(safe-area-inset-left, 0px));
-    padding-right: calc(8px + env(safe-area-inset-right, 0px));
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 18px;
-    margin: 0 0 8px;
+    padding: 10px;
+    padding-left: calc(10px + env(safe-area-inset-left, 0px));
+    padding-right: calc(10px + env(safe-area-inset-right, 0px));
+    background: var(--bg-sidebar, #FAFAFA);
+    border: 1px solid var(--border-color, #E5E5EA);
+    border-radius: var(--radius-md, 12px);
+    margin: 0 4px 8px;
     box-sizing: border-box;
-    box-shadow: 
-        0 8px 24px rgba(0, 0, 0, 0.15),
-        0 4px 12px rgba(103, 126, 234, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
     z-index: 1100;
 }
 
@@ -498,9 +362,8 @@ body.is-mobile .editor-container {
     width: 24px;
     height: 24px;
     border-radius: 6px;
-    border: 2px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--border-color, #E5E5EA);
     background-color: #000000;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     flex-shrink: 0;
     pointer-events: none;
     z-index: 1;
@@ -508,19 +371,18 @@ body.is-mobile .editor-container {
 
 .compact-eraser-btn {
     padding: 6px 12px;
-    border: none;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
+    border: 1px solid var(--border-color, #E5E5EA);
+    border-radius: var(--radius-sm, 8px);
+    background: #FFFFFF;
+    color: var(--text-primary, #1D1D1F);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 .compact-eraser-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
+    background: var(--bg-hover, #F0F0F2);
 }
 
 /* Bouton pipette compact */
@@ -530,32 +392,26 @@ body.is-mobile .editor-container {
     min-width: 32px;
     min-height: 32px;
     padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: white;
+    border: 1px solid var(--border-color, #E5E5EA);
+    border-radius: var(--radius-sm, 8px);
+    background: #FFFFFF;
+    color: var(--text-primary, #1D1D1F);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
     flex-shrink: 0;
 }
 
 .compact-eyedropper-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    background: var(--bg-hover, #F0F0F2);
+    border-color: var(--color-primary, #FF7300);
 }
 
 .compact-eyedropper-btn.active {
-    background: rgba(0, 122, 255, 0.3);
-    border-color: rgba(0, 122, 255, 0.6);
-    box-shadow: 0 0 12px rgba(0, 122, 255, 0.4);
+    background: var(--color-primary-light, #FFF3E8);
+    border-color: var(--color-primary, #FF7300);
 }
 
 .compact-eyedropper-btn svg {
@@ -571,28 +427,22 @@ body.is-mobile .editor-container {
     min-width: 32px;
     min-height: 32px;
     padding: 0;
-    border: 1px solid rgba(0, 255, 100, 0.4);
-    border-radius: 8px;
-    background: rgba(0, 255, 100, 0.2);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: white;
+    border: none;
+    border-radius: var(--radius-sm, 8px);
+    background: var(--color-primary, #FF7300);
+    color: #FFFFFF;
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
     flex-shrink: 0;
 }
 
 .compact-validate-btn:hover:not(:disabled) {
-    background: rgba(0, 255, 100, 0.3);
-    border-color: rgba(0, 255, 100, 0.6);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 255, 100, 0.3);
+    background: var(--color-primary-hover, #E66800);
 }
 
 .compact-validate-btn:active:not(:disabled) {
@@ -602,52 +452,46 @@ body.is-mobile .editor-container {
 .compact-validate-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--bg-secondary, #F5F5F7);
+    color: var(--text-light, #86868B);
 }
 
 .compact-undo-redo-btn {
     width: 32px;
     height: 32px;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    border-radius: 8px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
-    color: white;
+    border: 1px solid var(--border-color, #E5E5EA);
+    border-radius: var(--radius-sm, 8px);
+    background: #FFFFFF;
+    color: var(--text-primary, #1D1D1F);
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.15s ease;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
 }
 
 .compact-undo-redo-btn:hover {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.3));
-    border-color: rgba(255, 255, 255, 0.6);
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background: var(--bg-hover, #F0F0F2);
+    border-color: var(--color-primary, #FF7300);
 }
 
 .compact-undo-redo-btn:active {
     transform: scale(0.95);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .compact-undo-redo-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--bg-secondary, #F5F5F7);
     transform: none;
 }
 
 .compact-undo-redo-btn:disabled:hover {
     transform: none;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background: var(--bg-secondary, #F5F5F7);
 }
 
 /* Styles supprimés - plus de bouton de personnalisation */
@@ -698,19 +542,18 @@ body.is-mobile .editor-container {
     min-height: 32px;
     max-width: 32px;
     max-height: 32px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
+    border: 1px solid var(--border-color, #E5E5EA);
+    border-radius: var(--radius-sm, 8px);
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
     position: relative;
     flex-shrink: 0;
     box-sizing: border-box;
 }
 
 .compact-color-btn.custom-color {
-    border-color: #007AFF;
-    box-shadow: 0 0 0 1px rgba(0, 122, 255, 0.3), 0 2px 6px rgba(0, 122, 255, 0.25);
+    border-color: var(--color-primary, #FF7300);
+    box-shadow: 0 0 0 1px rgba(255, 115, 0, 0.2);
 }
 
 .compact-color-btn.custom-color::after {
@@ -722,26 +565,24 @@ body.is-mobile .editor-container {
     height: 14px;
     border-radius: 50%;
     background: #ffffff;
-    border: 1px solid #007AFF;
-    color: #007AFF;
+    border: 1px solid var(--color-primary, #FF7300);
+    color: var(--color-primary, #FF7300);
     font-size: 0.6rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
     pointer-events: none;
 }
 
 .compact-color-btn:hover {
     transform: scale(1.1);
-    border-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border-color: var(--color-primary, #FF7300);
 }
 
 .compact-color-btn.selected {
-    border: 3px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+    border: 2px solid var(--color-primary, #FF7300);
+    box-shadow: 0 0 0 2px rgba(255, 115, 0, 0.2);
     transform: scale(1.05);
 }
 
@@ -1351,7 +1192,7 @@ body.is-mobile .editor-container {
     transform: scale(1.05);
 }
 
-/* Container de la grille - Liquid Glass */
+/* Container de la grille - Style Simple */
 .grid-container {
     flex: 1;
     display: flex;
@@ -1359,18 +1200,13 @@ body.is-mobile .editor-container {
     align-items: center;
     padding: 8px;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px) saturate(150%);
-    -webkit-backdrop-filter: blur(15px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
+    background: #FFFFFF;
+    border: none;
+    border-radius: 0;
     margin: 4px;
     min-height: 200px;
-    max-height: calc(100vh - 200px); /* Réduit pour desktop */
-    max-height: clamp(280px, calc(100dvh - 180px), 600px); /* Ajuste pour les barres système mobiles */
-    box-shadow: 
-        0 4px 20px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    max-height: calc(100vh - 200px);
+    max-height: clamp(280px, calc(100dvh - 180px), 600px);
 }
 
 /* Grille de pixels - GARANTIE 32x32 cases exactes sur toutes plateformes */
@@ -1379,25 +1215,21 @@ body.is-mobile .editor-container {
     grid-template-columns: repeat(32, 1fr);
     grid-template-rows: repeat(32, 1fr);
     gap: 0;
-    /* Fallback pour navigateurs sans backdrop-filter */
     background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(10px) saturate(120%);
-    -webkit-backdrop-filter: blur(10px) saturate(120%);
-    border: 2px solid rgba(255, 255, 255, 0.25);
-    border-radius: 8px;
-    aspect-ratio: 1 / 1; /* Garantir que la grille reste carrée */
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    border-radius: 16px;
+    aspect-ratio: 1 / 1;
     position: relative;
     margin: 0 auto;
     
-    /* Calcul EXACT pour 32x32 cases avec clamp() pour plus de stabilité
-       formule: (taille_case * 32) + border */
+    /* Calcul EXACT pour 32x32 cases avec clamp() pour plus de stabilité */
     --cell-size: clamp(
-        8px,  /* Minimum absolu pour lisibilité */
+        8px,
         min(
             calc((100vw - max(20px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px) / 32),
             calc((100vh - max(120px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px) / 32)
         ),
-        18px  /* Maximum pour mobile standard */
+        18px
     );
     
     width: calc(var(--cell-size) * 32);
@@ -1410,25 +1242,10 @@ body.is-mobile .editor-container {
     max-height: calc(15px * 32);
     
     box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.15),
-        0 4px 16px rgba(103, 126, 234, 0.1),
-        inset 0 2px 0 rgba(255, 255, 255, 0.2);
+        0 12px 48px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
     overflow: hidden;
-    transition: all 0.3s ease;
-}
-
-/* Amélioration pour navigateurs supportant backdrop-filter */
-@supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
-    #pixelGrid {
-        background: rgba(255, 255, 255, 0.15);
-    }
-}
-
-#pixelGrid:hover {
-    box-shadow: 
-        0 12px 48px rgba(0, 0, 0, 0.2),
-        0 6px 24px rgba(103, 126, 234, 0.15),
-        inset 0 2px 0 rgba(255, 255, 255, 0.3);
+    transition: all 0.2s ease;
 }
 
 .pixel {
@@ -1517,32 +1334,18 @@ body.is-mobile .editor-container {
     }
 }
 
-/* Container de frames optimisé - Liquid Glass */
+/* Container de frames optimisé - Style Simple */
 .frames-container {
-    /* Fallback pour navigateurs sans backdrop-filter */
-    background: rgba(240, 240, 255, 0.95);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
+    background: var(--bg-sidebar, #FAFAFA);
+    border: 1px solid var(--border-color, #E5E5EA);
+    border-radius: var(--radius-md, 12px);
     padding: 12px;
-    /* Marge bottom adaptative pour bannière pub + safe area */
     margin: 6px 6px 12px 6px;
     min-height: 120px;
     max-height: 160px;
     overflow-y: auto;
     flex-shrink: 0;
     position: relative;
-    box-shadow: 
-        0 4px 16px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-}
-
-/* Amélioration pour navigateurs supportant backdrop-filter */
-@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
-    .frames-container {
-        background: rgba(255, 255, 255, 0.1);
-    }
 }
 
 /* Styles pour l'aide */
@@ -1963,39 +1766,9 @@ body.drag-over .grid-container {
     min-height: 50px; /* Hauteur minimale garantie */
 }
 
-/* Espace publicitaire réservé - Barre visible sans référence publicitaire */
+/* Espace publicitaire réservé - Masqué sur mobile */
 .ad-space {
-    height: 72px;
-    background: rgba(240, 240, 255, 0.95);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: static;
-    margin: 12px 6px 0 6px;
-    padding: 0 16px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
-    flex-shrink: 0;
-    box-shadow: 
-        0 -4px 16px rgba(0, 0, 0, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
-}
-
-/* Amélioration pour navigateurs supportant backdrop-filter */
-@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
-    .ad-space {
-        background: rgba(255, 255, 255, 0.08);
-    }
-}
-
-/* Masquer tout contenu texte dans la barre */
-.ad-space span,
-.ad-space * {
     display: none;
-    visibility: hidden;
 }
 
 /* Styles pour les frames */
@@ -2081,94 +1854,61 @@ body.drag-over .grid-container {
     touch-action: manipulation;
 }
 
-/* Dialogues et modales mobiles - Liquid Glass */
+/* Dialogues et modales mobiles - Style Simple */
 .save-dialog {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     padding: 20px;
-    animation: modalBackdropFadeIn 0.3s ease;
+    animation: fadeIn 0.2s ease;
 }
 
 .save-dialog-content {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(25px) saturate(200%);
-    -webkit-backdrop-filter: blur(25px) saturate(200%);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 24px;
-    padding: 32px;
+    background: #FFFFFF;
+    border: 1px solid var(--border-color, #E5E5EA);
+    border-radius: var(--radius-lg, 16px);
+    padding: 24px;
     width: 100%;
     max-width: 420px;
-    box-shadow: 
-        0 16px 64px rgba(0, 0, 0, 0.2),
-        0 8px 32px rgba(103, 126, 234, 0.1),
-        inset 0 2px 0 rgba(255, 255, 255, 0.4);
-    animation: modalContentSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes modalBackdropFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes modalContentSlideIn {
-    from { 
-        opacity: 0;
-        transform: translateY(30px) scale(0.9);
-    }
-    to { 
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.12));
+    animation: slideIn 0.2s ease;
 }
 
 .save-dialog h3 {
     margin: 0 0 20px 0;
     text-align: center;
     font-size: 1.3rem;
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--text-primary, #1D1D1F);
     font-weight: 600;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .save-dialog input {
     width: 100%;
-    padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border-color, #E5E5EA);
+    border-radius: var(--radius-md, 12px);
     font-size: 1rem;
     margin-bottom: 20px;
     outline: none;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: white;
-    transition: all 0.3s ease;
-    box-shadow: 
-        0 4px 12px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background: #FFFFFF;
+    color: var(--text-primary, #1D1D1F);
+    transition: all 0.15s ease;
 }
 
 .save-dialog input::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-light, #86868B);
 }
 
 .save-dialog input:focus {
-    border-color: rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow: 
-        0 6px 20px rgba(103, 126, 234, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
+    border-color: var(--color-primary, #FF7300);
+    box-shadow: 0 0 0 3px rgba(255, 115, 0, 0.1);
 }
 
 .dialog-buttons {
@@ -2178,54 +1918,34 @@ body.drag-over .grid-container {
 
 .dialog-buttons button {
     flex: 1;
-    padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border-color, #E5E5EA);
+    border-radius: var(--radius-md, 12px);
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     min-height: 48px;
     touch-action: manipulation;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    backdrop-filter: blur(10px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
 }
 
 #dialogSave {
-    background: linear-gradient(135deg, 
-        rgba(0, 122, 255, 0.8), 
-        rgba(0, 86, 179, 0.8));
-    color: white;
-    box-shadow: 
-        0 4px 16px rgba(0, 122, 255, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    background: var(--color-primary, #FF7300);
+    color: #FFFFFF;
+    border: none;
 }
 
 #dialogSave:hover {
-    transform: translateY(-2px) scale(1.02);
-    background: linear-gradient(135deg, 
-        rgba(0, 122, 255, 0.9), 
-        rgba(0, 86, 179, 0.9));
-    box-shadow: 
-        0 8px 24px rgba(0, 122, 255, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    background: var(--color-primary-hover, #E66800);
 }
 
 #dialogCancel {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
-    box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background: #FFFFFF;
+    color: var(--text-primary, #1D1D1F);
 }
 
 #dialogCancel:hover {
-    transform: translateY(-1px) scale(1.01);
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow: 
-        0 4px 12px rgba(0, 0, 0, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    background: var(--bg-hover, #F0F0F2);
 }
 
 /* Marqueurs de pixels */
@@ -2598,7 +2318,7 @@ body.drag-over .grid-container {
 
 
 /* ===================================================================
-   BOUTON PLAY DANS LA BARRE DU HAUT - STYLE IDENTIQUE AU HAMBURGER
+   BOUTON PLAY DANS LA BARRE DU HAUT - STYLE SIMPLE
    =================================================================== */
 
 .play-button {
@@ -2606,12 +2326,10 @@ body.drag-over .grid-container {
     right: 16px;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    font-size: 0; /* Masquer le texte */
+    background: var(--bg-secondary, #F5F5F7);
+    border: 1px solid var(--border-color, #E5E5EA);
+    color: var(--text-primary, #1D1D1F);
+    font-size: 0;
     width: 44px;
     height: 44px;
     border-radius: 22px;
@@ -2619,14 +2337,11 @@ body.drag-over .grid-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 
-        0 4px 16px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: all 0.15s ease;
     z-index: 10;
 }
 
-/* Créer l'icône play avec du CSS pur - PARFAITEMENT CENTRÉE */
+/* Créer l'icône play avec du CSS pur */
 .play-button::before {
     content: '';
     position: absolute;
@@ -2634,19 +2349,19 @@ body.drag-over .grid-container {
     left: 50%;
     width: 0;
     height: 0;
-    border-left: 10px solid white;
+    border-left: 10px solid var(--text-primary, #1D1D1F);
     border-top: 6px solid transparent;
     border-bottom: 6px solid transparent;
-    transform: translate(-40%, -50%); /* Ajustement pour centrer parfaitement */
+    transform: translate(-40%, -50%);
     transform-origin: center center;
     -webkit-transform: translate(-40%, -50%);
     -webkit-transform-origin: center center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     margin: 0;
     padding: 0;
 }
 
-/* Style quand l'animation est en cours (stop) - PARFAITEMENT CENTRÉ */
+/* Style quand l'animation est en cours (stop) */
 .play-button.playing::before {
     content: '';
     position: absolute;
@@ -2654,9 +2369,9 @@ body.drag-over .grid-container {
     left: 50%;
     width: 8px;
     height: 8px;
-    background: white;
+    background: var(--text-primary, #1D1D1F);
     border: none;
-    transform: translate(-50%, -50%); /* Parfaitement centré */
+    transform: translate(-50%, -50%);
     -webkit-transform: translate(-50%, -50%);
     transform-origin: center center;
     -webkit-transform-origin: center center;
@@ -2665,23 +2380,16 @@ body.drag-over .grid-container {
 }
 
 .play-button:hover, .play-button:active {
-    background: rgba(255, 255, 255, 0.3);
-    color: white;
+    background: var(--bg-hover, #F0F0F2);
     transform: translateY(-50%) scale(1.05);
-    box-shadow: 
-        0 8px 24px rgba(103, 126, 234, 0.3),
-        0 4px 12px rgba(118, 75, 162, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-/* Animation pulse quand l'animation est en cours */
+/* Animation quand l'animation est en cours */
 .play-button.playing {
-    background: rgba(255, 0, 0, 0.3);
-    animation: playButtonPulse 1s infinite;
+    background: var(--color-primary-light, #FFF3E8);
+    border-color: var(--color-primary, #FF7300);
 }
 
-@keyframes playButtonPulse {
-    0% { transform: translateY(-50%) scale(1); }
-    50% { transform: translateY(-50%) scale(1.1); }
-    100% { transform: translateY(-50%) scale(1); }
+.play-button.playing::before {
+    background: var(--color-primary, #FF7300);
 }
