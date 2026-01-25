@@ -736,7 +736,7 @@ body.is-mobile .editor-container {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 9000;
     left: 0;
     top: 0;
     width: 100%;
@@ -754,17 +754,15 @@ body.is-mobile .editor-container {
 }
 
 .modal-content {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #FFFFFF;
+    border: 1px solid var(--border-color, #E5E5EA);
     border-radius: 16px;
     padding: 0;
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    /* Le margin n'est plus nécessaire car le modal est centré avec flexbox */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 .modal-header {
@@ -772,19 +770,19 @@ body.is-mobile .editor-container {
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-color, #E5E5EA);
 }
 
 .modal-header h3 {
-    color: white;
+    color: var(--text-primary, #1D1D1F);
     margin: 0;
     font-size: 18px;
 }
 
 .close-btn {
-    background: none;
-    border: none;
-    color: white;
+    background: var(--bg-secondary, #F5F5F7);
+    border: 1px solid var(--border-color, #E5E5EA);
+    color: var(--text-primary, #1D1D1F);
     font-size: 24px;
     cursor: pointer;
     padding: 0;
@@ -798,7 +796,7 @@ body.is-mobile .editor-container {
 }
 
 .close-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--bg-hover, #E5E5EA);
 }
 
 .modal-body {
