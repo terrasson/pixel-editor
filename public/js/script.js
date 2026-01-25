@@ -5911,20 +5911,146 @@ async function updateUserProfileDisplay() {
             return;
         }
         
-        // Ajouter l'event listener pour ouvrir le menu de profil au clic (une seule fois)
+        // Ajouter l'event listener pour ouvrir le dropdown au clic (une seule fois)
         if (!userProfileDisplay.dataset.clickListenerAdded) {
             userProfileDisplay.style.cursor = 'pointer';
             userProfileDisplay.title = 'Cliquez pour gérer votre profil';
-            userProfileDisplay.addEventListener('click', () => {
-                if (typeof showProfileMenu === 'function') {
-                    showProfileMenu();
-                } else if (typeof window.showProfileMenu === 'function') {
-                    window.showProfileMenu();
-                } else if (typeof window.initUserProfileFlow === 'function') {
-                    window.initUserProfileFlow(true);
+            
+            const userDropdown = document.getElementById('userDropdown');
+            const dropdownUserName = document.getElementById('dropdownUserName');
+            
+            if (!userDropdown) {
+                console.warn('userDropdown non trouvé');
+                return;
+            }
+            
+            // Mettre à jour le nom dans le dropdown
+            if (dropdownUserName && userName) {
+                dropdownUserName.textContent = userName.textContent || 'Utilisateur';
+            }
+            
+            // Toggle dropdown au clic
+            userProfileDisplay.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (userDropdown) {
+                    const isOpen = userDropdown.classList.contains('open');
+                    userDropdown.classList.toggle('open');
+                    console.log('Dropdown toggled, isOpen:', !isOpen);
+                } else {
+                    console.warn('userDropdown non trouvé dans le click handler');
                 }
             });
+            
+            // Fermer le dropdown quand on clique ailleurs
+            document.addEventListener('click', (e) => {
+                if (userDropdown && !userProfileDisplay.contains(e.target) && !userDropdown.contains(e.target)) {
+                    userDropdown.classList.remove('open');
+                }
+            });
+            
+            // Gérer les boutons du dropdown
+            const profileBtn = document.getElementById('profileBtn');
+            const logoutBtnDropdown = document.getElementById('logoutBtnDropdown');
+            
+            if (profileBtn) {
+                profileBtn.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    if (typeof window.initUserProfileFlow === 'function') {
+                        window.initUserProfileFlow(true);
+                    } else if (typeof showProfileMenu === 'function') {
+                        showProfileMenu();
+                    }
+                });
+            }
+            
+            if (logoutBtnDropdown) {
+                logoutBtnDropdown.addEventListener('click', async () => {
+                    userDropdown.classList.remove('open');
+                    const logoutBtn = document.getElementById('logoutBtn');
+                    if (logoutBtn) {
+                        logoutBtn.click();
+                    } else if (window.authService) {
+                        const result = await window.authService.signOut();
+                        if (result.success) {
+                            window.location.href = '/login.html';
+                        }
+                    }
+                });
+            }
+            
+            // Connecter les boutons du dropdown aux fonctions existantes
+            const saveBtnDropdown = document.getElementById('saveBtnDropdown');
+            const loadBtnDropdown = document.getElementById('loadBtnDropdown');
+            const loadLocalBtnDropdown = document.getElementById('loadLocalBtnDropdown');
+            const exportGifBtnDropdown = document.getElementById('exportGifBtnDropdown');
+            const photoToPixelBtnDropdown = document.getElementById('photoToPixelBtnDropdown');
+            const templateBtnDropdown = document.getElementById('templateBtnDropdown');
+            const publishTemplateBtnDropdown = document.getElementById('publishTemplateBtnDropdown');
+            
+            if (saveBtnDropdown) {
+                saveBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    const saveBtn = document.getElementById('saveBtn') || document.getElementById('saveBtn2');
+                    if (saveBtn) saveBtn.click();
+                });
+            }
+            
+            if (loadBtnDropdown) {
+                loadBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    const loadBtn = document.getElementById('loadBtn') || document.getElementById('loadBtn2');
+                    if (loadBtn) loadBtn.click();
+                });
+            }
+            
+            if (loadLocalBtnDropdown) {
+                loadLocalBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    const loadLocalBtn = document.getElementById('loadLocalBtn') || document.getElementById('loadLocalBtn2');
+                    if (loadLocalBtn) loadLocalBtn.click();
+                });
+            }
+            
+            if (exportGifBtnDropdown) {
+                exportGifBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    const exportGifBtn = document.getElementById('exportGifBtn') || document.getElementById('exportGifBtn2');
+                    if (exportGifBtn) exportGifBtn.click();
+                });
+            }
+            
+            if (photoToPixelBtnDropdown) {
+                photoToPixelBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    const photoToPixelBtn = document.getElementById('photoToPixelBtn') || document.getElementById('photoToPixelBtn2');
+                    if (photoToPixelBtn) photoToPixelBtn.click();
+                });
+            }
+            
+            if (templateBtnDropdown) {
+                templateBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    const templateBtn = document.getElementById('templateBtn') || document.getElementById('templateBtn2');
+                    if (templateBtn) templateBtn.click();
+                });
+            }
+            
+            if (publishTemplateBtnDropdown) {
+                publishTemplateBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    const publishTemplateBtn = document.getElementById('publishTemplateBtn') || document.getElementById('publishTemplateBtnMobile');
+                    if (publishTemplateBtn) publishTemplateBtn.click();
+                });
+            }
+            
             userProfileDisplay.dataset.clickListenerAdded = 'true';
+        }
+        
+        // Mettre à jour le nom dans le dropdown si le profil change
+        const dropdownUserName = document.getElementById('dropdownUserName');
+        if (dropdownUserName && userName) {
+            dropdownUserName.textContent = userName.textContent || 'Utilisateur';
         }
         
         // Charger le profil utilisateur
@@ -5948,17 +6074,37 @@ async function updateUserProfileDisplay() {
                 // Afficher le pseudo
                 userName.textContent = username;
                 userName.title = userEmail; // Email en tooltip
+                
+                // Mettre à jour le nom dans le dropdown
+                const dropdownUserName = document.getElementById('dropdownUserName');
+                if (dropdownUserName) {
+                    dropdownUserName.textContent = username;
+                }
             } else {
                 // Pas de profil, afficher l'email
                 userAvatar.innerHTML = '<div style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>';
-                userName.textContent = userEmail.split('@')[0] || 'Utilisateur';
+                const fallbackUsername = userEmail.split('@')[0] || 'Utilisateur';
+                userName.textContent = fallbackUsername;
                 userName.title = userEmail;
+                
+                // Mettre à jour le nom dans le dropdown
+                const dropdownUserName = document.getElementById('dropdownUserName');
+                if (dropdownUserName) {
+                    dropdownUserName.textContent = fallbackUsername;
+                }
             }
         } else {
             // Fallback si dbService n'est pas disponible
             userAvatar.innerHTML = '<div style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>';
-            userName.textContent = userEmail.split('@')[0] || 'Utilisateur';
+            const fallbackUsername = userEmail.split('@')[0] || 'Utilisateur';
+            userName.textContent = fallbackUsername;
             userName.title = userEmail;
+            
+            // Mettre à jour le nom dans le dropdown
+            const dropdownUserName = document.getElementById('dropdownUserName');
+            if (dropdownUserName) {
+                dropdownUserName.textContent = fallbackUsername;
+            }
         }
     } catch (error) {
         console.error('Erreur lors de la mise à jour de l\'affichage du profil:', error);

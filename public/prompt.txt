@@ -1,0 +1,129 @@
+Parfait, c’est très clair 👍
+Voici **le prompt mis à jour**, en **conservant le bandeau vertical gauche** pour les outils/palettes, et en **déplaçant uniquement les boutons secondaires** dans le menu avatar du bandeau supérieur.
+
+Tu peux l’utiliser tel quel dans **Antigravity**, avec ton screenshot.
+
+---
+
+## 🎯 Prompt Antigravity – Refonte UI de *pixel-editor*
+
+> **Contexte :**
+> Je travaille sur l’interface d’une application nommée **pixel-editor**, dédiée à la **création d’interfaces et d’applications via des outils de pixel-editing**.
+> La refonte est réalisée avec **Antigravity (logiciel IA de création d’interfaces et d’applications)**.
+> Un **screenshot de la version web actuelle** est fourni comme base de travail.
+
+> **Objectif général :**
+> Moderniser et alléger l’interface de *pixel-editor* tout en **conservant sa logique fonctionnelle**, afin d’obtenir un design clair, actuel et professionnel, cohérent entre web et mobile.
+
+---
+
+### 🎨 Direction artistique & identité visuelle
+
+* Supprimer le **dégradé rose/violet** existant.
+* Passer à une **interface claire et lumineuse**, majoritairement **blanche**.
+* Définir **une seule couleur principale identifiable**, moderne et sobre, destinée à devenir la **couleur du futur logo de pixel-editor**.
+* Utiliser cette couleur avec parcimonie :
+
+  * boutons d’action principaux
+  * éléments actifs
+  * indicateurs d’état
+* Style :
+
+  * UI moderne / SaaS
+  * minimaliste
+  * typographie sans-serif lisible
+  * espacements aérés
+
+---
+
+### 🧭 Structure & navigation
+
+#### Bandeau vertical gauche (à conserver)
+
+* **Conserver le bandeau vertical gauche**.
+* Ce bandeau doit contenir **uniquement les éléments essentiels à la création** :
+
+  * palettes de couleurs
+  * outils de pixel / dessin
+  * outils fréquemment utilisés
+* Optimiser la lisibilité :
+
+  * icônes claires
+  * regroupement logique
+  * réduction du bruit visuel
+
+#### Bandeau horizontal supérieur (top bar)
+
+* Ajouter / moderniser un **bandeau horizontal en haut** :
+
+  **À gauche :**
+
+  * Nom de l’application : **pixel-editor**
+  * Emplacement pour un futur logo
+
+  **À droite :**
+
+  * Icône de profil utilisateur sous forme de **cercle avec avatar**
+
+---
+
+### 👤 Menu avatar (allègement de l’interface)
+
+* Au clic ou au survol de l’avatar :
+
+  * Afficher un **menu déroulant ou popup menu**
+* Ce menu doit regrouper les **boutons secondaires ou moins utilisés**, auparavant présents dans le bandeau gauche, par exemple :
+
+  * paramètres globaux
+  * préférences
+  * gestion du compte / profil
+  * aide
+  * actions non liées directement au pixel-editing
+  * déconnexion
+* Objectif :
+
+  * alléger visuellement le bandeau gauche
+  * recentrer ce bandeau sur les outils de création uniquement
+
+---
+
+### 📱 Responsive & cohérence Web / Mobile
+
+* Interface pensée **mobile-first**.
+* Cohérence graphique et UX entre web et mobile.
+* Sur mobile :
+
+  * bandeau supérieur conservé
+  * bandeau outils adapté (icônes, scroll, collapse)
+  * menu avatar accessible facilement
+
+---
+
+### 🧠 UX & ressenti attendu
+
+* Interface :
+
+  * moderne
+  * légère
+  * orientée productivité
+* Priorité donnée aux outils de création.
+* Réduction de la charge cognitive.
+* Navigation fluide et intuitive.
+
+---
+
+### 🛠️ Contraintes implicites
+
+* Design réaliste et exploitable en production.
+* Composants UI cohérents (boutons, palettes, menus, icônes).
+* États hover, actif et focus visibles mais discrets.
+
+---
+
+Si tu veux aller plus loin, je peux :
+
+* 🎨 te proposer **une couleur principale idéale** pour pixel-editor
+* 🧩 créer une **version courte ultra-optimisée IA**
+* 🧠 t’aider à définir un **design system minimal (tokens, spacing, typo)**
+
+Dis-moi 👍
