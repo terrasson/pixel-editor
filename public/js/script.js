@@ -5071,14 +5071,19 @@ function showFileLoadDialog() {
                     📁 Parcourir les fichiers
                     <small>Sélectionner un fichier .pixelart depuis votre appareil</small>
                 </button>
-                
+
+                <button id="importPixelArtBtn" class="load-option">
+                    🖼️ Importer une image pixel art
+                    <small>PNG, WebP, JPG, GIF — place l'image sur la grille sans modifier les pixels</small>
+                </button>
+
                 <button id="pasteProject" class="load-option">
                     📋 Coller depuis le presse-papier
                     <small>Si vous avez copié un lien de projet</small>
                 </button>
-                
+
                 <div class="drop-zone" id="dropZoneLoad">
-                    📤 Ou glissez-déposez un fichier .pixelart ici
+                    📤 Ou glissez-déposez un fichier .pixelart ou une image ici
                 </div>
             </div>
             
@@ -5113,6 +5118,28 @@ function showFileLoadDialog() {
         input.click();
     });
     
+    // Importer une image pixel art existante
+    dialog.querySelector('#importPixelArtBtn').addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/png,image/webp,image/jpeg,image/gif,image/bmp,.png,.webp,.jpg,.jpeg,.gif,.bmp';
+
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    const result = await importPixelArtImage(file);
+                    dialog.remove();
+                    alert(`✅ Image importée avec succès !\n\n• Taille détectée : ${result.artW}×${result.artH} pixels${result.pixelSize > 1 ? ` (zoom ×${result.pixelSize} détecté)` : ''}\n• Couleurs uniques : ${result.totalColors}`);
+                } catch (err) {
+                    alert(`❌ Erreur lors de l'import : ${err.message}`);
+                }
+            }
+        };
+
+        input.click();
+    });
+
     // Coller depuis le presse-papier
     dialog.querySelector('#pasteProject').addEventListener('click', async () => {
         try {
@@ -5176,23 +5203,183 @@ function showFileLoadDialog() {
     
     dropZone.addEventListener('drop', async (e) => {
         const files = e.dataTransfer.files;
-        
+
         if (files.length > 0) {
             const file = files[0];
-            
-            // Plus permissif pour la compatibilité iOS
-            if (file.type === 'application/json' || 
-                file.type === 'text/plain' || 
+
+            // Image pixel art (PNG, WebP, JPG, GIF, BMP)
+            if (file.type.startsWith('image/') ||
+                file.name.endsWith('.png') ||
+                file.name.endsWith('.webp') ||
+                file.name.endsWith('.jpg') ||
+                file.name.endsWith('.jpeg') ||
+                file.name.endsWith('.gif') ||
+                file.name.endsWith('.bmp')) {
+                try {
+                    const result = await importPixelArtImage(file);
+                    dialog.remove();
+                    alert(`✅ Image importée avec succès !\n\n• Taille détectée : ${result.artW}×${result.artH} pixels${result.pixelSize > 1 ? ` (zoom ×${result.pixelSize} détecté)` : ''}\n• Couleurs uniques : ${result.totalColors}`);
+                } catch (err) {
+                    alert(`❌ Erreur lors de l'import : ${err.message}`);
+                }
+            // Projet JSON / .pixelart / .txt
+            } else if (file.type === 'application/json' ||
+                file.type === 'text/plain' ||
                 file.type === 'text/json' ||
-                file.name.endsWith('.json') || 
-                file.name.endsWith('.pixelart') || 
+                file.name.endsWith('.json') ||
+                file.name.endsWith('.pixelart') ||
                 file.name.endsWith('.txt')) {
                 await importSharedProject(file);
                 dialog.remove();
             } else {
-                alert('❌ Veuillez déposer un fichier .json, .pixelart ou .txt');
+                alert('❌ Format non supporté.\n\nFichiers acceptés :\n• Projets : .json, .pixelart, .txt\n• Images pixel art : .png, .webp, .jpg, .gif, .bmp');
             }
         }
+    });
+}
+
+// ========================================
+// IMPORT IMAGE PIXEL ART
+// ========================================
+
+/**
+ * Détecte le facteur de zoom d'une image pixel art agrandie.
+ * Ex : une image 320×320 qui est en réalité un pixel art 32×32 dessiné à ×10
+ * retourne 10. Si l'image est déjà ≤ GRID_SIZE, retourne 1.
+ */
+function detectPixelBlockSize(width, height) {
+    // L'image rentre déjà dans la grille → pas de réduction nécessaire
+    if (width <= GRID_SIZE && height <= GRID_SIZE) return 1;
+
+    // On cherche le plus petit facteur entier qui ramène LES DEUX dimensions à ≤ GRID_SIZE
+    const minFactor = Math.ceil(Math.max(width, height) / GRID_SIZE);
+
+    for (let factor = minFactor; factor <= Math.max(width, height); factor++) {
+        if (width % factor === 0 && height % factor === 0) {
+            const resultW = width / factor;
+            const resultH = height / factor;
+            if (resultW <= GRID_SIZE && resultH <= GRID_SIZE) {
+                return factor;
+            }
+        }
+    }
+
+    // Fallback : facteur minimal pour entrer dans GRID_SIZE
+    return minFactor;
+}
+
+/**
+ * Importe une image pixel art (PNG, WebP, JPG, GIF, BMP) sur la grille.
+ * Utilise le rendu nearest-neighbor (pas de lissage) pour préserver
+ * les pixels exacts du pixel art. Centre l'image dans la grille 32×32.
+ */
+async function importPixelArtImage(file) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            img.onload = () => {
+                try {
+                    const srcW = img.naturalWidth;
+                    const srcH = img.naturalHeight;
+
+                    // Détecter le facteur de zoom (ex: 320×320 → facteur 10 → art 32×32)
+                    const pixelSize = detectPixelBlockSize(srcW, srcH);
+                    let artW = Math.round(srcW / pixelSize);
+                    let artH = Math.round(srcH / pixelSize);
+
+                    // Sécurité : jamais dépasser GRID_SIZE
+                    artW = Math.min(artW, GRID_SIZE);
+                    artH = Math.min(artH, GRID_SIZE);
+
+                    // Canvas à la taille réelle de l'art détecté
+                    const canvas = document.createElement('canvas');
+                    canvas.width = artW;
+                    canvas.height = artH;
+                    const ctx = canvas.getContext('2d');
+
+                    // ⚠️ Désactiver TOTALEMENT le lissage → nearest-neighbor pixel perfect
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.mozImageSmoothingEnabled = false;
+                    ctx.webkitImageSmoothingEnabled = false;
+                    ctx.msImageSmoothingEnabled = false;
+
+                    // Dessiner l'image réduite sans interpolation
+                    ctx.drawImage(img, 0, 0, artW, artH);
+
+                    const imageData = ctx.getImageData(0, 0, artW, artH);
+                    const pixels = imageData.data;
+
+                    // Créer une frame vide 32×32
+                    const newFrame = [];
+                    for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+                        newFrame.push({ color: '#FFFFFF', isEmpty: true });
+                    }
+
+                    // Centrer l'image dans la grille si elle est plus petite que 32×32
+                    const offsetX = Math.floor((GRID_SIZE - artW) / 2);
+                    const offsetY = Math.floor((GRID_SIZE - artH) / 2);
+
+                    const colorsUsed = new Set();
+
+                    for (let y = 0; y < artH; y++) {
+                        for (let x = 0; x < artW; x++) {
+                            const i = (y * artW + x) * 4;
+                            const r = pixels[i];
+                            const g = pixels[i + 1];
+                            const b = pixels[i + 2];
+                            const a = pixels[i + 3];
+
+                            const gridX = x + offsetX;
+                            const gridY = y + offsetY;
+
+                            if (gridX >= 0 && gridX < GRID_SIZE && gridY >= 0 && gridY < GRID_SIZE) {
+                                const gridIndex = gridY * GRID_SIZE + gridX;
+
+                                if (a < 128) {
+                                    // Pixel transparent → case vide
+                                    newFrame[gridIndex] = { color: '#FFFFFF', isEmpty: true };
+                                } else {
+                                    // Convertir r,g,b → hex
+                                    const hex = '#' + [r, g, b]
+                                        .map(v => v.toString(16).padStart(2, '0'))
+                                        .join('')
+                                        .toUpperCase();
+                                    newFrame[gridIndex] = { color: hex, isEmpty: false };
+                                    colorsUsed.add(hex);
+                                }
+                            }
+                        }
+                    }
+
+                    // Appliquer la frame sur la grille courante
+                    frames[currentFrame] = newFrame;
+                    loadFrame(currentFrame);
+                    updateFramesList();
+
+                    // Ajouter les couleurs détectées à la palette personnalisée
+                    colorsUsed.forEach(color => addCustomColor(color));
+                    updateColorPalette();
+
+                    resolve({
+                        artW,
+                        artH,
+                        pixelSize,
+                        totalColors: colorsUsed.size
+                    });
+
+                } catch (error) {
+                    reject(error);
+                }
+            };
+
+            img.onerror = () => reject(new Error('Impossible de charger l\'image. Vérifiez que le fichier est une image valide.'));
+            img.src = e.target.result;
+        };
+
+        reader.onerror = () => reject(new Error('Erreur lors de la lecture du fichier.'));
+        reader.readAsDataURL(file);
     });
 }
 
