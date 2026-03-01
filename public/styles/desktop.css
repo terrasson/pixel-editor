@@ -964,22 +964,21 @@ body {
     min-height: 0;
 }
 
-/* Grille 32×32 massive */
+/* Grille dynamique (taille contrôlée par JS via --grid-cols et --cell-size) */
 #pixelGrid {
-    --cell-size: min(calc((100vw - 480px) / 32),
-            /* Largeur - sidebars - gaps */
-            calc((100vh - 200px) / 32),
-            /* Hauteur - header - pub */
+    /* Valeurs par défaut 32×32, surchargées dynamiquement par JS */
+    --grid-cols: 32;
+    --cell-size: min(calc((100vw - 480px) / var(--grid-cols, 32)),
+            calc((100vh - 200px) / var(--grid-cols, 32)),
             28px
-            /* Cellules ÉNORMES pour desktop */
         );
 
-    width: calc(var(--cell-size) * 32);
-    height: calc(var(--cell-size) * 32);
+    width: calc(var(--cell-size) * var(--grid-cols, 32));
+    height: calc(var(--cell-size) * var(--grid-cols, 32));
 
     display: grid;
-    grid-template-columns: repeat(32, 1fr);
-    grid-template-rows: repeat(32, 1fr);
+    grid-template-columns: repeat(32, 1fr); /* fallback, surchargé par JS */
+    grid-template-rows: repeat(32, 1fr);    /* fallback, surchargé par JS */
     gap: 0;
 
     border: 3px solid rgba(255, 255, 255, 0.4);
@@ -989,17 +988,12 @@ body {
         0 12px 48px rgba(0, 0, 0, 0.15),
         inset 0 1px 0 rgba(255, 255, 255, 0.5);
     overflow: hidden;
-    /* Pour que les pixels ne débordent pas et respectent les angles arrondis */
     aspect-ratio: 1;
-    /* Garantir que la grille reste carrée */
 
-    /* Contraintes desktop avec responsivité améliorée */
-    min-width: calc(20px * 32);
-    min-height: calc(20px * 32);
-    max-width: calc(28px * 32);
-    max-height: calc(28px * 32);
-
-    /* Assurer que la grille reste carrée même en cas de redimensionnement */
+    min-width: calc(20px * var(--grid-cols, 32));
+    min-height: calc(20px * var(--grid-cols, 32));
+    max-width: calc(28px * var(--grid-cols, 32));
+    max-height: calc(28px * var(--grid-cols, 32));
 }
 
 .pixel {

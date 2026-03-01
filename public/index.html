@@ -130,6 +130,7 @@
                 <button id="deleteFrameBtn">Supprimer la frame</button>
                 <button id="previewBtn" title="Lancer/Arrêter l'animation">▶️</button>
                 <button id="fpsBtn" title="Régler la vitesse d'animation">⚙️ FPS</button>
+                <button id="gridSizeBtn" title="Changer la taille de la grille">📐 <span class="grid-size-indicator">32×32</span></button>
                 <button id="saveBtn">💾 Sauvegarder</button>
                 <button id="loadBtn">📂 Charger</button>
                 <button id="loadLocalBtn">🌐 Mes projets</button>
@@ -253,6 +254,39 @@
             </div>
         </div>
 
+        <!-- Modal pour sélectionner la taille de la grille -->
+        <div id="gridSizeModal" class="modal" style="display:none;">
+            <div class="modal-content grid-size-modal-content">
+                <div class="modal-header">
+                    <h3>📐 Taille de la grille</h3>
+                    <button id="closeGridSizeModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="grid-size-subtitle">Choisissez la résolution de votre pixel art</p>
+                    <div class="grid-size-options">
+                        <button class="grid-size-btn" data-size="8">
+                            <span class="grid-size-label">8×8</span>
+                            <span class="grid-size-desc">Icônes rétro</span>
+                        </button>
+                        <button class="grid-size-btn" data-size="16">
+                            <span class="grid-size-label">16×16</span>
+                            <span class="grid-size-desc">Sprites classiques</span>
+                        </button>
+                        <button class="grid-size-btn active" data-size="32">
+                            <span class="grid-size-label">32×32</span>
+                            <span class="grid-size-desc">Défaut</span>
+                        </button>
+                        <button class="grid-size-btn" data-size="64">
+                            <span class="grid-size-label">64×64</span>
+                            <span class="grid-size-desc">Détails fins</span>
+                        </button>
+                    </div>
+                    <p class="grid-size-warning">⚠️ Changer la taille effacera le contenu actuel.</p>
+                    <p class="grid-size-current">Taille actuelle : <strong class="grid-size-indicator">32×32</strong></p>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal custom pour sélectionner une couleur -->
         <div id="customColorModal" class="modal-overlay" style="display: none;">
             <div class="modal custom-color-modal">
@@ -348,6 +382,7 @@
             <div class="extra-tools">
                 <button id="previewBtn2" title="Lancer/Arrêter l'animation">▶️ Animation</button>
                 <button id="fpsBtnSidebar" title="Régler la vitesse d'animation">⚙️ Vitesse</button>
+                <button id="gridSizeBtnSidebar" title="Changer la taille de la grille">📐 <span class="grid-size-indicator">32×32</span></button>
                 <div class="fps-sidebar-panel" id="fpsSidebarPanel">
                     <div class="fps-sidebar-header">
                         <div class="fps-sidebar-value"><span id="fpsSidebarValue">24</span> FPS</div>

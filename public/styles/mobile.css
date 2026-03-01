@@ -1211,11 +1211,11 @@ body.is-mobile .editor-container {
     max-height: clamp(280px, calc(100dvh - 180px), 600px);
 }
 
-/* Grille de pixels - GARANTIE 32x32 cases exactes sur toutes plateformes */
+/* Grille de pixels - taille dynamique contrôlée par JS via --grid-cols */
 #pixelGrid {
     display: grid;
-    grid-template-columns: repeat(32, 1fr);
-    grid-template-rows: repeat(32, 1fr);
+    grid-template-columns: repeat(32, 1fr); /* fallback, surchargé par JS */
+    grid-template-rows: repeat(32, 1fr);    /* fallback, surchargé par JS */
     gap: 0;
     background: rgba(255, 255, 255, 0.98);
     border: 3px solid rgba(255, 255, 255, 0.4);
@@ -1223,27 +1223,26 @@ body.is-mobile .editor-container {
     aspect-ratio: 1 / 1;
     position: relative;
     margin: 0 auto;
-    
-    /* Calcul EXACT pour 32x32 cases avec clamp() pour plus de stabilité */
+
+    --grid-cols: 32;
     --cell-size: clamp(
         8px,
         min(
-            calc((100vw - max(20px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px) / 32),
-            calc((100vh - max(120px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px) / 32)
+            calc((100vw - max(20px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px) / var(--grid-cols, 32)),
+            calc((100vh - max(120px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px) / var(--grid-cols, 32))
         ),
         18px
     );
-    
-    width: calc(var(--cell-size) * 32);
-    height: calc(var(--cell-size) * 32);
-    
-    /* Contraintes absolues pour éviter les déformations */
-    min-width: calc(8px * 32);
-    min-height: calc(8px * 32);
-    max-width: calc(15px * 32);
-    max-height: calc(15px * 32);
-    
-    box-shadow: 
+
+    width: calc(var(--cell-size) * var(--grid-cols, 32));
+    height: calc(var(--cell-size) * var(--grid-cols, 32));
+
+    min-width: calc(8px * var(--grid-cols, 32));
+    min-height: calc(8px * var(--grid-cols, 32));
+    max-width: calc(15px * var(--grid-cols, 32));
+    max-height: calc(15px * var(--grid-cols, 32));
+
+    box-shadow:
         0 12px 48px rgba(0, 0, 0, 0.15),
         inset 0 1px 0 rgba(255, 255, 255, 0.5);
     overflow: hidden;

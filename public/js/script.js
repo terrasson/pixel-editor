@@ -24,7 +24,9 @@ let customColorModalState = {
 let animationFPS = 24; // FPS par défaut (cinéma)
 let autoSaveProjects = []; // Projets sauvegardés automatiquement en local
 const maxAutoSaveProjects = 10; // Nombre maximum de projets auto-sauvegardés
-const GRID_SIZE = 32;
+const DEFAULT_GRID_SIZE = 32;
+const VALID_GRID_SIZES = [8, 16, 32, 64];
+let currentGridSize = DEFAULT_GRID_SIZE;
 let currentUserProfile = null;
 let profileModalContext = 'prompt';
 let profileModalInitialized = false;
@@ -58,7 +60,7 @@ const PROFILE_USAGE_OPTIONS = Object.freeze([
 let userProfile = null;
 let userProfileFetched = false;
 
-function createEmptyFrame(width = GRID_SIZE, height = GRID_SIZE) {
+function createEmptyFrame(width = currentGridSize, height = currentGridSize) {
     const totalPixels = width * height;
     return Array.from({ length: totalPixels }, () => ({
         color: '#FFFFFF',
@@ -109,7 +111,7 @@ function normaliseFrames(rawFrames) {
         if (!Array.isArray(frame)) {
             return createEmptyFrame();
         }
-        if (frame.length !== GRID_SIZE * GRID_SIZE) {
+        if (frame.length !== currentGridSize * currentGridSize) {
             const normalised = createEmptyFrame();
             frame.slice(0, normalised.length).forEach((pixel, idx) => {
                 normalised[idx] = normalisePixel(pixel);
@@ -163,16 +165,46 @@ const maxHistorySize = 50; // Nombre maximum d'étapes dans l'historique
 let currentActionPixels = new Set(); // Pixels modifiés dans l'action actuelle
 let actionStartState = null; // État de la grille au début de l'action
 
-// Initialisation de la grille
-function initGrid() {
+// Applique les variables CSS dynamiques à la grille selon la taille
+function applyGridCSSVariables(size) {
     const grid = document.getElementById('pixelGrid');
-    for (let i = 0; i < 32 * 32; i++) {
+    if (!grid) return;
+
+    grid.style.setProperty('--grid-cols', size);
+    grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    grid.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+
+    if (window.innerWidth >= 1024) {
+        grid.style.setProperty('--cell-size',
+            `min(calc((100vw - 480px) / ${size}), calc((100vh - 200px) / ${size}), 28px)`);
+    } else {
+        grid.style.setProperty('--cell-size',
+            `clamp(8px, min(calc((100vw - 4px) / ${size}), calc((100vh - 120px) / ${size})), 18px)`);
+    }
+    grid.style.width = `calc(var(--cell-size) * ${size})`;
+    grid.style.height = `calc(var(--cell-size) * ${size})`;
+}
+
+// Initialisation de la grille (dynamique)
+function initGrid(size = currentGridSize) {
+    const grid = document.getElementById('pixelGrid');
+    if (!grid) return;
+
+    // Vider la grille existante
+    grid.innerHTML = '';
+
+    // Appliquer les variables CSS dynamiques
+    applyGridCSSVariables(size);
+
+    // Créer les pixels via un DocumentFragment (1 seul reflow)
+    const fragment = document.createDocumentFragment();
+    const total = size * size;
+    for (let i = 0; i < total; i++) {
         const pixel = document.createElement('div');
         pixel.className = 'pixel empty';
         pixel.addEventListener('mousedown', startDrawing);
         pixel.addEventListener('mouseover', draw);
         pixel.addEventListener('mouseup', stopDrawing);
-        // Support tactile pour la pipette
         pixel.addEventListener('touchstart', (e) => {
             e.preventDefault();
             if (isEyedropperMode) {
@@ -181,10 +213,120 @@ function initGrid() {
                 startDrawing(e);
             }
         });
-        grid.appendChild(pixel);
+        fragment.appendChild(pixel);
     }
-    
-    grid.addEventListener('mousedown', e => e.preventDefault());
+    grid.appendChild(fragment);
+
+    if (!grid._mousedownListenerAdded) {
+        grid.addEventListener('mousedown', e => e.preventDefault());
+        grid._mousedownListenerAdded = true;
+    }
+}
+
+// Recalculer les CSS si la fenêtre est redimensionnée
+window.addEventListener('resize', () => applyGridCSSVariables(currentGridSize));
+
+// ========================================
+// CHANGEMENT DE TAILLE DE GRILLE
+// ========================================
+
+/**
+ * Change la taille de la grille. Reconstruit le DOM, recrée les frames.
+ * @param {number} newSize - Nouvelle taille (8, 16, 32 ou 64)
+ * @param {Object} options
+ *   skipConfirm {boolean} - Ne pas demander confirmation (ex: import image)
+ *   newFrames {Array}     - Frames à charger directement (ex: chargement projet)
+ */
+function changeGridSize(newSize, options = {}) {
+    const { skipConfirm = false, newFrames = null } = options;
+
+    if (!VALID_GRID_SIZES.includes(newSize)) return false;
+    if (newSize === currentGridSize && !newFrames) return true;
+
+    // Vérifier si la grille contient du contenu
+    const hasContent = frames.some(f => f && f.some(p => p && !p.isEmpty));
+
+    if (hasContent && !skipConfirm) {
+        const ok = confirm(
+            `Changer la grille de ${currentGridSize}×${currentGridSize} à ${newSize}×${newSize} ?\n\n` +
+            `⚠️ Le contenu actuel sera effacé.`
+        );
+        if (!ok) return false;
+    }
+
+    // Stopper l'animation si en cours
+    if (isAnimationPlaying) stopAnimation();
+
+    // Vider l'historique (invalide pour la nouvelle taille)
+    history = [];
+    historyIndex = -1;
+    copiedFrame = null;
+
+    // Mettre à jour la taille courante
+    currentGridSize = newSize;
+
+    // Réinitialiser ou appliquer les frames fournies
+    if (newFrames) {
+        frames = newFrames;
+        currentFrame = Math.min(currentFrame, frames.length - 1);
+    } else {
+        frames = [createEmptyFrame()];
+        currentFrame = 0;
+    }
+
+    // Reconstruire la grille DOM
+    initGrid(newSize);
+
+    // Mettre à jour l'interface
+    updateFramesList();
+    loadFrame(currentFrame);
+    updateGridSizeIndicator(newSize);
+    updateGridSizeBtnStates(newSize);
+
+    return true;
+}
+
+function updateGridSizeIndicator(size) {
+    document.querySelectorAll('.grid-size-indicator').forEach(el => {
+        el.textContent = `${size}×${size}`;
+    });
+}
+
+function updateGridSizeBtnStates(size) {
+    document.querySelectorAll('.grid-size-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.size) === size);
+    });
+}
+
+function showGridSizeModal() {
+    const modal = document.getElementById('gridSizeModal');
+    if (modal) {
+        updateGridSizeBtnStates(currentGridSize);
+        modal.style.display = 'flex';
+    }
+}
+
+function initGridSizeModal() {
+    const modal = document.getElementById('gridSizeModal');
+    if (!modal) return;
+
+    document.getElementById('closeGridSizeModal')?.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+    });
+
+    modal.querySelectorAll('.grid-size-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const newSize = parseInt(btn.dataset.size, 10);
+            const success = changeGridSize(newSize);
+            if (success) {
+                modal.style.display = 'none';
+            }
+        });
+    });
 }
 
 // Fonctions de dessin
@@ -521,6 +663,7 @@ function autoSaveProjectLocal(name) {
         customColors: customColors,
         customPalette: customPalette,
         fps: animationFPS || 24,
+        gridSize: { width: currentGridSize, height: currentGridSize },
         signature: 'pixel-art-editor-v2',
         dateCreated: new Date().toISOString(),
         lastModified: new Date().toISOString()
@@ -659,6 +802,17 @@ async function showLocalProjects() {
                 window.currentTemplate = null;
             }
             
+            // Restaurer la taille de grille si présente
+            if (data.gridSize) {
+                const savedSize = data.gridSize.width || data.gridSize.height || DEFAULT_GRID_SIZE;
+                if (VALID_GRID_SIZES.includes(savedSize) && savedSize !== currentGridSize) {
+                    currentGridSize = savedSize;
+                    initGrid(savedSize);
+                    updateGridSizeIndicator(savedSize);
+                    updateGridSizeBtnStates(savedSize);
+                }
+            }
+
             frames = normaliseFrames(data.frames);
             currentFrame = data.current_frame ?? data.currentFrame ?? 0;
             if (currentFrame >= frames.length) {
@@ -2779,29 +2933,23 @@ function createFrameThumbnail(frame, frameIndex) {
     const thumbnail = document.createElement('div');
     thumbnail.className = 'frame-thumbnail';
     
-    // Utiliser 16x16 pour desktop et mobile (cohérence avec CSS)
-    let thumbnailSize = 16; // 16x16 partout pour correspondre au CSS
-    if (window.innerWidth <= 360 || (window.innerHeight <= 500 && window.matchMedia('(orientation: landscape)').matches)) {
-        thumbnailSize = 16; // Garder 16x16 même sur petits écrans pour cohérence
-    }
-    
-    const originalSize = 32;
-    const ratio = originalSize / thumbnailSize; // ratio = 2
-    
+    // Toujours 16×16 pour la miniature (taille fixe CSS)
+    const thumbnailSize = 16;
+
+    // Taille dynamique de la grille courante (8, 16, 32 ou 64)
+    const originalSize = currentGridSize;
+    // ratio = 0.5 pour 8×8, 1 pour 16×16, 2 pour 32×32, 4 pour 64×64
+    const ratio = originalSize / thumbnailSize;
+
     for (let row = 0; row < thumbnailSize; row++) {
         for (let col = 0; col < thumbnailSize; col++) {
             const pixel = document.createElement('div');
             pixel.className = 'thumbnail-pixel';
-            
-            // Calculer la zone correspondante dans la grille originale (2x2 pixels)
-            const startRow = Math.floor(row * ratio);
-            const startCol = Math.floor(col * ratio);
-            const endRow = Math.min(startRow + ratio, originalSize);
-            const endCol = Math.min(startCol + ratio, originalSize);
-            
-            // Prendre le pixel en haut à gauche de chaque zone 2x2 pour une représentation précise
-            // Cela garantit que chaque pixel de la miniature correspond exactement à une zone de la grille
-            const originalIndex = startRow * originalSize + startCol;
+
+            // Mapper la position thumbnail → position dans la grille source
+            const srcRow = Math.min(Math.floor(row * ratio), originalSize - 1);
+            const srcCol = Math.min(Math.floor(col * ratio), originalSize - 1);
+            const originalIndex = srcRow * originalSize + srcCol;
             
             // Obtenir la couleur du pixel correspondant
             let color = '#FFFFFF'; // Blanc par défaut
@@ -2985,7 +3133,8 @@ async function saveToFile() {
             frames: frames,
             currentFrame: currentFrame,
             customColors: customColors,
-            customPalette: customPalette, // Ajouter la palette personnalisée
+            customPalette: customPalette,
+            gridSize: { width: currentGridSize, height: currentGridSize },
             created: new Date().toISOString(),
             version: '2.0'
         };
@@ -3929,6 +4078,17 @@ async function loadFromServer() {
                         cleanUpMarkers();
                     }
                     
+                    // Restaurer la taille de grille si présente
+                    if (data.gridSize) {
+                        const savedSize = data.gridSize.width || data.gridSize.height || DEFAULT_GRID_SIZE;
+                        if (VALID_GRID_SIZES.includes(savedSize) && savedSize !== currentGridSize) {
+                            currentGridSize = savedSize;
+                            initGrid(savedSize);
+                            updateGridSizeIndicator(savedSize);
+                            updateGridSizeBtnStates(savedSize);
+                        }
+                    }
+
                     const parsedFrames = typeof data.frames === 'string' ? JSON.parse(data.frames) : data.frames;
                     frames = normaliseFrames(parsedFrames);
                     currentFrame = data.current_frame ?? data.currentFrame ?? 0;
@@ -4446,6 +4606,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initFPSSidebarPanel();
     // Initialiser le modal FPS
     initFPSModal();
+
+    // Initialiser la modal de taille de grille
+    initGridSizeModal();
+    document.getElementById('gridSizeBtn')?.addEventListener('click', showGridSizeModal);
+    document.getElementById('gridSizeBtnSidebar')?.addEventListener('click', showGridSizeModal);
+    updateGridSizeIndicator(currentGridSize);
     
     // Initialiser l'historique undo/redo APRÈS que la grille soit prête
     setTimeout(() => {
@@ -4592,6 +4758,17 @@ function importProjectData(projectData) {
             throw new Error('Données de projet invalides');
         }
         
+        // Restaurer la taille de grille AVANT normaliseFrames()
+        if (projectData.gridSize) {
+            const savedSize = projectData.gridSize.width || projectData.gridSize.height || DEFAULT_GRID_SIZE;
+            if (VALID_GRID_SIZES.includes(savedSize) && savedSize !== currentGridSize) {
+                currentGridSize = savedSize;
+                initGrid(savedSize);
+                updateGridSizeIndicator(savedSize);
+                updateGridSizeBtnStates(savedSize);
+            }
+        }
+
         // Importer le projet
         const parsedFrames = typeof projectData.frames === 'string' ? JSON.parse(projectData.frames) : projectData.frames;
         frames = normaliseFrames(parsedFrames);
@@ -4673,7 +4850,7 @@ function createShareableProject() {
         fps: animationFPS || 24,
         
         // Informations pour la compatibilité
-        gridSize: { width: 32, height: 32 },
+        gridSize: { width: currentGridSize, height: currentGridSize },
         totalFrames: frames.length,
         
         // Signature pour vérifier l'intégrité
@@ -5249,29 +5426,30 @@ function showFileLoadDialog() {
  */
 function detectPixelBlockSize(width, height) {
     // L'image rentre déjà dans la grille → pas de réduction nécessaire
-    if (width <= GRID_SIZE && height <= GRID_SIZE) return 1;
+    if (width <= currentGridSize && height <= currentGridSize) return 1;
 
-    // On cherche le plus petit facteur entier qui ramène LES DEUX dimensions à ≤ GRID_SIZE
-    const minFactor = Math.ceil(Math.max(width, height) / GRID_SIZE);
+    // On cherche le plus petit facteur entier qui ramène LES DEUX dimensions à ≤ currentGridSize
+    const minFactor = Math.ceil(Math.max(width, height) / currentGridSize);
 
     for (let factor = minFactor; factor <= Math.max(width, height); factor++) {
         if (width % factor === 0 && height % factor === 0) {
             const resultW = width / factor;
             const resultH = height / factor;
-            if (resultW <= GRID_SIZE && resultH <= GRID_SIZE) {
+            if (resultW <= currentGridSize && resultH <= currentGridSize) {
                 return factor;
             }
         }
     }
 
-    // Fallback : facteur minimal pour entrer dans GRID_SIZE
+    // Fallback : facteur minimal pour entrer dans currentGridSize
     return minFactor;
 }
 
 /**
  * Importe une image pixel art (PNG, WebP, JPG, GIF, BMP) sur la grille.
  * Utilise le rendu nearest-neighbor (pas de lissage) pour préserver
- * les pixels exacts du pixel art. Centre l'image dans la grille 32×32.
+ * les pixels exacts du pixel art. Centre l'image dans la grille.
+ * Si l'art détecté est plus grand que la grille actuelle, propose de l'agrandir.
  */
 async function importPixelArtImage(file) {
     return new Promise((resolve, reject) => {
@@ -5279,7 +5457,7 @@ async function importPixelArtImage(file) {
         const reader = new FileReader();
 
         reader.onload = (e) => {
-            img.onload = () => {
+            img.onload = async () => {
                 try {
                     const srcW = img.naturalWidth;
                     const srcH = img.naturalHeight;
@@ -5289,9 +5467,25 @@ async function importPixelArtImage(file) {
                     let artW = Math.round(srcW / pixelSize);
                     let artH = Math.round(srcH / pixelSize);
 
-                    // Sécurité : jamais dépasser GRID_SIZE
-                    artW = Math.min(artW, GRID_SIZE);
-                    artH = Math.min(artH, GRID_SIZE);
+                    // Si l'art est plus grand que la grille actuelle → proposer d'agrandir
+                    const maxDim = Math.max(artW, artH);
+                    if (maxDim > currentGridSize) {
+                        const fittingSize = VALID_GRID_SIZES.find(s => s >= maxDim);
+                        if (fittingSize) {
+                            const ok = confirm(
+                                `Image détectée : ${artW}×${artH} pixels.\n` +
+                                `La grille actuelle est ${currentGridSize}×${currentGridSize}.\n\n` +
+                                `Changer la grille à ${fittingSize}×${fittingSize} pour accueillir l'image entière ?`
+                            );
+                            if (ok) {
+                                changeGridSize(fittingSize, { skipConfirm: true });
+                            }
+                        }
+                    }
+
+                    // Sécurité : jamais dépasser currentGridSize après éventuel changement
+                    artW = Math.min(artW, currentGridSize);
+                    artH = Math.min(artH, currentGridSize);
 
                     // Canvas à la taille réelle de l'art détecté
                     const canvas = document.createElement('canvas');
@@ -5311,15 +5505,15 @@ async function importPixelArtImage(file) {
                     const imageData = ctx.getImageData(0, 0, artW, artH);
                     const pixels = imageData.data;
 
-                    // Créer une frame vide 32×32
+                    // Créer une frame vide à la taille courante
                     const newFrame = [];
-                    for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+                    for (let i = 0; i < currentGridSize * currentGridSize; i++) {
                         newFrame.push({ color: '#FFFFFF', isEmpty: true });
                     }
 
-                    // Centrer l'image dans la grille si elle est plus petite que 32×32
-                    const offsetX = Math.floor((GRID_SIZE - artW) / 2);
-                    const offsetY = Math.floor((GRID_SIZE - artH) / 2);
+                    // Centrer l'image dans la grille si elle est plus petite
+                    const offsetX = Math.floor((currentGridSize - artW) / 2);
+                    const offsetY = Math.floor((currentGridSize - artH) / 2);
 
                     const colorsUsed = new Set();
 
@@ -5334,14 +5528,12 @@ async function importPixelArtImage(file) {
                             const gridX = x + offsetX;
                             const gridY = y + offsetY;
 
-                            if (gridX >= 0 && gridX < GRID_SIZE && gridY >= 0 && gridY < GRID_SIZE) {
-                                const gridIndex = gridY * GRID_SIZE + gridX;
+                            if (gridX >= 0 && gridX < currentGridSize && gridY >= 0 && gridY < currentGridSize) {
+                                const gridIndex = gridY * currentGridSize + gridX;
 
                                 if (a < 128) {
-                                    // Pixel transparent → case vide
                                     newFrame[gridIndex] = { color: '#FFFFFF', isEmpty: true };
                                 } else {
-                                    // Convertir r,g,b → hex
                                     const hex = '#' + [r, g, b]
                                         .map(v => v.toString(16).padStart(2, '0'))
                                         .join('')
