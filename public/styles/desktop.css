@@ -966,20 +966,13 @@ body {
 
 /* Grille dynamique (taille contrôlée par JS via --grid-cols et --cell-size) */
 #pixelGrid {
-    /* Valeurs par défaut 32×32, surchargées dynamiquement par JS */
+    /* Viewport fixe — taille contrôlée par JS via applyGridCSSVariables() */
     --grid-cols: 32;
-    --cell-size: min(calc((100vw - 480px) / var(--grid-cols, 32)),
-            calc((100vh - 200px) / var(--grid-cols, 32)),
-            28px
-        );
+    /* width et height injectés par JS — viewport toujours fixe peu importe la résolution */
 
-    width: calc(var(--cell-size) * var(--grid-cols, 32));
-    height: calc(var(--cell-size) * var(--grid-cols, 32));
-
-    display: grid;
-    grid-template-columns: repeat(32, 1fr); /* fallback, surchargé par JS */
-    grid-template-rows: repeat(32, 1fr);    /* fallback, surchargé par JS */
-    gap: 0;
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1;
 
     border: 3px solid rgba(255, 255, 255, 0.4);
     border-radius: 16px;
@@ -987,14 +980,9 @@ body {
     box-shadow:
         0 12px 48px rgba(0, 0, 0, 0.15),
         inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    overflow: hidden;
-    aspect-ratio: 1;
-
-    min-width: calc(20px * var(--grid-cols, 32));
-    min-height: calc(20px * var(--grid-cols, 32));
-    max-width: calc(28px * var(--grid-cols, 32));
-    max-height: calc(28px * var(--grid-cols, 32));
 }
+
+/* La grille CSS (display:grid) est sur #pixelGridInner, géré par JS */
 
 .pixel {
     width: 100%;

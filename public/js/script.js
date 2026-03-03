@@ -166,23 +166,30 @@ let currentActionPixels = new Set(); // Pixels modifiés dans l'action actuelle
 let actionStartState = null; // État de la grille au début de l'action
 
 // Applique les variables CSS dynamiques à la grille selon la taille
+// Le viewport est TOUJOURS fixe (indépendant du nombre de cellules)
 function applyGridCSSVariables(size) {
     const grid = document.getElementById('pixelGrid');
+    const inner = document.getElementById('pixelGridInner');
     if (!grid) return;
 
-    grid.style.setProperty('--grid-cols', size);
-    grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-    grid.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+    const isDesktop = window.innerWidth >= 1024;
 
-    if (window.innerWidth >= 1024) {
-        grid.style.setProperty('--cell-size',
-            `min(calc((100vw - 480px) / ${size}), calc((100vh - 200px) / ${size}), 28px)`);
-    } else {
-        grid.style.setProperty('--cell-size',
-            `clamp(8px, min(calc((100vw - 4px) / ${size}), calc((100vh - 120px) / ${size})), 18px)`);
+    // Taille viewport fixe — même espace visuel peu importe 8×8 ou 64×64
+    const viewportExpr = isDesktop
+        ? 'min(calc(100vw - 480px), calc(100vh - 200px), 896px)'
+        : 'min(calc(100vw - 4px), calc(100vh - 120px), 560px)';
+
+    // #pixelGrid = viewport fixe, overflow hidden
+    grid.style.width  = `calc(${viewportExpr})`;
+    grid.style.height = `calc(${viewportExpr})`;
+    grid.style.setProperty('--grid-cols', size);
+    grid.style.setProperty('--cell-size', `calc(${viewportExpr} / ${size})`);
+
+    // #pixelGridInner = grille CSS (reçoit le zoom/pan via transform)
+    if (inner) {
+        inner.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+        inner.style.gridTemplateRows    = `repeat(${size}, 1fr)`;
     }
-    grid.style.width = `calc(var(--cell-size) * ${size})`;
-    grid.style.height = `calc(var(--cell-size) * ${size})`;
 }
 
 // Initialisation de la grille (dynamique)
@@ -190,8 +197,23 @@ function initGrid(size = currentGridSize) {
     const grid = document.getElementById('pixelGrid');
     if (!grid) return;
 
-    // Vider la grille existante
+    // Vider la grille + reset zoom/pan
     grid.innerHTML = '';
+    gridZoom = 1; gridPanX = 0; gridPanY = 0;
+
+    // Créer le wrapper interne (reçoit le transform zoom/pan)
+    const inner = document.createElement('div');
+    inner.id = 'pixelGridInner';
+    inner.style.cssText = [
+        'display: grid',
+        'width: 100%',
+        'height: 100%',
+        'position: absolute',
+        'top: 0',
+        'left: 0',
+        'transform-origin: 0 0',
+    ].join(';');
+    grid.appendChild(inner);
 
     // Appliquer les variables CSS dynamiques
     applyGridCSSVariables(size);
@@ -205,26 +227,119 @@ function initGrid(size = currentGridSize) {
         pixel.addEventListener('mousedown', startDrawing);
         pixel.addEventListener('mouseover', draw);
         pixel.addEventListener('mouseup', stopDrawing);
-        pixel.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (isEyedropperMode) {
-                pickColorFromPixel(e.target);
-            } else {
-                startDrawing(e);
-            }
-        });
         fragment.appendChild(pixel);
     }
-    grid.appendChild(fragment);
+    inner.appendChild(fragment);
 
     if (!grid._mousedownListenerAdded) {
-        grid.addEventListener('mousedown', e => e.preventDefault());
+        grid.addEventListener('mousedown', e => { if (e.button === 0) e.preventDefault(); });
         grid._mousedownListenerAdded = true;
+        initZoomPan();
     }
 }
 
 // Recalculer les CSS si la fenêtre est redimensionnée
 window.addEventListener('resize', () => applyGridCSSVariables(currentGridSize));
+
+// ========================================
+// ZOOM / PAN DE LA GRILLE
+// ========================================
+
+let gridZoom = 1;
+let gridPanX = 0;
+let gridPanY = 0;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 16;
+
+function applyGridTransform() {
+    const inner = document.getElementById('pixelGridInner');
+    if (inner) inner.style.transform = `translate(${gridPanX}px, ${gridPanY}px) scale(${gridZoom})`;
+}
+
+function clampPan() {
+    const grid = document.getElementById('pixelGrid');
+    if (!grid) return;
+    const size = grid.clientWidth;
+    const max = 0;
+    const min = -(size * gridZoom - size);
+    gridPanX = Math.max(min, Math.min(max, gridPanX));
+    gridPanY = Math.max(min, Math.min(max, gridPanY));
+}
+
+function zoomAtPoint(factor, clientX, clientY) {
+    const grid = document.getElementById('pixelGrid');
+    if (!grid) return;
+    const rect = grid.getBoundingClientRect();
+    // Point dans l'espace de la grille avant le zoom
+    const px = (clientX - rect.left - gridPanX) / gridZoom;
+    const py = (clientY - rect.top  - gridPanY) / gridZoom;
+    gridZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, gridZoom * factor));
+    // Réajuster le pan pour que le point reste sous le curseur
+    gridPanX = clientX - rect.left - px * gridZoom;
+    gridPanY = clientY - rect.top  - py * gridZoom;
+    clampPan();
+    applyGridTransform();
+}
+
+function resetZoom() {
+    gridZoom = 1; gridPanX = 0; gridPanY = 0;
+    applyGridTransform();
+}
+
+function pinchDist(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function initZoomPan() {
+    const grid = document.getElementById('pixelGrid');
+    if (!grid) return;
+
+    // --- Molette souris + trackpad pinch (ctrlKey) ---
+    grid.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (e.ctrlKey) {
+            // Pinch trackpad MacBook : deltaY proportionnel au pinch
+            zoomAtPoint(1 - e.deltaY * 0.01, e.clientX, e.clientY);
+        } else {
+            // Molette classique
+            zoomAtPoint(e.deltaY < 0 ? 1.15 : 0.87, e.clientX, e.clientY);
+        }
+    }, { passive: false });
+
+    // --- Clic droit maintenu = pan ---
+    let isPanning = false, panSX = 0, panSY = 0;
+    grid.addEventListener('mousedown', (e) => {
+        if (e.button === 2) {
+            e.preventDefault();
+            isPanning = true;
+            panSX = e.clientX - gridPanX;
+            panSY = e.clientY - gridPanY;
+        }
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (!isPanning) return;
+        gridPanX = e.clientX - panSX;
+        gridPanY = e.clientY - panSY;
+        clampPan();
+        applyGridTransform();
+    });
+    document.addEventListener('mouseup', (e) => {
+        if (e.button === 2) isPanning = false;
+    });
+
+    // Bloquer le menu contextuel sur la grille
+    grid.addEventListener('contextmenu', e => e.preventDefault());
+
+    // --- Double-clic gauche = reset zoom ---
+    grid.addEventListener('dblclick', (e) => {
+        if (e.button === 0 && gridZoom > 1) {
+            resetZoom();
+            e.stopPropagation();
+        }
+    });
+}
 
 // ========================================
 // CHANGEMENT DE TAILLE DE GRILLE
@@ -4174,39 +4289,89 @@ function initMobileFeatures() {
 }
 
 function optimizeTouchInteractions() {
-    // Optimiser le dessin tactile
+    const grid = document.getElementById('pixelGrid');
+    if (!grid) return;
+
     let touchStarted = false;
-    
-    document.getElementById('pixelGrid').addEventListener('touchstart', (e) => {
+    let lastPinchDist = null;
+    let lastPinchMX = 0;
+    let lastPinchMY = 0;
+
+    grid.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        touchStarted = true;
-        
-        const touch = e.touches[0];
-        const element = document.elementFromPoint(touch.clientX, touch.clientY);
-        
-        if (element && element.classList.contains('pixel')) {
-            startDrawing({ target: element });
-        }
-    }, { passive: false });
-    
-    document.getElementById('pixelGrid').addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        
-        if (touchStarted) {
+
+        if (e.touches.length === 2) {
+            // 2 doigts → démarrer pinch zoom/pan
+            touchStarted = false;
+            stopDrawing();
+            lastPinchDist = pinchDist(e.touches);
+            lastPinchMX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            lastPinchMY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        } else {
+            // 1 doigt → dessiner
+            touchStarted = true;
             const touch = e.touches[0];
             const element = document.elementFromPoint(touch.clientX, touch.clientY);
-            
+            if (element && element.classList.contains('pixel')) {
+                startDrawing({ target: element });
+            }
+        }
+    }, { passive: false });
+
+    grid.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+
+        if (e.touches.length === 2) {
+            // 2 doigts → zoom + pan simultanés
+            const dist = pinchDist(e.touches);
+            const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+            if (lastPinchDist) {
+                const rect = grid.getBoundingClientRect();
+                // Zoom centré sur le milieu des 2 doigts
+                const px = (lastPinchMX - rect.left - gridPanX) / gridZoom;
+                const py = (lastPinchMY - rect.top  - gridPanY) / gridZoom;
+                gridZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, gridZoom * (dist / lastPinchDist)));
+                gridPanX = lastPinchMX - rect.left - px * gridZoom;
+                gridPanY = lastPinchMY - rect.top  - py * gridZoom;
+                // Pan additionnel (déplacement du centre des 2 doigts)
+                gridPanX += mx - lastPinchMX;
+                gridPanY += my - lastPinchMY;
+                clampPan();
+                applyGridTransform();
+            }
+
+            lastPinchDist = dist;
+            lastPinchMX = mx;
+            lastPinchMY = my;
+
+        } else if (touchStarted) {
+            // 1 doigt → continuer le dessin
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
             if (element && element.classList.contains('pixel')) {
                 draw({ target: element });
             }
         }
     }, { passive: false });
-    
-    document.getElementById('pixelGrid').addEventListener('touchend', (e) => {
+
+    grid.addEventListener('touchend', (e) => {
         e.preventDefault();
-        touchStarted = false;
-        stopDrawing();
+        if (e.touches.length < 2) {
+            lastPinchDist = null;
+        }
+        if (e.touches.length === 0) {
+            touchStarted = false;
+            stopDrawing();
+        }
     }, { passive: false });
+
+    grid.addEventListener('touchcancel', () => {
+        touchStarted = false;
+        lastPinchDist = null;
+        stopDrawing();
+    });
 }
 
 // Fonction pour gérer l'affichage/masquage de la toolbar
