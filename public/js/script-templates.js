@@ -13,6 +13,10 @@
 (function () {
     'use strict';
 
+    // Taille fixe de la grille pour les modèles (toujours 32×32)
+    // Note : currentGridSize dans script.js peut varier, mais les templates sont conçus pour 32×32
+    const GRID_SIZE = 32;
+
     // Variable pour stocker le modèle actuellement chargé
     let currentTemplate = null;
     let isTemplateMode = false;
@@ -23,7 +27,7 @@
 
     // Attendre que le DOM et script.js soient chargés
     function waitForScript() {
-        if (typeof frames === 'undefined' || typeof GRID_SIZE === 'undefined') {
+        if (typeof frames === 'undefined' || typeof currentGridSize === 'undefined') {
             setTimeout(waitForScript, 100);
             return;
         }

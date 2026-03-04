@@ -284,7 +284,7 @@ class DatabaseService {
 
             const { data, error } = await this.supabase
                 .from('user_profiles')
-                .select('age_range, gender, country, region, updated_at')
+                .select('*')
                 .eq('user_id', userId)
                 .single();
 
@@ -1521,52 +1521,37 @@ class DatabaseService {
                 }
             }
             
-            // Préparer les données du profil
+            // Préparer les données du profil (UPSERT pour préserver l'avatar existant)
             const profileData = {
                 user_id: userId,
                 username: username.trim(),
                 updated_at: new Date().toISOString()
             };
-            
-            // Ajouter l'avatar si fourni
+
+            // Ajouter l'avatar uniquement s'il est fourni (sinon l'UPSERT préserve l'existant)
             if (avatarData !== null) {
                 profileData.avatar_data = avatarData;
                 profileData.avatar_size = avatarSize;
             }
-            
-            // Supprimer tous les profils existants pour cet utilisateur (nettoyage des doublons)
-            // Ensuite on en créera un nouveau propre
-            await this.supabase
-                .from('user_profiles')
-                .delete()
-                .eq('user_id', userId);
-            
-            // Insérer le nouveau profil (maintenant qu'on a nettoyé les anciens)
+
+            // UPSERT : crée ou met à jour le profil sans écraser l'avatar si non fourni
             const { data, error } = await this.supabase
                 .from('user_profiles')
-                .insert(profileData)
+                .upsert(profileData, { onConflict: 'user_id' })
                 .select()
                 .single();
-            
+
             if (error) {
-                console.error('Insert profile error:', error);
+                console.error('Upsert profile error:', error);
                 throw error;
             }
-            
+
             // Mettre à jour author_username dans tous les templates
             await this.supabase
                 .from('pixel_templates')
                 .update({ author_username: username.trim() })
                 .eq('author_id', userId);
-            
-            return { success: true, data };
-            
-            // Mettre à jour author_username dans tous les templates de l'utilisateur
-            await this.supabase
-                .from('pixel_templates')
-                .update({ author_username: username.trim() })
-                .eq('author_id', userId);
-            
+
             return { success: true, data };
         } catch (error) {
             console.error('Set user profile error:', error);
