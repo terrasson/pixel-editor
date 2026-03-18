@@ -1,6 +1,7 @@
 # Éditeur Pixel Art
 
 Un éditeur de pixel art interactif avec support des animations et interface responsive.
+<img width="1470" height="810" alt="Capture d’écran 2026-03-18 à 19 25 45" src="https://github.com/user-attachments/assets/9f0224ea-2457-432b-9ec3-5cd52e07cab8" />
 
 ## 🎨 Fonctionnalités
 
