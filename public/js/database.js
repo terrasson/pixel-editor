@@ -933,24 +933,12 @@ class DatabaseService {
                 .select('*')
                 .eq('user_id', userId)
                 .eq('name', projectName)
-                .single();
+                .maybeSingle();
 
             if (projectError) throw projectError;
             if (!project) throw new Error('Project not found');
 
-            // Check if public share already exists
-            const { data: existing } = await this.supabase
-                .from('public_shares')
-                .select('*')
-                .eq('project_id', project.id)
-                .single();
-
-            if (existing) {
-                // Return existing share
-                return { success: true, data: existing, isNew: false };
-            }
-
-            // Create snapshot of project data
+            // Create snapshot of project data (always fresh)
             const projectSnapshot = {
                 name: project.name,
                 frames: project.frames,
@@ -960,6 +948,30 @@ class DatabaseService {
                 custom_colors: project.custom_colors,
                 created_at: project.created_at
             };
+
+            // Check if public share already exists
+            const { data: existing } = await this.supabase
+                .from('public_shares')
+                .select('*')
+                .eq('project_id', project.id)
+                .maybeSingle();
+
+            if (existing) {
+                // Update snapshot with latest project data
+                const { data: updated, error: updateError } = await this.supabase
+                    .from('public_shares')
+                    .update({
+                        project_snapshot: projectSnapshot,
+                        project_thumbnail: project.thumbnail,
+                        project_name: project.name
+                    })
+                    .eq('id', existing.id)
+                    .select()
+                    .single();
+
+                if (updateError) throw updateError;
+                return { success: true, data: updated, isNew: false };
+            }
 
             // Calculate expiry date if specified
             let expiresAt = null;

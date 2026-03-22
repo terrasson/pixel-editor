@@ -202,6 +202,34 @@
             margin-top: 5px;
         }
 
+        .animation-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .btn-play {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 8px;
+            color: white;
+            padding: 8px 18px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-play:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .frame-counter {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
         @media (max-width: 768px) {
             .shared-header h1 {
                 font-size: 2rem;
@@ -250,6 +278,11 @@
     <script>
         let currentShare = null;
         let currentUser = null;
+        let animationInterval = null;
+        let animationFrames = [];
+        let animationFps = 24;
+        let animationIndex = 0;
+        let animationPlaying = false;
 
         // Initialize
         async function init() {
@@ -314,6 +347,10 @@
 
                     <div class="project-preview">
                         <canvas id="pixelCanvas" width="320" height="320"></canvas>
+                        <div class="animation-controls" id="animationControls" style="display:none;">
+                            <button class="btn-play" id="playPauseBtn" onclick="toggleAnimation()">⏸ Pause</button>
+                            <span class="frame-counter" id="frameCounter">1 / 1</span>
+                        </div>
                     </div>
 
                     <div class="action-buttons">
@@ -361,33 +398,87 @@
             updateMetaTags(share);
         }
 
-        function renderFrame(snapshot) {
+        function drawFrameOnCanvas(frame) {
             const canvas = document.getElementById('pixelCanvas');
-            if (!canvas) return;
+            if (!canvas || !frame) return;
 
             const ctx = canvas.getContext('2d');
-            const frames = snapshot.frames || [];
-            const currentFrameIndex = snapshot.current_frame || 0;
-
-            if (frames.length === 0) return;
-
-            const frame = frames[currentFrameIndex];
             const gridSize = Math.sqrt(frame.length);
             const pixelSize = canvas.width / gridSize;
 
-            // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw pixels
             frame.forEach((pixel, index) => {
                 if (!pixel || pixel.isEmpty) return;
-
                 const x = (index % gridSize) * pixelSize;
                 const y = Math.floor(index / gridSize) * pixelSize;
-
                 ctx.fillStyle = pixel.color || '#FFFFFF';
                 ctx.fillRect(x, y, pixelSize, pixelSize);
             });
+        }
+
+        function updateFrameCounter() {
+            const counter = document.getElementById('frameCounter');
+            if (counter) counter.textContent = `${animationIndex + 1} / ${animationFrames.length}`;
+        }
+
+        function startAnimation() {
+            if (animationInterval) clearInterval(animationInterval);
+            animationPlaying = true;
+            document.getElementById('playPauseBtn').textContent = '⏸ Pause';
+            animationInterval = setInterval(() => {
+                animationIndex = (animationIndex + 1) % animationFrames.length;
+                try {
+                    drawFrameOnCanvas(animationFrames[animationIndex]);
+                } catch(e) {
+                    console.error('Frame draw error:', e);
+                }
+                updateFrameCounter();
+            }, 1000 / animationFps);
+        }
+
+        function stopAnimation() {
+            if (animationInterval) clearInterval(animationInterval);
+            animationInterval = null;
+            animationPlaying = false;
+            document.getElementById('playPauseBtn').textContent = '▶ Play';
+        }
+
+        function toggleAnimation() {
+            if (animationPlaying) stopAnimation();
+            else startAnimation();
+        }
+
+        function normaliseFrame(frame) {
+            if (Array.isArray(frame)) return frame;
+            if (frame && Array.isArray(frame.pixels)) return frame.pixels;
+            return null;
+        }
+
+        function renderFrame(snapshot) {
+            const rawFrames = snapshot.frames || [];
+            animationFrames = Array.isArray(rawFrames)
+                ? rawFrames.map(normaliseFrame).filter(f => f !== null)
+                : [];
+            animationFps = snapshot.fps || 24;
+            animationIndex = snapshot.current_frame || 0;
+
+            if (animationFrames.length === 0) return;
+
+            // Draw initial frame
+            try {
+                drawFrameOnCanvas(animationFrames[animationIndex]);
+            } catch(e) {
+                console.error('Draw error:', e);
+            }
+
+            // Show controls and start animation only if multi-frame
+            if (animationFrames.length > 1) {
+                const controls = document.getElementById('animationControls');
+                if (controls) controls.style.display = 'flex';
+                updateFrameCounter();
+                startAnimation();
+            }
         }
 
         function updateMetaTags(share) {
@@ -462,6 +553,11 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
+
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            if (animationInterval) clearInterval(animationInterval);
+        });
 
         // Start
         init();

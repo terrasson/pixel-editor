@@ -101,7 +101,11 @@ async function handleShareButtonClick() {
     }
 
     // Get current project name
-    const projectName = document.getElementById('projectTitle')?.textContent || 'Nouveau projet';
+    const projectName = window.currentProjectName || document.getElementById('projectTitle')?.textContent;
+    if (!projectName) {
+        alert('⚠️ Sauvegardez d\'abord votre projet avant de le partager.');
+        return;
+    }
 
     // Show loading state
     const button = event.currentTarget;

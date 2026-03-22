@@ -740,6 +740,7 @@ function saveCustomColors() {
 
 // Fonctions Supabase pour la sauvegarde en ligne
 let currentProjectId = null; // ID du projet actuel pour les mises à jour
+window.currentProjectName = null; // Nom du projet actif (pour le partage)
 
 async function loadSupabaseProjects() {
     try {
@@ -902,6 +903,8 @@ async function showLocalProjects() {
                 alert('❌ Erreur lors du chargement du projet: ' + (result.error || 'inconnue'));
                 return;
             }
+
+            window.currentProjectName = projectMeta.name;
 
             const data = result.data;
             console.log('📥 Projet Supabase chargé depuis dialog', {
@@ -4170,6 +4173,7 @@ async function loadFromServer() {
 
                 try {
                     const loadResult = await window.dbService.loadProject(projectName);
+                    if (loadResult.success) window.currentProjectName = projectName;
 
                     if (!loadResult.success) {
                         alert('❌ Erreur lors du chargement: ' + loadResult.error);
@@ -4556,6 +4560,7 @@ async function saveProjectSmart() {
 
             if (result.success) {
                 const action = result.isUpdate ? 'mis à jour' : 'créé';
+                window.currentProjectName = fileName;
                 console.log('✅ Project saved to Supabase:', result.data);
                 logUsageEvent('project_saved', {
                     name: fileName,
@@ -4652,7 +4657,10 @@ function initEventListeners() {
     document.getElementById('saveBtn')?.addEventListener('click', saveProjectSmart);
     document.getElementById('loadBtn')?.addEventListener('click', loadFromFile);
     document.getElementById('loadLocalBtn')?.addEventListener('click', showLocalProjects);
-    document.getElementById('shareProjectBtn')?.addEventListener('click', shareProject);
+    document.getElementById('shareProjectBtn')?.addEventListener('click', () => {
+        if (typeof handleShareButtonClick === 'function') handleShareButtonClick();
+        else shareProject();
+    });
     document.getElementById('exportGifBtn')?.addEventListener('click', exportToGif);
     document.getElementById('copyFrameBtn')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
@@ -6561,6 +6569,15 @@ async function updateUserProfileDisplay() {
                     userDropdown.classList.remove('open');
                     const exportGifBtn = document.getElementById('exportGifBtn') || document.getElementById('exportGifBtn2');
                     if (exportGifBtn) exportGifBtn.click();
+                });
+            }
+
+            const shareProjectBtnDropdown = document.getElementById('shareProjectBtnDropdown');
+            if (shareProjectBtnDropdown) {
+                shareProjectBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    const shareBtn = document.getElementById('shareProjectBtn') || document.getElementById('shareProjectBtn2');
+                    if (shareBtn) shareBtn.click();
                 });
             }
             

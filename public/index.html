@@ -98,6 +98,9 @@
                         <button id="exportGifBtnDropdown" class="dropdown-item">
                             🎬 Export GIF
                         </button>
+                        <button id="shareProjectBtnDropdown" class="dropdown-item">
+                            🔗 Partager
+                        </button>
                         <div class="dropdown-divider"></div>
                         <button id="photoToPixelBtnDropdown" class="dropdown-item">
                             📷 Photo → Pixel
@@ -135,6 +138,7 @@
                 <button id="loadBtn">📂 Charger</button>
                 <button id="loadLocalBtn">🌐 Mes projets</button>
                 <button id="exportGifBtn">🎬 Export GIF</button>
+                <button id="shareProjectBtn">🔗 Partager</button>
                 <button id="photoToPixelBtn" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">📷 Photo →
                     Pixel</button>
                 <button id="templateBtn" style="background: linear-gradient(135deg, #4CAF50, #45A049);">🧩 Modèles à
@@ -407,6 +411,7 @@
                 <button id="loadBtn2">📂 Charger</button>
                 <button id="loadLocalBtn2">🌐 Mes projets</button>
                 <button id="exportGifBtn2">🎬 Export GIF</button>
+                <button id="shareProjectBtn2">🔗 Partager</button>
                 <button id="photoToPixelBtn2" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">📷 Photo →
                     Pixel</button>
                 <button id="templateBtn2" style="background: linear-gradient(135deg, #4CAF50, #45A049);">🧩 Modèles à
@@ -444,7 +449,7 @@
     <script src="js/config/app-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/database.js"></script>
-    <!-- <script src="js/sharing.js"></script> DISABLED - See docs/SHARING-REIMPLEMENTATION-GUIDE.md -->
+    <script src="js/sharing.js"></script>
     <script>
         // Authentication check - must be logged in to use the app
         (async function () {
