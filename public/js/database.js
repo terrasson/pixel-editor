@@ -971,7 +971,8 @@ class DatabaseService {
                     .update({
                         project_snapshot: projectSnapshot,
                         project_thumbnail: project.thumbnail,
-                        project_name: project.name
+                        project_name: project.name,
+                        is_public_gallery: options.publishToGallery === true
                     })
                     .eq('id', keepId)
                     .select()
@@ -999,7 +1000,8 @@ class DatabaseService {
                     project_name: project.name,
                     project_thumbnail: project.thumbnail,
                     allow_duplicate: options.allowDuplicate !== false,
-                    expires_at: expiresAt
+                    expires_at: expiresAt,
+                    is_public_gallery: false
                 })
                 .select()
                 .single();
@@ -1020,6 +1022,17 @@ class DatabaseService {
         }
     }
 
+    // Set gallery visibility for a share
+    async setGalleryVisibility(shareId, isPublic) {
+        if (!this.supabase) this.init();
+        const { error } = await this.supabase
+            .from('public_shares')
+            .update({ is_public_gallery: isPublic })
+            .eq('id', shareId);
+        if (error) throw error;
+        return { success: true };
+    }
+
     // Get public gallery (all public shares)
     async getPublicGallery({ limit = 40, sortBy = 'recent' } = {}) {
         if (!this.supabase) this.init();
@@ -1030,6 +1043,7 @@ class DatabaseService {
             const { data, error } = await this.supabase
                 .from('public_shares')
                 .select('id, project_id, share_token, project_name, project_thumbnail, project_snapshot, view_count, duplicate_count, created_at')
+                .eq('is_public_gallery', true)
                 .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
                 .order(orderColumn, { ascending: false })
                 .limit(limit * 5); // fetch more to account for deduplication
@@ -1048,6 +1062,33 @@ class DatabaseService {
             return { success: true, data: deduped };
         } catch (error) {
             console.error('Get gallery error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Set whether a public share appears in the public gallery
+    async setGalleryVisibility(shareId, isPublic) {
+        if (!this.supabase) this.init();
+
+        try {
+            const userId = this.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            const { data, error } = await this.supabase
+                .from('public_shares')
+                .update({ is_public_gallery: isPublic })
+                .eq('id', shareId)
+                .eq('owner_id', userId)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('Set gallery visibility error:', error);
             return { success: false, error: error.message };
         }
     }

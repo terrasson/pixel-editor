@@ -121,35 +121,13 @@ async function handleShareButtonClick() {
 
         if (result.success) {
             const shareUrl = window.dbService.getShareableUrl(result.data.share_token);
+            const shareId = result.data.id;
 
             // Log that link was created
-            await window.dbService.logPublicShareAnalytics(result.data.id, 'link_copied');
+            await window.dbService.logPublicShareAnalytics(shareId, 'link_copied');
 
-            // Try to use Web Share API (mobile)
-            if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: `${projectName} - Pixel Art`,
-                        text: `Découvre mon pixel art "${projectName}" !`,
-                        url: shareUrl
-                    });
-
-                    // Success
-                    if (result.isNew) {
-                        showShareSuccessMessage(shareUrl, true);
-                    }
-                } catch (shareError) {
-                    // User cancelled or error
-                    if (shareError.name !== 'AbortError') {
-                        console.error('Share error:', shareError);
-                        // Fallback to copy
-                        await copyToClipboard(shareUrl, projectName);
-                    }
-                }
-            } else {
-                // Fallback for desktop - copy to clipboard
-                await copyToClipboard(shareUrl, projectName);
-            }
+            // Show the share modal with URL and gallery opt-in
+            showShareModal(shareUrl, shareId);
         } else {
             alert(`❌ Erreur lors de la création du lien :\n${result.error}`);
         }
@@ -162,25 +140,126 @@ async function handleShareButtonClick() {
     }
 }
 
-// Copy to clipboard with feedback
-async function copyToClipboard(url, projectName) {
-    try {
-        await navigator.clipboard.writeText(url);
-        showShareSuccessMessage(url, false);
-    } catch (error) {
-        console.error('Clipboard error:', error);
-        // Fallback for older browsers
-        showShareLinkDialog(url, projectName);
-    }
-}
+// Show share modal with URL, copy button, and gallery opt-in
+function showShareModal(url, shareId) {
+    // Remove any existing share modal
+    const existing = document.getElementById('shareResultModal');
+    if (existing) existing.remove();
 
-// Show success message with link
-function showShareSuccessMessage(url, wasShared) {
-    const message = wasShared
-        ? `✅ Lien partagé avec succès !\n\n📋 Le lien a aussi été copié dans le presse-papier :\n${url}`
-        : `✅ Lien copié dans le presse-papier !\n\n📤 Partagez-le où vous voulez :\n${url}`;
+    const overlay = document.createElement('div');
+    overlay.id = 'shareResultModal';
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    `;
 
-    alert(message);
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background: rgba(20, 20, 30, 0.98);
+        padding: 30px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        max-width: 90vw;
+        width: 500px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    `;
+
+    dialog.innerHTML = `
+        <h3 style="margin: 0 0 20px 0; color: white; font-size: 1.3rem;">📤 Lien de partage</h3>
+        <p style="color: rgba(255, 255, 255, 0.8); margin: 0 0 15px 0;">
+            Copiez ce lien et partagez-le où vous voulez :
+        </p>
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input
+                id="shareResultUrl"
+                type="text"
+                value="${escapeHtml(url)}"
+                readonly
+                style="flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.1);
+                       border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px;
+                       color: white; font-size: 0.9rem;"
+                onclick="this.select()"
+            />
+            <button
+                id="shareResultCopyBtn"
+                style="padding: 12px 20px; background: linear-gradient(135deg, #007AFF, #5856D6);
+                       border: none; border-radius: 10px; color: white; cursor: pointer;
+                       font-weight: 600; white-space: nowrap;"
+            >
+                📋 Copier
+            </button>
+        </div>
+        <label style="display: flex; align-items: center; gap: 10px; color: rgba(255, 255, 255, 0.85);
+                      margin-bottom: 24px; cursor: pointer; user-select: none;">
+            <input
+                id="shareGalleryCheckbox"
+                type="checkbox"
+                style="width: 18px; height: 18px; cursor: pointer; accent-color: #007AFF;"
+            />
+            🖼️ Publier dans la galerie publique
+        </label>
+        <button
+            id="shareResultCloseBtn"
+            style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.1);
+                   border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px;
+                   color: white; cursor: pointer; font-weight: 600; font-size: 1rem;"
+        >
+            Fermer
+        </button>
+    `;
+
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    // Copy button handler
+    const copyBtn = dialog.querySelector('#shareResultCopyBtn');
+    copyBtn.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(url);
+            copyBtn.textContent = '✅ Copié !';
+            setTimeout(() => { copyBtn.textContent = '📋 Copier'; }, 2000);
+        } catch {
+            // Fallback for browsers without clipboard API
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try { document.execCommand('copy'); } catch { /* silent */ }
+            ta.remove();
+            copyBtn.textContent = '✅ Copié !';
+            setTimeout(() => { copyBtn.textContent = '📋 Copier'; }, 2000);
+        }
+    });
+
+    // Close button handler — update gallery visibility if checkbox is checked
+    const closeBtn = dialog.querySelector('#shareResultCloseBtn');
+    closeBtn.addEventListener('click', async () => {
+        const publish = dialog.querySelector('#shareGalleryCheckbox').checked;
+        if (publish) {
+            closeBtn.textContent = '⏳ Publication...';
+            closeBtn.disabled = true;
+            try {
+                await window.dbService.setGalleryVisibility(shareId, true);
+            } catch (err) {
+                console.error('Gallery visibility error:', err);
+            }
+        }
+        overlay.remove();
+    });
+
+    // Close when clicking outside the dialog
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeBtn.click();
+        }
+    });
 }
 
 // Fallback dialog to manually copy link
