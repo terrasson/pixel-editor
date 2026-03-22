@@ -174,7 +174,7 @@ function showShareModal(url, shareId) {
         <p style="color: rgba(255, 255, 255, 0.8); margin: 0 0 15px 0;">
             Copiez ce lien et partagez-le où vous voulez :
         </p>
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 12px;">
             <input
                 id="shareResultUrl"
                 type="text"
@@ -194,6 +194,16 @@ function showShareModal(url, shareId) {
                 📋 Copier
             </button>
         </div>
+        ${navigator.share ? `
+        <button
+            id="shareResultNativeBtn"
+            style="width: 100%; padding: 12px; background: linear-gradient(135deg, #34C759, #30A853);
+                   border: none; border-radius: 10px; color: white; cursor: pointer;
+                   font-weight: 600; font-size: 1rem; margin-bottom: 20px;"
+        >
+            📲 Partager via iMessage, AirDrop...
+        </button>` : ''}
+        <div style="margin-bottom: 20px; height: 1px; background: rgba(255,255,255,0.1);"></div>
         <label style="display: flex; align-items: center; gap: 10px; color: rgba(255, 255, 255, 0.85);
                       margin-bottom: 24px; cursor: pointer; user-select: none;">
             <input
@@ -237,6 +247,18 @@ function showShareModal(url, shareId) {
             setTimeout(() => { copyBtn.textContent = '📋 Copier'; }, 2000);
         }
     });
+
+    // Native share button handler
+    const nativeBtn = dialog.querySelector('#shareResultNativeBtn');
+    if (nativeBtn) {
+        nativeBtn.addEventListener('click', async () => {
+            try {
+                await navigator.share({ url });
+            } catch (e) {
+                if (e.name !== 'AbortError') console.error('Share error:', e);
+            }
+        });
+    }
 
     // Close button handler — update gallery visibility if checkbox is checked
     const closeBtn = dialog.querySelector('#shareResultCloseBtn');
