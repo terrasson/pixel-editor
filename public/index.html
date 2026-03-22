@@ -1,682 +1,646 @@
 <!DOCTYPE html>
-<html lang="fr">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Editor — Free Online Pixel Art Tool</title>
+    <meta name="description" content="Create your first pixel art in 30 seconds. Free, fun, no download needed. Works on mobile and desktop.">
 
-    <!-- App mobile settings -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Pixel-Editor">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Pixel-Editor">
-
-    <!-- Theme colors -->
-    <meta name="theme-color" content="#007AFF">
-    <meta name="msapplication-TileColor" content="#007AFF">
-
-    <title>Éditeur Pixel Art</title>
-
-    <!-- Favicons et icônes -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-
-    <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="assets/icons/icon-192.png">
-
-    <!-- Android/Chrome icons -->
-    <link rel="icon" type="image/svg+xml" sizes="192x192" href="assets/icons/icon-192.svg">
-
-    <!-- Web App Manifest -->
-    <link rel="manifest" href="manifest.json">
-
-    <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <!-- Bibliothèque pour générer des GIF animés -->
-    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
-
-    <!-- Meta tags pour le support des fichiers -->
-    <meta name="file-handlers" content="application/json:.pixelart,.json">
-
-    <!-- Meta tags pour le partage social -->
-    <meta property="og:title" content="Éditeur Pixel Art">
-    <meta property="og:description" content="Créez des animations pixel art et partagez-les avec vos amis !">
+    <meta property="og:title" content="Pixel Editor — Free Online Pixel Art Tool">
+    <meta property="og:description" content="Create your first pixel art in 30 seconds. Free, fun, no download needed.">
     <meta property="og:type" content="website">
-    <meta property="og:image"
-        content="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630'%3e%3crect width='1200' height='630' fill='%23007AFF'/%3e%3ctext x='600' y='350' font-family='Arial' font-size='80' font-weight='bold' text-anchor='middle' fill='white'%3eÉditeur Pixel Art 🎨%3c/text%3e%3c/svg%3e">
+    <meta property="og:url" content="https://pixel-editor.app">
 
-    <!-- Styles communs -->
-    <link rel="stylesheet" href="styles/common.css">
-    <link rel="stylesheet" href="styles/carousel.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
 
-    <!-- CSS conditionnel selon l'écran -->
-    <link rel="stylesheet" href="styles/mobile.css" media="screen and (max-width: 1023px)">
-    <link rel="stylesheet" href="styles/desktop.css" media="screen and (min-width: 1024px)">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --blue: #007AFF;
+            --purple: #5856D6;
+            --bg: #0d0d1a;
+            --card: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.1);
+            --text: #ffffff;
+            --muted: rgba(255,255,255,0.55);
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Header ── */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 32px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,13,26,0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 4px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .lang-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px 8px;
+            border-radius: 5px;
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            background: rgba(255,255,255,0.12);
+            opacity: 1;
+        }
+
+        .btn-primary {
+            padding: 10px 22px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(0,122,255,0.4);
+        }
+
+        /* ── Hero ── */
+        .hero {
+            text-align: center;
+            padding: 80px 24px 60px;
+            max-width: 780px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(0,122,255,0.15);
+            border: 1px solid rgba(0,122,255,0.3);
+            color: #60a5fa;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 5px 14px;
+            border-radius: 20px;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.4rem);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--muted);
+            margin-bottom: 36px;
+            line-height: 1.6;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-secondary {
+            padding: 12px 24px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .btn-large {
+            padding: 14px 32px;
+            font-size: 1.05rem;
+        }
+
+        /* ── Demo canvas ── */
+        .demo-wrapper {
+            display: flex;
+            justify-content: center;
+            padding: 0 24px 80px;
+        }
+
+        .demo-frame {
+            position: relative;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+        }
+
+        #demoCanvas {
+            display: block;
+            image-rendering: pixelated;
+            border-radius: 8px;
+            width: 256px;
+            height: 256px;
+        }
+
+        .demo-label {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        /* ── Features ── */
+        .features {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .feature-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(0,122,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .feature-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 0.88rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* ── Gallery preview ── */
+        .gallery-preview {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+
+        .gallery-grid-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .preview-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            text-decoration: none;
+            transition: transform 0.2s, border-color 0.2s;
+            display: block;
+        }
+
+        .preview-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(0,122,255,0.4);
+        }
+
+        .preview-card canvas {
+            width: 100%;
+            aspect-ratio: 1;
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        .preview-card-name {
+            padding: 8px 10px;
+            font-size: 0.78rem;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .gallery-cta {
+            text-align: center;
+        }
+
+        /* ── Final CTA ── */
+        .final-cta {
+            text-align: center;
+            padding: 80px 24px;
+            background: linear-gradient(135deg, rgba(0,122,255,0.08), rgba(88,86,214,0.08));
+            border-top: 1px solid var(--border);
+        }
+
+        .final-cta h2 {
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .final-cta p {
+            color: var(--muted);
+            margin-bottom: 32px;
+            font-size: 1.05rem;
+        }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 24px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        footer a {
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        footer a:hover { color: white; }
+
+        /* ── Responsive ── */
+        @media (max-width: 480px) {
+            header { padding: 14px 16px; }
+            .hero { padding: 50px 16px 40px; }
+            #demoCanvas { width: 200px; height: 200px; }
+        }
+    </style>
 </head>
-
 <body>
-    <div class="editor-container">
-        <div class="project-info">
-            <button id="menuToggle" class="menu-hamburger" title="Afficher les outils">
-                <div id="mobileUserAvatar" class="mobile-user-avatar"></div>
-            </button>
-            <div class="branding">
-                <img src="images/icon.png" alt="Pixel Editor Icon" class="app-icon">
-                <img src="images/text.png" alt="Pixel Editor" class="app-text">
+
+    <header>
+        <a href="/" class="logo">🎨 Pixel Editor</a>
+        <div class="header-right">
+            <div class="lang-switcher">
+                <button class="lang-btn active" data-lang="en" title="English">🇬🇧</button>
+                <button class="lang-btn" data-lang="fr" title="Français">🇫🇷</button>
             </div>
-            <div class="user-profile">
-                <div id="userProfileDisplay" class="user-profile-display">
-                    <div id="userAvatar" class="user-avatar"></div>
-                    <span id="userName" class="user-name">Loading...</span>
-                    
-                    <!-- Menu dropdown simple -->
-                    <div class="user-dropdown" id="userDropdown">
-                        <div class="user-dropdown-header">
-                            <span class="user-dropdown-name" id="dropdownUserName">Utilisateur</span>
-                        </div>
-                        <button id="profileBtn" class="dropdown-item">
-                            <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                            Profil
-                        </button>
-                        <div class="dropdown-divider"></div>
-                        <button id="saveBtnDropdown" class="dropdown-item">
-                            💾 Sauvegarder
-                        </button>
-                        <button id="loadBtnDropdown" class="dropdown-item">
-                            📂 Charger
-                        </button>
-                        <button id="loadLocalBtnDropdown" class="dropdown-item">
-                            🌐 Mes projets
-                        </button>
-                        <button id="exportGifBtnDropdown" class="dropdown-item">
-                            🎬 Export GIF
-                        </button>
-                        <button id="shareProjectBtnDropdown" class="dropdown-item">
-                            🔗 Partager
-                        </button>
-                        <div class="dropdown-divider"></div>
-                        <button id="photoToPixelBtnDropdown" class="dropdown-item">
-                            📷 Photo → Pixel
-                        </button>
-                        <button id="templateBtnDropdown" class="dropdown-item">
-                            🧩 Modèles à Réaliser
-                        </button>
-                        <button id="publishTemplateBtnDropdown" class="dropdown-item">
-                            ✨ Publier un Modèle
-                        </button>
-                        <button id="galleryBtnDropdown" class="dropdown-item">
-                            🖼️ Galerie
-                        </button>
-                        <div class="dropdown-divider"></div>
-                        <button id="logoutBtnDropdown" class="dropdown-item">
-                            <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                                <polyline points="16 17 21 12 16 7" />
-                                <line x1="21" y1="12" x2="9" y2="12" />
-                            </svg>
-                            Déconnexion
-                        </button>
-                    </div>
-                </div>
-                <button id="logoutBtn" class="logout-btn" title="Se déconnecter">Déconnexion</button>
-            </div>
-            <button id="playToggle" class="play-button" title="Lancer/Arrêter l'animation">▶️</button>
+            <a href="/editor.html" class="btn-primary" data-en="Open Editor" data-fr="Ouvrir l'éditeur">Open Editor</a>
         </div>
+    </header>
 
-        <div class="toolbar">
-            <div class="tools">
-                <button id="clearBtn">Effacer tout</button>
-                <button id="deleteFrameBtn">Supprimer la frame</button>
-                <button id="previewBtn" title="Lancer/Arrêter l'animation">▶️</button>
-                <button id="fpsBtn" title="Régler la vitesse d'animation">⚙️ FPS</button>
-                <button id="gridSizeBtn" title="Changer la taille de la grille">📐 <span class="grid-size-indicator">32×32</span></button>
-                <button id="saveBtn">💾 Sauvegarder</button>
-                <button id="loadBtn">📂 Charger</button>
-                <button id="loadLocalBtn">🌐 Mes projets</button>
-                <button id="exportGifBtn">🎬 Export GIF</button>
-                <button id="shareProjectBtn">🔗 Partager</button>
-                <button id="galleryBtnMobile" onclick="window.location.href='/gallery.html'">🖼️ Galerie</button>
-                <button id="photoToPixelBtn" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">📷 Photo →
-                    Pixel</button>
-                <button id="templateBtn" style="background: linear-gradient(135deg, #4CAF50, #45A049);">🧩 Modèles à
-                    Réaliser</button>
-                <button id="publishTemplateBtnMobile" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">✨
-                    Publier</button>
-                <button id="profileBtnMobile">👤 Profil</button>
-                <button id="helpBtn">❓ Aide</button>
-                <button id="creditsBtn">Crédits</button>
-                <button id="logoutBtnMobile" class="logout-btn logout-btn-mobile">Déconnexion</button>
-            </div>
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-badge" data-en="✨ Free · No download · Works on mobile" data-fr="✨ Gratuit · Sans téléchargement · Mobile">✨ Free · No download · Works on mobile</div>
+        <h1 data-en="Create your first pixel art <span>in 30 seconds</span>" data-fr="Crée ton premier pixel art <span>en 30 secondes</span>">
+            Create your first pixel art <span>in 30 seconds</span>
+        </h1>
+        <p data-en="A simple, fun and free pixel art editor. Draw, animate and share your creations — no install needed, works on any device." data-fr="Un éditeur de pixel art simple, fun et gratuit. Dessine, anime et partage tes créations — sans installation, sur n'importe quel appareil.">
+            A simple, fun and free pixel art editor. Draw, animate and share your creations — no install needed, works on any device.
+        </p>
+        <div class="hero-cta">
+            <a href="/editor.html" class="btn-primary btn-large" data-en="🎨 Start drawing — it's free" data-fr="🎨 Commencer à dessiner — c'est gratuit">🎨 Start drawing — it's free</a>
+            <a href="/gallery.html" class="btn-secondary btn-large" data-en="🖼️ See the gallery" data-fr="🖼️ Voir la galerie">🖼️ See the gallery</a>
         </div>
+    </section>
 
-        <!-- Interface compacte mobile intégrée -->
-        <div class="tools-compact">
-            <div class="compact-tools">
-                <!-- Ligne principale : Gomme + Couleur actuelle + Couleurs + Undo/Redo -->
-                <div class="compact-main-tools">
-                    <!-- Gauche : Gomme + Pipette + Valider + Couleur actuelle -->
-                    <div class="compact-left-tools">
-                        <button id="eraserBtn" class="compact-eraser-btn">Gomme</button>
-                        <button id="eyedropperBtn" class="compact-eyedropper-btn eyedropper-btn" title="Pipette (I)">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <!-- Icône pipette style simple et reconnaissable -->
-                                <path
-                                    d="M20.71 5.04l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75 1.83-1.84c.39-.38.39-1.02 0-1.41zM17.08 9.94l-3.75-3.75L4.27 15.17v3.75h3.75l9.06-9.06zM6 18v-1.83l6.83-6.83 1.83 1.83L7.83 18H6z" />
-                            </svg>
-                        </button>
-                        <button id="validateColorBtnMobile" class="compact-validate-btn"
-                            title="Ajouter cette couleur à la palette">V</button>
-                        <div class="compact-current-color-container">
-                            <input type="color" id="colorPicker" value="#000000" class="compact-color-picker">
-                            <div class="compact-current-color" id="currentColorDisplay"></div>
-                        </div>
-                    </div>
-
-                    <!-- Centre : Couleurs preset -->
-                    <div class="compact-preset-colors">
-                        <button class="compact-color-btn" style="background-color: #000000"></button>
-                        <button class="compact-color-btn" style="background-color: #FFFFFF"></button>
-                        <button class="compact-color-btn" style="background-color: #FF0000"></button>
-                        <button class="compact-color-btn" style="background-color: #00FF00"></button>
-                        <button class="compact-color-btn" style="background-color: #0000FF"></button>
-                        <button class="compact-color-btn" style="background-color: #FFFF00"></button>
-                        <button class="compact-color-btn" style="background-color: #FF00FF"></button>
-                        <button class="compact-color-btn" style="background-color: #00FFFF"></button>
-                    </div>
-
-                    <!-- Droite : Undo/Redo -->
-                    <div class="compact-right-tools">
-                        <button id="undoBtn" class="compact-undo-redo-btn" title="Annuler (←)">↺</button>
-                        <button id="redoBtn" class="compact-undo-redo-btn" title="Rétablir (→)">↻</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal pour personnaliser la palette -->
-        <div id="paletteModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Personnaliser la palette</h3>
-                    <button id="closePaletteModal" class="close-btn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="palette-customizer">
-                        <div class="palette-colors-grid" id="paletteColorsGrid">
-                            <!-- Les couleurs seront générées dynamiquement -->
-                        </div>
-                        <div class="palette-actions">
-                            <button id="resetPaletteBtn" class="reset-btn">🔄 Couleurs par défaut</button>
-                            <button id="savePaletteBtn" class="save-btn">💾 Sauvegarder</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal pour régler le FPS -->
-        <div id="fpsModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>⚙️ Vitesse d'animation</h3>
-                    <button id="closeFpsModal" class="close-btn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="fps-control">
-                        <div class="fps-display">
-                            <span id="fpsValue" class="fps-value">24</span>
-                            <span class="fps-label">FPS</span>
-                            <span id="fpsDesc" class="fps-desc">(Cinéma)</span>
-                        </div>
-
-                        <div class="fps-slider-container">
-                            <span class="fps-min">1</span>
-                            <input type="range" id="fpsSlider" min="1" max="60" value="24" class="fps-slider">
-                            <span class="fps-max">60</span>
-                        </div>
-
-                        <div class="fps-presets">
-                            <span class="fps-presets-label">Préréglages :</span>
-                            <button class="fps-preset-btn" data-fps="12">12 FPS<br><small>(Animation)</small></button>
-                            <button class="fps-preset-btn" data-fps="24">24 FPS<br><small>(Cinéma)</small></button>
-                            <button class="fps-preset-btn" data-fps="30">30 FPS<br><small>(Vidéo)</small></button>
-                            <button class="fps-preset-btn" data-fps="60">60 FPS<br><small>(Fluide)</small></button>
-                        </div>
-
-                        <div class="fps-info">
-                            <p>💡 Plus le FPS est élevé, plus l'animation sera fluide.</p>
-                            <p>24 FPS = Qualité cinéma professionnelle</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal pour sélectionner la taille de la grille -->
-        <div id="gridSizeModal" class="modal" style="display:none;">
-            <div class="modal-content grid-size-modal-content">
-                <div class="modal-header">
-                    <h3>📐 Taille de la grille</h3>
-                    <button id="closeGridSizeModal" class="close-btn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p class="grid-size-subtitle">Choisissez la résolution de votre pixel art</p>
-                    <div class="grid-size-options">
-                        <button class="grid-size-btn" data-size="8">
-                            <span class="grid-size-label">8×8</span>
-                            <span class="grid-size-desc">Icônes rétro</span>
-                        </button>
-                        <button class="grid-size-btn" data-size="16">
-                            <span class="grid-size-label">16×16</span>
-                            <span class="grid-size-desc">Sprites classiques</span>
-                        </button>
-                        <button class="grid-size-btn active" data-size="32">
-                            <span class="grid-size-label">32×32</span>
-                            <span class="grid-size-desc">Défaut</span>
-                        </button>
-                        <button class="grid-size-btn" data-size="64">
-                            <span class="grid-size-label">64×64</span>
-                            <span class="grid-size-desc">Détails fins</span>
-                        </button>
-                    </div>
-                    <p class="grid-size-warning">⚠️ Changer la taille effacera le contenu actuel.</p>
-                    <p class="grid-size-current">Taille actuelle : <strong class="grid-size-indicator">32×32</strong></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal custom pour sélectionner une couleur -->
-        <div id="customColorModal" class="modal-overlay" style="display: none;">
-            <div class="modal custom-color-modal">
-                <div class="modal-header custom-color-header">
-                    <h3>Couleur personnalisée</h3>
-                    <button id="closeCustomColorModal" class="close-btn">&times;</button>
-                </div>
-                <div class="custom-color-body">
-                    <div class="custom-color-preview" id="customColorPreview"></div>
-                    <div class="custom-color-info">
-                        <span class="custom-color-hex-label">Hex</span>
-                        <span class="custom-color-hex-value" id="customColorHexValue">#000000</span>
-                    </div>
-                    <div class="custom-color-spectrum">
-                        <canvas id="customColorCanvas" width="320" height="200"></canvas>
-                        <p class="custom-color-spectrum-hint">Glissez dans le nuancier pour sélectionner une teinte.</p>
-                    </div>
-                    <div class="custom-color-swatches" id="customColorSwatches">
-                        <button class="custom-color-swatch" data-color="#FFFFFF" title="#FFFFFF"
-                            style="background:#FFFFFF;"></button>
-                        <button class="custom-color-swatch" data-color="#000000" title="#000000"
-                            style="background:#000000;"></button>
-                        <button class="custom-color-swatch" data-color="#FF0000" title="#FF0000"
-                            style="background:#FF0000;"></button>
-                        <button class="custom-color-swatch" data-color="#FF7F00" title="#FF7F00"
-                            style="background:#FF7F00;"></button>
-                        <button class="custom-color-swatch" data-color="#FFFF00" title="#FFFF00"
-                            style="background:#FFFF00;"></button>
-                        <button class="custom-color-swatch" data-color="#00FF00" title="#00FF00"
-                            style="background:#00FF00;"></button>
-                        <button class="custom-color-swatch" data-color="#00FFFF" title="#00FFFF"
-                            style="background:#00FFFF;"></button>
-                        <button class="custom-color-swatch" data-color="#0000FF" title="#0000FF"
-                            style="background:#0000FF;"></button>
-                        <button class="custom-color-swatch" data-color="#8B00FF" title="#8B00FF"
-                            style="background:#8B00FF;"></button>
-                        <button class="custom-color-swatch" data-color="#FF1493" title="#FF1493"
-                            style="background:#FF1493;"></button>
-                    </div>
-                    <div class="custom-color-actions">
-                        <button id="customColorSystem" class="dialog-button secondary">🎨 Sélecteur système</button>
-                        <div class="custom-color-actions-right">
-                            <button id="cancelCustomColor" class="dialog-button secondary">Annuler</button>
-                            <button id="applyCustomColor" class="dialog-button">Appliquer</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="tools-secondary">
-            <div class="color-palette">
-                <!-- Ligne 1 : Couleur actuelle -->
-                <div class="color-picker-row">
-                    <div class="desktop-current-color-container">
-                        <span class="color-label">Couleur actuelle :</span>
-                        <div class="desktop-current-color" id="desktopCurrentColorDisplay"></div>
-                    </div>
-                    <input type="color" id="colorPicker" value="#000000">
-                </div>
-
-                <!-- Ligne 2 : Validate + Undo + Redo -->
-                <div class="tools-row validate-undo-redo-row">
-                    <button id="validateColorBtn" class="validate-color-btn"
-                        title="Ajouter cette couleur à la palette">✓</button>
-                    <button id="undoBtnDesktop" class="undo-redo-btn" title="Annuler (←)">↺</button>
-                    <button id="redoBtnDesktop" class="undo-redo-btn" title="Rétablir (→)">↻</button>
-                </div>
-
-                <!-- Ligne 2 : Couleurs preset -->
-                <div class="tools-row">
-                    <!-- Couleurs preset compactes -->
-                    <div class="preset-colors">
-                        <button class="color-btn" style="background-color: #000000"></button>
-                        <button class="color-btn" style="background-color: #FFFFFF"></button>
-                        <button class="color-btn" style="background-color: #FF0000"></button>
-                        <button class="color-btn" style="background-color: #00FF00"></button>
-                        <button class="color-btn" style="background-color: #0000FF"></button>
-                        <button class="color-btn" style="background-color: #FFFF00"></button>
-                        <button class="color-btn" style="background-color: #FF00FF"></button>
-                        <button class="color-btn" style="background-color: #00FFFF"></button>
-                    </div>
-                </div>
-
-                <!-- Ligne 3 : Gomme + Pipette -->
-                <div class="tools-row">
-                    <button id="eraserBtn" class="eraser-btn">Gomme</button>
-                    <button id="eyedropperBtn" class="eraser-btn eyedropper-btn" title="Pipette (I)">🎨 Pipette</button>
-                </div>
-            </div>
-
-            <!-- TOUS LES BOUTONS pour desktop -->
-            <div class="extra-tools">
-                <button id="previewBtn2" title="Lancer/Arrêter l'animation">▶️ Animation</button>
-                <button id="fpsBtnSidebar" title="Régler la vitesse d'animation">⚙️ Vitesse</button>
-                <button id="gridSizeBtnSidebar" title="Changer la taille de la grille">📐 <span class="grid-size-indicator">32×32</span></button>
-                <div class="fps-sidebar-panel" id="fpsSidebarPanel">
-                    <div class="fps-sidebar-header">
-                        <div class="fps-sidebar-value"><span id="fpsSidebarValue">24</span> FPS</div>
-                        <div class="fps-sidebar-desc" id="fpsSidebarDesc">(Cinéma)</div>
-                    </div>
-                    <div class="fps-sidebar-slider">
-                        <span class="fps-sidebar-min">1</span>
-                        <input type="range" id="fpsSidebarSlider" min="1" max="60" value="24">
-                        <span class="fps-sidebar-max">60</span>
-                    </div>
-                    <div class="fps-sidebar-presets">
-                        <button class="fps-sidebar-preset" data-fps="12">12 FPS<br><small>Animation</small></button>
-                        <button class="fps-sidebar-preset" data-fps="24">24 FPS<br><small>Cinéma</small></button>
-                        <button class="fps-sidebar-preset" data-fps="30">30 FPS<br><small>Vidéo</small></button>
-                        <button class="fps-sidebar-preset" data-fps="60">60 FPS<br><small>Fluide</small></button>
-                    </div>
-                    <p class="fps-sidebar-hint">💡 Ajuste la vitesse pendant la lecture pour voir l'effet en direct.</p>
-                </div>
-                <button id="clearBtn2">🗑️ Effacer tout</button>
-                <button id="deleteFrameBtn2">🗑️ Supprimer la frame</button>
-                <button id="saveBtn2">💾 Sauvegarder</button>
-                <button id="loadBtn2">📂 Charger</button>
-                <button id="loadLocalBtn2">🌐 Mes projets</button>
-                <button id="exportGifBtn2">🎬 Export GIF</button>
-                <button id="shareProjectBtn2">🔗 Partager</button>
-                <button id="galleryBtn2" onclick="window.location.href='/gallery.html'">🖼️ Galerie</button>
-                <button id="photoToPixelBtn2" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">📷 Photo →
-                    Pixel</button>
-                <button id="templateBtn2" style="background: linear-gradient(135deg, #4CAF50, #45A049);">🧩 Modèles à
-                    Réaliser</button>
-                <button id="publishTemplateBtn" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">✨ Publier
-                    un Modèle</button>
-                <button id="profileBtn">👤 Mon profil</button>
-                <button id="helpBtn2">❓ Aide</button>
-                <button id="creditsBtn2">ℹ️ Crédits</button>
-            </div>
-        </div>
-
-        <div class="grid-container">
-            <div id="pixelGrid"></div>
-        </div>
-
-        <div class="frames-container">
-            <div class="frame-actions">
-                <button id="copyFrameBtnMain" class="frame-action-btn copy-btn"
-                    title="Copier la frame actuelle">C</button>
-                <button id="addFrameBtn">+ Nouvelle Frame</button>
-                <button id="pasteFrameBtnMain" class="frame-action-btn paste-btn"
-                    title="Coller la frame copiée">V</button>
-            </div>
-            <div id="framesList"></div>
-        </div>
-
-        <!-- Espace réservé pour la publicité future -->
-        <div class="ad-space">
-            <!-- Zone réservée pour contenu futur -->
+    <!-- Demo -->
+    <div class="demo-wrapper">
+        <div class="demo-frame">
+            <canvas id="demoCanvas" width="128" height="128"></canvas>
+            <div class="demo-label" data-en="Live preview — made with Pixel Editor" data-fr="Aperçu en direct — fait avec Pixel Editor">Live preview — made with Pixel Editor</div>
         </div>
     </div>
+
+    <!-- Features -->
+    <section class="features">
+        <h2 class="section-title" data-en="Everything you need to create" data-fr="Tout ce qu'il faut pour créer">Everything you need to create</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 data-en="Instant & free" data-fr="Instantané et gratuit">Instant & free</h3>
+                <p data-en="Open your browser and start drawing. No account required to try it out." data-fr="Ouvre ton navigateur et commence à dessiner. Pas de compte requis pour essayer.">Open your browser and start drawing. No account required to try it out.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3 data-en="Mobile & desktop" data-fr="Mobile et desktop">Mobile & desktop</h3>
+                <p data-en="Works on iPhone, iPad, Android and any computer — the same experience everywhere." data-fr="Fonctionne sur iPhone, iPad, Android et tout ordinateur — la même expérience partout.">Works on iPhone, iPad, Android and any computer — the same experience everywhere.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎬</div>
+                <h3 data-en="Animate your art" data-fr="Anime ton pixel art">Animate your art</h3>
+                <p data-en="Create multiple frames and bring your pixel art to life with smooth animations. Export as GIF." data-fr="Crée plusieurs frames et donne vie à ton pixel art avec des animations fluides. Exporte en GIF.">Create multiple frames and bring your pixel art to life with smooth animations. Export as GIF.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌍</div>
+                <h3 data-en="Share with the world" data-fr="Partage avec le monde">Share with the world</h3>
+                <p data-en="Share your creations via a link, iMessage or AirDrop. Publish to the community gallery." data-fr="Partage tes créations via un lien, iMessage ou AirDrop. Publie dans la galerie communautaire.">Share your creations via a link, iMessage or AirDrop. Publish to the community gallery.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">☁️</div>
+                <h3 data-en="Cloud saves" data-fr="Sauvegarde dans le cloud">Cloud saves</h3>
+                <p data-en="Create a free account to save your projects and access them from any device." data-fr="Crée un compte gratuit pour sauvegarder tes projets et y accéder depuis n'importe quel appareil.">Create a free account to save your projects and access them from any device.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3 data-en="For everyone" data-fr="Pour tout le monde">For everyone</h3>
+                <p data-en="Whether you're 7 or 70, a beginner or a hobbyist — pixel art is for everyone." data-fr="Que tu aies 7 ou 70 ans, débutant ou amateur — le pixel art est fait pour tout le monde.">Whether you're 7 or 70, a beginner or a hobbyist — pixel art is for everyone.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery preview -->
+    <section class="gallery-preview">
+        <h2 class="section-title" data-en="Made by the community" data-fr="Créé par la communauté">Made by the community</h2>
+        <div class="gallery-grid-preview" id="galleryPreview">
+            <!-- Loaded dynamically -->
+        </div>
+        <div class="gallery-cta">
+            <a href="/gallery.html" class="btn-secondary" data-en="🖼️ See all creations" data-fr="🖼️ Voir toutes les créations">🖼️ See all creations</a>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="final-cta">
+        <h2 data-en="Ready to create your first pixel art?" data-fr="Prêt à créer ton premier pixel art ?">Ready to create your first pixel art?</h2>
+        <p data-en="Free, instant, no download. Just open and draw." data-fr="Gratuit, instantané, sans téléchargement. Ouvre et dessine.">Free, instant, no download. Just open and draw.</p>
+        <a href="/editor.html" class="btn-primary btn-large" data-en="🎨 Start now" data-fr="🎨 Commencer maintenant">🎨 Start now</a>
+    </section>
+
+    <footer>
+        <p>© <span id="year"></span> Frédéric Terrasson &nbsp;·&nbsp;
+           <a href="/editor.html" data-en="Editor" data-fr="Éditeur">Editor</a> &nbsp;·&nbsp;
+           <a href="/gallery.html" data-en="Gallery" data-fr="Galerie">Gallery</a>
+        </p>
+    </footer>
 
     <script src="js/config/supabase-config.js"></script>
     <script src="js/config/app-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/database.js"></script>
-    <script src="js/sharing.js"></script>
+
     <script>
-        // Authentication check - must be logged in to use the app
-        (async function () {
-            const initialized = await window.authService.init();
+        // ── Year ──
+        document.getElementById('year').textContent = new Date().getFullYear();
 
-            if (!initialized) {
-                // Show error if Supabase not configured
-                alert('⚠️ Supabase not configured.\n\nPlease:\n1. Create a Supabase project at https://supabase.com\n2. Update public/js/config/supabase-config.js with your credentials\n3. See docs/SETUP-AUTHENTICATION.md for full instructions');
-                window.location.href = '/login.html';
-                return;
-            }
+        // ── Language switcher ──
+        let currentLang = localStorage.getItem('lang') || 'en';
 
-            if (!window.authService.isAuthenticated()) {
-                window.location.href = '/login.html';
-                return;
-            }
+        function applyLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
 
-            // Gestion des boutons de déconnexion (header + menu hamburger)
-            const logoutButtons = [
-                document.getElementById('logoutBtn'),
-                document.getElementById('logoutBtnMobile')
-            ].filter(Boolean);
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const text = el.getAttribute('data-' + lang);
+                if (!text) return;
+                // Preserve innerHTML for elements with spans
+                if (text.includes('<')) {
+                    el.innerHTML = text;
+                } else {
+                    el.textContent = text;
+                }
+            });
 
-            logoutButtons.forEach(button => {
-                button.addEventListener('click', async () => {
-                    const result = await window.authService.signOut();
-                    if (result.success) {
-                        window.location.href = '/login.html';
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+
+            document.documentElement.lang = lang;
+        }
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+        });
+
+        applyLang(currentLang);
+
+        // ── Demo canvas animation ──
+        const canvas = document.getElementById('demoCanvas');
+        const ctx = canvas.getContext('2d');
+        const SIZE = 16;
+        const PIXEL = 128 / SIZE;
+
+        // A small pixel art character (16x16 smiley face)
+        const frames = [
+            // Frame 1 — neutral
+            `
+                ................
+                ................
+                .....XXXXX......
+                ....X.....X.....
+                ...X.......X....
+                ...X.O...O.X....
+                ...X.......X....
+                ...X..._...X....
+                ...X.......X....
+                ....X.....X.....
+                .....XXXXX......
+                ................
+                ................
+                ................
+                ................
+                ................
+            `,
+            // Frame 2 — smile
+            `
+                ................
+                ................
+                .....XXXXX......
+                ....X.....X.....
+                ...X.......X....
+                ...X.O...O.X....
+                ...X.......X....
+                ...X..VVV..X....
+                ...X.......X....
+                ....X.....X.....
+                .....XXXXX......
+                ................
+                ................
+                ................
+                ................
+                ................
+            `
+        ];
+
+        const palette = {
+            'X': '#f59e0b',
+            'O': '#1e293b',
+            'V': '#ef4444',
+            '_': '#94a3b8',
+            '.': null
+        };
+
+        function drawFrame(frameStr) {
+            ctx.clearRect(0, 0, 128, 128);
+            ctx.fillStyle = '#1e1e2e';
+            ctx.fillRect(0, 0, 128, 128);
+
+            const rows = frameStr.trim().split('\n').map(r => r.trim()).filter(r => r.length);
+            rows.forEach((row, y) => {
+                [...row].forEach((ch, x) => {
+                    const color = palette[ch];
+                    if (color) {
+                        ctx.fillStyle = color;
+                        ctx.fillRect(x * PIXEL, y * PIXEL, PIXEL, PIXEL);
                     }
                 });
             });
+        }
 
-            window.__pixelEditorAuthInitialized = true;
+        let frameIdx = 0;
+        drawFrame(frames[0]);
+        setInterval(() => {
+            frameIdx = (frameIdx + 1) % frames.length;
+            drawFrame(frames[frameIdx]);
+        }, 600);
 
-            // Vérifier si le profil utilisateur est configuré (pseudo requis)
-            await checkAndRequireUserProfile();
+        // ── Gallery preview ──
+        function normaliseFrame(frame) {
+            if (Array.isArray(frame)) return frame;
+            if (frame && Array.isArray(frame.pixels)) return frame.pixels;
+            return null;
+        }
 
-            // Initialiser le tracking de session
-            if (window.dbService && typeof window.dbService.startUserSession === 'function') {
-                window.dbService.startUserSession().catch(err => {
-                    console.warn('Session tracking error:', err);
+        function drawPixelFrame(ctx, frame, size) {
+            if (!Array.isArray(frame) || frame.length === 0) return;
+            const gridSize = Math.sqrt(frame.length);
+            const pixelSize = size / gridSize;
+            ctx.clearRect(0, 0, size, size);
+            frame.forEach((pixel, i) => {
+                if (!pixel || pixel.isEmpty) return;
+                ctx.fillStyle = pixel.color || '#FFF';
+                ctx.fillRect((i % gridSize) * pixelSize, Math.floor(i / gridSize) * pixelSize, pixelSize, pixelSize);
+            });
+        }
+
+        async function loadGalleryPreview() {
+            try {
+                await window.authService.init();
+                const result = await window.dbService.getPublicGallery({ sortBy: 'popular' });
+                if (!result.success || result.data.length === 0) return;
+
+                const container = document.getElementById('galleryPreview');
+                container.innerHTML = '';
+
+                result.data.slice(0, 6).forEach(share => {
+                    const snapshot = share.project_snapshot || {};
+                    const rawFrames = (snapshot.frames || []).map(normaliseFrame).filter(Boolean);
+
+                    const card = document.createElement('a');
+                    card.className = 'preview-card';
+                    card.href = `/shared.html?token=${share.share_token}`;
+                    card.innerHTML = `
+                        <canvas width="64" height="64"></canvas>
+                        <div class="preview-card-name">${escapeHtml(share.project_name)}</div>
+                    `;
+
+                    const c = card.querySelector('canvas');
+                    const cx = c.getContext('2d');
+                    cx.fillStyle = '#1e1e2e';
+                    cx.fillRect(0, 0, 64, 64);
+
+                    if (rawFrames.length > 0) {
+                        drawPixelFrame(cx, rawFrames[0], 64);
+                    } else if (share.project_thumbnail) {
+                        const img = new Image();
+                        img.onload = () => cx.drawImage(img, 0, 0, 64, 64);
+                        img.src = share.project_thumbnail;
+                    }
+
+                    container.appendChild(card);
                 });
+            } catch (e) {
+                // Gallery preview is optional — fail silently
             }
+        }
 
-            // Mettre à jour l'affichage du profil après chargement de tous les scripts
-            // Utiliser un délai pour s'assurer que script-templates.js est chargé
-            setTimeout(() => {
-                if (typeof updateUserProfileDisplay === 'function') {
-                    updateUserProfileDisplay();
-                } else if (typeof window.updateUserProfileDisplay === 'function') {
-                    window.updateUserProfileDisplay();
-                }
-            }, 500);
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
 
-            if (typeof window.initUserProfileFlow === 'function') {
-                window.initUserProfileFlow();
-            }
-
-            /**
-             * Vérifie si le profil utilisateur est configuré et affiche une modal obligatoire si nécessaire
-             */
-            async function checkAndRequireUserProfile() {
-                try {
-                    if (!window.dbService) {
-                        console.warn('Database service non disponible, impossible de vérifier le profil');
-                        return;
-                    }
-
-                    // Attendre que les scripts soient chargés
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-
-                    const profileResult = await window.dbService.getUserProfile();
-
-                    if (!profileResult.success) {
-                        console.warn('Erreur lors de la récupération du profil:', profileResult.error);
-                        return;
-                    }
-
-                    const profile = profileResult.data;
-                    const username = profile && profile.username ? profile.username.trim() : '';
-
-                    // Vérifier si le pseudo est configuré
-                    const hasCustomUsername = username && username.length >= 2;
-
-                    if (!hasCustomUsername) {
-                        // Afficher une modal obligatoire pour configurer le profil
-                        showRequiredProfileModal();
-                    }
-                } catch (error) {
-                    console.error('Erreur lors de la vérification du profil:', error);
-                }
-            }
-
-            /**
-             * Affiche une modal obligatoire pour configurer le pseudo et l'avatar
-             */
-            function showRequiredProfileModal() {
-                const modalContent = `
-                    <div style="padding: 30px; text-align: center; color: rgba(255, 255, 255, 0.95);">
-                        <h2 style="margin-top: 0; color: rgba(255, 255, 255, 0.98); font-size: 24px;">👋 Bienvenue !</h2>
-                        <p style="font-size: 16px; margin: 20px 0; color: rgba(255, 255, 255, 0.9);">
-                            Pour continuer, vous devez configurer votre profil public.
-                        </p>
-                        <p style="font-size: 14px; margin: 15px 0; color: rgba(255, 255, 255, 0.8);">
-                            Choisissez un pseudo et créez un avatar qui seront affichés sur vos créations partagées.
-                        </p>
-                        <button id="configureProfileBtn" style="margin-top: 20px; padding: 12px 30px; border: none; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; font-size: 16px;">
-                            Configurer mon profil
-                        </button>
-                    </div>
-                `;
-
-                const modal = document.createElement('div');
-                modal.className = 'modal';
-                modal.style.display = 'flex';
-                modal.style.zIndex = '10000';
-                modal.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
-                modal.innerHTML = `
-                    <div class="modal-content" style="max-width: 450px; width: 90%; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.95);">
-                        ${modalContent}
-                    </div>
-                `;
-
-                document.body.appendChild(modal);
-
-                // Empêcher la fermeture de la modal
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                });
-
-                // Bouton pour configurer le profil
-                document.getElementById('configureProfileBtn').addEventListener('click', () => {
-                    modal.remove();
-
-                    // Attendre que les scripts soient chargés puis ouvrir le dialogue de profil
-                    setTimeout(() => {
-                        if (typeof window.showUsernameDialog === 'function') {
-                            window.showUsernameDialog();
-                        } else {
-                            // Fallback : essayer d'ouvrir via le menu profil
-                            const profileBtn = document.getElementById('profileBtn') || document.getElementById('profileBtnMobile');
-                            if (profileBtn) {
-                                profileBtn.click();
-                            }
-                        }
-                    }, 500);
-                });
-
-                // Écouter l'événement quand le profil est configuré
-                const onProfileConfigured = () => {
-                    // Vérifier une dernière fois avant de fermer définitivement
-                    setTimeout(async () => {
-                        const profileResult = await window.dbService.getUserProfile();
-                        if (profileResult.success) {
-                            const profile = profileResult.data;
-                            const username = profile && profile.username ? profile.username.trim() : '';
-                            const hasCustomUsername = username && username.length >= 2;
-
-                            if (hasCustomUsername) {
-                                // Le profil est configuré, ne plus afficher la modal
-                                return;
-                            }
-                        }
-
-                        // Si toujours pas configuré, réafficher la modal
-                        if (!document.querySelector('.modal[style*="z-index: 10000"]')) {
-                            showRequiredProfileModal();
-                        }
-                    }, 1000);
-                };
-
-                window.addEventListener('userProfileConfigured', onProfileConfigured);
-
-                // Vérifier périodiquement si le profil a été configuré (au cas où l'événement ne se déclenche pas)
-                const checkInterval = setInterval(async () => {
-                    try {
-                        const profileResult = await window.dbService.getUserProfile();
-                        if (profileResult.success) {
-                            const profile = profileResult.data;
-                            const username = profile && profile.username ? profile.username.trim() : '';
-                            const hasCustomUsername = username && username.length >= 2;
-
-                            if (hasCustomUsername) {
-                                clearInterval(checkInterval);
-                                window.removeEventListener('userProfileConfigured', onProfileConfigured);
-
-                                // Fermer la modal si elle existe encore
-                                const existingModal = document.querySelector('.modal[style*="z-index: 10000"]');
-                                if (existingModal) {
-                                    existingModal.remove();
-                                }
-
-                                // Mettre à jour l'affichage
-                                if (typeof window.updateUserProfileDisplay === 'function') {
-                                    window.updateUserProfileDisplay();
-                                }
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Erreur lors de la vérification:', error);
-                    }
-                }, 2000);
-
-                // Nettoyer l'intervalle si la modal est supprimée manuellement
-                const observer = new MutationObserver(() => {
-                    if (!document.body.contains(modal)) {
-                        clearInterval(checkInterval);
-                        window.removeEventListener('userProfileConfigured', onProfileConfigured);
-                        observer.disconnect();
-                    }
-                });
-                observer.observe(document.body, { childList: true, subtree: true });
-            }
-        })();
+        loadGalleryPreview();
     </script>
-    <script src="js/script.js"></script>
-    <!-- Script BETA - Fonctionnalité Photo → Pixel Art -->
-    <script src="js/script-beta.js"></script>
-    <!-- Script BETA - Fonctionnalité Modèles à Réaliser -->
-    <script src="js/script-templates.js"></script>
 </body>
-
 </html>
-<!-- Force deployment Fri Oct  3 18:01:04 CEST 2025 -->

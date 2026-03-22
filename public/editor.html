@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+    <!-- App mobile settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Pixel-Editor">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Pixel-Editor">
+
+    <!-- Theme colors -->
+    <meta name="theme-color" content="#007AFF">
+    <meta name="msapplication-TileColor" content="#007AFF">
+
+    <title>Éditeur Pixel Art</title>
+
+    <!-- Favicons et icônes -->
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="assets/icons/icon-192.png">
+
+    <!-- Android/Chrome icons -->
+    <link rel="icon" type="image/svg+xml" sizes="192x192" href="assets/icons/icon-192.svg">
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Bibliothèque pour générer des GIF animés -->
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+
+    <!-- Meta tags pour le support des fichiers -->
+    <meta name="file-handlers" content="application/json:.pixelart,.json">
+
+    <!-- Meta tags pour le partage social -->
+    <meta property="og:title" content="Éditeur Pixel Art">
+    <meta property="og:description" content="Créez des animations pixel art et partagez-les avec vos amis !">
+    <meta property="og:type" content="website">
+    <meta property="og:image"
+        content="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630'%3e%3crect width='1200' height='630' fill='%23007AFF'/%3e%3ctext x='600' y='350' font-family='Arial' font-size='80' font-weight='bold' text-anchor='middle' fill='white'%3eÉditeur Pixel Art 🎨%3c/text%3e%3c/svg%3e">
+
+    <!-- Styles communs -->
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/carousel.css">
+
+    <!-- CSS conditionnel selon l'écran -->
+    <link rel="stylesheet" href="styles/mobile.css" media="screen and (max-width: 1023px)">
+    <link rel="stylesheet" href="styles/desktop.css" media="screen and (min-width: 1024px)">
+</head>
+
+<body>
+    <div class="editor-container">
+        <div class="project-info">
+            <button id="menuToggle" class="menu-hamburger" title="Afficher les outils">
+                <div id="mobileUserAvatar" class="mobile-user-avatar"></div>
+            </button>
+            <div class="branding">
+                <img src="images/icon.png" alt="Pixel Editor Icon" class="app-icon">
+                <img src="images/text.png" alt="Pixel Editor" class="app-text">
+            </div>
+            <div class="user-profile">
+                <div id="userProfileDisplay" class="user-profile-display">
+                    <div id="userAvatar" class="user-avatar"></div>
+                    <span id="userName" class="user-name">Loading...</span>
+                    
+                    <!-- Menu dropdown simple -->
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="user-dropdown-header">
+                            <span class="user-dropdown-name" id="dropdownUserName">Utilisateur</span>
+                        </div>
+                        <button id="profileBtn" class="dropdown-item">
+                            <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            Profil
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button id="saveBtnDropdown" class="dropdown-item">
+                            💾 Sauvegarder
+                        </button>
+                        <button id="loadBtnDropdown" class="dropdown-item">
+                            📂 Charger
+                        </button>
+                        <button id="loadLocalBtnDropdown" class="dropdown-item">
+                            🌐 Mes projets
+                        </button>
+                        <button id="exportGifBtnDropdown" class="dropdown-item">
+                            🎬 Export GIF
+                        </button>
+                        <button id="shareProjectBtnDropdown" class="dropdown-item">
+                            🔗 Partager
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button id="photoToPixelBtnDropdown" class="dropdown-item">
+                            📷 Photo → Pixel
+                        </button>
+                        <button id="templateBtnDropdown" class="dropdown-item">
+                            🧩 Modèles à Réaliser
+                        </button>
+                        <button id="publishTemplateBtnDropdown" class="dropdown-item">
+                            ✨ Publier un Modèle
+                        </button>
+                        <button id="galleryBtnDropdown" class="dropdown-item">
+                            🖼️ Galerie
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button id="logoutBtnDropdown" class="dropdown-item">
+                            <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
+                            </svg>
+                            Déconnexion
+                        </button>
+                    </div>
+                </div>
+                <button id="logoutBtn" class="logout-btn" title="Se déconnecter">Déconnexion</button>
+            </div>
+            <button id="playToggle" class="play-button" title="Lancer/Arrêter l'animation">▶️</button>
+        </div>
+
+        <div class="toolbar">
+            <div class="tools">
+                <button id="clearBtn">Effacer tout</button>
+                <button id="deleteFrameBtn">Supprimer la frame</button>
+                <button id="previewBtn" title="Lancer/Arrêter l'animation">▶️</button>
+                <button id="fpsBtn" title="Régler la vitesse d'animation">⚙️ FPS</button>
+                <button id="gridSizeBtn" title="Changer la taille de la grille">📐 <span class="grid-size-indicator">32×32</span></button>
+                <button id="saveBtn">💾 Sauvegarder</button>
+                <button id="loadBtn">📂 Charger</button>
+                <button id="loadLocalBtn">🌐 Mes projets</button>
+                <button id="exportGifBtn">🎬 Export GIF</button>
+                <button id="shareProjectBtn">🔗 Partager</button>
+                <button id="galleryBtnMobile" onclick="window.location.href='/gallery.html'">🖼️ Galerie</button>
+                <button id="photoToPixelBtn" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">📷 Photo →
+                    Pixel</button>
+                <button id="templateBtn" style="background: linear-gradient(135deg, #4CAF50, #45A049);">🧩 Modèles à
+                    Réaliser</button>
+                <button id="publishTemplateBtnMobile" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">✨
+                    Publier</button>
+                <button id="profileBtnMobile">👤 Profil</button>
+                <button id="helpBtn">❓ Aide</button>
+                <button id="creditsBtn">Crédits</button>
+                <button id="logoutBtnMobile" class="logout-btn logout-btn-mobile">Déconnexion</button>
+            </div>
+        </div>
+
+        <!-- Interface compacte mobile intégrée -->
+        <div class="tools-compact">
+            <div class="compact-tools">
+                <!-- Ligne principale : Gomme + Couleur actuelle + Couleurs + Undo/Redo -->
+                <div class="compact-main-tools">
+                    <!-- Gauche : Gomme + Pipette + Valider + Couleur actuelle -->
+                    <div class="compact-left-tools">
+                        <button id="eraserBtn" class="compact-eraser-btn">Gomme</button>
+                        <button id="eyedropperBtn" class="compact-eyedropper-btn eyedropper-btn" title="Pipette (I)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <!-- Icône pipette style simple et reconnaissable -->
+                                <path
+                                    d="M20.71 5.04l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75 1.83-1.84c.39-.38.39-1.02 0-1.41zM17.08 9.94l-3.75-3.75L4.27 15.17v3.75h3.75l9.06-9.06zM6 18v-1.83l6.83-6.83 1.83 1.83L7.83 18H6z" />
+                            </svg>
+                        </button>
+                        <button id="validateColorBtnMobile" class="compact-validate-btn"
+                            title="Ajouter cette couleur à la palette">V</button>
+                        <div class="compact-current-color-container">
+                            <input type="color" id="colorPicker" value="#000000" class="compact-color-picker">
+                            <div class="compact-current-color" id="currentColorDisplay"></div>
+                        </div>
+                    </div>
+
+                    <!-- Centre : Couleurs preset -->
+                    <div class="compact-preset-colors">
+                        <button class="compact-color-btn" style="background-color: #000000"></button>
+                        <button class="compact-color-btn" style="background-color: #FFFFFF"></button>
+                        <button class="compact-color-btn" style="background-color: #FF0000"></button>
+                        <button class="compact-color-btn" style="background-color: #00FF00"></button>
+                        <button class="compact-color-btn" style="background-color: #0000FF"></button>
+                        <button class="compact-color-btn" style="background-color: #FFFF00"></button>
+                        <button class="compact-color-btn" style="background-color: #FF00FF"></button>
+                        <button class="compact-color-btn" style="background-color: #00FFFF"></button>
+                    </div>
+
+                    <!-- Droite : Undo/Redo -->
+                    <div class="compact-right-tools">
+                        <button id="undoBtn" class="compact-undo-redo-btn" title="Annuler (←)">↺</button>
+                        <button id="redoBtn" class="compact-undo-redo-btn" title="Rétablir (→)">↻</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal pour personnaliser la palette -->
+        <div id="paletteModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Personnaliser la palette</h3>
+                    <button id="closePaletteModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="palette-customizer">
+                        <div class="palette-colors-grid" id="paletteColorsGrid">
+                            <!-- Les couleurs seront générées dynamiquement -->
+                        </div>
+                        <div class="palette-actions">
+                            <button id="resetPaletteBtn" class="reset-btn">🔄 Couleurs par défaut</button>
+                            <button id="savePaletteBtn" class="save-btn">💾 Sauvegarder</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal pour régler le FPS -->
+        <div id="fpsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>⚙️ Vitesse d'animation</h3>
+                    <button id="closeFpsModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="fps-control">
+                        <div class="fps-display">
+                            <span id="fpsValue" class="fps-value">24</span>
+                            <span class="fps-label">FPS</span>
+                            <span id="fpsDesc" class="fps-desc">(Cinéma)</span>
+                        </div>
+
+                        <div class="fps-slider-container">
+                            <span class="fps-min">1</span>
+                            <input type="range" id="fpsSlider" min="1" max="60" value="24" class="fps-slider">
+                            <span class="fps-max">60</span>
+                        </div>
+
+                        <div class="fps-presets">
+                            <span class="fps-presets-label">Préréglages :</span>
+                            <button class="fps-preset-btn" data-fps="12">12 FPS<br><small>(Animation)</small></button>
+                            <button class="fps-preset-btn" data-fps="24">24 FPS<br><small>(Cinéma)</small></button>
+                            <button class="fps-preset-btn" data-fps="30">30 FPS<br><small>(Vidéo)</small></button>
+                            <button class="fps-preset-btn" data-fps="60">60 FPS<br><small>(Fluide)</small></button>
+                        </div>
+
+                        <div class="fps-info">
+                            <p>💡 Plus le FPS est élevé, plus l'animation sera fluide.</p>
+                            <p>24 FPS = Qualité cinéma professionnelle</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal pour sélectionner la taille de la grille -->
+        <div id="gridSizeModal" class="modal" style="display:none;">
+            <div class="modal-content grid-size-modal-content">
+                <div class="modal-header">
+                    <h3>📐 Taille de la grille</h3>
+                    <button id="closeGridSizeModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="grid-size-subtitle">Choisissez la résolution de votre pixel art</p>
+                    <div class="grid-size-options">
+                        <button class="grid-size-btn" data-size="8">
+                            <span class="grid-size-label">8×8</span>
+                            <span class="grid-size-desc">Icônes rétro</span>
+                        </button>
+                        <button class="grid-size-btn" data-size="16">
+                            <span class="grid-size-label">16×16</span>
+                            <span class="grid-size-desc">Sprites classiques</span>
+                        </button>
+                        <button class="grid-size-btn active" data-size="32">
+                            <span class="grid-size-label">32×32</span>
+                            <span class="grid-size-desc">Défaut</span>
+                        </button>
+                        <button class="grid-size-btn" data-size="64">
+                            <span class="grid-size-label">64×64</span>
+                            <span class="grid-size-desc">Détails fins</span>
+                        </button>
+                    </div>
+                    <p class="grid-size-warning">⚠️ Changer la taille effacera le contenu actuel.</p>
+                    <p class="grid-size-current">Taille actuelle : <strong class="grid-size-indicator">32×32</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal custom pour sélectionner une couleur -->
+        <div id="customColorModal" class="modal-overlay" style="display: none;">
+            <div class="modal custom-color-modal">
+                <div class="modal-header custom-color-header">
+                    <h3>Couleur personnalisée</h3>
+                    <button id="closeCustomColorModal" class="close-btn">&times;</button>
+                </div>
+                <div class="custom-color-body">
+                    <div class="custom-color-preview" id="customColorPreview"></div>
+                    <div class="custom-color-info">
+                        <span class="custom-color-hex-label">Hex</span>
+                        <span class="custom-color-hex-value" id="customColorHexValue">#000000</span>
+                    </div>
+                    <div class="custom-color-spectrum">
+                        <canvas id="customColorCanvas" width="320" height="200"></canvas>
+                        <p class="custom-color-spectrum-hint">Glissez dans le nuancier pour sélectionner une teinte.</p>
+                    </div>
+                    <div class="custom-color-swatches" id="customColorSwatches">
+                        <button class="custom-color-swatch" data-color="#FFFFFF" title="#FFFFFF"
+                            style="background:#FFFFFF;"></button>
+                        <button class="custom-color-swatch" data-color="#000000" title="#000000"
+                            style="background:#000000;"></button>
+                        <button class="custom-color-swatch" data-color="#FF0000" title="#FF0000"
+                            style="background:#FF0000;"></button>
+                        <button class="custom-color-swatch" data-color="#FF7F00" title="#FF7F00"
+                            style="background:#FF7F00;"></button>
+                        <button class="custom-color-swatch" data-color="#FFFF00" title="#FFFF00"
+                            style="background:#FFFF00;"></button>
+                        <button class="custom-color-swatch" data-color="#00FF00" title="#00FF00"
+                            style="background:#00FF00;"></button>
+                        <button class="custom-color-swatch" data-color="#00FFFF" title="#00FFFF"
+                            style="background:#00FFFF;"></button>
+                        <button class="custom-color-swatch" data-color="#0000FF" title="#0000FF"
+                            style="background:#0000FF;"></button>
+                        <button class="custom-color-swatch" data-color="#8B00FF" title="#8B00FF"
+                            style="background:#8B00FF;"></button>
+                        <button class="custom-color-swatch" data-color="#FF1493" title="#FF1493"
+                            style="background:#FF1493;"></button>
+                    </div>
+                    <div class="custom-color-actions">
+                        <button id="customColorSystem" class="dialog-button secondary">🎨 Sélecteur système</button>
+                        <div class="custom-color-actions-right">
+                            <button id="cancelCustomColor" class="dialog-button secondary">Annuler</button>
+                            <button id="applyCustomColor" class="dialog-button">Appliquer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tools-secondary">
+            <div class="color-palette">
+                <!-- Ligne 1 : Couleur actuelle -->
+                <div class="color-picker-row">
+                    <div class="desktop-current-color-container">
+                        <span class="color-label">Couleur actuelle :</span>
+                        <div class="desktop-current-color" id="desktopCurrentColorDisplay"></div>
+                    </div>
+                    <input type="color" id="colorPicker" value="#000000">
+                </div>
+
+                <!-- Ligne 2 : Validate + Undo + Redo -->
+                <div class="tools-row validate-undo-redo-row">
+                    <button id="validateColorBtn" class="validate-color-btn"
+                        title="Ajouter cette couleur à la palette">✓</button>
+                    <button id="undoBtnDesktop" class="undo-redo-btn" title="Annuler (←)">↺</button>
+                    <button id="redoBtnDesktop" class="undo-redo-btn" title="Rétablir (→)">↻</button>
+                </div>
+
+                <!-- Ligne 2 : Couleurs preset -->
+                <div class="tools-row">
+                    <!-- Couleurs preset compactes -->
+                    <div class="preset-colors">
+                        <button class="color-btn" style="background-color: #000000"></button>
+                        <button class="color-btn" style="background-color: #FFFFFF"></button>
+                        <button class="color-btn" style="background-color: #FF0000"></button>
+                        <button class="color-btn" style="background-color: #00FF00"></button>
+                        <button class="color-btn" style="background-color: #0000FF"></button>
+                        <button class="color-btn" style="background-color: #FFFF00"></button>
+                        <button class="color-btn" style="background-color: #FF00FF"></button>
+                        <button class="color-btn" style="background-color: #00FFFF"></button>
+                    </div>
+                </div>
+
+                <!-- Ligne 3 : Gomme + Pipette -->
+                <div class="tools-row">
+                    <button id="eraserBtn" class="eraser-btn">Gomme</button>
+                    <button id="eyedropperBtn" class="eraser-btn eyedropper-btn" title="Pipette (I)">🎨 Pipette</button>
+                </div>
+            </div>
+
+            <!-- TOUS LES BOUTONS pour desktop -->
+            <div class="extra-tools">
+                <button id="previewBtn2" title="Lancer/Arrêter l'animation">▶️ Animation</button>
+                <button id="fpsBtnSidebar" title="Régler la vitesse d'animation">⚙️ Vitesse</button>
+                <button id="gridSizeBtnSidebar" title="Changer la taille de la grille">📐 <span class="grid-size-indicator">32×32</span></button>
+                <div class="fps-sidebar-panel" id="fpsSidebarPanel">
+                    <div class="fps-sidebar-header">
+                        <div class="fps-sidebar-value"><span id="fpsSidebarValue">24</span> FPS</div>
+                        <div class="fps-sidebar-desc" id="fpsSidebarDesc">(Cinéma)</div>
+                    </div>
+                    <div class="fps-sidebar-slider">
+                        <span class="fps-sidebar-min">1</span>
+                        <input type="range" id="fpsSidebarSlider" min="1" max="60" value="24">
+                        <span class="fps-sidebar-max">60</span>
+                    </div>
+                    <div class="fps-sidebar-presets">
+                        <button class="fps-sidebar-preset" data-fps="12">12 FPS<br><small>Animation</small></button>
+                        <button class="fps-sidebar-preset" data-fps="24">24 FPS<br><small>Cinéma</small></button>
+                        <button class="fps-sidebar-preset" data-fps="30">30 FPS<br><small>Vidéo</small></button>
+                        <button class="fps-sidebar-preset" data-fps="60">60 FPS<br><small>Fluide</small></button>
+                    </div>
+                    <p class="fps-sidebar-hint">💡 Ajuste la vitesse pendant la lecture pour voir l'effet en direct.</p>
+                </div>
+                <button id="clearBtn2">🗑️ Effacer tout</button>
+                <button id="deleteFrameBtn2">🗑️ Supprimer la frame</button>
+                <button id="saveBtn2">💾 Sauvegarder</button>
+                <button id="loadBtn2">📂 Charger</button>
+                <button id="loadLocalBtn2">🌐 Mes projets</button>
+                <button id="exportGifBtn2">🎬 Export GIF</button>
+                <button id="shareProjectBtn2">🔗 Partager</button>
+                <button id="galleryBtn2" onclick="window.location.href='/gallery.html'">🖼️ Galerie</button>
+                <button id="photoToPixelBtn2" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">📷 Photo →
+                    Pixel</button>
+                <button id="templateBtn2" style="background: linear-gradient(135deg, #4CAF50, #45A049);">🧩 Modèles à
+                    Réaliser</button>
+                <button id="publishTemplateBtn" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">✨ Publier
+                    un Modèle</button>
+                <button id="profileBtn">👤 Mon profil</button>
+                <button id="helpBtn2">❓ Aide</button>
+                <button id="creditsBtn2">ℹ️ Crédits</button>
+            </div>
+        </div>
+
+        <div class="grid-container">
+            <div id="pixelGrid"></div>
+        </div>
+
+        <div class="frames-container">
+            <div class="frame-actions">
+                <button id="copyFrameBtnMain" class="frame-action-btn copy-btn"
+                    title="Copier la frame actuelle">C</button>
+                <button id="addFrameBtn">+ Nouvelle Frame</button>
+                <button id="pasteFrameBtnMain" class="frame-action-btn paste-btn"
+                    title="Coller la frame copiée">V</button>
+            </div>
+            <div id="framesList"></div>
+        </div>
+
+        <!-- Espace réservé pour la publicité future -->
+        <div class="ad-space">
+            <!-- Zone réservée pour contenu futur -->
+        </div>
+    </div>
+
+    <script src="js/config/supabase-config.js"></script>
+    <script src="js/config/app-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/sharing.js"></script>
+    <script>
+        // Authentication check - must be logged in to use the app
+        (async function () {
+            const initialized = await window.authService.init();
+
+            if (!initialized) {
+                // Show error if Supabase not configured
+                alert('⚠️ Supabase not configured.\n\nPlease:\n1. Create a Supabase project at https://supabase.com\n2. Update public/js/config/supabase-config.js with your credentials\n3. See docs/SETUP-AUTHENTICATION.md for full instructions');
+                window.location.href = '/login.html';
+                return;
+            }
+
+            if (!window.authService.isAuthenticated()) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // Gestion des boutons de déconnexion (header + menu hamburger)
+            const logoutButtons = [
+                document.getElementById('logoutBtn'),
+                document.getElementById('logoutBtnMobile')
+            ].filter(Boolean);
+
+            logoutButtons.forEach(button => {
+                button.addEventListener('click', async () => {
+                    const result = await window.authService.signOut();
+                    if (result.success) {
+                        window.location.href = '/login.html';
+                    }
+                });
+            });
+
+            window.__pixelEditorAuthInitialized = true;
+
+            // Vérifier si le profil utilisateur est configuré (pseudo requis)
+            await checkAndRequireUserProfile();
+
+            // Initialiser le tracking de session
+            if (window.dbService && typeof window.dbService.startUserSession === 'function') {
+                window.dbService.startUserSession().catch(err => {
+                    console.warn('Session tracking error:', err);
+                });
+            }
+
+            // Mettre à jour l'affichage du profil après chargement de tous les scripts
+            // Utiliser un délai pour s'assurer que script-templates.js est chargé
+            setTimeout(() => {
+                if (typeof updateUserProfileDisplay === 'function') {
+                    updateUserProfileDisplay();
+                } else if (typeof window.updateUserProfileDisplay === 'function') {
+                    window.updateUserProfileDisplay();
+                }
+            }, 500);
+
+            if (typeof window.initUserProfileFlow === 'function') {
+                window.initUserProfileFlow();
+            }
+
+            /**
+             * Vérifie si le profil utilisateur est configuré et affiche une modal obligatoire si nécessaire
+             */
+            async function checkAndRequireUserProfile() {
+                try {
+                    if (!window.dbService) {
+                        console.warn('Database service non disponible, impossible de vérifier le profil');
+                        return;
+                    }
+
+                    // Attendre que les scripts soient chargés
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    const profileResult = await window.dbService.getUserProfile();
+
+                    if (!profileResult.success) {
+                        console.warn('Erreur lors de la récupération du profil:', profileResult.error);
+                        return;
+                    }
+
+                    const profile = profileResult.data;
+                    const username = profile && profile.username ? profile.username.trim() : '';
+
+                    // Vérifier si le pseudo est configuré
+                    const hasCustomUsername = username && username.length >= 2;
+
+                    if (!hasCustomUsername) {
+                        // Afficher une modal obligatoire pour configurer le profil
+                        showRequiredProfileModal();
+                    }
+                } catch (error) {
+                    console.error('Erreur lors de la vérification du profil:', error);
+                }
+            }
+
+            /**
+             * Affiche une modal obligatoire pour configurer le pseudo et l'avatar
+             */
+            function showRequiredProfileModal() {
+                const modalContent = `
+                    <div style="padding: 30px; text-align: center; color: rgba(255, 255, 255, 0.95);">
+                        <h2 style="margin-top: 0; color: rgba(255, 255, 255, 0.98); font-size: 24px;">👋 Bienvenue !</h2>
+                        <p style="font-size: 16px; margin: 20px 0; color: rgba(255, 255, 255, 0.9);">
+                            Pour continuer, vous devez configurer votre profil public.
+                        </p>
+                        <p style="font-size: 14px; margin: 15px 0; color: rgba(255, 255, 255, 0.8);">
+                            Choisissez un pseudo et créez un avatar qui seront affichés sur vos créations partagées.
+                        </p>
+                        <button id="configureProfileBtn" style="margin-top: 20px; padding: 12px 30px; border: none; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; font-size: 16px;">
+                            Configurer mon profil
+                        </button>
+                    </div>
+                `;
+
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.style.display = 'flex';
+                modal.style.zIndex = '10000';
+                modal.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 450px; width: 90%; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.95);">
+                        ${modalContent}
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+
+                // Empêcher la fermeture de la modal
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                });
+
+                // Bouton pour configurer le profil
+                document.getElementById('configureProfileBtn').addEventListener('click', () => {
+                    modal.remove();
+
+                    // Attendre que les scripts soient chargés puis ouvrir le dialogue de profil
+                    setTimeout(() => {
+                        if (typeof window.showUsernameDialog === 'function') {
+                            window.showUsernameDialog();
+                        } else {
+                            // Fallback : essayer d'ouvrir via le menu profil
+                            const profileBtn = document.getElementById('profileBtn') || document.getElementById('profileBtnMobile');
+                            if (profileBtn) {
+                                profileBtn.click();
+                            }
+                        }
+                    }, 500);
+                });
+
+                // Écouter l'événement quand le profil est configuré
+                const onProfileConfigured = () => {
+                    // Vérifier une dernière fois avant de fermer définitivement
+                    setTimeout(async () => {
+                        const profileResult = await window.dbService.getUserProfile();
+                        if (profileResult.success) {
+                            const profile = profileResult.data;
+                            const username = profile && profile.username ? profile.username.trim() : '';
+                            const hasCustomUsername = username && username.length >= 2;
+
+                            if (hasCustomUsername) {
+                                // Le profil est configuré, ne plus afficher la modal
+                                return;
+                            }
+                        }
+
+                        // Si toujours pas configuré, réafficher la modal
+                        if (!document.querySelector('.modal[style*="z-index: 10000"]')) {
+                            showRequiredProfileModal();
+                        }
+                    }, 1000);
+                };
+
+                window.addEventListener('userProfileConfigured', onProfileConfigured);
+
+                // Vérifier périodiquement si le profil a été configuré (au cas où l'événement ne se déclenche pas)
+                const checkInterval = setInterval(async () => {
+                    try {
+                        const profileResult = await window.dbService.getUserProfile();
+                        if (profileResult.success) {
+                            const profile = profileResult.data;
+                            const username = profile && profile.username ? profile.username.trim() : '';
+                            const hasCustomUsername = username && username.length >= 2;
+
+                            if (hasCustomUsername) {
+                                clearInterval(checkInterval);
+                                window.removeEventListener('userProfileConfigured', onProfileConfigured);
+
+                                // Fermer la modal si elle existe encore
+                                const existingModal = document.querySelector('.modal[style*="z-index: 10000"]');
+                                if (existingModal) {
+                                    existingModal.remove();
+                                }
+
+                                // Mettre à jour l'affichage
+                                if (typeof window.updateUserProfileDisplay === 'function') {
+                                    window.updateUserProfileDisplay();
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Erreur lors de la vérification:', error);
+                    }
+                }, 2000);
+
+                // Nettoyer l'intervalle si la modal est supprimée manuellement
+                const observer = new MutationObserver(() => {
+                    if (!document.body.contains(modal)) {
+                        clearInterval(checkInterval);
+                        window.removeEventListener('userProfileConfigured', onProfileConfigured);
+                        observer.disconnect();
+                    }
+                });
+                observer.observe(document.body, { childList: true, subtree: true });
+            }
+        })();
+    </script>
+    <script src="js/script.js"></script>
+    <!-- Script BETA - Fonctionnalité Photo → Pixel Art -->
+    <script src="js/script-beta.js"></script>
+    <!-- Script BETA - Fonctionnalité Modèles à Réaliser -->
+    <script src="js/script-templates.js"></script>
+</body>
+
+</html>
+<!-- Force deployment Fri Oct  3 18:01:04 CEST 2025 -->

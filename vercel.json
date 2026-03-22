@@ -5,12 +5,12 @@
       "destination": "/api"
     },
     {
-      "source": "/",
-      "destination": "/public/landing.html"
-    },
-    {
       "source": "/(.+)",
       "destination": "/public/$1"
+    },
+    {
+      "source": "/",
+      "destination": "/public/index.html"
     }
   ]
 }
