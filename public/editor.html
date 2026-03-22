@@ -356,13 +356,13 @@
 
             <!-- TOUS LES BOUTONS pour desktop -->
             <div class="extra-tools">
-                <button id="previewBtn2" title="Lancer/Arrêter l'animation">▶️ Animation</button>
-                <button id="fpsBtnSidebar" title="Régler la vitesse d'animation">⚙️ Vitesse</button>
-                <button id="gridSizeBtnSidebar" title="Changer la taille de la grille">📐 <span class="grid-size-indicator">32×32</span></button>
+                <button id="previewBtn2"      data-en="▶️ Animation"    data-fr="▶️ Animation">▶️ Animation</button>
+                <button id="fpsBtnSidebar"    data-en="⚙️ Speed"        data-fr="⚙️ Vitesse">⚙️ Speed</button>
+                <button id="gridSizeBtnSidebar" data-en="📐 Size"       data-fr="📐 Taille">📐 <span class="grid-size-indicator">32×32</span></button>
                 <div class="fps-sidebar-panel" id="fpsSidebarPanel">
                     <div class="fps-sidebar-header">
                         <div class="fps-sidebar-value"><span id="fpsSidebarValue">24</span> FPS</div>
-                        <div class="fps-sidebar-desc" id="fpsSidebarDesc">(Cinéma)</div>
+                        <div class="fps-sidebar-desc" id="fpsSidebarDesc">(Cinema)</div>
                     </div>
                     <div class="fps-sidebar-slider">
                         <span class="fps-sidebar-min">1</span>
@@ -370,30 +370,27 @@
                         <span class="fps-sidebar-max">60</span>
                     </div>
                     <div class="fps-sidebar-presets">
-                        <button class="fps-sidebar-preset" data-fps="12">12 FPS<br><small>Animation</small></button>
-                        <button class="fps-sidebar-preset" data-fps="24">24 FPS<br><small>Cinéma</small></button>
-                        <button class="fps-sidebar-preset" data-fps="30">30 FPS<br><small>Vidéo</small></button>
-                        <button class="fps-sidebar-preset" data-fps="60">60 FPS<br><small>Fluide</small></button>
+                        <button class="fps-sidebar-preset" data-fps="12">12 FPS<br><small data-en="Animation" data-fr="Animation">Animation</small></button>
+                        <button class="fps-sidebar-preset" data-fps="24">24 FPS<br><small data-en="Cinema" data-fr="Cinéma">Cinema</small></button>
+                        <button class="fps-sidebar-preset" data-fps="30">30 FPS<br><small data-en="Video" data-fr="Vidéo">Video</small></button>
+                        <button class="fps-sidebar-preset" data-fps="60">60 FPS<br><small data-en="Smooth" data-fr="Fluide">Smooth</small></button>
                     </div>
-                    <p class="fps-sidebar-hint">💡 Ajuste la vitesse pendant la lecture pour voir l'effet en direct.</p>
+                    <p class="fps-sidebar-hint" data-en="💡 Adjust speed while playing to hear the effect live." data-fr="💡 Ajuste la vitesse pendant la lecture pour voir l'effet en direct.">💡 Adjust speed while playing to hear the effect live.</p>
                 </div>
-                <button id="clearBtn2">🗑️ Effacer tout</button>
-                <button id="deleteFrameBtn2">🗑️ Supprimer la frame</button>
-                <button id="saveBtn2">💾 Sauvegarder</button>
-                <button id="loadBtn2">📂 Charger</button>
-                <button id="loadLocalBtn2">🌐 Mes projets</button>
-                <button id="exportGifBtn2">🎬 Export GIF</button>
-                <button id="shareProjectBtn2">🔗 Partager</button>
-                <button id="galleryBtn2" onclick="window.location.href='/gallery.html'">🖼️ Galerie</button>
-                <button id="photoToPixelBtn2" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">📷 Photo →
-                    Pixel</button>
-                <button id="templateBtn2" style="background: linear-gradient(135deg, #4CAF50, #45A049);">🧩 Modèles à
-                    Réaliser</button>
-                <button id="publishTemplateBtn" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">✨ Publier
-                    un Modèle</button>
-                <button id="profileBtn">👤 Mon profil</button>
-                <button id="helpBtn2">❓ Aide</button>
-                <button id="creditsBtn2">ℹ️ Crédits</button>
+                <button id="clearBtn2"        data-en="🗑️ Clear all"    data-fr="🗑️ Effacer tout">🗑️ Clear all</button>
+                <button id="deleteFrameBtn2"  data-en="🗑️ Delete frame" data-fr="🗑️ Supprimer la frame">🗑️ Delete frame</button>
+                <button id="saveBtn2"         data-en="💾 Save"         data-fr="💾 Sauvegarder">💾 Save</button>
+                <button id="loadBtn2"         data-en="📂 Load"         data-fr="📂 Charger">📂 Load</button>
+                <button id="loadLocalBtn2"    data-en="🌐 My projects"  data-fr="🌐 Mes projets">🌐 My projects</button>
+                <button id="exportGifBtn2"    data-en="🎬 Export GIF"   data-fr="🎬 Export GIF">🎬 Export GIF</button>
+                <button id="shareProjectBtn2" data-en="🔗 Share"        data-fr="🔗 Partager">🔗 Share</button>
+                <button id="galleryBtn2"      data-en="🖼️ Gallery"      data-fr="🖼️ Galerie" onclick="window.location.href='/gallery.html'">🖼️ Gallery</button>
+                <button id="photoToPixelBtn2" data-en="📷 Photo → Pixel" data-fr="📷 Photo → Pixel" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">📷 Photo → Pixel</button>
+                <button id="templateBtn2"     data-en="🧩 Templates"    data-fr="🧩 Modèles à Réaliser" style="background: linear-gradient(135deg, #4CAF50, #45A049);">🧩 Templates</button>
+                <button id="publishTemplateBtn" data-en="✨ Publish template" data-fr="✨ Publier un Modèle" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">✨ Publish template</button>
+                <button id="profileBtn"       data-en="👤 My profile"   data-fr="👤 Mon profil">👤 My profile</button>
+                <button id="helpBtn2"         data-en="❓ Help"          data-fr="❓ Aide">❓ Help</button>
+                <button id="creditsBtn2"      data-en="ℹ️ Credits"       data-fr="ℹ️ Crédits">ℹ️ Credits</button>
             </div>
         </div>
 
@@ -405,7 +402,7 @@
             <div class="frame-actions">
                 <button id="copyFrameBtnMain" class="frame-action-btn copy-btn"
                     title="Copier la frame actuelle">C</button>
-                <button id="addFrameBtn">+ Nouvelle Frame</button>
+                <button id="addFrameBtn" data-en="+ New Frame" data-fr="+ Nouvelle Frame">+ New Frame</button>
                 <button id="pasteFrameBtnMain" class="frame-action-btn paste-btn"
                     title="Coller la frame copiée">V</button>
             </div>
