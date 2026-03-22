@@ -3992,9 +3992,9 @@ function showCredits() {
             </ul>
         </div>
         <div class="credits-section legal">
-            <h3>Mentions légales</h3>
-            <p>© ${new Date().getFullYear()} Frédéric Terrasson. Tous droits réservés.</p>
-            <p>Usage autorisé uniquement dans le cadre des licences signées avec l'éditeur. Pour toute exploitation commerciale, contactez l'adresse ci-dessus.</p>
+            <h3>Projet open source</h3>
+            <p>© ${new Date().getFullYear()} Frédéric Terrasson</p>
+            <p>Projet personnel open source — code disponible librement sur GitHub.</p>
         </div>
         <button class="close-credits">Fermer</button>
     `;
