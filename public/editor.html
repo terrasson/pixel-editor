@@ -664,7 +664,10 @@
             btn.addEventListener('click', () => applyEditorLang(btn.dataset.lang));
         });
 
+        // Apply immediately and again after async init completes
         applyEditorLang(localStorage.getItem('lang') || 'en');
+        setTimeout(() => applyEditorLang(localStorage.getItem('lang') || 'en'), 500);
+        window.applyEditorLang = applyEditorLang;
     </script>
 </body>
 
