@@ -3992,9 +3992,9 @@ function showCredits() {
             </ul>
         </div>
         <div class="credits-section legal">
-            <h3>Projet open source</h3>
+            <h3>Projet personnel</h3>
             <p>© ${new Date().getFullYear()} Frédéric Terrasson</p>
-            <p>Projet personnel open source — code disponible librement sur GitHub.</p>
+            <p>Projet d'apprentissage personnel, code source visible sur GitHub.</p>
         </div>
         <button class="close-credits">Fermer</button>
     `;
