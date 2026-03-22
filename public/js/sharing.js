@@ -7,6 +7,47 @@
 // INITIALIZATION
 // ============================================
 
+// ── i18n ──
+const TS = {
+    noProject:      { en: '⚠️ No project to share. Create something first!', fr: '⚠️ Aucun projet à partager. Créez d\'abord quelque chose !' },
+    saveFirst:      { en: '⚠️ Save your project before sharing.', fr: '⚠️ Sauvegardez d\'abord votre projet avant de le partager.' },
+    creatingLink:   { en: '⏳ Creating link...', fr: '⏳ Création du lien...' },
+    linkError:      { en: '❌ Error creating link:', fr: '❌ Erreur lors de la création du lien :' },
+    shareError:     { en: '❌ An error occurred while sharing.', fr: '❌ Une erreur est survenue lors du partage.' },
+    shareTitle:     { en: '📤 Share link', fr: '📤 Lien de partage' },
+    shareDesc:      { en: 'Copy this link and share it anywhere:', fr: 'Copiez ce lien et partagez-le où vous voulez :' },
+    copy:           { en: '📋 Copy', fr: '📋 Copier' },
+    copied:         { en: '✅ Copied!', fr: '✅ Copié !' },
+    nativeShare:    { en: '📲 Share via iMessage, AirDrop…', fr: '📲 Partager via iMessage, AirDrop…' },
+    publishGallery: { en: '🖼️ Publish to the public gallery', fr: '🖼️ Publier dans la galerie publique' },
+    close:          { en: 'Close', fr: 'Fermer' },
+    publishing:     { en: '⏳ Publishing…', fr: '⏳ Publication…' },
+    loadingShared:  { en: 'Loading shared projects…', fr: 'Chargement des projets partagés…' },
+    noShared:       { en: 'No shared projects yet.', fr: 'Aucun projet partagé pour le moment.' },
+    noSharedSub:    { en: 'When someone shares a project with you, it will appear here.', fr: 'Quand quelqu\'un partagera un projet avec vous, il apparaîtra ici.' },
+    loadError:      { en: 'Error loading.', fr: 'Erreur lors du chargement.' },
+    genericError:   { en: 'An error occurred.', fr: 'Une erreur est survenue.' },
+    statusNew:      { en: 'New', fr: 'Nouveau' },
+    statusAccepted: { en: 'Accepted', fr: 'Accepté' },
+    from:           { en: '📧 From:', fr: '📧 De :' },
+    actionDuplicate:{ en: '📋 Duplicate', fr: '📋 Dupliquer' },
+    actionView:     { en: '👁️ View', fr: '👁️ Voir' },
+    actionDecline:  { en: '✕ Decline', fr: '✕ Refuser' },
+    duplicating:    { en: '⏳ Duplicating…', fr: '⏳ Duplication…' },
+    dupSuccess:     { en: '✅ Project duplicated successfully!', fr: '✅ Projet dupliqué avec succès !' },
+    dupAdded:       { en: 'added to your projects.', fr: 'a été ajouté à vos projets.' },
+    dupError:       { en: '❌ Duplication error:', fr: '❌ Erreur lors de la duplication :' },
+    confirmView:    { en: '⚠️ This will replace your current project.\n\nPermission:', fr: '⚠️ Cela remplacera votre projet actuel.\n\nPermission :' },
+    viewBtn:        { en: '👁️ View project', fr: '👁️ Voir le projet' },
+    shared:         { en: '(shared)', fr: '(partagé)' },
+    loadSuccess:    { en: '✅ Project loaded successfully!', fr: '✅ Projet chargé avec succès !' },
+    declining:      { en: '⏳ Declining…', fr: '⏳ Refus…' },
+    confirmDecline: { en: '⚠️ Are you sure you want to decline this share?', fr: '⚠️ Êtes-vous sûr de vouloir refuser ce partage ?' },
+    declineSuccess: { en: '✅ Share declined.', fr: '✅ Partage refusé.' },
+    declineError:   { en: '❌ Error:', fr: '❌ Erreur :' },
+};
+const tS = key => TS[key]?.[localStorage.getItem('lang') || 'en'] || TS[key]?.en || key;
+
 let pendingSharesCount = 0;
 
 // Initialize sharing system
@@ -96,21 +137,19 @@ function hideModal(modalId) {
 async function handleShareButtonClick() {
     // Check if we have a project to share
     if (!frames || frames.length === 0) {
-        alert('⚠️ Aucun projet à partager. Créez d\'abord quelque chose !');
+        alert(tS('noProject'));
         return;
     }
 
-    // Get current project name
     const projectName = window.currentProjectName || document.getElementById('projectTitle')?.textContent;
     if (!projectName) {
-        alert('⚠️ Sauvegardez d\'abord votre projet avant de le partager.');
+        alert(tS('saveFirst'));
         return;
     }
 
-    // Show loading state
     const button = event.currentTarget;
     const originalText = button.textContent;
-    button.textContent = '⏳ Création du lien...';
+    button.textContent = tS('creatingLink');
     button.disabled = true;
 
     try {
@@ -129,11 +168,11 @@ async function handleShareButtonClick() {
             // Show the share modal with URL and gallery opt-in
             showShareModal(shareUrl, shareId);
         } else {
-            alert(`❌ Erreur lors de la création du lien :\n${result.error}`);
+            alert(`${tS('linkError')}\n${result.error}`);
         }
     } catch (error) {
         console.error('Share error:', error);
-        alert('❌ Une erreur est survenue lors du partage');
+        alert(tS('shareError'));
     } finally {
         button.textContent = originalText;
         button.disabled = false;
@@ -170,10 +209,8 @@ function showShareModal(url, shareId) {
     `;
 
     dialog.innerHTML = `
-        <h3 style="margin: 0 0 20px 0; color: white; font-size: 1.3rem;">📤 Lien de partage</h3>
-        <p style="color: rgba(255, 255, 255, 0.8); margin: 0 0 15px 0;">
-            Copiez ce lien et partagez-le où vous voulez :
-        </p>
+        <h3 style="margin: 0 0 20px 0; color: white; font-size: 1.3rem;">${tS('shareTitle')}</h3>
+        <p style="color: rgba(255, 255, 255, 0.8); margin: 0 0 15px 0;">${tS('shareDesc')}</p>
         <div style="display: flex; gap: 10px; margin-bottom: 12px;">
             <input
                 id="shareResultUrl"
@@ -190,9 +227,7 @@ function showShareModal(url, shareId) {
                 style="padding: 12px 20px; background: linear-gradient(135deg, #007AFF, #5856D6);
                        border: none; border-radius: 10px; color: white; cursor: pointer;
                        font-weight: 600; white-space: nowrap;"
-            >
-                📋 Copier
-            </button>
+            >${tS('copy')}</button>
         </div>
         ${navigator.share ? `
         <button
@@ -200,27 +235,19 @@ function showShareModal(url, shareId) {
             style="width: 100%; padding: 12px; background: linear-gradient(135deg, #34C759, #30A853);
                    border: none; border-radius: 10px; color: white; cursor: pointer;
                    font-weight: 600; font-size: 1rem; margin-bottom: 20px;"
-        >
-            📲 Partager via iMessage, AirDrop...
-        </button>` : ''}
+        >${tS('nativeShare')}</button>` : ''}
         <div style="margin-bottom: 20px; height: 1px; background: rgba(255,255,255,0.1);"></div>
         <label style="display: flex; align-items: center; gap: 10px; color: rgba(255, 255, 255, 0.85);
                       margin-bottom: 24px; cursor: pointer; user-select: none;">
-            <input
-                id="shareGalleryCheckbox"
-                type="checkbox"
-                style="width: 18px; height: 18px; cursor: pointer; accent-color: #007AFF;"
-            />
-            🖼️ Publier dans la galerie publique
+            <input id="shareGalleryCheckbox" type="checkbox"
+                style="width: 18px; height: 18px; cursor: pointer; accent-color: #007AFF;"/>
+            ${tS('publishGallery')}
         </label>
-        <button
-            id="shareResultCloseBtn"
+        <button id="shareResultCloseBtn"
             style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.1);
                    border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px;
                    color: white; cursor: pointer; font-weight: 600; font-size: 1rem;"
-        >
-            Fermer
-        </button>
+        >${tS('close')}</button>
     `;
 
     overlay.appendChild(dialog);
@@ -231,8 +258,8 @@ function showShareModal(url, shareId) {
     copyBtn.addEventListener('click', async () => {
         try {
             await navigator.clipboard.writeText(url);
-            copyBtn.textContent = '✅ Copié !';
-            setTimeout(() => { copyBtn.textContent = '📋 Copier'; }, 2000);
+            copyBtn.textContent = tS('copied');
+            setTimeout(() => { copyBtn.textContent = tS('copy'); }, 2000);
         } catch {
             // Fallback for browsers without clipboard API
             const ta = document.createElement('textarea');
@@ -243,8 +270,8 @@ function showShareModal(url, shareId) {
             ta.select();
             try { document.execCommand('copy'); } catch { /* silent */ }
             ta.remove();
-            copyBtn.textContent = '✅ Copié !';
-            setTimeout(() => { copyBtn.textContent = '📋 Copier'; }, 2000);
+            copyBtn.textContent = tS('copied');
+            setTimeout(() => { copyBtn.textContent = tS('copy'); }, 2000);
         }
     });
 
@@ -265,7 +292,7 @@ function showShareModal(url, shareId) {
     closeBtn.addEventListener('click', async () => {
         const publish = dialog.querySelector('#shareGalleryCheckbox').checked;
         if (publish) {
-            closeBtn.textContent = '⏳ Publication...';
+            closeBtn.textContent = tS('publishing');
             closeBtn.disabled = true;
             try {
                 await window.dbService.setGalleryVisibility(shareId, true);
@@ -353,7 +380,7 @@ async function showSharedWithMeDialog() {
     showModal('sharedWithMeDialog');
 
     const listContainer = document.getElementById('sharedProjectsList');
-    listContainer.innerHTML = '<div class="loading-state">Chargement des projets partagés...</div>';
+    listContainer.innerHTML = `<div class="loading-state">${tS('loadingShared')}</div>`;
 
     try {
         const result = await window.dbService.getSharedWithMeProjects();
@@ -365,8 +392,8 @@ async function showSharedWithMeDialog() {
                 listContainer.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📭</div>
-                        <p>Aucun projet partagé pour le moment</p>
-                        <small>Quand quelqu'un partagera un projet avec vous, il apparaîtra ici.</small>
+                        <p>${tS('noShared')}</p>
+                        <small>${tS('noSharedSub')}</small>
                     </div>
                 `;
             } else {
@@ -379,19 +406,17 @@ async function showSharedWithMeDialog() {
             listContainer.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">⚠️</div>
-                    <p>Erreur lors du chargement</p>
+                    <p>${tS('loadError')}</p>
                     <small>${result.error}</small>
-                </div>
-            `;
+                </div>`;
         }
     } catch (error) {
         console.error('Load shared projects error:', error);
         listContainer.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">⚠️</div>
-                <p>Une erreur est survenue</p>
-            </div>
-        `;
+                <p>${tS('genericError')}</p>
+            </div>`;
     }
 }
 
@@ -400,7 +425,7 @@ function createSharedProjectCard(share) {
     if (!project) return '';
 
     const statusClass = share.status === 'pending' ? 'pending' : 'accepted';
-    const statusLabel = share.status === 'pending' ? 'Nouveau' : 'Accepté';
+    const statusLabel = share.status === 'pending' ? tS('statusNew') : tS('statusAccepted');
 
     const permissionIcon = {
         'can_duplicate': '📋',
@@ -410,7 +435,7 @@ function createSharedProjectCard(share) {
 
     const permissionLabel = getPermissionLabel(share.permission);
 
-    const shareDate = new Date(share.created_at).toLocaleDateString('fr-FR', {
+    const shareDate = new Date(share.created_at).toLocaleDateString(localStorage.getItem('lang') === 'fr' ? 'fr-FR' : 'en-US', {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
@@ -423,22 +448,12 @@ function createSharedProjectCard(share) {
     ` : '';
 
     const actions = share.permission === 'view_only' ? `
-        <button class="shared-project-action-btn secondary" data-share-id="${share.id}" data-action="view">
-            👁️ Voir
-        </button>
-        <button class="shared-project-action-btn danger" data-share-id="${share.id}" data-action="decline">
-            ✕ Refuser
-        </button>
+        <button class="shared-project-action-btn secondary" data-share-id="${share.id}" data-action="view">${tS('actionView')}</button>
+        <button class="shared-project-action-btn danger" data-share-id="${share.id}" data-action="decline">${tS('actionDecline')}</button>
     ` : `
-        <button class="shared-project-action-btn primary" data-share-id="${share.id}" data-action="duplicate">
-            📋 Dupliquer
-        </button>
-        <button class="shared-project-action-btn secondary" data-share-id="${share.id}" data-action="view">
-            👁️ Voir
-        </button>
-        <button class="shared-project-action-btn danger" data-share-id="${share.id}" data-action="decline">
-            ✕ Refuser
-        </button>
+        <button class="shared-project-action-btn primary" data-share-id="${share.id}" data-action="duplicate">${tS('actionDuplicate')}</button>
+        <button class="shared-project-action-btn secondary" data-share-id="${share.id}" data-action="view">${tS('actionView')}</button>
+        <button class="shared-project-action-btn danger" data-share-id="${share.id}" data-action="decline">${tS('actionDecline')}</button>
     `;
 
     return `
@@ -453,7 +468,7 @@ function createSharedProjectCard(share) {
                 </div>
                 <div class="shared-project-meta">
                     <div class="shared-project-meta-row">
-                        <span>📧 De : ${escapeHtml(share.owner_email)}</span>
+                        <span>${tS('from')} ${escapeHtml(share.owner_email)}</span>
                     </div>
                     <div class="shared-project-meta-row">
                         <span>📅 ${shareDate}</span>
@@ -506,29 +521,25 @@ async function handleSharedProjectAction(e) {
 
 async function handleDuplicateShare(shareId, button) {
     const originalText = button.textContent;
-    button.textContent = '⏳ Duplication...';
+    button.textContent = tS('duplicating');
     button.disabled = true;
 
     try {
         const result = await window.dbService.duplicateSharedProject(shareId);
 
         if (result.success) {
-            alert(`✅ Projet dupliqué avec succès !\n\nLe projet "${result.data.name}" a été ajouté à vos projets.`);
-
-            // Accept the share automatically
+            alert(`${tS('dupSuccess')}\n\n"${result.data.name}" ${tS('dupAdded')}`);
             await window.dbService.acceptShare(shareId);
-
-            // Refresh the list
             await showSharedWithMeDialog();
             await updatePendingSharesBadge();
         } else {
-            alert(`❌ Erreur lors de la duplication :\n${result.error}`);
+            alert(`${tS('dupError')}\n${result.error}`);
             button.textContent = originalText;
             button.disabled = false;
         }
     } catch (error) {
         console.error('Duplicate error:', error);
-        alert('❌ Une erreur est survenue');
+        alert(tS('genericError'));
         button.textContent = originalText;
         button.disabled = false;
     }
@@ -543,7 +554,7 @@ async function handleViewShare(shareId) {
             const projectData = result.data;
 
             // Confirm with user
-            const confirmed = confirm(`👁️ Voir le projet "${projectData.name}" ?\n\n⚠️ Cela remplacera votre projet actuel.\n\nPermission : ${getPermissionLabel(result.permission)}`);
+            const confirmed = confirm(`${tS('viewBtn')} "${projectData.name}" ?\n\n${tS('confirmView')} ${getPermissionLabel(result.permission)}`);
 
             if (confirmed) {
                 // Load frames and other data
@@ -566,49 +577,49 @@ async function handleViewShare(shareId) {
 
                     // Update title
                     const title = document.getElementById('projectTitle');
-                    if (title) title.textContent = `${projectData.name} (partagé)`;
+                    if (title) title.textContent = `${projectData.name} ${tS('shared')}`;
 
                     // Accept the share
                     await window.dbService.acceptShare(shareId);
                     await updatePendingSharesBadge();
 
                     hideModal('sharedWithMeDialog');
-                    alert(`✅ Projet "${projectData.name}" chargé avec succès !`);
+                    alert(`${tS('loadSuccess')} "${projectData.name}"`);
                 }
             }
         } else {
-            alert(`❌ Erreur lors du chargement :\n${result.error}`);
+            alert(`${tS('loadError')}\n${result.error}`);
         }
     } catch (error) {
         console.error('View share error:', error);
-        alert('❌ Une erreur est survenue');
+        alert(tS('genericError'));
     }
 }
 
 async function handleDeclineShare(shareId, button) {
-    const confirmed = confirm('⚠️ Êtes-vous sûr de vouloir refuser ce partage ?');
+    const confirmed = confirm(tS('confirmDecline'));
 
     if (!confirmed) return;
 
     const originalText = button.textContent;
-    button.textContent = '⏳ Refus...';
+    button.textContent = tS('declining');
     button.disabled = true;
 
     try {
         const result = await window.dbService.declineShare(shareId);
 
         if (result.success) {
-            alert('✅ Partage refusé');
+            alert(tS('declineSuccess'));
             await showSharedWithMeDialog();
             await updatePendingSharesBadge();
         } else {
-            alert(`❌ Erreur :\n${result.error}`);
+            alert(`${tS('declineError')}\n${result.error}`);
             button.textContent = originalText;
             button.disabled = false;
         }
     } catch (error) {
         console.error('Decline error:', error);
-        alert('❌ Une erreur est survenue');
+        alert(tS('genericError'));
         button.textContent = originalText;
         button.disabled = false;
     }
