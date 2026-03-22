@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Projet Partagé - Éditeur Pixel Art</title>
+    <title>Shared Pixel Art - Pixel Editor</title>
 
-    <!-- Meta tags pour le partage social -->
-    <meta property="og:title" content="Découvre ce pixel art !">
-    <meta property="og:description" content="Un projet pixel art créé avec l'Éditeur Pixel Art">
+    <meta property="og:title" content="Check out this pixel art!">
+    <meta property="og:description" content="A pixel art project created with Pixel Editor">
     <meta property="og:type" content="website">
     <meta id="og-image" property="og:image" content="">
 
@@ -257,15 +256,14 @@
 <body>
     <div class="shared-container">
         <div class="shared-header">
-            <h1>🎨 Projet Partagé</h1>
-            <p>Découvrez ce pixel art créé avec l'Éditeur Pixel Art</p>
+            <h1 data-en="🎨 Shared Pixel Art" data-fr="🎨 Projet Partagé">🎨 Shared Pixel Art</h1>
+            <p data-en="A pixel art created with Pixel Editor" data-fr="Un pixel art créé avec l'Éditeur Pixel Art">A pixel art created with Pixel Editor</p>
         </div>
 
         <div id="content">
-            <!-- Loading state -->
             <div class="loading-state">
                 <div class="loading-spinner"></div>
-                <p>Chargement du projet...</p>
+                <p data-en="Loading project..." data-fr="Chargement du projet...">Loading project...</p>
             </div>
         </div>
     </div>
@@ -276,6 +274,39 @@
     <script src="js/database.js"></script>
 
     <script>
+        // ── Language ──
+        const T = {
+            loading:       { en: 'Loading project...', fr: 'Chargement du projet...' },
+            noToken:       { en: 'Invalid or incomplete share link.', fr: 'Le lien de partage est invalide ou incomplet.' },
+            notFound:      { en: 'Project not found', fr: 'Projet introuvable' },
+            error:         { en: 'An error occurred while loading.', fr: 'Une erreur est survenue lors du chargement.' },
+            sharedOn:      { en: 'Shared on', fr: 'Partagé le' },
+            duplicate:     { en: '📋 Duplicate to my account', fr: '📋 Dupliquer dans mon compte' },
+            dupDisabled:   { en: '🔒 Duplication disabled', fr: '🔒 Duplication désactivée' },
+            createAccount: { en: '👤 Create an account to duplicate', fr: '👤 Créer un compte pour dupliquer' },
+            createArt:     { en: '🎨 Create my own pixel art', fr: '🎨 Créer mon propre pixel art' },
+            views:         { en: 'Views', fr: 'Vues' },
+            duplicates:    { en: 'Duplicates', fr: 'Duplications' },
+            frames:        { en: 'Frames', fr: 'Frames' },
+            duplicating:   { en: '⏳ Duplicating...', fr: '⏳ Duplication en cours...' },
+            dupSuccess:    { en: 'Project duplicated! You can now edit it in your account.', fr: 'Projet dupliqué avec succès ! Vous pouvez maintenant le modifier dans votre compte.' },
+            dupError:      { en: 'An error occurred', fr: 'Une erreur est survenue' },
+            goToEditor:    { en: '🎨 Go to editor', fr: '🎨 Aller à l\'éditeur' },
+            pause:         { en: '⏸ Pause', fr: '⏸ Pause' },
+            play:          { en: '▶ Play', fr: '▶ Play' },
+        };
+        const t = key => T[key]?.[localStorage.getItem('lang') || 'en'] || T[key]?.en || key;
+
+        // Apply lang to static elements
+        (function applySharedLang() {
+            const l = localStorage.getItem('lang') || 'en';
+            document.documentElement.lang = l;
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const text = el.getAttribute('data-' + l);
+                if (text) el.textContent = text;
+            });
+        })();
+
         let currentShare = null;
         let currentUser = null;
         let animationInterval = null;
@@ -292,7 +323,7 @@
                 const token = urlParams.get('token');
 
                 if (!token) {
-                    showError('Aucun projet trouvé', 'Le lien de partage est invalide ou incomplet.');
+                    showError(t('notFound'), t('noToken'));
                     return;
                 }
 
@@ -304,7 +335,7 @@
                 const result = await window.dbService.getPublicShare(token);
 
                 if (!result.success) {
-                    showError('Projet introuvable', result.error);
+                    showError(t('notFound'), result.error);
                     return;
                 }
 
@@ -318,7 +349,7 @@
 
             } catch (error) {
                 console.error('Init error:', error);
-                showError('Erreur', 'Une erreur est survenue lors du chargement.');
+                showError('Error', t('error'));
             }
         }
 
@@ -335,7 +366,7 @@
                         <div class="project-details">
                             <h2>${escapeHtml(share.project_name)}</h2>
                             <div class="project-meta">
-                                <div>📅 Partagé le ${new Date(share.created_at).toLocaleDateString('fr-FR', {
+                                <div>📅 ${t('sharedOn')} ${new Date(share.created_at).toLocaleDateString(localStorage.getItem('lang') === 'fr' ? 'fr-FR' : 'en-US', {
                                     day: 'numeric',
                                     month: 'long',
                                     year: 'numeric'
@@ -356,36 +387,28 @@
                     <div class="action-buttons">
                         ${currentUser ? `
                             ${share.allow_duplicate ? `
-                                <button class="btn btn-primary" onclick="duplicateProject()">
-                                    📋 Dupliquer dans mon compte
-                                </button>
+                                <button class="btn btn-primary" onclick="duplicateProject()">${t('duplicate')}</button>
                             ` : `
-                                <button class="btn btn-secondary" disabled>
-                                    🔒 Duplication désactivée
-                                </button>
+                                <button class="btn btn-secondary" disabled>${t('dupDisabled')}</button>
                             `}
                         ` : `
-                            <button class="btn btn-primary" onclick="goToLogin()">
-                                👤 Créer un compte pour dupliquer
-                            </button>
+                            <button class="btn btn-primary" onclick="goToLogin()">${t('createAccount')}</button>
                         `}
-                        <button class="btn btn-secondary" onclick="goToApp()">
-                            🎨 Créer mon propre pixel art
-                        </button>
+                        <button class="btn btn-secondary" onclick="goToApp()">${t('createArt')}</button>
                     </div>
 
                     <div class="stats">
                         <div class="stat-item">
                             <div class="stat-value">${share.view_count || 0}</div>
-                            <div class="stat-label">Vues</div>
+                            <div class="stat-label">${t('views')}</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-value">${share.duplicate_count || 0}</div>
-                            <div class="stat-label">Duplications</div>
+                            <div class="stat-label">${t('duplicates')}</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-value">${snapshot.frames?.length || 1}</div>
-                            <div class="stat-label">Frames</div>
+                            <div class="stat-label">${t('frames')}</div>
                         </div>
                     </div>
                 </div>
@@ -425,7 +448,7 @@
         function startAnimation() {
             if (animationInterval) clearInterval(animationInterval);
             animationPlaying = true;
-            document.getElementById('playPauseBtn').textContent = '⏸ Pause';
+            document.getElementById('playPauseBtn').textContent = t('pause');
             animationInterval = setInterval(() => {
                 animationIndex = (animationIndex + 1) % animationFrames.length;
                 try {
@@ -441,7 +464,7 @@
             if (animationInterval) clearInterval(animationInterval);
             animationInterval = null;
             animationPlaying = false;
-            document.getElementById('playPauseBtn').textContent = '▶ Play';
+            document.getElementById('playPauseBtn').textContent = t('play');
         }
 
         function toggleAnimation() {
@@ -483,7 +506,7 @@
 
         function updateMetaTags(share) {
             // Update page title
-            document.title = `${share.project_name} - Pixel Art Partagé`;
+            document.title = `${share.project_name} - Shared Pixel Art`;
 
             // Update OG tags
             document.querySelector('meta[property="og:title"]').content = `${share.project_name} - Pixel Art`;
@@ -495,7 +518,7 @@
         async function duplicateProject() {
             const btn = event.currentTarget;
             const originalText = btn.textContent;
-            btn.textContent = '⏳ Duplication en cours...';
+            btn.textContent = t('duplicating');
             btn.disabled = true;
 
             try {
@@ -505,18 +528,16 @@
                 const result = await window.dbService.duplicatePublicShare(token);
 
                 if (result.success) {
-                    alert(`✅ Projet "${result.data.name}" dupliqué avec succès !\n\nVous pouvez maintenant le modifier dans votre compte.`);
-
-                    // Redirect to app
+                    alert(`✅ "${result.data.name}" — ${t('dupSuccess')}`);
                     window.location.href = '/editor.html';
                 } else {
-                    alert(`❌ Erreur : ${result.error}`);
+                    alert(`❌ ${result.error}`);
                     btn.textContent = originalText;
                     btn.disabled = false;
                 }
             } catch (error) {
                 console.error('Duplicate error:', error);
-                alert('❌ Une erreur est survenue');
+                alert(`❌ ${t('dupError')}`);
                 btn.textContent = originalText;
                 btn.disabled = false;
             }
@@ -538,7 +559,7 @@
                     <h2>${title}</h2>
                     <p style="color: rgba(255, 255, 255, 0.7); margin: 20px 0;">${message}</p>
                     <button class="btn btn-primary" onclick="goToApp()" style="margin: 0 auto; display: inline-block;">
-                        🎨 Aller à l'éditeur
+                        ${t('goToEditor')}
                     </button>
                 </div>
             `;
