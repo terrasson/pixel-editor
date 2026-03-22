@@ -3940,7 +3940,7 @@ function showHelp() {
             <h3>💾 Sauvegarde & chargement</h3>
             <div class="help-item"><strong>Sauvegarder :</strong> enregistre le projet (frames, couleurs, FPS) sur votre compte et crée un backup local.</div>
             <div class="help-item"><strong>Mes projets :</strong> retrouvez vos créations, rechargez-les ou supprimez-les.</div>
-            <div class="help-item"><strong>Charger :</strong> importez un projet reçu ou exporté (.json / .pixelart / .txt).</div>
+            <div class="help-item"><strong>Charger :</strong> importez un projet exporté depuis l'app (.json). Sur iOS, utilisez le format .txt si le fichier .json est grisé.</div>
                 </div>
             <div class="help-section">
             <h3>📤 Export & partage</h3>
