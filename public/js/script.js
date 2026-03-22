@@ -6645,6 +6645,14 @@ async function updateUserProfileDisplay() {
                 });
             }
             
+            const galleryBtnDropdown = document.getElementById('galleryBtnDropdown');
+            if (galleryBtnDropdown) {
+                galleryBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    window.location.href = '/gallery.html';
+                });
+            }
+
             userProfileDisplay.dataset.clickListenerAdded = 'true';
         }
         
