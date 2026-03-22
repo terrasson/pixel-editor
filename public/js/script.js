@@ -3918,7 +3918,7 @@ function showHelp() {
             <h3>🧱 Frames & animation</h3>
             <div class="help-item"><strong>+ Nouvelle Frame :</strong> ajoute une frame vide (ou duplique la sélection si elle contient des pixels).</div>
             <div class="help-item"><strong>Play :</strong> lance/arrête l'aperçu.</div>
-            <div class="help-item"><strong>Vitesse :</strong> ajustez les FPS via le bouton "Vitesse" (sidebar desktop ou panneau mobile) pour tester plusieurs rythmes.</div>
+            <div class="help-item"><strong>FPS :</strong> ajustez la vitesse d'animation via le bouton "FPS" (sidebar desktop ou menu hamburger sur mobile).</div>
                 </div>
             <div class="help-section">
             <h3>⌨️ Raccourcis clavier</h3>
@@ -3945,12 +3945,14 @@ function showHelp() {
             <div class="help-section">
             <h3>📤 Export & partage</h3>
             <div class="help-item"><strong>Export GIF :</strong> génère un GIF animé de toutes vos frames.</div>
-            <div class="help-item"><strong>Partager :</strong> crée un fichier ou un lien à envoyer à d'autres utilisateurs.</div>
+            <div class="help-item"><strong>Partager :</strong> génère un lien public vers votre création (iMessage, AirDrop, copie du lien). Option pour publier dans la Galerie communautaire.</div>
+            <div class="help-item"><strong>Galerie :</strong> parcourez les créations partagées par la communauté. Accessible depuis le menu.</div>
                 </div>
             <div class="help-section">
             <h3>📱 Astuces mobiles</h3>
             <div class="help-item"><strong>Menu hamburger :</strong> affiche/masque les outils complets.</div>
             <div class="help-item"><strong>Dessin tactile :</strong> maintenez et glissez pour tracer ; le multitouch est limité pour éviter les gestes accidentels.</div>
+            <div class="help-item"><strong>C / V :</strong> boutons en bas de l'écran pour copier et coller la frame actuelle.</div>
         </div>
     `;
 
