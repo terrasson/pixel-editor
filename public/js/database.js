@@ -1037,6 +1037,25 @@ class DatabaseService {
         return { success: true };
     }
 
+    // Delete a gallery share (owner only)
+    async deleteGalleryShare(shareId) {
+        if (!this.supabase) this.init();
+        try {
+            const userId = this.getUserId();
+            if (!userId) throw new Error('User not authenticated');
+            const { error } = await this.supabase
+                .from('public_shares')
+                .delete()
+                .eq('id', shareId)
+                .eq('owner_id', userId);
+            if (error) throw error;
+            return { success: true };
+        } catch (error) {
+            console.error('Delete gallery share error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
     // Get public gallery (all public shares)
     async getPublicGallery({ limit = 40, sortBy = 'recent' } = {}) {
         if (!this.supabase) this.init();
@@ -1046,7 +1065,7 @@ class DatabaseService {
 
             const { data, error } = await this.supabase
                 .from('public_shares')
-                .select('id, project_id, share_token, project_name, project_thumbnail, project_snapshot, view_count, duplicate_count, created_at')
+                .select('id, project_id, share_token, project_name, project_thumbnail, project_snapshot, view_count, duplicate_count, created_at, owner_id')
                 .eq('is_public_gallery', true)
                 .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
                 .order(orderColumn, { ascending: false })

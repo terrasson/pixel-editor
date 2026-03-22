@@ -174,6 +174,27 @@
             backdrop-filter: blur(4px);
         }
 
+        .card-delete-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(220, 38, 38, 0.85);
+            border: none;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            color: white;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+
+        .gallery-card:hover .card-delete-btn {
+            opacity: 1;
+        }
+
         .card-body {
             padding: 12px;
         }
@@ -326,7 +347,7 @@
             return null;
         }
 
-        function renderCard(share) {
+        function renderCard(share, currentUserId) {
             const snapshot = share.project_snapshot || {};
             const rawFrames = snapshot.frames || [];
             const frames = Array.isArray(rawFrames)
@@ -340,10 +361,13 @@
             card.className = 'gallery-card';
             card.href = `/shared.html?token=${share.share_token}`;
 
+            const isOwner = currentUserId && share.owner_id && share.owner_id === currentUserId;
+
             card.innerHTML = `
                 <div class="card-canvas-wrapper">
                     <canvas class="card-canvas" width="128" height="128"></canvas>
                     ${isAnimated ? `<span class="card-animated-badge">▶ ${frameCount} frames</span>` : ''}
+                    ${isOwner ? `<button class="card-delete-btn" title="Delete">🗑</button>` : ''}
                 </div>
                 <div class="card-body">
                     <div class="card-name">${escapeHtml(share.project_name)}</div>
@@ -374,6 +398,32 @@
                 }
             }
 
+            if (isOwner) {
+                const deleteBtn = card.querySelector('.card-delete-btn');
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const lang = localStorage.getItem('lang') || 'en';
+                    const msg = lang === 'fr'
+                        ? 'Supprimer cette création de la galerie ?'
+                        : 'Remove this creation from the gallery?';
+                    if (!confirm(msg)) return;
+                    deleteBtn.textContent = '⏳';
+                    deleteBtn.disabled = true;
+                    const result = await window.dbService.deleteGalleryShare(share.id);
+                    if (result.success) {
+                        card.style.transition = 'opacity 0.3s, transform 0.3s';
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.9)';
+                        setTimeout(() => card.remove(), 300);
+                    } else {
+                        deleteBtn.textContent = '🗑';
+                        deleteBtn.disabled = false;
+                        alert(lang === 'fr' ? 'Erreur lors de la suppression.' : 'Error while deleting.');
+                    }
+                });
+            }
+
             return card;
         }
 
@@ -383,6 +433,7 @@
             container.innerHTML = `<div class="gallery-loading"><div class="spinner"></div><p>${t('loading')}</p></div>`;
 
             await window.authService.init();
+            const currentUserId = window.dbService.getUserId ? window.dbService.getUserId() : null;
 
             const result = await window.dbService.getPublicGallery({ sortBy: sort });
 
@@ -403,7 +454,7 @@
 
             const grid = document.createElement('div');
             grid.className = 'gallery-grid';
-            result.data.forEach(share => grid.appendChild(renderCard(share)));
+            result.data.forEach(share => grid.appendChild(renderCard(share, currentUserId)));
             container.innerHTML = '';
             container.appendChild(grid);
         }
