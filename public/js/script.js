@@ -4778,12 +4778,8 @@ function initEventListeners() {
     });
     
     // Event listeners pour les nouveaux boutons copier/coller dans le bandeau des frames
-    document.getElementById('copyFrameBtnMain')?.addEventListener('click', () => {
-        document.getElementById('copyFrameBtn')?.click();
-    });
-    document.getElementById('pasteFrameBtnMain')?.addEventListener('click', () => {
-        document.getElementById('pasteFrameBtn')?.click();
-    });
+    document.getElementById('copyFrameBtnMain')?.addEventListener('click', copyCurrentFrame);
+    document.getElementById('pasteFrameBtnMain')?.addEventListener('click', pasteFrame);
     
     // Initialiser les autres fonctionnalités
     initMobileFeatures();
