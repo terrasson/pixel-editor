@@ -263,6 +263,9 @@ const TL = {
     ssExportBtn:            { en: '🗂️ Download PNG', fr: '🗂️ Télécharger PNG' },
     ssNoFrames:             { en: '❌ No frames to export!', fr: '❌ Aucune frame à exporter !' },
     ssSuccess:              { en: (f) => `✅ Sprite sheet "${f}" downloaded!`, fr: (f) => `✅ Sprite sheet "${f}" téléchargée !` },
+    // Watermark
+    wmLabel:                { en: '✨ Add watermark "pixel-editor.app"', fr: '✨ Ajouter watermark "pixel-editor.app"' },
+    wmHint:                 { en: 'Helps spread the word 🙏', fr: 'Aide à faire connaître l\'app 🙏' },
 };
 const tL = (key, ...args) => {
     const lang = localStorage.getItem('lang') || 'en';
@@ -5986,6 +5989,32 @@ async function importPixelArtImage(file) {
 }
 
 // ========================================
+// WATERMARK HELPER
+// ========================================
+
+function drawWatermark(ctx, width, height) {
+    const text = 'pixel-editor.app';
+    const fontSize = Math.max(7, Math.min(10, width / 30));
+    ctx.save();
+    ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
+    ctx.textBaseline = 'middle';
+    const textWidth = ctx.measureText(text).width;
+    const padX = fontSize * 0.5;
+    const padY = fontSize * 0.3;
+    const pillW = textWidth + padX * 2;
+    const pillH = fontSize + padY * 2;
+    const x = width - pillW - 4;
+    const y = height - pillH - 4;
+    // Fond très discret
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+    ctx.fillRect(x, y, pillW, pillH);
+    // Texte blanc semi-transparent
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.70)';
+    ctx.fillText(text, x + padX, y + pillH / 2);
+    ctx.restore();
+}
+
+// ========================================
 // EXPORT SPRITE SHEET
 // ========================================
 
@@ -6035,6 +6064,14 @@ function showSpriteSheetExportDialog() {
                 </div>
             </div>
 
+            <div class="gif-option" style="margin-top:12px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="ssWatermark" checked style="width:16px;height:16px;cursor:pointer;">
+                    <span>${tL('wmLabel')}</span>
+                </label>
+                <small style="opacity:0.65;margin-left:24px;">${tL('wmHint')}</small>
+            </div>
+
             <div class="dialog-buttons">
                 <button id="createSpriteSheetBtn" class="dialog-button">${tL('ssExportBtn')}</button>
                 <button id="cancelSpriteSheetBtn" class="dialog-button secondary">${tL('cancelBtn')}</button>
@@ -6053,8 +6090,9 @@ function showSpriteSheetExportDialog() {
     dialog.querySelector('#createSpriteSheetBtn').addEventListener('click', () => {
         const zoom = parseInt(dialog.querySelector('#ssZoom').value);
         const bg = dialog.querySelector('#ssBg').value;
+        const watermark = dialog.querySelector('#ssWatermark').checked;
         dialog.remove();
-        createAndDownloadSpriteSheet(zoom, bg);
+        createAndDownloadSpriteSheet(zoom, bg, watermark);
     });
 
     dialog.querySelector('#cancelSpriteSheetBtn').addEventListener('click', () => {
@@ -6062,7 +6100,7 @@ function showSpriteSheetExportDialog() {
     });
 }
 
-function createAndDownloadSpriteSheet(zoom, bg) {
+function createAndDownloadSpriteSheet(zoom, bg, watermark = false) {
     const g = currentGridSize;
     const frameSize = g * zoom;
     const cols = frames.length;
@@ -6095,6 +6133,9 @@ function createAndDownloadSpriteSheet(zoom, bg) {
             ctx.fillRect(x, y, zoom, zoom);
         });
     });
+
+    // Watermark optionnel
+    if (watermark) drawWatermark(ctx, canvas.width, canvas.height);
 
     // Télécharger en PNG
     const projectName = window.currentProjectName || 'sprite-sheet';
@@ -6189,24 +6230,33 @@ function showGifExportDialog() {
                 </div>
             </div>
 
+            <div class="gif-option" style="margin-top:12px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="gifWatermark" checked style="width:16px;height:16px;cursor:pointer;">
+                    <span>${tL('wmLabel')}</span>
+                </label>
+                <small style="opacity:0.65;margin-left:24px;">${tL('wmHint')}</small>
+            </div>
+
             <div class="dialog-buttons">
                 <button id="createGifBtn" class="dialog-button">${tL('gifCreateBtn')}</button>
                 <button id="cancelGifBtn" class="dialog-button secondary">${tL('cancelBtn')}</button>
             </div>
         </div>
     `;
-    
+
     const dialog = createMobileDialog('🎬 Export GIF', exportContent);
-    
+
     // Créer le GIF
     dialog.querySelector('#createGifBtn').addEventListener('click', async () => {
         const size = parseInt(dialog.querySelector('#gifSize').value);
         const speed = parseInt(dialog.querySelector('#gifSpeed').value);
         const repeat = parseInt(dialog.querySelector('#gifLoop').value);
         const quality = parseInt(dialog.querySelector('#gifQuality').value);
-        
+        const watermark = dialog.querySelector('#gifWatermark').checked;
+
         dialog.remove();
-        await createAnimatedGif(size, speed, repeat, quality);
+        await createAnimatedGif(size, speed, repeat, quality, watermark);
     });
     
     // Annuler
@@ -6216,7 +6266,7 @@ function showGifExportDialog() {
 }
 
 // Créer le GIF animé avec les paramètres choisis
-async function createAnimatedGif(size, frameDelay, repeat, quality) {
+async function createAnimatedGif(size, frameDelay, repeat, quality, watermark = false) {
     // Message de progression
     const progressDiv = document.createElement('div');
     progressDiv.style.cssText = `
@@ -6267,7 +6317,7 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
         progressBar.style.width = '10%';
         
         try {
-            await createGifWithGifJS(frames, { size, frameDelay, repeat, quality }, progressText, progressBar, cancelled);
+            await createGifWithGifJS(frames, { size, frameDelay, repeat, quality }, progressText, progressBar, cancelled, watermark);
             if (!cancelled) {
                 progressDiv.remove();
             }
@@ -6361,7 +6411,7 @@ function downloadGif(gifBlob, size, frameDelay) {
 }
 
 // Créer un GIF avec gif.js (fallback)
-async function createGifWithGifJS(frames, config, progressText, progressBar, cancelled) {
+async function createGifWithGifJS(frames, config, progressText, progressBar, cancelled, watermark = false) {
     return new Promise((resolve, reject) => {
         try {
             const { size, frameDelay, repeat, quality } = config;
@@ -6433,6 +6483,9 @@ async function createGifWithGifJS(frames, config, progressText, progressBar, can
                     }
                 }
                 
+                // Watermark optionnel
+                if (watermark) drawWatermark(ctx, size, size);
+
                 // Ajouter la frame au GIF
                 console.log(`📸 Ajout frame locale ${frameIndex + 1}/${frames.length}`);
                 gif.addFrame(canvas, { delay: frameDelay, copy: true });

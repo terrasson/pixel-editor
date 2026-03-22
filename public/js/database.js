@@ -502,6 +502,10 @@ class DatabaseService {
         canvas.width = 32;
         canvas.height = 32;
 
+        // White background so empty pixels don't appear black on dark gallery backgrounds
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, 32, 32);
+
         // Get pixel grid
         const pixels = document.querySelectorAll('.pixel');
         const pixelSize = 1; // 1px per pixel in thumbnail
