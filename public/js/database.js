@@ -949,15 +949,23 @@ class DatabaseService {
                 created_at: project.created_at
             };
 
-            // Check if public share already exists
-            const { data: existing } = await this.supabase
+            // Get all existing shares for this project
+            const { data: existingShares } = await this.supabase
                 .from('public_shares')
-                .select('*')
+                .select('id')
                 .eq('project_id', project.id)
-                .maybeSingle();
+                .order('created_at', { ascending: false });
 
-            if (existing) {
-                // Update snapshot with latest project data
+            if (existingShares && existingShares.length > 0) {
+                const keepId = existingShares[0].id;
+
+                // Delete duplicates (keep only the most recent)
+                if (existingShares.length > 1) {
+                    const idsToDelete = existingShares.slice(1).map(s => s.id);
+                    await this.supabase.from('public_shares').delete().in('id', idsToDelete);
+                }
+
+                // Update the kept share with fresh snapshot
                 const { data: updated, error: updateError } = await this.supabase
                     .from('public_shares')
                     .update({
@@ -965,7 +973,7 @@ class DatabaseService {
                         project_thumbnail: project.thumbnail,
                         project_name: project.name
                     })
-                    .eq('id', existing.id)
+                    .eq('id', keepId)
                     .select()
                     .single();
 
@@ -1021,14 +1029,23 @@ class DatabaseService {
 
             const { data, error } = await this.supabase
                 .from('public_shares')
-                .select('id, share_token, project_name, project_thumbnail, project_snapshot, view_count, duplicate_count, created_at')
+                .select('id, project_id, share_token, project_name, project_thumbnail, project_snapshot, view_count, duplicate_count, created_at')
                 .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
                 .order(orderColumn, { ascending: false })
-                .limit(limit);
+                .limit(limit * 5); // fetch more to account for deduplication
 
             if (error) throw error;
 
-            return { success: true, data };
+            // Deduplicate: keep only the most recent share per project
+            const seen = new Set();
+            const deduped = data.filter(share => {
+                const key = share.project_id || share.project_name;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            }).slice(0, limit);
+
+            return { success: true, data: deduped };
         } catch (error) {
             console.error('Get gallery error:', error);
             return { success: false, error: error.message };
