@@ -174,8 +174,9 @@ html, body {
 
 .toolbar.visible {
     padding: 12px 8px;
-    max-height: clamp(200px, 60vh, 400px);
-    overflow: visible;
+    max-height: clamp(200px, 60vh, 500px);
+    overflow-y: auto;
+    overflow-x: hidden;
     opacity: 1;
     transform: translateY(0);
     box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.08));
