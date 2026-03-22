@@ -234,28 +234,34 @@
 
     <header class="gallery-header">
         <div class="gallery-header-left">
-            <a href="/editor.html" style="text-decoration:none; display:flex; align-items:center; gap:8px; color:rgba(255,255,255,0.7); font-size:0.9rem; transition:color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">
-                ← Retour à l'éditeur
+            <a href="/editor.html" style="text-decoration:none; display:flex; align-items:center; gap:8px; color:rgba(255,255,255,0.7); font-size:0.9rem; transition:color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,0.7)'"
+               data-en="← Back to editor" data-fr="← Retour à l'éditeur">← Back to editor
             </a>
         </div>
         <span class="gallery-logo">🎨 Pixel Editor</span>
-        <a href="/editor.html" class="btn-create">✏️ Créer mon pixel art</a>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div style="display:flex;gap:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:4px;">
+                <button class="lang-btn-gallery active" data-lang="en" title="English" style="background:none;border:none;cursor:pointer;font-size:1rem;padding:3px 7px;border-radius:5px;opacity:0.5;transition:all 0.2s;">🇬🇧</button>
+                <button class="lang-btn-gallery" data-lang="fr" title="Français" style="background:none;border:none;cursor:pointer;font-size:1rem;padding:3px 7px;border-radius:5px;opacity:0.5;transition:all 0.2s;">🇫🇷</button>
+            </div>
+            <a href="/editor.html" class="btn-create" data-en="✏️ Create pixel art" data-fr="✏️ Créer mon pixel art">✏️ Create pixel art</a>
+        </div>
     </header>
 
     <section class="gallery-hero">
-        <h1>🖼️ Galerie</h1>
-        <p>Les créations de la communauté</p>
+        <h1 data-en="🖼️ Gallery" data-fr="🖼️ Galerie">🖼️ Gallery</h1>
+        <p data-en="Community creations" data-fr="Les créations de la communauté">Community creations</p>
     </section>
 
     <div class="gallery-controls">
-        <button class="sort-btn active" data-sort="recent">🕐 Récents</button>
-        <button class="sort-btn" data-sort="popular">🔥 Populaires</button>
+        <button class="sort-btn active" data-sort="recent" data-en="🕐 Recent" data-fr="🕐 Récents">🕐 Recent</button>
+        <button class="sort-btn" data-sort="popular" data-en="🔥 Popular" data-fr="🔥 Populaires">🔥 Popular</button>
     </div>
 
     <div id="galleryContainer">
         <div class="gallery-loading">
             <div class="spinner"></div>
-            <p>Chargement des créations...</p>
+            <p data-en="Loading creations..." data-fr="Chargement des créations...">Loading creations...</p>
         </div>
     </div>
 
@@ -265,6 +271,35 @@
     <script src="js/database.js"></script>
 
     <script>
+        // ── Language ──
+        const lang = localStorage.getItem('lang') || 'en';
+
+        function applyLang(l) {
+            localStorage.setItem('lang', l);
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const text = el.getAttribute('data-' + l);
+                if (text) el.textContent = text;
+            });
+            document.querySelectorAll('.lang-btn-gallery').forEach(btn => {
+                btn.style.opacity = btn.dataset.lang === l ? '1' : '0.5';
+                btn.style.background = btn.dataset.lang === l ? 'rgba(255,255,255,0.15)' : 'none';
+            });
+        }
+
+        document.querySelectorAll('.lang-btn-gallery').forEach(btn => {
+            btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+        });
+
+        applyLang(lang);
+
+        const T = {
+            loading:  { en: 'Loading...', fr: 'Chargement...' },
+            error:    { en: 'An error occurred.', fr: 'Une erreur est survenue.' },
+            empty:    { en: 'No creations shared yet.', fr: 'Aucune création partagée pour le moment.' },
+            beFirst:  { en: 'Be the first to share!', fr: 'Soyez le premier à partager !' },
+        };
+        const t = key => T[key][localStorage.getItem('lang') || 'en'];
+
         let currentSort = 'recent';
         const activeIntervals = [];
 
@@ -345,14 +380,14 @@
         async function loadGallery(sort = 'recent') {
             clearIntervals();
             const container = document.getElementById('galleryContainer');
-            container.innerHTML = '<div class="gallery-loading"><div class="spinner"></div><p>Chargement...</p></div>';
+            container.innerHTML = `<div class="gallery-loading"><div class="spinner"></div><p>${t('loading')}</p></div>`;
 
             await window.authService.init();
 
             const result = await window.dbService.getPublicGallery({ sortBy: sort });
 
             if (!result.success) {
-                container.innerHTML = `<div class="gallery-error"><div class="state-icon">⚠️</div><p>${result.error}</p></div>`;
+                container.innerHTML = `<div class="gallery-error"><div class="state-icon">⚠️</div><p>${t('error')}</p></div>`;
                 return;
             }
 
@@ -360,8 +395,8 @@
                 container.innerHTML = `
                     <div class="gallery-empty">
                         <div class="state-icon">🎨</div>
-                        <p>Aucune création partagée pour le moment.</p>
-                        <p style="margin-top:8px;">Soyez le premier à partager !</p>
+                        <p>${t('empty')}</p>
+                        <p style="margin-top:8px;">${t('beFirst')}</p>
                     </div>`;
                 return;
             }

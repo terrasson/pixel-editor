@@ -78,81 +78,51 @@
                         <div class="user-dropdown-header">
                             <span class="user-dropdown-name" id="dropdownUserName">Utilisateur</span>
                         </div>
-                        <button id="profileBtn" class="dropdown-item">
-                            <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                            Profil
-                        </button>
+                        <button id="profileBtn" class="dropdown-item" data-en="👤 Profile" data-fr="👤 Profil">👤 Profile</button>
                         <div class="dropdown-divider"></div>
-                        <button id="saveBtnDropdown" class="dropdown-item">
-                            💾 Sauvegarder
-                        </button>
-                        <button id="loadBtnDropdown" class="dropdown-item">
-                            📂 Charger
-                        </button>
-                        <button id="loadLocalBtnDropdown" class="dropdown-item">
-                            🌐 Mes projets
-                        </button>
-                        <button id="exportGifBtnDropdown" class="dropdown-item">
-                            🎬 Export GIF
-                        </button>
-                        <button id="shareProjectBtnDropdown" class="dropdown-item">
-                            🔗 Partager
-                        </button>
+                        <button id="saveBtnDropdown" class="dropdown-item" data-en="💾 Save" data-fr="💾 Sauvegarder">💾 Save</button>
+                        <button id="loadBtnDropdown" class="dropdown-item" data-en="📂 Load" data-fr="📂 Charger">📂 Load</button>
+                        <button id="loadLocalBtnDropdown" class="dropdown-item" data-en="🌐 My projects" data-fr="🌐 Mes projets">🌐 My projects</button>
+                        <button id="exportGifBtnDropdown" class="dropdown-item" data-en="🎬 Export GIF" data-fr="🎬 Export GIF">🎬 Export GIF</button>
+                        <button id="shareProjectBtnDropdown" class="dropdown-item" data-en="🔗 Share" data-fr="🔗 Partager">🔗 Share</button>
                         <div class="dropdown-divider"></div>
-                        <button id="photoToPixelBtnDropdown" class="dropdown-item">
-                            📷 Photo → Pixel
-                        </button>
-                        <button id="templateBtnDropdown" class="dropdown-item">
-                            🧩 Modèles à Réaliser
-                        </button>
-                        <button id="publishTemplateBtnDropdown" class="dropdown-item">
-                            ✨ Publier un Modèle
-                        </button>
-                        <button id="galleryBtnDropdown" class="dropdown-item">
-                            🖼️ Galerie
-                        </button>
+                        <button id="photoToPixelBtnDropdown" class="dropdown-item" data-en="📷 Photo → Pixel" data-fr="📷 Photo → Pixel">📷 Photo → Pixel</button>
+                        <button id="templateBtnDropdown" class="dropdown-item" data-en="🧩 Templates" data-fr="🧩 Modèles à Réaliser">🧩 Templates</button>
+                        <button id="publishTemplateBtnDropdown" class="dropdown-item" data-en="✨ Publish a template" data-fr="✨ Publier un Modèle">✨ Publish a template</button>
+                        <button id="galleryBtnDropdown" class="dropdown-item" data-en="🖼️ Gallery" data-fr="🖼️ Galerie">🖼️ Gallery</button>
                         <div class="dropdown-divider"></div>
-                        <button id="logoutBtnDropdown" class="dropdown-item">
-                            <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                                <polyline points="16 17 21 12 16 7" />
-                                <line x1="21" y1="12" x2="9" y2="12" />
-                            </svg>
-                            Déconnexion
-                        </button>
+                        <div style="display:flex;gap:4px;padding:6px 12px;">
+                            <button class="lang-btn-editor" data-lang="en" title="English" style="background:none;border:1px solid rgba(255,255,255,0.2);border-radius:6px;cursor:pointer;font-size:0.95rem;padding:4px 8px;color:white;transition:all 0.2s;">🇬🇧 EN</button>
+                            <button class="lang-btn-editor" data-lang="fr" title="Français" style="background:none;border:1px solid rgba(255,255,255,0.2);border-radius:6px;cursor:pointer;font-size:0.95rem;padding:4px 8px;color:white;transition:all 0.2s;">🇫🇷 FR</button>
+                        </div>
+                        <button id="logoutBtnDropdown" class="dropdown-item" data-en="Sign out" data-fr="Déconnexion">Sign out</button>
                     </div>
                 </div>
-                <button id="logoutBtn" class="logout-btn" title="Se déconnecter">Déconnexion</button>
+                <button id="logoutBtn" class="logout-btn" data-en="Sign out" data-fr="Déconnexion" title="Sign out">Sign out</button>
             </div>
-            <button id="playToggle" class="play-button" title="Lancer/Arrêter l'animation">▶️</button>
+            <button id="playToggle" class="play-button" title="Play/Stop animation">▶️</button>
         </div>
 
         <div class="toolbar">
             <div class="tools">
-                <button id="clearBtn">Effacer tout</button>
-                <button id="deleteFrameBtn">Supprimer la frame</button>
-                <button id="previewBtn" title="Lancer/Arrêter l'animation">▶️</button>
-                <button id="fpsBtn" title="Régler la vitesse d'animation">⚙️ FPS</button>
-                <button id="gridSizeBtn" title="Changer la taille de la grille">📐 <span class="grid-size-indicator">32×32</span></button>
-                <button id="saveBtn">💾 Sauvegarder</button>
-                <button id="loadBtn">📂 Charger</button>
-                <button id="loadLocalBtn">🌐 Mes projets</button>
-                <button id="exportGifBtn">🎬 Export GIF</button>
-                <button id="shareProjectBtn">🔗 Partager</button>
-                <button id="galleryBtnMobile" onclick="window.location.href='/gallery.html'">🖼️ Galerie</button>
-                <button id="photoToPixelBtn" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">📷 Photo →
-                    Pixel</button>
-                <button id="templateBtn" style="background: linear-gradient(135deg, #4CAF50, #45A049);">🧩 Modèles à
-                    Réaliser</button>
-                <button id="publishTemplateBtnMobile" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">✨
-                    Publier</button>
-                <button id="profileBtnMobile">👤 Profil</button>
-                <button id="helpBtn">❓ Aide</button>
-                <button id="creditsBtn">Crédits</button>
-                <button id="logoutBtnMobile" class="logout-btn logout-btn-mobile">Déconnexion</button>
+                <button id="clearBtn"         data-en="🗑️ Clear all"       data-fr="🗑️ Effacer tout">🗑️ Clear all</button>
+                <button id="deleteFrameBtn"  data-en="🗑️ Delete frame"    data-fr="🗑️ Supprimer la frame">🗑️ Delete frame</button>
+                <button id="previewBtn" title="Play/Stop animation">▶️</button>
+                <button id="fpsBtn"          data-en="⚙️ FPS"             data-fr="⚙️ FPS">⚙️ FPS</button>
+                <button id="gridSizeBtn"     data-en="📐 Size"            data-fr="📐 Taille">📐 <span class="grid-size-indicator">32×32</span></button>
+                <button id="saveBtn"         data-en="💾 Save"            data-fr="💾 Sauvegarder">💾 Save</button>
+                <button id="loadBtn"         data-en="📂 Load"            data-fr="📂 Charger">📂 Load</button>
+                <button id="loadLocalBtn"    data-en="🌐 My projects"     data-fr="🌐 Mes projets">🌐 My projects</button>
+                <button id="exportGifBtn"    data-en="🎬 Export GIF"      data-fr="🎬 Export GIF">🎬 Export GIF</button>
+                <button id="shareProjectBtn" data-en="🔗 Share"           data-fr="🔗 Partager">🔗 Share</button>
+                <button id="galleryBtnMobile" onclick="window.location.href='/gallery.html'" data-en="🖼️ Gallery" data-fr="🖼️ Galerie">🖼️ Gallery</button>
+                <button id="photoToPixelBtn" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);" data-en="📷 Photo → Pixel" data-fr="📷 Photo → Pixel">📷 Photo → Pixel</button>
+                <button id="templateBtn"     style="background: linear-gradient(135deg, #4CAF50, #45A049);" data-en="🧩 Templates"     data-fr="🧩 Modèles à Réaliser">🧩 Templates</button>
+                <button id="publishTemplateBtnMobile" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);" data-en="✨ Publish" data-fr="✨ Publier">✨ Publish</button>
+                <button id="profileBtnMobile" data-en="👤 Profile"        data-fr="👤 Profil">👤 Profile</button>
+                <button id="helpBtn"          data-en="❓ Help"            data-fr="❓ Aide">❓ Help</button>
+                <button id="creditsBtn"       data-en="ℹ️ Credits"         data-fr="ℹ️ Crédits">ℹ️ Credits</button>
+                <button id="logoutBtnMobile" class="logout-btn logout-btn-mobile" data-en="Sign out" data-fr="Déconnexion">Sign out</button>
             </div>
         </div>
 
@@ -676,6 +646,29 @@
     <script src="js/script-beta.js"></script>
     <!-- Script BETA - Fonctionnalité Modèles à Réaliser -->
     <script src="js/script-templates.js"></script>
+
+    <script>
+        // ── Language init ──
+        function applyEditorLang(l) {
+            localStorage.setItem('lang', l);
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const text = el.getAttribute('data-' + l);
+                if (!text) return;
+                // Buttons with grid-size-indicator span: skip innerHTML replacement
+                if (el.querySelector && el.querySelector('.grid-size-indicator')) return;
+                el.textContent = text;
+            });
+            document.querySelectorAll('.lang-btn-editor').forEach(btn => {
+                btn.style.background = btn.dataset.lang === l ? 'rgba(255,255,255,0.15)' : 'none';
+            });
+        }
+
+        document.querySelectorAll('.lang-btn-editor').forEach(btn => {
+            btn.addEventListener('click', () => applyEditorLang(btn.dataset.lang));
+        });
+
+        applyEditorLang(localStorage.getItem('lang') || 'en');
+    </script>
 </body>
 
 </html>
