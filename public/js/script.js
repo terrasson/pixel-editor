@@ -832,11 +832,12 @@ async function showLocalProjects() {
         
         // Générer l'aperçu visuel
         let previewHTML = '';
-        if (p.thumbnail) {
-            // Utiliser le thumbnail existant (image base64)
+        const hasMultipleFrames = Array.isArray(p.frames) && p.frames.length > 1;
+        if (hasMultipleFrames) {
+            previewHTML = `<canvas data-project-id="${projectId}" width="48" height="48" style="width: 48px; height: 48px; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); image-rendering: pixelated;"></canvas>`;
+        } else if (p.thumbnail) {
             previewHTML = `<img src="${p.thumbnail}" alt="${projectName}" class="project-preview-img" style="width: 48px; height: 48px; object-fit: contain; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">`;
         } else {
-            // Placeholder si pas de thumbnail
             previewHTML = `<div class="project-preview-placeholder" style="width: 48px; height: 48px; background: rgba(255,255,255,0.1); border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px;">🎨</div>`;
         }
         
@@ -866,6 +867,45 @@ async function showLocalProjects() {
             <button id="cancelLocalLoad" class="dialog-button secondary">❌ Fermer</button>
         </div>
     `);
+
+    // Animer les thumbnails multi-frames
+    const thumbnailIntervals = [];
+    autoSaveProjects.forEach((p) => {
+        if (!Array.isArray(p.frames) || p.frames.length <= 1) return;
+        const projectId = p.id || p.project_id;
+        const canvas = dialog.querySelector(`canvas[data-project-id="${projectId}"]`);
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const fps = p.fps || 4;
+        let frameIndex = 0;
+
+        function drawThumbnailFrame(frame) {
+            if (!Array.isArray(frame)) return;
+            const gridSize = Math.sqrt(frame.length);
+            const pixelSize = canvas.width / gridSize;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            frame.forEach((pixel, i) => {
+                if (!pixel || pixel.isEmpty) return;
+                ctx.fillStyle = pixel.color || '#FFFFFF';
+                ctx.fillRect((i % gridSize) * pixelSize, Math.floor(i / gridSize) * pixelSize, pixelSize, pixelSize);
+            });
+        }
+
+        drawThumbnailFrame(p.frames[0]);
+        const interval = setInterval(() => {
+            frameIndex = (frameIndex + 1) % p.frames.length;
+            drawThumbnailFrame(p.frames[frameIndex]);
+        }, 1000 / fps);
+        thumbnailIntervals.push(interval);
+    });
+
+    // Nettoyer les intervals à la fermeture
+    const origRemove = dialog.remove.bind(dialog);
+    dialog.remove = () => {
+        thumbnailIntervals.forEach(clearInterval);
+        origRemove();
+    };
 
     let selectedProject = null;
     const loadBtn = dialog.querySelector('#loadLocalProject');
