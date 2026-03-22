@@ -57,6 +57,220 @@ const PROFILE_USAGE_OPTIONS = Object.freeze([
     { value: 'other', label: 'Autre projet' }
 ]);
 
+// ── Script-level translations (EN / FR) ──────────────────────────────────────
+const TL = {
+    // Grid
+    changeGrid:             { en: (c,n) => `Change grid from ${c}×${c} to ${n}×${n}?\n\n⚠️ Current content will be erased.`, fr: (c,n) => `Changer la grille de ${c}×${c} à ${n}×${n} ?\n\n⚠️ Le contenu actuel sera effacé.` },
+    // Frames
+    cannotDeleteLast:       { en: 'Cannot delete the last frame!', fr: 'Impossible de supprimer la dernière frame !' },
+    confirmDeleteFrame:     { en: n => `Really delete frame ${n}?`, fr: n => `Voulez-vous vraiment supprimer la frame ${n} ?` },
+    confirmClearAll:        { en: 'Are you sure you want to erase all frames?', fr: 'Êtes-vous sûr de vouloir effacer toutes les frames ?' },
+    minFrames:              { en: 'At least 2 frames are needed for an animation!', fr: 'Il faut au moins 2 frames pour faire une animation !' },
+    // Save dialogs
+    saveTitle:              { en: '💾 Save project', fr: '💾 Sauvegarder le projet' },
+    projectNamePlaceholder: { en: 'Project name', fr: 'Nom du projet' },
+    saveBtn:                { en: 'Save', fr: 'Sauvegarder' },
+    cancelBtn:              { en: 'Cancel', fr: 'Annuler' },
+    savedDownloaded:        { en: '✅ Project downloaded as file!', fr: '✅ Projet téléchargé en fichier !' },
+    savedLocally:           { en: '✅ Project saved locally!', fr: '✅ Projet sauvegardé localement !' },
+    saveErrorShort:         { en: '❌ Save error.', fr: '❌ Erreur lors de la sauvegarde.' },
+    // Save result dialog titles/messages
+    saveSuccessTitle:       { en: 'Save successful', fr: 'Sauvegarde réussie' },
+    saveErrorTitle:         { en: 'Save error', fr: 'Erreur de sauvegarde' },
+    saveLocalTitle:         { en: 'Local save', fr: 'Sauvegarde locale' },
+    saveDownloadTitle:      { en: 'File download', fr: 'Téléchargement du fichier' },
+    updated:                { en: 'updated', fr: 'mis à jour' },
+    created2:               { en: 'created', fr: 'créé' },
+    saveSuccessMsg:         { en: (n,a) => `Project "${n}" ${a} successfully on the cloud!\n\nYour project is now accessible from any device.`, fr: (n,a) => `Projet "${n}" ${a} avec succès sur le cloud !\n\nVotre projet est maintenant accessible depuis n'importe quel appareil.` },
+    saveErrorMsg:           { en: err => `Save error:\n${err}`, fr: err => `Erreur lors de la sauvegarde :\n${err}` },
+    saveErrorConnected:     { en: err => `Save error.\n\nMake sure you are connected.\n\n${err || ''}`, fr: err => `Erreur lors de la sauvegarde.\n\nVérifiez que vous êtes connecté.\n\n${err || ''}` },
+    saveLocalMsg:           { en: (n,e) => `Project "${n}" saved LOCALLY only.\n\nCloud is unavailable (${e}).\n\nYour project is safe locally on this device.`, fr: (n,e) => `Projet "${n}" sauvegardé en LOCAL uniquement.\n\nLe cloud n'est pas disponible (${e}).\n\nVotre projet est en sécurité localement sur cet appareil.` },
+    saveDownloadMsg:        { en: n => `Could not save to cloud or locally.\n\nFile downloaded to your device:\n"${n}.json"\n\nYou can re-import it later.`, fr: n => `Impossible de sauvegarder sur le cloud ou en local.\n\nLe fichier a été téléchargé sur votre appareil :\n"${n}.json"\n\nVous pouvez le réimporter plus tard.` },
+    saveErrorUnexpected:    { en: e => `Unexpected save error.\n\n${e || 'Please try again.'}`, fr: e => `Erreur inattendue lors de la sauvegarde.\n\n${e || 'Veuillez réessayer.'}` },
+    // Load projects
+    loadProjectsError:      { en: e => '❌ Error loading: ' + e, fr: e => '❌ Erreur lors du chargement: ' + e },
+    noProjectsFound:        { en: '📱 No projects found.\n\nStart drawing and save your first project! 🎨', fr: '📱 Aucun projet trouvé.\n\nCommencez à dessiner et sauvegardez votre premier projet ! 🎨' },
+    noProjectsSave:         { en: 'No saved projects found. Create one and save it!', fr: 'Aucun projet sauvegardé trouvé. Créez-en un et sauvegardez-le !' },
+    noProjectsFoundShort:   { en: 'No saved projects found.', fr: 'Aucun projet sauvegardé trouvé.' },
+    loadProjectsErrorShort: { en: '❌ Error loading projects.', fr: '❌ Erreur lors du chargement des projets.' },
+    myProjects:             { en: '🌐 My projects', fr: '🌐 Mes projets' },
+    loadBtn:                { en: '📂 Load', fr: '📂 Charger' },
+    deleteBtn:              { en: '🗑️ Delete', fr: '🗑️ Supprimer' },
+    closeBtn:               { en: '❌ Close', fr: '❌ Fermer' },
+    clickProject:           { en: '👆 <strong>Click on a project</strong> to select it, then use the buttons below.', fr: '👆 <strong>Cliquez sur un projet</strong> pour le sélectionner, puis utilisez les boutons ci-dessous.' },
+    loadProjectError:       { en: e => '❌ Error loading project: ' + (e || 'unknown'), fr: e => '❌ Erreur lors du chargement du projet: ' + (e || 'inconnue') },
+    projectLoaded:          { en: n => `✅ Project "${n}" loaded successfully!`, fr: n => `✅ Projet "${n}" chargé avec succès !` },
+    projectLoadErrorDetail: { en: '❌ Unexpected error loading the project. Check the console for details.', fr: '❌ Erreur inattendue lors du chargement du projet. Consultez la console pour plus de détails.' },
+    confirmDelete:          { en: 'Permanently delete this project?', fr: 'Supprimer ce projet définitivement ?' },
+    deleteSuccess:          { en: '✅ Project deleted successfully!', fr: '✅ Projet supprimé avec succès !' },
+    deleteError:            { en: e => '❌ Error deleting: ' + e, fr: e => '❌ Erreur lors de la suppression: ' + e },
+    deleteErrorRetry:       { en: '❌ Error deleting. Please try again.', fr: '❌ Erreur lors de la suppression. Veuillez réessayer.' },
+    loadProjectTitle:       { en: 'Load a project', fr: 'Charger un projet' },
+    at:                     { en: 'at', fr: 'à' },
+    dateLocale:             { en: 'en-US', fr: 'fr-FR' },
+    loadErrorConnected:     { en: '❌ Error loading. Make sure you are connected.', fr: '❌ Erreur lors du chargement. Vérifiez que vous êtes connecté.' },
+    loadProjectErrorShort:  { en: '❌ Error loading project.', fr: '❌ Erreur lors du chargement du projet.' },
+    projectLoadedShort:     { en: 'Project loaded successfully!', fr: 'Projet chargé avec succès !' },
+    loadErrorShort:         { en: 'Error loading.', fr: 'Erreur lors du chargement.' },
+    loadErrorRetry:         { en: 'Error loading. Please try again.', fr: 'Erreur lors du chargement. Veuillez réessayer.' },
+    untitledProject:        { en: 'Untitled project', fr: 'Projet sans nom' },
+    cancelLoad:             { en: 'Cancel', fr: 'Annuler' },
+    loadProject:            { en: 'Load a project', fr: 'Charger un projet' },
+    // Import project
+    unknownDate:            { en: 'Unknown date', fr: 'Date inconnue' },
+    createdOn:              { en: 'Created on', fr: 'Créé le' },
+    customColors:           { en: c => c + ' custom colors', fr: c => c + ' couleurs personnalisées' },
+    baseColorsOnly:         { en: 'Base colors only', fr: 'Couleurs de base seulement' },
+    importConfirmTitle:     { en: n => `🎨 Import "${n}"?`, fr: n => `🎨 Importer "${n}" ?` },
+    importConfirmDetails:   { en: '📊 Details:', fr: '📊 Détails :' },
+    importWillReplace:      { en: '⚠️ This will replace your current project.', fr: '⚠️ Cela remplacera votre projet actuel.' },
+    importSuccess:          { en: n => `✅ Project "${n}" imported successfully!`, fr: n => `✅ Projet "${n}" importé avec succès !` },
+    importError:            { en: m => `❌ Import error: ${m}`, fr: m => `❌ Erreur lors de l'import : ${m}` },
+    // Shared project
+    sharedProject:          { en: 'Shared project', fr: 'Projet partagé' },
+    sharedProjectOpened:    { en: n => `✅ Project "${n}" opened!`, fr: n => `✅ Projet "${n}" ouvert !` },
+    sharedProjectError:     { en: m => `❌ Error opening shared project: ${m}`, fr: m => `❌ Erreur lors de l'ouverture du projet partagé: ${m}` },
+    sharedDetected:         { en: '🎨 Shared project detected!', fr: '🎨 Projet partagé détecté !' },
+    sharedOpenQuestion:     { en: 'Do you want to open it?', fr: 'Voulez-vous l\'ouvrir ?' },
+    shareError:             { en: '❌ Share error. The file will be downloaded instead.', fr: '❌ Erreur lors du partage. Le fichier va être téléchargé à la place.' },
+    linkCopiedDetail:       { en: '🔗 Link copied to clipboard!\n\nPaste it in a message, email, etc.', fr: '🔗 Lien copié dans le presse-papier !\n\nCollez-le dans un message, email, etc.' },
+    linkCopied:             { en: '🔗 Link copied to clipboard!', fr: '🔗 Lien copié dans le presse-papier !' },
+    // Image import
+    imageResizeConfirm:     { en: (w,h,c,f) => `Image detected: ${w}×${h} pixels.\nCurrent grid is ${c}×${c}.\n\nChange grid to ${f}×${f} to fit the entire image?`, fr: (w,h,c,f) => `Image détectée : ${w}×${h} pixels.\nLa grille actuelle est ${c}×${c}.\n\nChanger la grille à ${f}×${f} pour accueillir l'image entière ?` },
+    imageImportSuccess:     { en: (w,h,ps,tc) => `✅ Image imported successfully!\n\n• Detected size: ${w}×${h} pixels${ps > 1 ? ` (zoom ×${ps} detected)` : ''}\n• Unique colors: ${tc}`, fr: (w,h,ps,tc) => `✅ Image importée avec succès !\n\n• Taille détectée : ${w}×${h} pixels${ps > 1 ? ` (zoom ×${ps} détecté)` : ''}\n• Couleurs uniques : ${tc}` },
+    imageImportError:       { en: m => `❌ Import error: ${m}`, fr: m => `❌ Erreur lors de l'import : ${m}` },
+    clipboardError:         { en: '❌ Clipboard content does not appear to be a valid project.\n\nMake sure you copied a project link or JSON data.', fr: '❌ Le contenu du presse-papier ne semble pas être un projet valide.\n\nAssurez-vous d\'avoir copié un lien de projet ou des données JSON.' },
+    clipboardAccessError:   { en: '❌ Cannot access clipboard.\n\nPlease use "Browse files" instead.', fr: '❌ Impossible d\'accéder au presse-papier.\n\nVeuillez utiliser "Parcourir les fichiers" à la place.' },
+    unsupportedFormat:      { en: '❌ Unsupported format.\n\nAccepted files:\n• Projects: .json, .pixelart, .txt\n• Pixel art images: .png, .webp, .jpg, .gif, .bmp', fr: '❌ Format non supporté.\n\nFichiers acceptés :\n• Projets : .json, .pixelart, .txt\n• Images pixel art : .png, .webp, .jpg, .gif, .bmp' },
+    invalidFileType:        { en: '❌ Please drop a .json, .pixelart or .txt file', fr: '❌ Veuillez déposer un fichier .json, .pixelart ou .txt' },
+    // GIF export
+    noFrames:               { en: '❌ No frames to export!', fr: '❌ Aucune frame à exporter !' },
+    gifSizeLabel:           { en: '📏 GIF size:', fr: '📏 Taille du GIF :' },
+    gifSpeedLabel:          { en: '⚡ Animation speed:', fr: '⚡ Vitesse d\'animation :' },
+    gifLoopLabel:           { en: '🔄 Repeat:', fr: '🔄 Répétition :' },
+    gifQualityLabel:        { en: '✨ Quality:', fr: '✨ Qualité :' },
+    gifSmall:               { en: '128x128 (Small - Fast)', fr: '128x128 (Petit - Rapide)' },
+    gifMedium:              { en: '256x256 (Medium)', fr: '256x256 (Moyen)' },
+    gifLarge:               { en: '512x512 (Large - Slower)', fr: '512x512 (Grand - Plus lent)' },
+    gifXLarge:              { en: '1024x1024 (Very large - Very slow)', fr: '1024x1024 (Très grand - Très lent)' },
+    gifVeryFast:            { en: 'Very fast (0.1s)', fr: 'Très rapide (0.1s)' },
+    gifFast:                { en: 'Fast (0.2s)', fr: 'Rapide (0.2s)' },
+    gifNormal:              { en: 'Normal (0.3s)', fr: 'Normal (0.3s)' },
+    gifSlow:                { en: 'Slow (0.5s)', fr: 'Lent (0.5s)' },
+    gifVerySlow:            { en: 'Very slow (1s)', fr: 'Très lent (1s)' },
+    gifLoopInfinite:        { en: 'Infinite', fr: 'Infinie' },
+    gifQualityMax:          { en: 'Maximum (very slow)', fr: 'Maximale (très lent)' },
+    gifQualityHigh:         { en: 'High (slow)', fr: 'Haute (lent)' },
+    gifQualityMedium:       { en: 'Medium (recommended)', fr: 'Moyenne (recommandé)' },
+    gifQualityFast:         { en: 'Fast', fr: 'Rapide' },
+    gifPreviewLabel:        { en: '<strong>Preview:</strong> Animation', fr: '<strong>Aperçu :</strong> Animation' },
+    gifInfoLocal:           { en: '🎬 Your GIF will be created directly in the app!', fr: '🎬 Votre GIF sera créé directement dans l\'application !' },
+    gifInfoOptimized:       { en: '⚡ Optimized for mobile - No workers to avoid blocking', fr: '⚡ Optimisé pour mobile - Sans workers pour éviter les blocages' },
+    gifInfoTime:            { en: fc => `⏱️ Estimated time: ${fc < 5 ? '5-15 seconds' : fc < 10 ? '15-30 seconds' : '30-45 seconds'}`, fr: fc => `⏱️ Temps estimé : ${fc < 5 ? '5-15 secondes' : fc < 10 ? '15-30 secondes' : '30-45 secondes'}` },
+    gifCreateBtn:           { en: '🎬 Create GIF', fr: '🎬 Créer le GIF' },
+    gifFrames:              { en: fc => `${fc} frame${fc > 1 ? 's' : ''} to export`, fr: fc => `${fc} frame${fc > 1 ? 's' : ''} à exporter` },
+    gifCreating:            { en: 'Creating GIF...', fr: 'Création du GIF...' },
+    gifPreparing:           { en: 'Preparing...', fr: 'Préparation...' },
+    gifSendingSupabase:     { en: 'Sending to Supabase server...', fr: 'Envoi vers serveur Supabase...' },
+    gifServerUnavailable:   { en: 'Server unavailable, processing locally...', fr: 'Serveur indisponible, traitement local...' },
+    gifError:               { en: (s,l) => `❌ Error creating GIF:\n\n🌐 Server: ${s}\n💻 Local: ${l}\n\nPlease try again later.`, fr: (s,l) => `❌ Erreur lors de la création du GIF :\n\n🌐 Serveur : ${s}\n💻 Local : ${l}\n\nVeuillez réessayer plus tard.` },
+    gifSuccessServer:       { en: (f,fc,sz,d) => `🎉 GIF created successfully via server!\n\n📁 File: ${f}\n🎬 ${fc} frames\n📏 Size: ${sz}x${sz}\n⚡ Speed: ${d}ms per frame\n🚀 Processed by Supabase server\n\nYour GIF animation is ready! 🎨`, fr: (f,fc,sz,d) => `🎉 GIF créé avec succès via serveur !\n\n📁 Fichier: ${f}\n🎬 ${fc} frames\n📏 Taille: ${sz}x${sz}\n⚡ Vitesse: ${d}ms par frame\n🚀 Traité par serveur Supabase\n\nVotre animation GIF est prête ! 🎨` },
+    gifDownloadError:       { en: '❌ Error downloading GIF', fr: '❌ Erreur lors du téléchargement du GIF' },
+    // Notifications
+    colorUpdated:           { en: 'Color updated!', fr: 'Couleur mise à jour !' },
+    paletteSaved:           { en: 'Custom palette saved!', fr: 'Palette personnalisée sauvegardée !' },
+    frameCopied:            { en: 'Frame copied 📋', fr: 'Frame copiée 📋' },
+    framePasted:            { en: 'Frame pasted 📋', fr: 'Frame collée 📋' },
+    frameAdded:             { en: 'New frame created ➕', fr: 'Nouvelle frame créée ➕' },
+    // Profile
+    profileTitle:           { en: '👤 My Profile', fr: '👤 Mon Profil' },
+    profileSubtitle:        { en: 'What would you like to manage?', fr: 'Que souhaitez-vous gérer ?' },
+    profileCreativeTitle:   { en: '📊 Creative Profile', fr: '📊 Profil Créatif' },
+    profileCreativeDesc:    { en: 'Optional info to improve the editor', fr: 'Informations optionnelles pour améliorer l\'éditeur' },
+    profileUsernameTitle:   { en: '🎭 My Username', fr: '🎭 Mon Pseudo' },
+    profileUsernameDesc:    { en: 'Set your public username and avatar for published templates', fr: 'Définir votre pseudo public et votre avatar pour les modèles publiés' },
+    profileUsernameNotLoaded: { en: '❌ Username management is not loaded yet. Please reload the page.', fr: '❌ La fonctionnalité de gestion du pseudo n\'est pas encore chargée. Veuillez recharger la page.' },
+    profileUpdated:         { en: 'Profile updated ✅', fr: 'Profil mis à jour ✅' },
+    profileSaveError:       { en: 'Cannot save profile', fr: 'Impossible d\'enregistrer le profil' },
+    // Help
+    helpTitle:              { en: '🎨 User Guide', fr: '🎨 Guide d\'utilisation' },
+    helpStartTitle:         { en: '🔰 Getting started', fr: '🔰 Commencer' },
+    helpPalette:            { en: '<strong>Palette:</strong> choose a color (left sidebar on desktop, compact bar at top on mobile) then draw on the 32×32 grid.', fr: '<strong>Palette :</strong> choisissez une couleur (sidebar gauche sur desktop, barre compacte en haut sur mobile) puis dessinez sur la grille 32×32.' },
+    helpEraser:             { en: '<strong>Eraser:</strong> activate the eraser to erase, deactivate to return to the brush.', fr: '<strong>Gomme :</strong> activez la gomme pour effacer, désactivez-la pour revenir au pinceau.' },
+    helpColorsTitle:        { en: '🎚️ Custom colors', fr: '🎚️ Couleurs personnalisées' },
+    helpColorsDesktop:      { en: '<strong>Desktop:</strong> click the current color to open the editor and add your custom shades (marked with a star).', fr: '<strong>Desktop :</strong> cliquez sur la couleur actuelle pour ouvrir l\'éditeur et ajouter vos teintes personnalisées (marquées par une étoile).' },
+    helpColorsMobile:       { en: '<strong>Mobile:</strong> long-press a compact color to modify it.', fr: '<strong>Mobile :</strong> effectuez un appui long sur une couleur compacte pour la modifier.' },
+    helpFramesTitle:        { en: '🧱 Frames & animation', fr: '🧱 Frames & animation' },
+    helpNewFrame:           { en: '<strong>+ New Frame:</strong> adds an empty frame (or duplicates selection if it contains pixels).', fr: '<strong>+ Nouvelle Frame :</strong> ajoute une frame vide (ou duplique la sélection si elle contient des pixels).' },
+    helpPlay:               { en: '<strong>Play:</strong> start/stop the preview.', fr: '<strong>Play :</strong> lance/arrête l\'aperçu.' },
+    helpFPS:                { en: '<strong>FPS:</strong> adjust animation speed via the "FPS" button (desktop sidebar or hamburger menu on mobile).', fr: '<strong>FPS :</strong> ajustez la vitesse d\'animation via le bouton "FPS" (sidebar desktop ou menu hamburger sur mobile).' },
+    helpShortcutsTitle:     { en: '⌨️ Keyboard shortcuts', fr: '⌨️ Raccourcis clavier' },
+    helpCopyFrame:          { en: '<strong>Ctrl/Cmd + C:</strong> copy current frame', fr: '<strong>Ctrl/Cmd + C :</strong> copier la frame actuelle' },
+    helpPasteFrame:         { en: '<strong>Ctrl/Cmd + V:</strong> paste copied frame', fr: '<strong>Ctrl/Cmd + V :</strong> coller la frame copiée' },
+    helpUndo:               { en: '<strong>Ctrl/Cmd + Z:</strong> undo last action', fr: '<strong>Ctrl/Cmd + Z :</strong> annuler la dernière action' },
+    helpRedo:               { en: '<strong>Ctrl/Cmd + Shift + Z:</strong> redo undone action', fr: '<strong>Ctrl/Cmd + Shift + Z :</strong> rétablir l\'action annulée' },
+    helpRedoAlt:            { en: '<strong>Ctrl/Cmd + Y:</strong> redo undone action (alternative)', fr: '<strong>Ctrl/Cmd + Y :</strong> rétablir l\'action annulée (alternative)' },
+    helpSave:               { en: '<strong>Ctrl/Cmd + S:</strong> save project', fr: '<strong>Ctrl/Cmd + S :</strong> sauvegarder le projet' },
+    helpNewFrameKey:        { en: '<strong>Ctrl/Cmd + Shift + F:</strong> create a new frame', fr: '<strong>Ctrl/Cmd + Shift + F :</strong> créer une nouvelle frame' },
+    helpEyedropper:         { en: '<strong>I:</strong> toggle eyedropper', fr: '<strong>I :</strong> activer/désactiver la pipette' },
+    helpEraserKey:          { en: '<strong>E:</strong> toggle eraser', fr: '<strong>E :</strong> activer/désactiver la gomme' },
+    helpSpace:              { en: '<strong>Space:</strong> start/stop animation', fr: '<strong>Espace :</strong> lancer/arrêter l\'animation' },
+    helpArrows:             { en: '<strong>← →:</strong> navigate between frames', fr: '<strong>← → :</strong> naviguer entre les frames' },
+    helpDelete:             { en: '<strong>Del/Backspace:</strong> delete current frame', fr: '<strong>Suppr/Backspace :</strong> supprimer la frame actuelle' },
+    helpEscape:             { en: '<strong>Esc:</strong> deactivate tools (eyedropper, eraser)', fr: '<strong>Échap :</strong> désactiver les outils (pipette, gomme)' },
+    helpStorageTitle:       { en: '💾 Save & load', fr: '💾 Sauvegarde & chargement' },
+    helpStorageSave:        { en: '<strong>Save:</strong> stores the project (frames, colors, FPS) to your account and creates a local backup.', fr: '<strong>Sauvegarder :</strong> enregistre le projet (frames, couleurs, FPS) sur votre compte et crée un backup local.' },
+    helpStorageProjects:    { en: '<strong>My projects:</strong> find your creations, reload or delete them.', fr: '<strong>Mes projets :</strong> retrouvez vos créations, rechargez-les ou supprimez-les.' },
+    helpStorageLoad:        { en: '<strong>Load:</strong> import a project exported from the app (.json). On iOS, use .txt format if .json is greyed out.', fr: '<strong>Charger :</strong> importez un projet exporté depuis l\'app (.json). Sur iOS, utilisez le format .txt si le fichier .json est grisé.' },
+    helpExportTitle:        { en: '📤 Export & share', fr: '📤 Export & partage' },
+    helpExportGif:          { en: '<strong>Export GIF:</strong> generates an animated GIF of all your frames.', fr: '<strong>Export GIF :</strong> génère un GIF animé de toutes vos frames.' },
+    helpShare:              { en: '<strong>Share:</strong> generates a public link to your creation (iMessage, AirDrop, copy link). Option to publish to the community Gallery.', fr: '<strong>Partager :</strong> génère un lien public vers votre création (iMessage, AirDrop, copie du lien). Option pour publier dans la Galerie communautaire.' },
+    helpGallery:            { en: '<strong>Gallery:</strong> browse creations shared by the community. Accessible from the menu.', fr: '<strong>Galerie :</strong> parcourez les créations partagées par la communauté. Accessible depuis le menu.' },
+    helpMobileTitle:        { en: '📱 Mobile tips', fr: '📱 Astuces mobiles' },
+    helpMobileMenu:         { en: '<strong>Hamburger menu:</strong> show/hide full tools.', fr: '<strong>Menu hamburger :</strong> affiche/masque les outils complets.' },
+    helpMobileTouch:        { en: '<strong>Touch drawing:</strong> hold and drag to draw; multitouch is limited to avoid accidental gestures.', fr: '<strong>Dessin tactile :</strong> maintenez et glissez pour tracer ; le multitouch est limité pour éviter les gestes accidentels.' },
+    helpMobileCV:           { en: '<strong>C / V:</strong> buttons at the bottom of the screen to copy and paste the current frame.', fr: '<strong>C / V :</strong> boutons en bas de l\'écran pour copier et coller la frame actuelle.' },
+    // Credits
+    creditsTitle:           { en: 'Pixel Editor - Credits', fr: 'Pixel Editor - Crédits' },
+    creditsCreatorTitle:    { en: 'Creator & vision', fr: 'Créateur & vision' },
+    creditsCreatorRole:     { en: 'Founder, product designer & lead developer', fr: 'Fondateur, designer produit & développeur principal' },
+    creditsMissionTitle:    { en: 'Mission', fr: 'Mission' },
+    creditsMissionText:     { en: 'Offer everyone — children and adults alike — a simple, fun and accessible animated pixel studio to bring their creative ideas to life.', fr: 'Proposer à tous — enfants comme adultes — un studio de pixel animé simple, ludique et accessible pour donner vie à leurs idées créatives.' },
+    creditsJourneyTitle:    { en: 'Journey', fr: 'Parcours' },
+    creditsJourney1:        { en: "2024 — launch of the Pixel Editor project, first for family and close friends", fr: "2024 — lancement du projet Pixel Editor, d'abord pour la famille et les proches" },
+    creditsJourney2:        { en: "2025 — gradual opening to the online creative community", fr: "2025 — ouverture progressive à la communauté créative en ligne" },
+    creditsJourney3:        { en: "Today — continuous evolution with your feedback, to keep the tool simple and fun", fr: "Aujourd'hui — évolution continue avec vos retours, pour garder l'outil simple et fun" },
+    creditsLegalTitle:      { en: 'Personal project', fr: 'Projet personnel' },
+    creditsLegalText:       { en: 'Personal learning project, source code visible on GitHub.', fr: "Projet d'apprentissage personnel, code source visible sur GitHub." },
+    creditsClose:           { en: 'Close', fr: 'Fermer' },
+    // Sprite Sheet
+    ssTitle:                { en: '🗂️ Sprite Sheet Export', fr: '🗂️ Export Sprite Sheet' },
+    ssDialogTitle:          { en: '🗂️ Sprite Sheet', fr: '🗂️ Sprite Sheet' },
+    ssFrames:               { en: fc => `${fc} frame${fc > 1 ? 's' : ''} · grid ${fc}×1`, fr: fc => `${fc} frame${fc > 1 ? 's' : ''} · grille ${fc}×1` },
+    ssZoomLabel:            { en: '🔍 Frame size (zoom):', fr: '🔍 Taille par frame (zoom) :' },
+    ssZoom1:                { en: (g) => `×1 — ${g}×${g}px per frame (native)`, fr: (g) => `×1 — ${g}×${g}px par frame (natif)` },
+    ssZoom4:                { en: (g) => `×4 — ${g*4}×${g*4}px per frame`, fr: (g) => `×4 — ${g*4}×${g*4}px par frame` },
+    ssZoom8:                { en: (g) => `×8 — ${g*8}×${g*8}px per frame`, fr: (g) => `×8 — ${g*8}×${g*8}px par frame` },
+    ssZoom16:               { en: (g) => `×16 — ${g*16}×${g*16}px per frame`, fr: (g) => `×16 — ${g*16}×${g*16}px par frame` },
+    ssBgLabel:              { en: '🖼️ Background:', fr: '🖼️ Fond :' },
+    ssBgTransparent:        { en: 'Transparent', fr: 'Transparent' },
+    ssBgWhite:              { en: 'White', fr: 'Blanc' },
+    ssBgBlack:              { en: 'Black', fr: 'Noir' },
+    ssPreviewLabel:         { en: '<strong>Result:</strong>', fr: '<strong>Résultat :</strong>' },
+    ssPreviewInfo:          { en: (fc, g, z) => `PNG image · ${fc * g * z}×${g * z}px · ${fc} frame${fc>1?'s':''}`, fr: (fc, g, z) => `Image PNG · ${fc * g * z}×${g * z}px · ${fc} frame${fc>1?'s':''}` },
+    ssInfoGame:             { en: '🎮 Compatible with Unity, Godot, Phaser, GameMaker...', fr: '🎮 Compatible avec Unity, Godot, Phaser, GameMaker...' },
+    ssInfoTransparent:      { en: '✨ Transparent pixels respected', fr: '✨ Pixels transparents respectés' },
+    ssExportBtn:            { en: '🗂️ Download PNG', fr: '🗂️ Télécharger PNG' },
+    ssNoFrames:             { en: '❌ No frames to export!', fr: '❌ Aucune frame à exporter !' },
+    ssSuccess:              { en: (f) => `✅ Sprite sheet "${f}" downloaded!`, fr: (f) => `✅ Sprite sheet "${f}" téléchargée !` },
+};
+const tL = (key, ...args) => {
+    const lang = localStorage.getItem('lang') || 'en';
+    const val = TL[key]?.[lang] ?? TL[key]?.en ?? key;
+    return typeof val === 'function' ? val(...args) : val;
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 let userProfile = null;
 let userProfileFetched = false;
 
@@ -362,10 +576,7 @@ function changeGridSize(newSize, options = {}) {
     const hasContent = frames.some(f => f && f.some(p => p && !p.isEmpty));
 
     if (hasContent && !skipConfirm) {
-        const ok = confirm(
-            `Changer la grille de ${currentGridSize}×${currentGridSize} à ${newSize}×${newSize} ?\n\n` +
-            `⚠️ Le contenu actuel sera effacé.`
-        );
+        const ok = confirm(tL('changeGrid', currentGridSize, newSize));
         if (!ok) return false;
     }
 
@@ -803,7 +1014,7 @@ async function showLocalProjects() {
         const result = await window.dbService.getAllProjects();
 
         if (!result.success) {
-            alert('❌ Erreur lors du chargement: ' + result.error);
+            alert(tL('loadProjectsError', result.error));
             return;
         }
 
@@ -811,7 +1022,7 @@ async function showLocalProjects() {
         console.log('📱 Projets trouvés:', projects.length);
 
         if (projects.length === 0) {
-            alert('📱 Aucun projet trouvé.\n\nCommencez à dessiner et sauvegardez votre premier projet ! 🎨');
+            alert(tL('noProjectsFound'));
             return;
         }
 
@@ -819,14 +1030,14 @@ async function showLocalProjects() {
         autoSaveProjects = projects;
     } catch (error) {
         console.error('Error loading projects:', error);
-        alert('❌ Erreur lors du chargement des projets.');
+        alert(tL('loadProjectsErrorShort'));
         return;
     }
     
     // Créer une liste interactive pour mobile (compatible Supabase et localStorage)
     const projectsList = autoSaveProjects.map((p, index) => {
         const projectId = p.id || p.project_id || index;
-        const projectName = p.name || 'Projet sans nom';
+        const projectName = p.name || tL('untitledProject');
         const lastModified = p.lastModified || p.updated_at || p.created_at;
         const deviceInfo = p.device_info ? ` 📱 ${p.device_info.includes('iPhone') ? 'iPhone' : p.device_info.includes('Android') ? 'Android' : 'Web'}` : '';
         
@@ -846,25 +1057,25 @@ async function showLocalProjects() {
                 ${previewHTML}
                 <div class="project-info" style="flex: 1; min-width: 0;">
                     <div class="project-name">${projectName}${deviceInfo}</div>
-                    <div class="project-date">${new Date(lastModified).toLocaleDateString('fr-FR')} à ${new Date(lastModified).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</div>
+                    <div class="project-date">${new Date(lastModified).toLocaleDateString(tL('dateLocale'))} ${tL('at')} ${new Date(lastModified).toLocaleTimeString(tL('dateLocale'), {hour: '2-digit', minute: '2-digit'})}</div>
                 </div>
             </div>
         </div>`;
     }).join('');
 
-    const dialog = createMobileDialog('🌐 Mes projets', `
+    const dialog = createMobileDialog(tL('myProjects'), `
         <div style="margin-bottom: 12px; padding: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
             <p style="margin: 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.8);">
-                👆 <strong>Cliquez sur un projet</strong> pour le sélectionner, puis utilisez les boutons ci-dessous.
+                ${tL('clickProject')}
             </p>
         </div>
         <div class="projects-list">
             ${projectsList}
         </div>
         <div style="margin-top: 16px; display: flex; gap: 8px;">
-            <button id="loadLocalProject" class="dialog-button" disabled>📂 Charger</button>
-            <button id="deleteLocalProject" class="dialog-button secondary" disabled>🗑️ Supprimer</button>
-            <button id="cancelLocalLoad" class="dialog-button secondary">❌ Fermer</button>
+            <button id="loadLocalProject" class="dialog-button" disabled>${tL('loadBtn')}</button>
+            <button id="deleteLocalProject" class="dialog-button secondary" disabled>${tL('deleteBtn')}</button>
+            <button id="cancelLocalLoad" class="dialog-button secondary">${tL('closeBtn')}</button>
         </div>
     `);
 
@@ -940,7 +1151,7 @@ async function showLocalProjects() {
             const result = await window.dbService.loadProject(projectMeta.name);
 
             if (!result.success) {
-                alert('❌ Erreur lors du chargement du projet: ' + (result.error || 'inconnue'));
+                alert(tL('loadProjectError', result.error));
                 return;
             }
 
@@ -1016,16 +1227,16 @@ async function showLocalProjects() {
             });
             
             dialog.remove();
-            alert(`✅ Projet "${data.name || projectMeta.name}" chargé avec succès !`);
+            alert(tL('projectLoaded', data.name || projectMeta.name));
         } catch (error) {
             console.error('Erreur chargement projet Supabase:', error);
-            alert('❌ Erreur inattendue lors du chargement du projet. Consultez la console pour plus de détails.');
+            alert(tL('projectLoadErrorDetail'));
         }
     });
 
     // Supprimer le projet sélectionné
     deleteBtn.addEventListener('click', async () => {
-        if (selectedProject && confirm('Supprimer ce projet définitivement ?')) {
+        if (selectedProject && confirm(tL('confirmDelete'))) {
             const project = autoSaveProjects[selectedProject.index];
 
             try {
@@ -1034,16 +1245,16 @@ async function showLocalProjects() {
 
                 if (result.success) {
                     console.log('✅ Projet supprimé de Supabase');
-                    alert('✅ Projet supprimé avec succès !');
+                    alert(tL('deleteSuccess'));
                     dialog.remove();
                     showLocalProjects(); // Refresh the list
                 } else {
-                    alert('❌ Erreur lors de la suppression: ' + result.error);
+                    alert(tL('deleteError', result.error));
                 }
 
             } catch (error) {
                 console.error('Erreur suppression:', error);
-                alert('❌ Erreur lors de la suppression. Veuillez réessayer.');
+                alert(tL('deleteErrorRetry'));
             }
         }
     });
@@ -2523,7 +2734,7 @@ function openColorCustomizer(colorIndex, colorBtn) {
         }
         customPalette[colorIndex] = newColor;
         
-        showNotification('Couleur mise à jour !', 'success');
+        showNotification(tL('colorUpdated'), 'success');
         modal.remove();
     });
 }
@@ -2608,7 +2819,7 @@ function saveCustomPalette() {
     if (fromModal) {
         closePaletteModal();
     // Afficher un message de confirmation
-    showNotification('Palette personnalisée sauvegardée !', 'success');
+    showNotification(tL('paletteSaved'), 'success');
     } else {
         console.log('💾 Palette compacte sauvegardée:', customPalette);
     }
@@ -3241,11 +3452,11 @@ function insertFrame(index) {
 // Ajouter la fonction deleteCurrentFrame
 function deleteCurrentFrame() {
     if (frames.length <= 1) {
-        alert('Impossible de supprimer la dernière frame !');
+        alert(tL('cannotDeleteLast'));
         return;
     }
     
-    if (confirm(`Voulez-vous vraiment supprimer la frame ${currentFrame + 1} ?`)) {
+    if (confirm(tL('confirmDeleteFrame', currentFrame + 1))) {
         frames.splice(currentFrame, 1);
         if (currentFrame >= frames.length) {
             currentFrame = frames.length - 1;
@@ -3257,7 +3468,7 @@ function deleteCurrentFrame() {
 
 // Ajouter la fonction clearAllFrames
 function clearAllFrames() {
-    if (confirm('Êtes-vous sûr de vouloir effacer toutes les frames ?')) {
+    if (confirm(tL('confirmClearAll'))) {
         frames = [[]];  // Réinitialiser avec une seule frame vide
         currentFrame = 0;
         
@@ -3312,7 +3523,7 @@ async function saveToFile() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            alert('✅ Projet téléchargé en fichier !');
+            alert(tL('savedDownloaded'));
             return;
         }
         
@@ -3322,11 +3533,11 @@ async function saveToFile() {
             titleElement.textContent = projectName;
         }
         
-        alert('✅ Projet sauvegardé localement !');
+        alert(tL('savedLocally'));
         
     } catch (err) {
         console.error('Erreur lors de la sauvegarde:', err);
-        alert('❌ Erreur lors de la sauvegarde.');
+        alert(tL('saveErrorShort'));
     }
 }
 
@@ -3361,11 +3572,11 @@ function showSaveDialog() {
                 box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
                 color: rgba(255, 255, 255, 0.95) !important;
             ">
-                <h3>💾 Sauvegarder le projet</h3>
-                <input type="text" id="saveFileName" placeholder="Nom du projet" value="mon-pixel-art">
+                <h3>${tL('saveTitle')}</h3>
+                <input type="text" id="saveFileName" placeholder="${tL('projectNamePlaceholder')}" value="mon-pixel-art">
                 <div class="dialog-buttons">
-                    <button id="dialogSave">Sauvegarder</button>
-                    <button id="dialogCancel">Annuler</button>
+                    <button id="dialogSave">${tL('saveBtn')}</button>
+                    <button id="dialogCancel">${tL('cancelBtn')}</button>
                 </div>
             </div>
         `;
@@ -3525,7 +3736,7 @@ function previewAnimation() {
 
 function startAnimation() {
     if (frames.length <= 1) {
-        alert('Il faut au moins 2 frames pour faire une animation !');
+        alert(tL('minFrames'));
         return;
     }
     
@@ -3786,7 +3997,7 @@ function handleKeyboardShortcuts(e) {
                 e.preventDefault();
                 copyCurrentFrame();
                 if (typeof showNotification === 'function') {
-                    showNotification('Frame copiée 📋', 'success');
+                    showNotification(tL('frameCopied'), 'success');
                 }
                 return;
                 
@@ -3795,7 +4006,7 @@ function handleKeyboardShortcuts(e) {
                 if (copiedFrame) {
                     pasteFrame();
                     if (typeof showNotification === 'function') {
-                        showNotification('Frame collée 📋', 'success');
+                        showNotification(tL('framePasted'), 'success');
                     }
                 }
                 return;
@@ -3830,7 +4041,7 @@ function handleKeyboardShortcuts(e) {
                 e.preventDefault();
                 addFrame();
                 if (typeof showNotification === 'function') {
-                    showNotification('Nouvelle frame créée ➕', 'success');
+                    showNotification(tL('frameAdded'), 'success');
                 }
                 return;
         }
@@ -3905,59 +4116,59 @@ function showHelp() {
     logUsageEvent('help_opened');
     const helpContent = `
             <div class="help-section">
-            <h3>🔰 Commencer</h3>
-            <div class="help-item"><strong>Palette :</strong> choisissez une couleur (sidebar gauche sur desktop, barre compacte en haut sur mobile) puis dessinez sur la grille 32×32.</div>
-            <div class="help-item"><strong>Gomme :</strong> activez la gomme pour effacer, désactivez-la pour revenir au pinceau.</div>
+            <h3>${tL('helpStartTitle')}</h3>
+            <div class="help-item">${tL('helpPalette')}</div>
+            <div class="help-item">${tL('helpEraser')}</div>
                 </div>
             <div class="help-section">
-            <h3>🎚️ Couleurs personnalisées</h3>
-            <div class="help-item"><strong>Desktop :</strong> cliquez sur la couleur actuelle pour ouvrir l'éditeur et ajouter vos teintes personnalisées (marquées par une étoile).</div>
-            <div class="help-item"><strong>Mobile :</strong> effectuez un appui long sur une couleur compacte pour la modifier.</div>
+            <h3>${tL('helpColorsTitle')}</h3>
+            <div class="help-item">${tL('helpColorsDesktop')}</div>
+            <div class="help-item">${tL('helpColorsMobile')}</div>
                 </div>
             <div class="help-section">
-            <h3>🧱 Frames & animation</h3>
-            <div class="help-item"><strong>+ Nouvelle Frame :</strong> ajoute une frame vide (ou duplique la sélection si elle contient des pixels).</div>
-            <div class="help-item"><strong>Play :</strong> lance/arrête l'aperçu.</div>
-            <div class="help-item"><strong>FPS :</strong> ajustez la vitesse d'animation via le bouton "FPS" (sidebar desktop ou menu hamburger sur mobile).</div>
+            <h3>${tL('helpFramesTitle')}</h3>
+            <div class="help-item">${tL('helpNewFrame')}</div>
+            <div class="help-item">${tL('helpPlay')}</div>
+            <div class="help-item">${tL('helpFPS')}</div>
                 </div>
             <div class="help-section">
-            <h3>⌨️ Raccourcis clavier</h3>
-            <div class="help-item"><strong>Ctrl/Cmd + C :</strong> copier la frame actuelle</div>
-            <div class="help-item"><strong>Ctrl/Cmd + V :</strong> coller la frame copiée</div>
-            <div class="help-item"><strong>Ctrl/Cmd + Z :</strong> annuler la dernière action</div>
-            <div class="help-item"><strong>Ctrl/Cmd + Shift + Z :</strong> rétablir l'action annulée</div>
-            <div class="help-item"><strong>Ctrl/Cmd + Y :</strong> rétablir l'action annulée (alternative)</div>
-            <div class="help-item"><strong>Ctrl/Cmd + S :</strong> sauvegarder le projet</div>
-            <div class="help-item"><strong>Ctrl/Cmd + Shift + F :</strong> créer une nouvelle frame</div>
-            <div class="help-item"><strong>I :</strong> activer/désactiver la pipette</div>
-            <div class="help-item"><strong>E :</strong> activer/désactiver la gomme</div>
-            <div class="help-item"><strong>Espace :</strong> lancer/arrêter l'animation</div>
-            <div class="help-item"><strong>← → :</strong> naviguer entre les frames</div>
-            <div class="help-item"><strong>Suppr/Backspace :</strong> supprimer la frame actuelle</div>
-            <div class="help-item"><strong>Échap :</strong> désactiver les outils (pipette, gomme)</div>
+            <h3>${tL('helpShortcutsTitle')}</h3>
+            <div class="help-item">${tL('helpCopyFrame')}</div>
+            <div class="help-item">${tL('helpPasteFrame')}</div>
+            <div class="help-item">${tL('helpUndo')}</div>
+            <div class="help-item">${tL('helpRedo')}</div>
+            <div class="help-item">${tL('helpRedoAlt')}</div>
+            <div class="help-item">${tL('helpSave')}</div>
+            <div class="help-item">${tL('helpNewFrameKey')}</div>
+            <div class="help-item">${tL('helpEyedropper')}</div>
+            <div class="help-item">${tL('helpEraserKey')}</div>
+            <div class="help-item">${tL('helpSpace')}</div>
+            <div class="help-item">${tL('helpArrows')}</div>
+            <div class="help-item">${tL('helpDelete')}</div>
+            <div class="help-item">${tL('helpEscape')}</div>
                 </div>
             <div class="help-section">
-            <h3>💾 Sauvegarde & chargement</h3>
-            <div class="help-item"><strong>Sauvegarder :</strong> enregistre le projet (frames, couleurs, FPS) sur votre compte et crée un backup local.</div>
-            <div class="help-item"><strong>Mes projets :</strong> retrouvez vos créations, rechargez-les ou supprimez-les.</div>
-            <div class="help-item"><strong>Charger :</strong> importez un projet exporté depuis l'app (.json). Sur iOS, utilisez le format .txt si le fichier .json est grisé.</div>
+            <h3>${tL('helpStorageTitle')}</h3>
+            <div class="help-item">${tL('helpStorageSave')}</div>
+            <div class="help-item">${tL('helpStorageProjects')}</div>
+            <div class="help-item">${tL('helpStorageLoad')}</div>
                 </div>
             <div class="help-section">
-            <h3>📤 Export & partage</h3>
-            <div class="help-item"><strong>Export GIF :</strong> génère un GIF animé de toutes vos frames.</div>
-            <div class="help-item"><strong>Partager :</strong> génère un lien public vers votre création (iMessage, AirDrop, copie du lien). Option pour publier dans la Galerie communautaire.</div>
-            <div class="help-item"><strong>Galerie :</strong> parcourez les créations partagées par la communauté. Accessible depuis le menu.</div>
+            <h3>${tL('helpExportTitle')}</h3>
+            <div class="help-item">${tL('helpExportGif')}</div>
+            <div class="help-item">${tL('helpShare')}</div>
+            <div class="help-item">${tL('helpGallery')}</div>
                 </div>
             <div class="help-section">
-            <h3>📱 Astuces mobiles</h3>
-            <div class="help-item"><strong>Menu hamburger :</strong> affiche/masque les outils complets.</div>
-            <div class="help-item"><strong>Dessin tactile :</strong> maintenez et glissez pour tracer ; le multitouch est limité pour éviter les gestes accidentels.</div>
-            <div class="help-item"><strong>C / V :</strong> boutons en bas de l'écran pour copier et coller la frame actuelle.</div>
+            <h3>${tL('helpMobileTitle')}</h3>
+            <div class="help-item">${tL('helpMobileMenu')}</div>
+            <div class="help-item">${tL('helpMobileTouch')}</div>
+            <div class="help-item">${tL('helpMobileCV')}</div>
         </div>
     `;
 
-    const dialog = createMobileDialog('🎨 Guide d\'utilisation', helpContent);
-    
+    const dialog = createMobileDialog(tL('helpTitle'), helpContent);
+
     // Ajouter des styles spécifiques à l'aide
     dialog.querySelector('.mobile-dialog-content').style.maxWidth = '600px';
     dialog.querySelector('.mobile-dialog-content').style.maxHeight = '80vh';
@@ -3974,31 +4185,31 @@ function showCredits() {
     content.className = 'credits-content';
     
     content.innerHTML = `
-        <h2>Pixel Editor - Crédits</h2>
+        <h2>${tL('creditsTitle')}</h2>
         <div class="credits-section">
-            <h3>Créateur & vision</h3>
+            <h3>${tL('creditsCreatorTitle')}</h3>
             <p><strong>Frédéric Terrasson</strong></p>
-            <p>Fondateur, designer produit & développeur principal</p>
+            <p>${tL('creditsCreatorRole')}</p>
             <p class="credits-contact">✉️ contact@pixel-editor.app</p>
         </div>
         <div class="credits-section">
-            <h3>Mission</h3>
-            <p>Proposer à tous — enfants comme adultes — un studio de pixel animé simple, ludique et accessible pour donner vie à leurs idées créatives.</p>
+            <h3>${tL('creditsMissionTitle')}</h3>
+            <p>${tL('creditsMissionText')}</p>
         </div>
         <div class="credits-section creator-story">
-            <h3>Parcours</h3>
+            <h3>${tL('creditsJourneyTitle')}</h3>
             <ul>
-                <li>2024 — lancement du projet Pixel Editor, d'abord pour la famille et les proches</li>
-                <li>2025 — ouverture progressive à la communauté créative en ligne</li>
-                <li>Aujourd'hui — évolution continue avec vos retours, pour garder l'outil simple et fun</li>
+                <li>${tL('creditsJourney1')}</li>
+                <li>${tL('creditsJourney2')}</li>
+                <li>${tL('creditsJourney3')}</li>
             </ul>
         </div>
         <div class="credits-section legal">
-            <h3>Projet personnel</h3>
+            <h3>${tL('creditsLegalTitle')}</h3>
             <p>© ${new Date().getFullYear()} Frédéric Terrasson</p>
-            <p>Projet d'apprentissage personnel, code source visible sur GitHub.</p>
+            <p>${tL('creditsLegalText')}</p>
         </div>
-        <button class="close-credits">Fermer</button>
+        <button class="close-credits">${tL('creditsClose')}</button>
     `;
     
     modal.appendChild(content);
@@ -4052,11 +4263,11 @@ function saveProject() {
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
             color: rgba(255, 255, 255, 0.95) !important;
         ">
-            <h3>Sauvegarder le projet</h3>
-            <input type="text" id="projectName" placeholder="Nom du projet" value="pixel_animation">
+            <h3>${tL('saveTitle')}</h3>
+            <input type="text" id="projectName" placeholder="${tL('projectNamePlaceholder')}" value="pixel_animation">
             <div class="dialog-buttons">
-                <button id="dialogSave">Sauvegarder</button>
-                <button id="dialogCancel">Annuler</button>
+                <button id="dialogSave">${tL('saveBtn')}</button>
+                <button id="dialogCancel">${tL('cancelBtn')}</button>
             </div>
         </div>
     `;
@@ -4124,25 +4335,25 @@ async function saveToServer() {
         const result = await window.dbService.saveProject(projectData);
 
         if (result.success) {
-            const action = result.isUpdate ? 'mis à jour' : 'créé';
+            const action = tL(result.isUpdate ? 'updated' : 'created2');
             console.log('Project saved:', result.data);
             await showSaveResultDialog({
-                title: 'Sauvegarde réussie',
-                message: `Projet "${fileName}" ${action} avec succès !\n\nVotre projet est maintenant accessible depuis n'importe quel appareil.`,
+                title: tL('saveSuccessTitle'),
+                message: tL('saveSuccessMsg', fileName, action),
                 type: 'success'
             });
         } else {
             await showSaveResultDialog({
-                title: 'Erreur de sauvegarde',
-                message: `Erreur lors de la sauvegarde :\n${result.error}`,
+                title: tL('saveErrorTitle'),
+                message: tL('saveErrorMsg', result.error),
                 type: 'error'
             });
         }
     } catch (err) {
         console.error('Erreur lors de la sauvegarde:', err);
         await showSaveResultDialog({
-            title: 'Erreur de sauvegarde',
-            message: `Erreur lors de la sauvegarde.\n\nVérifiez que vous êtes connecté.\n\n${err.message || ''}`,
+            title: tL('saveErrorTitle'),
+            message: tL('saveErrorConnected', err.message),
             type: 'error'
         });
     }
@@ -4155,14 +4366,14 @@ async function loadFromServer() {
         const result = await window.dbService.getAllProjects();
 
         if (!result.success) {
-            alert('❌ Erreur lors du chargement: ' + result.error);
+            alert(tL('loadProjectsError', result.error));
             return;
         }
 
         const projects = result.data;
 
         if (projects.length === 0) {
-            alert('Aucun projet sauvegardé trouvé. Créez-en un et sauvegardez-le !');
+            alert(tL('noProjectsSave'));
             return;
         }
 
@@ -4171,22 +4382,22 @@ async function loadFromServer() {
         dialog.className = 'save-dialog';
 
         const projectsList = projects.map(p => {
-            const date = new Date(p.updated_at).toLocaleDateString('fr-FR');
-            const time = new Date(p.updated_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+            const date = new Date(p.updated_at).toLocaleDateString(tL('dateLocale'));
+            const time = new Date(p.updated_at).toLocaleTimeString(tL('dateLocale'), {hour: '2-digit', minute: '2-digit'});
             return `<div class="project-item" data-name="${p.name}">
                 <strong>${p.name}</strong><br>
-                <small>${date} à ${time}</small>
+                <small>${date} ${tL('at')} ${time}</small>
             </div>`;
         }).join('');
 
         dialog.innerHTML = `
             <div class="save-dialog-content">
-                <h3>Charger un projet</h3>
+                <h3>${tL('loadProjectTitle')}</h3>
                 <div style="max-height: 300px; overflow-y: auto; margin: 15px 0;">
                     ${projectsList}
                 </div>
                 <div class="dialog-buttons">
-                    <button id="dialogCancel">Annuler</button>
+                    <button id="dialogCancel">${tL('cancelBtn')}</button>
                 </div>
             </div>
         `;
@@ -4218,7 +4429,7 @@ async function loadFromServer() {
                     if (loadResult.success) window.currentProjectName = projectName;
 
                     if (!loadResult.success) {
-                        alert('❌ Erreur lors du chargement: ' + loadResult.error);
+                        alert(tL('loadProjectsError', loadResult.error));
                         return;
                     }
 
@@ -4291,10 +4502,10 @@ async function loadFromServer() {
                     updateFramesList();
                     loadFrame(currentFrame);
 
-                    alert(`✅ Projet "${projectName}" chargé avec succès !`);
+                    alert(tL('projectLoaded', projectName));
                 } catch (err) {
                     console.error('Error loading project:', err);
-                    alert('❌ Erreur lors du chargement du projet.');
+                    alert(tL('loadProjectErrorShort'));
                 }
             });
         });
@@ -4305,7 +4516,7 @@ async function loadFromServer() {
 
     } catch (err) {
         console.error('Erreur lors du chargement:', err);
-        alert('❌ Erreur lors du chargement. Vérifiez que vous êtes connecté.');
+        alert(tL('loadErrorConnected'));
     }
 }
 
@@ -4481,7 +4692,7 @@ async function loadFromServerMobile() {
         const projects = await fetch('/api/projects').then(res => res.json());
         
         if (projects.length === 0) {
-            alert('Aucun projet sauvegardé trouvé.');
+            alert(tL('noProjectsFoundShort'));
             return;
         }
 
@@ -4493,11 +4704,11 @@ async function loadFromServerMobile() {
             </div>`
         ).join('');
 
-        const dialog = createMobileDialog('Charger un projet', `
+        const dialog = createMobileDialog(tL('loadProject'), `
             <div class="projects-list">
                 ${projectsList}
             </div>
-            <button id="cancelLoad" class="dialog-button secondary">Annuler</button>
+            <button id="cancelLoad" class="dialog-button secondary">${tL('cancelLoad')}</button>
         `);
 
         // Gérer la sélection
@@ -4539,17 +4750,17 @@ async function loadFromServerMobile() {
                     
                     const title = document.getElementById('projectTitle');
                     if (title) {
-                        title.textContent = data.name || 'Projet sans nom';
+                        title.textContent = data.name || tL('untitledProject');
                     }
                     
                     updateFramesList();
                     loadFrame(currentFrame);
                     
                     dialog.remove();
-                    alert('Projet chargé avec succès !');
+                    alert(tL('projectLoadedShort'));
                 } catch (err) {
                     console.error('Erreur lors du chargement:', err);
-                    alert('Erreur lors du chargement.');
+                    alert(tL('loadErrorShort'));
                 }
             });
         });
@@ -4560,7 +4771,7 @@ async function loadFromServerMobile() {
 
     } catch (err) {
         console.error('Erreur lors du chargement:', err);
-        alert('Erreur lors du chargement. Veuillez réessayer.');
+        alert(tL('loadErrorRetry'));
     }
 }
 
@@ -4601,7 +4812,7 @@ async function saveProjectSmart() {
             const result = await window.dbService.saveProject(projectData);
 
             if (result.success) {
-                const action = result.isUpdate ? 'mis à jour' : 'créé';
+                const action = tL(result.isUpdate ? 'updated' : 'created2');
                 window.currentProjectName = fileName;
                 console.log('✅ Project saved to Supabase:', result.data);
                 logUsageEvent('project_saved', {
@@ -4620,8 +4831,8 @@ async function saveProjectSmart() {
                 
                 // Afficher le message de succès dans une vraie fenêtre modale
                 await showSaveResultDialog({
-                    title: 'Sauvegarde réussie',
-                    message: `Projet "${fileName}" ${action} avec succès sur le cloud !\n\nVotre projet est maintenant accessible depuis n'importe quel appareil.`,
+                    title: tL('saveSuccessTitle'),
+                    message: tL('saveSuccessMsg', fileName, action),
                     type: 'success'
                 });
                 
@@ -4647,8 +4858,8 @@ async function saveProjectSmart() {
                 
                 // Afficher le message d'avertissement dans une vraie fenêtre modale
                 await showSaveResultDialog({
-                    title: 'Sauvegarde locale',
-                    message: `Projet "${fileName}" sauvegardé en LOCAL uniquement.\n\nLe cloud n'est pas disponible (${supabaseError.message}).\n\nVotre projet est en sécurité localement sur cet appareil.`,
+                    title: tL('saveLocalTitle'),
+                    message: tL('saveLocalMsg', fileName, supabaseError.message),
                     type: 'warning'
                 });
             } catch (localError) {
@@ -4673,8 +4884,8 @@ async function saveProjectSmart() {
                 
                 // Afficher le message d'avertissement dans une vraie fenêtre modale
                 await showSaveResultDialog({
-                    title: 'Téléchargement du fichier',
-                    message: `Impossible de sauvegarder sur le cloud ou en local.\n\nLe fichier a été téléchargé sur votre appareil :\n"${fileName}.json"\n\nVous pouvez le réimporter plus tard.`,
+                    title: tL('saveDownloadTitle'),
+                    message: tL('saveDownloadMsg', fileName),
                     type: 'warning'
                 });
             }
@@ -4683,8 +4894,8 @@ async function saveProjectSmart() {
     } catch (err) {
         console.error('❌ Erreur lors de la sauvegarde:', err);
         await showSaveResultDialog({
-            title: 'Erreur de sauvegarde',
-            message: `Erreur inattendue lors de la sauvegarde.\n\n${err.message || 'Veuillez réessayer.'}`,
+            title: tL('saveErrorTitle'),
+            message: tL('saveErrorUnexpected', err.message),
             type: 'error'
         });
     }
@@ -4704,6 +4915,7 @@ function initEventListeners() {
         else shareProject();
     });
     document.getElementById('exportGifBtn')?.addEventListener('click', exportToGif);
+    document.getElementById('exportSpriteSheetBtn')?.addEventListener('click', exportToSpriteSheet);
     document.getElementById('copyFrameBtn')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
     document.getElementById('helpBtn')?.addEventListener('click', showHelp);
@@ -4765,6 +4977,9 @@ function initEventListeners() {
     });
     document.getElementById('exportGifBtn2')?.addEventListener('click', () => {
         document.getElementById('exportGifBtn')?.click();
+    });
+    document.getElementById('exportSpriteSheetBtn2')?.addEventListener('click', () => {
+        document.getElementById('exportSpriteSheetBtn')?.click();
     });
     document.getElementById('copyFrameBtn2')?.addEventListener('click', () => {
         document.getElementById('copyFrameBtn')?.click();
@@ -4896,12 +5111,7 @@ function checkURLForSharedProject() {
             const project = JSON.parse(decodedData);
             
             // Confirmer l'import du projet partagé
-            const confirmMessage = `🎨 Projet partagé détecté !
-
-"${project.name || 'Projet sans nom'}"
-${project.frames ? project.frames.length : 0} frame(s)
-
-Voulez-vous l'ouvrir ?`;
+            const confirmMessage = `${tL('sharedDetected')}\n\n"${project.name || tL('sharedProject')}"\n${project.frames ? project.frames.length : 0} frame(s)\n\n${tL('sharedOpenQuestion')}`;
 
             if (confirm(confirmMessage)) {
                 importProjectData(project);
@@ -5027,12 +5237,12 @@ function importProjectData(projectData) {
         
         // Notification de succès
         setTimeout(() => {
-            alert(`✅ Projet "${projectData.name || 'Projet partagé'}" ouvert !`);
+            alert(tL('sharedProjectOpened', projectData.name || tL('sharedProject')));
         }, 500);
         
     } catch (error) {
         console.error('Erreur lors de l\'import:', error);
-        alert(`❌ Erreur lors de l'ouverture du projet partagé: ${error.message}`);
+        alert(tL('sharedProjectError', error.message));
     }
 }
 
@@ -5105,7 +5315,7 @@ async function shareProject() {
         
     } catch (error) {
         console.error('Erreur lors du partage:', error);
-        alert('❌ Erreur lors du partage. Le fichier va être téléchargé à la place.');
+        alert(tL('shareError'));
         
         // Fallback ultime : simple téléchargement
         const projectData = createShareableProject();
@@ -5197,14 +5407,14 @@ function showShareDialog(blob, fileName, projectData) {
             } else {
                 // Fallback : copier le lien
                 await navigator.clipboard.writeText(shareUrl);
-                alert('🔗 Lien copié dans le presse-papier !\n\nCollez-le dans un message, email, etc.');
+                alert(tL('linkCopiedDetail'));
             }
             dialog.remove();
         } catch (error) {
             // Si le partage échoue, copier dans le presse-papier
             try {
                 await navigator.clipboard.writeText(shareUrl);
-                alert('🔗 Lien copié dans le presse-papier !');
+                alert(tL('linkCopied'));
                 dialog.remove();
             } catch (clipboardError) {
                 // Afficher le lien pour copie manuelle
@@ -5324,14 +5534,7 @@ async function importSharedProject(file) {
         const frameCount = projectData.frames.length;
         const hasCustomColors = projectData.customColors && projectData.customColors.length > 0;
         
-        const confirmMessage = `🎨 Importer "${projectName}" ?
-
-📊 Détails :
-• ${frameCount} frame${frameCount > 1 ? 's' : ''}
-• ${hasCustomColors ? projectData.customColors.length + ' couleurs personnalisées' : 'Couleurs de base seulement'}
-• Créé le ${projectData.created ? new Date(projectData.created).toLocaleDateString('fr-FR') : 'Date inconnue'}
-
-⚠️ Cela remplacera votre projet actuel.`;
+        const confirmMessage = `${tL('importConfirmTitle', projectName)}\n\n${tL('importConfirmDetails')}\n• ${frameCount} frame${frameCount > 1 ? 's' : ''}\n• ${hasCustomColors ? tL('customColors', projectData.customColors.length) : tL('baseColorsOnly')}\n• ${tL('createdOn')} ${projectData.created ? new Date(projectData.created).toLocaleDateString(tL('dateLocale')) : tL('unknownDate')}\n\n${tL('importWillReplace')}`;
         
         if (!confirm(confirmMessage)) {
             return;
@@ -5375,11 +5578,11 @@ async function importSharedProject(file) {
         updateFramesList();
         loadFrame(currentFrame);
         
-        alert(`✅ Projet "${projectName}" importé avec succès !`);
+        alert(tL('importSuccess', projectName));
         
     } catch (error) {
         console.error('Erreur lors de l\'import:', error);
-        alert(`❌ Erreur lors de l'import : ${error.message}`);
+        alert(tL('importError', error.message));
     }
 }
 
@@ -5434,7 +5637,7 @@ function initDragAndDrop() {
                 file.name.endsWith('.txt')) {
                 importSharedProject(file);
             } else {
-                alert('❌ Veuillez déposer un fichier .json, .pixelart ou .txt');
+                alert(tL('invalidFileType'));
             }
         }
     }
@@ -5518,9 +5721,9 @@ function showFileLoadDialog() {
                 try {
                     const result = await importPixelArtImage(file);
                     dialog.remove();
-                    alert(`✅ Image importée avec succès !\n\n• Taille détectée : ${result.artW}×${result.artH} pixels${result.pixelSize > 1 ? ` (zoom ×${result.pixelSize} détecté)` : ''}\n• Couleurs uniques : ${result.totalColors}`);
+                    alert(tL('imageImportSuccess', result.artW, result.artH, result.pixelSize, result.totalColors));
                 } catch (err) {
-                    alert(`❌ Erreur lors de l'import : ${err.message}`);
+                    alert(tL('imageImportError', err.message));
                 }
             }
         };
@@ -5560,10 +5763,10 @@ function showFileLoadDialog() {
                 // Pas du JSON valide
             }
             
-            alert('❌ Le contenu du presse-papier ne semble pas être un projet valide.\n\nAssurez-vous d\'avoir copié un lien de projet ou des données JSON.');
+            alert(tL('clipboardError'));
             
         } catch (error) {
-            alert('❌ Impossible d\'accéder au presse-papier.\n\nVeuillez utiliser "Parcourir les fichiers" à la place.');
+            alert(tL('clipboardAccessError'));
         }
     });
     
@@ -5606,9 +5809,9 @@ function showFileLoadDialog() {
                 try {
                     const result = await importPixelArtImage(file);
                     dialog.remove();
-                    alert(`✅ Image importée avec succès !\n\n• Taille détectée : ${result.artW}×${result.artH} pixels${result.pixelSize > 1 ? ` (zoom ×${result.pixelSize} détecté)` : ''}\n• Couleurs uniques : ${result.totalColors}`);
+                    alert(tL('imageImportSuccess', result.artW, result.artH, result.pixelSize, result.totalColors));
                 } catch (err) {
-                    alert(`❌ Erreur lors de l'import : ${err.message}`);
+                    alert(tL('imageImportError', err.message));
                 }
             // Projet JSON / .pixelart / .txt
             } else if (file.type === 'application/json' ||
@@ -5620,7 +5823,7 @@ function showFileLoadDialog() {
                 await importSharedProject(file);
                 dialog.remove();
             } else {
-                alert('❌ Format non supporté.\n\nFichiers acceptés :\n• Projets : .json, .pixelart, .txt\n• Images pixel art : .png, .webp, .jpg, .gif, .bmp');
+                alert(tL('unsupportedFormat'));
             }
         }
     });
@@ -5683,11 +5886,7 @@ async function importPixelArtImage(file) {
                     if (maxDim > currentGridSize) {
                         const fittingSize = VALID_GRID_SIZES.find(s => s >= maxDim);
                         if (fittingSize) {
-                            const ok = confirm(
-                                `Image détectée : ${artW}×${artH} pixels.\n` +
-                                `La grille actuelle est ${currentGridSize}×${currentGridSize}.\n\n` +
-                                `Changer la grille à ${fittingSize}×${fittingSize} pour accueillir l'image entière ?`
-                            );
+                            const ok = confirm(tL('imageResizeConfirm', artW, artH, currentGridSize, fittingSize));
                             if (ok) {
                                 changeGridSize(fittingSize, { skipConfirm: true });
                             }
@@ -5787,13 +5986,140 @@ async function importPixelArtImage(file) {
 }
 
 // ========================================
+// EXPORT SPRITE SHEET
+// ========================================
+
+function exportToSpriteSheet() {
+    if (frames.length === 0) {
+        alert(tL('ssNoFrames'));
+        return;
+    }
+    saveCurrentFrame();
+    showSpriteSheetExportDialog();
+}
+
+function showSpriteSheetExportDialog() {
+    const g = currentGridSize;
+    const fc = frames.length;
+
+    const exportContent = `
+        <div class="gif-export-content">
+            <h3>${tL('ssTitle')}</h3>
+            <p>${tL('ssFrames', fc)}</p>
+
+            <div class="gif-options">
+                <div class="gif-option">
+                    <label for="ssZoom">${tL('ssZoomLabel')}</label>
+                    <select id="ssZoom">
+                        <option value="1">${tL('ssZoom1', g)}</option>
+                        <option value="4" selected>${tL('ssZoom4', g)}</option>
+                        <option value="8">${tL('ssZoom8', g)}</option>
+                        <option value="16">${tL('ssZoom16', g)}</option>
+                    </select>
+                </div>
+                <div class="gif-option">
+                    <label for="ssBg">${tL('ssBgLabel')}</label>
+                    <select id="ssBg">
+                        <option value="transparent" selected>${tL('ssBgTransparent')}</option>
+                        <option value="white">${tL('ssBgWhite')}</option>
+                        <option value="black">${tL('ssBgBlack')}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="gif-preview">
+                <p>${tL('ssPreviewLabel')} <span id="ssPreviewText">${tL('ssPreviewInfo', fc, g, 4)}</span></p>
+                <div class="gif-preview-info">
+                    <small>${tL('ssInfoGame')}</small>
+                    <br><small>${tL('ssInfoTransparent')}</small>
+                </div>
+            </div>
+
+            <div class="dialog-buttons">
+                <button id="createSpriteSheetBtn" class="dialog-button">${tL('ssExportBtn')}</button>
+                <button id="cancelSpriteSheetBtn" class="dialog-button secondary">${tL('cancelBtn')}</button>
+            </div>
+        </div>
+    `;
+
+    const dialog = createMobileDialog(tL('ssDialogTitle'), exportContent);
+
+    // Mettre à jour le texte de preview quand le zoom change
+    dialog.querySelector('#ssZoom').addEventListener('change', (e) => {
+        const z = parseInt(e.target.value);
+        dialog.querySelector('#ssPreviewText').textContent = tL('ssPreviewInfo', fc, g, z);
+    });
+
+    dialog.querySelector('#createSpriteSheetBtn').addEventListener('click', () => {
+        const zoom = parseInt(dialog.querySelector('#ssZoom').value);
+        const bg = dialog.querySelector('#ssBg').value;
+        dialog.remove();
+        createAndDownloadSpriteSheet(zoom, bg);
+    });
+
+    dialog.querySelector('#cancelSpriteSheetBtn').addEventListener('click', () => {
+        dialog.remove();
+    });
+}
+
+function createAndDownloadSpriteSheet(zoom, bg) {
+    const g = currentGridSize;
+    const frameSize = g * zoom;
+    const cols = frames.length;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = frameSize * cols;
+    canvas.height = frameSize;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    // Fond
+    if (bg === 'white') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (bg === 'black') {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    // transparent = rien à faire (canvas est transparent par défaut)
+
+    // Dessiner chaque frame
+    frames.forEach((frame, frameIndex) => {
+        const offsetX = frameIndex * frameSize;
+        if (!Array.isArray(frame)) return;
+        frame.forEach((pixel, i) => {
+            if (!pixel || pixel.isEmpty) return;
+            const x = (i % g) * zoom + offsetX;
+            const y = Math.floor(i / g) * zoom;
+            ctx.fillStyle = pixel.color;
+            ctx.fillRect(x, y, zoom, zoom);
+        });
+    });
+
+    // Télécharger en PNG
+    const projectName = window.currentProjectName || 'sprite-sheet';
+    const fileName = `${projectName}-spritesheet.png`;
+    canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showNotification(tL('ssSuccess', fileName), 'success');
+    }, 'image/png');
+}
+
+// ========================================
 // EXPORT GIF ANIMÉ
 // ========================================
 
 // Exporter l'animation en GIF
 async function exportToGif() {
     if (frames.length === 0) {
-        alert('❌ Aucune frame à exporter !');
+        alert(tL('noFrames'));
         return;
     }
     
@@ -5809,63 +6135,63 @@ function showGifExportDialog() {
     const exportContent = `
         <div class="gif-export-content">
             <h3>🎬 Export Animation GIF</h3>
-            <p>${frames.length} frame${frames.length > 1 ? 's' : ''} à exporter</p>
-            
+            <p>${tL('gifFrames', frames.length)}</p>
+
             <div class="gif-options">
                 <div class="gif-option">
-                    <label for="gifSize">📏 Taille du GIF :</label>
+                    <label for="gifSize">${tL('gifSizeLabel')}</label>
                     <select id="gifSize">
-                        <option value="128" selected>128x128 (Petit - Rapide)</option>
-                        <option value="256">256x256 (Moyen)</option>
-                        <option value="512">512x512 (Grand - Plus lent)</option>
-                        <option value="1024">1024x1024 (Très grand - Très lent)</option>
+                        <option value="128" selected>${tL('gifSmall')}</option>
+                        <option value="256">${tL('gifMedium')}</option>
+                        <option value="512">${tL('gifLarge')}</option>
+                        <option value="1024">${tL('gifXLarge')}</option>
                     </select>
                 </div>
-                
+
                 <div class="gif-option">
-                    <label for="gifSpeed">⚡ Vitesse d'animation :</label>
+                    <label for="gifSpeed">${tL('gifSpeedLabel')}</label>
                     <select id="gifSpeed">
-                        <option value="100">Très rapide (0.1s)</option>
-                        <option value="200">Rapide (0.2s)</option>
-                        <option value="300" selected>Normal (0.3s)</option>
-                        <option value="500">Lent (0.5s)</option>
-                        <option value="1000">Très lent (1s)</option>
+                        <option value="100">${tL('gifVeryFast')}</option>
+                        <option value="200">${tL('gifFast')}</option>
+                        <option value="300" selected>${tL('gifNormal')}</option>
+                        <option value="500">${tL('gifSlow')}</option>
+                        <option value="1000">${tL('gifVerySlow')}</option>
                     </select>
                 </div>
-                
+
                 <div class="gif-option">
-                    <label for="gifLoop">🔄 Répétition :</label>
+                    <label for="gifLoop">${tL('gifLoopLabel')}</label>
                     <select id="gifLoop">
-                        <option value="0" selected>Infinie</option>
+                        <option value="0" selected>${tL('gifLoopInfinite')}</option>
                         <option value="1">1 fois</option>
                         <option value="3">3 fois</option>
                         <option value="5">5 fois</option>
                     </select>
                 </div>
-                
+
                 <div class="gif-option">
-                    <label for="gifQuality">✨ Qualité :</label>
+                    <label for="gifQuality">${tL('gifQualityLabel')}</label>
                     <select id="gifQuality">
-                        <option value="1">Maximale (très lent)</option>
-                        <option value="5">Haute (lent)</option>
-                        <option value="10" selected>Moyenne (recommandé)</option>
-                        <option value="20">Rapide</option>
+                        <option value="1">${tL('gifQualityMax')}</option>
+                        <option value="5">${tL('gifQualityHigh')}</option>
+                        <option value="10" selected>${tL('gifQualityMedium')}</option>
+                        <option value="20">${tL('gifQualityFast')}</option>
                     </select>
                 </div>
             </div>
-            
+
             <div class="gif-preview">
-                <p><strong>Aperçu :</strong> Animation ${frames.length} frames</p>
+                <p>${tL('gifPreviewLabel')} ${frames.length} frames</p>
                 <div class="gif-preview-info">
-                    <small>🎬 Votre GIF sera créé directement dans l'application !</small>
-                    <br><small>⚡ Optimisé pour mobile - Sans workers pour éviter les blocages</small>
-                    <br><small>⏱️ Temps estimé : ${frames.length < 5 ? '5-15 secondes' : frames.length < 10 ? '15-30 secondes' : '30-45 secondes'}</small>
+                    <small>${tL('gifInfoLocal')}</small>
+                    <br><small>${tL('gifInfoOptimized')}</small>
+                    <br><small>${tL('gifInfoTime', frames.length)}</small>
                 </div>
             </div>
-            
+
             <div class="dialog-buttons">
-                <button id="createGifBtn" class="dialog-button">🎬 Créer le GIF</button>
-                <button id="cancelGifBtn" class="dialog-button secondary">Annuler</button>
+                <button id="createGifBtn" class="dialog-button">${tL('gifCreateBtn')}</button>
+                <button id="cancelGifBtn" class="dialog-button secondary">${tL('cancelBtn')}</button>
             </div>
         </div>
     `;
@@ -5901,12 +6227,12 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
     `;
     progressDiv.innerHTML = `
         <div style="font-size: 2rem; margin-bottom: 10px;">🎬</div>
-        <div style="font-size: 1.2rem; margin-bottom: 5px;">Création du GIF...</div>
-        <div id="progressText" style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">Préparation...</div>
+        <div style="font-size: 1.2rem; margin-bottom: 5px;">${tL('gifCreating')}</div>
+        <div id="progressText" style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">${tL('gifPreparing')}</div>
         <div style="background: rgba(255,255,255,0.3); border-radius: 10px; height: 8px; margin-bottom: 10px;">
             <div id="progressBar" style="background: white; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s;"></div>
         </div>
-        <button id="cancelExportBtn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Annuler</button>
+        <button id="cancelExportBtn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer;">${tL('cancelBtn')}</button>
     `;
     document.body.appendChild(progressDiv);
     
@@ -5922,7 +6248,7 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
 
     try {
         // 🚀 TENTATIVE 1 : UTILISER SUPABASE EDGE FUNCTION
-        progressText.textContent = 'Envoi vers serveur Supabase...';
+        progressText.textContent = tL('gifSendingSupabase');
         progressBar.style.width = '20%';
         
         const gifBlob = await createGifWithSupabase(frames, { size, frameDelay, repeat, quality });
@@ -5937,7 +6263,7 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
         console.warn('🔄 Supabase Edge Function échouée, fallback vers gif.js:', supabaseError);
         
         // Si Supabase échoue, on essaie gif.js en fallback
-        progressText.textContent = 'Serveur indisponible, traitement local...';
+        progressText.textContent = tL('gifServerUnavailable');
         progressBar.style.width = '10%';
         
         try {
@@ -5948,12 +6274,7 @@ async function createAnimatedGif(size, frameDelay, repeat, quality) {
         } catch (gifJsError) {
             console.error('❌ Échec complet gif.js et Supabase:', gifJsError);
             progressDiv.remove();
-            alert(`❌ Erreur lors de la création du GIF :
-            
-🌐 Serveur : ${supabaseError.message}
-💻 Local : ${gifJsError.message}
-
-Veuillez réessayer plus tard.`);
+            alert(tL('gifError', supabaseError.message, gifJsError.message));
         }
     }
 }
@@ -6023,15 +6344,7 @@ function downloadGif(gifBlob, size, frameDelay) {
         
         // Message de succès
         setTimeout(() => {
-            alert(`🎉 GIF créé avec succès via serveur !
-
-📁 Fichier: ${fileName}
-🎬 ${frames.length} frames  
-📏 Taille: ${size}x${size}
-⚡ Vitesse: ${frameDelay}ms par frame
-🚀 Traité par serveur Supabase
-
-Votre animation GIF est prête ! 🎨`);
+            alert(tL('gifSuccessServer', fileName, frames.length, size, frameDelay));
         }, 500);
         
         logUsageEvent('gif_exported', {
@@ -6043,7 +6356,7 @@ Votre animation GIF est prête ! 🎨`);
         
     } catch (error) {
         console.error('❌ Erreur téléchargement:', error);
-        alert('❌ Erreur lors du téléchargement du GIF');
+        alert(tL('gifDownloadError'));
     }
 }
 
@@ -6309,26 +6622,26 @@ function populateProfileForm(profile = {}) {
 function showProfileMenu() {
     const menuContent = `
         <div style="padding: 20px; color: rgba(255, 255, 255, 0.95);">
-            <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98);">👤 Mon Profil</h3>
+            <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98);">${tL('profileTitle')}</h3>
             <p style="text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85); font-size: 0.9em;">
-                Que souhaitez-vous gérer ?
+                ${tL('profileSubtitle')}
             </p>
-            
+
             <div style="display: flex; flex-direction: column; gap: 12px;">
                 <button id="profileCreativeBtn" style="padding: 15px; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; text-align: left;">
-                    <div style="font-size: 1.1em; margin-bottom: 4px;">📊 Profil Créatif</div>
-                    <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">Informations optionnelles pour améliorer l'éditeur</div>
+                    <div style="font-size: 1.1em; margin-bottom: 4px;">${tL('profileCreativeTitle')}</div>
+                    <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">${tL('profileCreativeDesc')}</div>
                 </button>
-                
+
                 <button id="profileUsernameBtn" style="padding: 15px; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; text-align: left;">
-                    <div style="font-size: 1.1em; margin-bottom: 4px;">🎭 Mon Pseudo</div>
-                    <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">Définir votre pseudo public et votre avatar pour les modèles publiés</div>
+                    <div style="font-size: 1.1em; margin-bottom: 4px;">${tL('profileUsernameTitle')}</div>
+                    <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">${tL('profileUsernameDesc')}</div>
                 </button>
             </div>
-            
+
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button id="cancelProfileMenuBtn" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
-                    Annuler
+                    ${tL('cancelBtn')}
                 </button>
             </div>
         </div>
@@ -6355,7 +6668,7 @@ function showProfileMenu() {
         if (typeof window.showUsernameDialog === 'function') {
             window.showUsernameDialog();
         } else {
-            alert('❌ La fonctionnalité de gestion du pseudo n\'est pas encore chargée. Veuillez recharger la page.');
+            alert(tL('profileUsernameNotLoaded'));
         }
     });
     
@@ -6419,9 +6732,9 @@ async function submitProfileForm(event) {
             profilePromptHasBeenShown = true;
             closeProfileModal(false);
             if (typeof showNotification === 'function') {
-                showNotification('Profil mis à jour ✅', 'success');
+                showNotification(tL('profileUpdated'), 'success');
             } else {
-                alert('Profil mis à jour ✅');
+                alert(tL('profileUpdated'));
             }
             logUsageEvent('profile_saved', {
                 age_range: result.data.age_range,
@@ -6435,9 +6748,9 @@ async function submitProfileForm(event) {
     } catch (error) {
         console.error('Erreur sauvegarde profil:', error);
         if (typeof showNotification === 'function') {
-            showNotification('Impossible d\'enregistrer le profil', 'error');
+            showNotification(tL('profileSaveError'), 'error');
         } else {
-            alert('❌ Impossible d\'enregistrer le profil.');
+            alert('❌ ' + tL('profileSaveError'));
         }
     }
 }
@@ -6607,6 +6920,15 @@ async function updateUserProfileDisplay() {
                     userDropdown.classList.remove('open');
                     const exportGifBtn = document.getElementById('exportGifBtn') || document.getElementById('exportGifBtn2');
                     if (exportGifBtn) exportGifBtn.click();
+                });
+            }
+
+            const exportSpriteSheetBtnDropdown = document.getElementById('exportSpriteSheetBtnDropdown');
+            if (exportSpriteSheetBtnDropdown) {
+                exportSpriteSheetBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    const ssBtn = document.getElementById('exportSpriteSheetBtn') || document.getElementById('exportSpriteSheetBtn2');
+                    if (ssBtn) ssBtn.click();
                 });
             }
 
