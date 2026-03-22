@@ -1,27 +1,31 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Connexion - Pixel Art Editor</title>
+    <title>Pixel Art Editor — Sign in</title>
 
-    <!-- Favicons -->
     <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
     <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
 
-    <!-- Styles -->
     <link rel="stylesheet" href="styles/login.css">
 
-    <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="login-container">
         <div class="login-card">
+
             <!-- Logo/Header -->
             <div class="login-header">
                 <h1>🎨 Pixel Art Editor</h1>
-                <p class="tagline">Créez et partagez vos animations pixel art</p>
+                <p class="tagline" data-en="Create and share your pixel art animations" data-fr="Créez et partagez vos animations pixel art">Create and share your pixel art animations</p>
+            </div>
+
+            <!-- Lang switcher -->
+            <div style="display:flex;justify-content:center;gap:6px;margin-bottom:16px;">
+                <button class="lang-btn-login" data-lang="en" style="background:none;border:1px solid rgba(255,255,255,0.2);border-radius:6px;cursor:pointer;font-size:0.9rem;padding:4px 10px;color:white;transition:all 0.2s;">🇬🇧 EN</button>
+                <button class="lang-btn-login" data-lang="fr" style="background:none;border:1px solid rgba(255,255,255,0.2);border-radius:6px;cursor:pointer;font-size:0.9rem;padding:4px 10px;color:white;transition:all 0.2s;">🇫🇷 FR</button>
             </div>
 
             <!-- Notification Area -->
@@ -29,41 +33,26 @@
 
             <!-- Login/Signup Tabs -->
             <div class="tabs">
-                <button class="tab-btn active" data-tab="signin">Connexion</button>
-                <button class="tab-btn" data-tab="signup">Inscription</button>
+                <button class="tab-btn active" data-tab="signin" data-en="Sign in" data-fr="Connexion">Sign in</button>
+                <button class="tab-btn" data-tab="signup" data-en="Sign up" data-fr="Inscription">Sign up</button>
             </div>
 
             <!-- Sign In Form -->
             <form id="signinForm" class="auth-form active">
                 <div class="form-group">
                     <label for="signin-email">Email</label>
-                    <input
-                        type="email"
-                        id="signin-email"
-                        placeholder="votre@email.com"
-                        required
-                        autocomplete="email"
-                    >
+                    <input type="email" id="signin-email" placeholder="your@email.com" data-placeholder-en="your@email.com" data-placeholder-fr="votre@email.com" required autocomplete="email">
                 </div>
-
                 <div class="form-group">
-                    <label for="signin-password">Mot de passe</label>
-                    <input
-                        type="password"
-                        id="signin-password"
-                        placeholder="••••••••"
-                        required
-                        autocomplete="current-password"
-                    >
+                    <label for="signin-password" data-en="Password" data-fr="Mot de passe">Password</label>
+                    <input type="password" id="signin-password" placeholder="••••••••" required autocomplete="current-password">
                 </div>
-
                 <button type="submit" class="btn btn-primary">
-                    <span class="btn-text">Se connecter</span>
-                    <span class="btn-loading hidden">Connexion...</span>
+                    <span class="btn-text" data-en="Sign in" data-fr="Se connecter">Sign in</span>
+                    <span class="btn-loading hidden" data-en="Signing in..." data-fr="Connexion...">Signing in...</span>
                 </button>
-
                 <div class="form-footer">
-                    <a href="#" id="forgot-password-link" class="link">Mot de passe oublié ?</a>
+                    <a href="#" id="forgot-password-link" class="link" data-en="Forgot password?" data-fr="Mot de passe oublié ?">Forgot password?</a>
                 </div>
             </form>
 
@@ -71,52 +60,29 @@
             <form id="signupForm" class="auth-form">
                 <div class="form-group">
                     <label for="signup-email">Email</label>
-                    <input
-                        type="email"
-                        id="signup-email"
-                        placeholder="votre@email.com"
-                        required
-                        autocomplete="email"
-                    >
+                    <input type="email" id="signup-email" placeholder="your@email.com" data-placeholder-en="your@email.com" data-placeholder-fr="votre@email.com" required autocomplete="email">
                 </div>
-
                 <div class="form-group">
-                    <label for="signup-password">Mot de passe</label>
-                    <input
-                        type="password"
-                        id="signup-password"
-                        placeholder="••••••••"
-                        required
-                        autocomplete="new-password"
-                        minlength="6"
-                    >
-                    <small class="form-hint">Minimum 6 caractères</small>
+                    <label for="signup-password" data-en="Password" data-fr="Mot de passe">Password</label>
+                    <input type="password" id="signup-password" placeholder="••••••••" required autocomplete="new-password" minlength="6">
+                    <small class="form-hint" data-en="Minimum 6 characters" data-fr="Minimum 6 caractères">Minimum 6 characters</small>
                 </div>
-
                 <div class="form-group">
-                    <label for="signup-password-confirm">Confirmer le mot de passe</label>
-                    <input
-                        type="password"
-                        id="signup-password-confirm"
-                        placeholder="••••••••"
-                        required
-                        autocomplete="new-password"
-                        minlength="6"
-                    >
+                    <label for="signup-password-confirm" data-en="Confirm password" data-fr="Confirmer le mot de passe">Confirm password</label>
+                    <input type="password" id="signup-password-confirm" placeholder="••••••••" required autocomplete="new-password" minlength="6">
                 </div>
-
                 <button type="submit" class="btn btn-primary">
-                    <span class="btn-text">Créer un compte</span>
-                    <span class="btn-loading hidden">Création...</span>
+                    <span class="btn-text" data-en="Create account" data-fr="Créer un compte">Create account</span>
+                    <span class="btn-loading hidden" data-en="Creating..." data-fr="Création...">Creating...</span>
                 </button>
             </form>
 
             <!-- Divider -->
             <div class="divider">
-                <span>ou</span>
+                <span data-en="or" data-fr="ou">or</span>
             </div>
 
-            <!-- OAuth Providers -->
+            <!-- OAuth -->
             <div class="oauth-buttons">
                 <button id="google-signin" class="btn btn-oauth btn-google">
                     <svg width="18" height="18" viewBox="0 0 18 18">
@@ -125,135 +91,144 @@
                         <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
                         <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
                     </svg>
-                    Continuer avec Google
+                    <span data-en="Continue with Google" data-fr="Continuer avec Google">Continue with Google</span>
                 </button>
             </div>
 
             <!-- Password Reset Modal -->
             <div id="reset-password-modal" class="modal hidden">
                 <div class="modal-content">
-                    <h3>Réinitialiser le mot de passe</h3>
-                    <p>Entrez votre email pour recevoir un lien de réinitialisation</p>
-
+                    <h3 data-en="Reset password" data-fr="Réinitialiser le mot de passe">Reset password</h3>
+                    <p data-en="Enter your email to receive a reset link." data-fr="Entrez votre email pour recevoir un lien de réinitialisation.">Enter your email to receive a reset link.</p>
                     <form id="reset-password-form">
                         <div class="form-group">
-                            <input
-                                type="email"
-                                id="reset-email"
-                                placeholder="votre@email.com"
-                                required
-                            >
+                            <input type="email" id="reset-email" placeholder="your@email.com" data-placeholder-en="your@email.com" data-placeholder-fr="votre@email.com" required>
                         </div>
                         <div class="modal-buttons">
-                            <button type="button" class="btn btn-secondary" id="cancel-reset">Annuler</button>
-                            <button type="submit" class="btn btn-primary">Envoyer</button>
+                            <button type="button" class="btn btn-secondary" id="cancel-reset" data-en="Cancel" data-fr="Annuler">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-en="Send" data-fr="Envoyer">Send</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- Footer -->
         <div class="login-footer">
-            <p>En vous connectant, vous acceptez nos conditions d'utilisation</p>
+            <p data-en="By signing in, you agree to our terms of use." data-fr="En vous connectant, vous acceptez nos conditions d'utilisation.">By signing in, you agree to our terms of use.</p>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="js/config/supabase-config.js"></script>
     <script src="js/auth.js"></script>
     <script>
-        // Tab switching
+        // ── Language ──
+        const T = {
+            signedIn:        { en: 'Signed in! Redirecting...', fr: 'Connexion réussie ! Redirection...' },
+            signInError:     { en: 'Sign in error.', fr: 'Erreur de connexion.' },
+            passwordMismatch:{ en: 'Passwords do not match.', fr: 'Les mots de passe ne correspondent pas.' },
+            accountCreated:  { en: 'Account created! Check your email to confirm.', fr: 'Compte créé ! Vérifiez votre email pour confirmer.' },
+            accountError:    { en: 'Error creating account.', fr: 'Erreur lors de la création du compte.' },
+            googleError:     { en: 'Google sign in error.', fr: 'Erreur de connexion Google.' },
+            resetSent:       { en: 'Reset email sent!', fr: 'Email de réinitialisation envoyé !' },
+            resetError:      { en: 'Error sending reset email.', fr: 'Erreur lors de l\'envoi.' },
+        };
+        const t = key => T[key][localStorage.getItem('lang') || 'en'];
+
+        function applyLoginLang(l) {
+            localStorage.setItem('lang', l);
+            document.documentElement.lang = l;
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const text = el.getAttribute('data-' + l);
+                if (text) el.textContent = text;
+            });
+            document.querySelectorAll('[data-placeholder-en]').forEach(el => {
+                el.placeholder = el.getAttribute('data-placeholder-' + l);
+            });
+            document.querySelectorAll('.lang-btn-login').forEach(btn => {
+                btn.style.background = btn.dataset.lang === l ? 'rgba(255,255,255,0.15)' : 'none';
+            });
+        }
+
+        document.querySelectorAll('.lang-btn-login').forEach(btn => {
+            btn.addEventListener('click', () => applyLoginLang(btn.dataset.lang));
+        });
+
+        applyLoginLang(localStorage.getItem('lang') || 'en');
+
+        // ── Tab switching ──
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const tab = btn.dataset.tab;
-
-                // Update active tab
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
-                // Update active form
                 document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
                 document.getElementById(`${tab}Form`).classList.add('active');
             });
         });
 
-        // Show notification
         function showNotification(message, type = 'info') {
             const notification = document.getElementById('notification');
             notification.textContent = message;
             notification.className = `notification ${type}`;
             notification.classList.remove('hidden');
-
-            setTimeout(() => {
-                notification.classList.add('hidden');
-            }, 5000);
+            setTimeout(() => notification.classList.add('hidden'), 5000);
         }
 
-        // Sign In Form
+        // ── Sign In ──
         document.getElementById('signinForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const btn = e.target.querySelector('.btn-primary');
             const btnText = btn.querySelector('.btn-text');
             const btnLoading = btn.querySelector('.btn-loading');
-
-            const email = document.getElementById('signin-email').value;
-            const password = document.getElementById('signin-password').value;
-
-            // Show loading
             btn.disabled = true;
             btnText.classList.add('hidden');
             btnLoading.classList.remove('hidden');
 
-            const result = await window.authService.signIn(email, password);
+            const result = await window.authService.signIn(
+                document.getElementById('signin-email').value,
+                document.getElementById('signin-password').value
+            );
 
             if (result.success) {
-                showNotification('Connexion réussie ! Redirection...', 'success');
-                setTimeout(() => {
-                    window.location.href = '/index.html';
-                }, 1000);
+                showNotification(t('signedIn'), 'success');
+                setTimeout(() => { window.location.href = '/editor.html'; }, 1000);
             } else {
-                showNotification(result.error || 'Erreur de connexion', 'error');
+                showNotification(result.error || t('signInError'), 'error');
                 btn.disabled = false;
                 btnText.classList.remove('hidden');
                 btnLoading.classList.add('hidden');
             }
         });
 
-        // Sign Up Form
+        // ── Sign Up ──
         document.getElementById('signupForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const btn = e.target.querySelector('.btn-primary');
             const btnText = btn.querySelector('.btn-text');
             const btnLoading = btn.querySelector('.btn-loading');
 
-            const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
             const passwordConfirm = document.getElementById('signup-password-confirm').value;
 
-            // Validate passwords match
             if (password !== passwordConfirm) {
-                showNotification('Les mots de passe ne correspondent pas', 'error');
+                showNotification(t('passwordMismatch'), 'error');
                 return;
             }
 
-            // Show loading
             btn.disabled = true;
             btnText.classList.add('hidden');
             btnLoading.classList.remove('hidden');
 
-            const result = await window.authService.signUp(email, password);
+            const result = await window.authService.signUp(
+                document.getElementById('signup-email').value,
+                password
+            );
 
             if (result.success) {
-                showNotification('Compte créé ! Vérifiez votre email pour confirmer.', 'success');
-                // Switch to signin tab
-                setTimeout(() => {
-                    document.querySelector('[data-tab="signin"]').click();
-                }, 2000);
+                showNotification(t('accountCreated'), 'success');
+                setTimeout(() => { document.querySelector('[data-tab="signin"]').click(); }, 2000);
             } else {
-                showNotification(result.error || 'Erreur lors de la création du compte', 'error');
+                showNotification(result.error || t('accountError'), 'error');
             }
 
             btn.disabled = false;
@@ -261,15 +236,13 @@
             btnLoading.classList.add('hidden');
         });
 
-        // Google Sign In
+        // ── Google ──
         document.getElementById('google-signin').addEventListener('click', async () => {
             const result = await window.authService.signInWithGoogle();
-            if (!result.success) {
-                showNotification(result.error || 'Erreur de connexion Google', 'error');
-            }
+            if (!result.success) showNotification(result.error || t('googleError'), 'error');
         });
 
-        // Forgot Password
+        // ── Forgot password ──
         document.getElementById('forgot-password-link').addEventListener('click', (e) => {
             e.preventDefault();
             document.getElementById('reset-password-modal').classList.remove('hidden');
@@ -281,33 +254,24 @@
 
         document.getElementById('reset-password-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            const email = document.getElementById('reset-email').value;
-            const result = await window.authService.resetPassword(email);
-
+            const result = await window.authService.resetPassword(document.getElementById('reset-email').value);
             if (result.success) {
-                showNotification('Email de réinitialisation envoyé !', 'success');
+                showNotification(t('resetSent'), 'success');
                 document.getElementById('reset-password-modal').classList.add('hidden');
             } else {
-                showNotification(result.error || 'Erreur lors de l\'envoi', 'error');
+                showNotification(result.error || t('resetError'), 'error');
             }
         });
 
-        // Check if already authenticated
+        // ── Auth check ──
         document.addEventListener('DOMContentLoaded', async () => {
             const initialized = await window.authService.init();
-
             if (!initialized) {
-                // Show error if Supabase not configured
-                showNotification(
-                    '⚠️ Supabase not configured. Please check the console and update public/js/config/supabase-config.js',
-                    'error'
-                );
+                showNotification('⚠️ Supabase not configured. Please check the console.', 'error');
                 return;
             }
-
             if (window.authService.isAuthenticated()) {
-                window.location.href = '/index.html';
+                window.location.href = '/editor.html';
             }
         });
     </script>
