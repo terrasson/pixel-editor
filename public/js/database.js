@@ -1012,6 +1012,29 @@ class DatabaseService {
         }
     }
 
+    // Get public gallery (all public shares)
+    async getPublicGallery({ limit = 40, sortBy = 'recent' } = {}) {
+        if (!this.supabase) this.init();
+
+        try {
+            const orderColumn = sortBy === 'popular' ? 'view_count' : 'created_at';
+
+            const { data, error } = await this.supabase
+                .from('public_shares')
+                .select('id, share_token, project_name, project_thumbnail, project_snapshot, view_count, duplicate_count, created_at')
+                .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
+                .order(orderColumn, { ascending: false })
+                .limit(limit);
+
+            if (error) throw error;
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('Get gallery error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
     // Get public share by token
     async getPublicShare(shareToken) {
         if (!this.supabase) this.init();
