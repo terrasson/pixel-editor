@@ -271,6 +271,13 @@ const TL = {
     // Watermark
     wmLabel:                { en: '✨ Add watermark "pixel-editor.app"', fr: '✨ Ajouter watermark "pixel-editor.app"' },
     wmHint:                 { en: 'Helps spread the word 🙏', fr: 'Aide à faire connaître l\'app 🙏' },
+    // Help - Stamp tool section
+    helpStampTitle:         { en: '🪄 Stamp tool', fr: '🪄 Outil Tampon' },
+    helpStampDesc:          { en: '<strong>🪄 Stamp sprite:</strong> import a frame from another saved project and place it on your current canvas.', fr: '<strong>🪄 Tampon sprite :</strong> importez une frame d\'un autre projet sauvegardé et incrustez-la sur votre canvas actuel.' },
+    helpStampHow:           { en: '<strong>How to use:</strong> click "🪄 Stamp sprite" → choose a project → pick the frame → a ghost preview follows your cursor (or finger on mobile) → click/tap to place it.', fr: '<strong>Comment utiliser :</strong> cliquez sur "🪄 Tampon sprite" → choisissez un projet → choisissez la frame → un aperçu fantôme suit votre curseur (ou doigt sur mobile) → cliquez/tapez pour poser.' },
+    helpStampTransparent:   { en: '<strong>Transparent pixels:</strong> empty pixels in the stamp are not applied — only colored pixels are stamped, preserving your background.', fr: '<strong>Pixels transparents :</strong> les pixels vides du tampon ne sont pas appliqués — seuls les pixels colorés sont incrustés, préservant votre fond.' },
+    helpStampUndo:          { en: '<strong>Undo:</strong> Ctrl+Z to remove the stamp. <strong>Esc</strong> to cancel before placing.', fr: '<strong>Annuler :</strong> Ctrl+Z pour retirer le tampon. <strong>Échap</strong> pour annuler avant de poser.' },
+    helpStampMobile:        { en: '<strong>Mobile:</strong> drag your finger to position the ghost, release to stamp.', fr: '<strong>Mobile :</strong> glissez votre doigt pour positionner l\'aperçu, relâchez pour incruster.' },
     // Stamp tool
     stampTitle:             { en: '🪄 Import a sprite', fr: '🪄 Importer un sprite' },
     stampSubtitle:          { en: 'Choose a project then pick the frame to stamp on your canvas.', fr: 'Choisissez un projet puis la frame à incruster sur votre canvas.' },
@@ -4413,6 +4420,14 @@ function showHelp() {
             <div class="help-item">${tL('helpGallery')}</div>
                 </div>
             <div class="help-section">
+            <h3>${tL('helpStampTitle')}</h3>
+            <div class="help-item">${tL('helpStampDesc')}</div>
+            <div class="help-item">${tL('helpStampHow')}</div>
+            <div class="help-item">${tL('helpStampTransparent')}</div>
+            <div class="help-item">${tL('helpStampUndo')}</div>
+            <div class="help-item">${tL('helpStampMobile')}</div>
+                </div>
+            <div class="help-section">
             <h3>${tL('helpMobileTitle')}</h3>
             <div class="help-item">${tL('helpMobileMenu')}</div>
             <div class="help-item">${tL('helpMobileTouch')}</div>
@@ -7302,6 +7317,22 @@ async function updateUserProfileDisplay() {
                 galleryBtnDropdown.addEventListener('click', () => {
                     userDropdown.classList.remove('open');
                     window.location.href = '/gallery.html';
+                });
+            }
+
+            const helpBtnDropdown = document.getElementById('helpBtnDropdown');
+            if (helpBtnDropdown) {
+                helpBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    showHelp();
+                });
+            }
+
+            const creditsBtnDropdown = document.getElementById('creditsBtnDropdown');
+            if (creditsBtnDropdown) {
+                creditsBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    showCredits();
                 });
             }
 
