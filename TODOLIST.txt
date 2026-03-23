@@ -2,14 +2,24 @@
   PIXEL EDITOR - LISTE DES AMÉLIORATIONS
 ========================================
 
-[ ] OUTIL TAMPON (STAMP / IMPORT SPRITE)
-    Permettre d'importer un sprite depuis un projet sauvegardé
-    et de l'incruster sur le canvas courant à l'endroit choisi.
-    - Bouton "🪄 Importer un sprite" dans la toolbar
-    - Modal pour choisir le projet source + la frame
-    - Mode "stamp" : le sprite suit le curseur en semi-transparent
-    - Clic pour valider le placement
-    - Les pixels vides/transparents du sprite ne remplacent pas le fond
-    - Redimensionnement si grilles de tailles différentes
+[x] OUTIL TAMPON (STAMP / IMPORT SPRITE)        ✅ Livré
+    Importer une frame d'un projet sauvegardé et l'incruster
+    sur le canvas courant. Ghost preview centré sur le curseur,
+    pixels transparents préservés, undo supporté, mobile OK.
+
+----------------------------------------
+  PRIORITÉS FUTURES
+----------------------------------------
+
+[ ] MIGRATION VERS LE RENDU CANVAS              🔴 PRIORITÉ HAUTE
+    Remplacement du rendu basé sur des divs HTML (1 div par pixel)
+    par un rendu sur un élément <canvas> unique.
+    Pourquoi : les grilles 128×128 (16 384 divs) et 256×256
+    (65 536 divs) sont lentes à rendre et à éditer. Le canvas
+    utilise le GPU → fluide quelle que soit la résolution.
+    Impact : réécriture majeure de l'éditeur (dessin, hover,
+    zoom/pan, grille, undo). Plusieurs semaines de travail.
+    Bénéfice : ouvre la voie aux grilles 512×512+, animations
+    fluides, export haute résolution sans ralentissement.
 
 ========================================
