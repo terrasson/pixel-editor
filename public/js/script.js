@@ -642,6 +642,23 @@ function changeGridSize(newSize, options = {}) {
     // Reconstruire la grille DOM
     initGrid(newSize);
 
+    // Auto-zoom pour les grandes grilles : chaque cellule doit faire ≥ 4px d'écran
+    // sinon un simple clic colorie plusieurs cellules à la fois
+    const grid = document.getElementById('pixelGrid');
+    if (grid) {
+        const canvasSize = grid.offsetWidth || 600;
+        const cellSize = canvasSize / newSize;
+        const minCellPx = 4;
+        if (cellSize < minCellPx) {
+            gridZoom = Math.min(MAX_ZOOM, Math.ceil(minCellPx / cellSize));
+            // Centrer le zoom
+            gridPanX = -(canvasSize * gridZoom - canvasSize) / 2;
+            gridPanY = -(canvasSize * gridZoom - canvasSize) / 2;
+            clampPan();
+            applyGridTransform();
+        }
+    }
+
     // Mettre à jour l'interface
     updateFramesList();
     loadFrame(currentFrame);
