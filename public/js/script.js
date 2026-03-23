@@ -974,10 +974,22 @@ function enterStampMode(pixels, gridSize) {
     overlay.height = pixelGrid ? pixelGrid.offsetHeight : 512;
     overlay.style.display = 'block';
 
+    // Bouton flottant "Annuler" visible pendant le mode tampon
+    let cancelBar = document.getElementById('stampCancelBar');
+    if (!cancelBar) {
+        cancelBar = document.createElement('div');
+        cancelBar.id = 'stampCancelBar';
+        cancelBar.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(220,38,38,0.92);color:white;border:none;border-radius:24px;padding:10px 22px;font-size:0.95rem;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);backdrop-filter:blur(8px);';
+        cancelBar.textContent = '✗ ' + (localStorage.getItem('lang') === 'fr' ? 'Annuler le tampon' : 'Cancel stamp');
+        cancelBar.addEventListener('click', exitStampMode);
+        document.body.appendChild(cancelBar);
+    }
+    cancelBar.style.display = 'block';
+
     showNotification(tL('stampModeActive'), 'success');
 }
 
-function exitStampMode() {
+function exitStampMode(silent = false) {
     isStampMode = false;
     stampPixels = null;
     const pixelGrid = document.getElementById('pixelGrid');
@@ -988,10 +1000,12 @@ function exitStampMode() {
         ctx.clearRect(0, 0, overlay.width, overlay.height);
         overlay.style.display = 'none';
     }
-    showNotification(tL('stampCancelled'), 'info');
+    const cancelBar = document.getElementById('stampCancelBar');
+    if (cancelBar) cancelBar.style.display = 'none';
+    if (!silent) showNotification(tL('stampCancelled'), 'info');
 }
 
-function updateStampGhost(col, row) {
+function updateStampGhost(col, row, displayOffsetRows = 0) {
     stampHoverCol = col;
     stampHoverRow = row;
     const overlay = document.getElementById('stampOverlay');
@@ -1000,6 +1014,8 @@ function updateStampGhost(col, row) {
     ctx.clearRect(0, 0, overlay.width, overlay.height);
     const pixelSize = overlay.width / currentGridSize;
     const scale = currentGridSize / stampGridSize;
+    // displayOffsetRows décale le ghost visuellement (mobile: au-dessus du doigt)
+    const displayRow = row + displayOffsetRows;
     ctx.globalAlpha = 0.65;
     for (let i = 0; i < stampPixels.length; i++) {
         const pixel = stampPixels[i];
@@ -1007,10 +1023,10 @@ function updateStampGhost(col, row) {
         const srcCol = i % stampGridSize;
         const srcRow = Math.floor(i / stampGridSize);
         const dstCol = col + Math.round(srcCol * scale);
-        const dstRow = row + Math.round(srcRow * scale);
-        if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
+        const dstDisplayRow = displayRow + Math.round(srcRow * scale);
+        if (dstCol < 0 || dstDisplayRow < 0 || dstCol >= currentGridSize || dstDisplayRow >= currentGridSize) continue;
         ctx.fillStyle = pixel.color || '#000000';
-        ctx.fillRect(dstCol * pixelSize, dstRow * pixelSize,
+        ctx.fillRect(dstCol * pixelSize, dstDisplayRow * pixelSize,
             Math.max(1, Math.ceil(pixelSize * scale)),
             Math.max(1, Math.ceil(pixelSize * scale)));
     }
@@ -1048,6 +1064,20 @@ function applyStamp(col, row) {
     }
     saveCurrentFrame();
     updateAllThumbnails();
+
+    // Vider le ghost après placement
+    const overlay = document.getElementById('stampOverlay');
+    if (overlay) {
+        const ctx = overlay.getContext('2d');
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+    }
+
+    // Sur mobile : quitter le mode tampon après chaque pose (UX plus claire)
+    const isTouch = 'ontouchstart' in window;
+    if (isTouch) {
+        exitStampMode(true); // silent = ne pas afficher "annulé"
+    }
+
     showNotification(tL('stampApplied'), 'success');
 }
 
