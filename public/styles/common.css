@@ -1525,7 +1525,7 @@ input[type="color"]::-webkit-color-swatch {
    ======================================== */
 
 .grid-size-modal-content {
-    max-width: 400px;
+    max-width: 460px;
     width: 90%;
 }
 
@@ -1571,7 +1571,7 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 .grid-size-label {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 700;
     line-height: 1;
 }
