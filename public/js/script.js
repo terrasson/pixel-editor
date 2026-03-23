@@ -1006,9 +1006,8 @@ function exitStampMode(silent = false) {
 }
 
 function updateStampGhost(col, row) {
-    // Centre le tampon sur le curseur / doigt
-    const scale = currentGridSize / stampGridSize;
-    const half = Math.floor((stampGridSize * scale) / 2);
+    // 1 pixel source = 1 pixel destination (taille native, sans mise à l'échelle)
+    const half = Math.floor(stampGridSize / 2);
     stampHoverCol = col - half;
     stampHoverRow = row - half;
 
@@ -1023,20 +1022,17 @@ function updateStampGhost(col, row) {
         if (!pixel || pixel.isEmpty) continue;
         const srcCol = i % stampGridSize;
         const srcRow = Math.floor(i / stampGridSize);
-        const dstCol = stampHoverCol + Math.round(srcCol * scale);
-        const dstRow = stampHoverRow + Math.round(srcRow * scale);
+        const dstCol = stampHoverCol + srcCol;
+        const dstRow = stampHoverRow + srcRow;
         if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
         ctx.fillStyle = pixel.color || '#000000';
-        ctx.fillRect(dstCol * pixelSize, dstRow * pixelSize,
-            Math.max(1, Math.ceil(pixelSize * scale)),
-            Math.max(1, Math.ceil(pixelSize * scale)));
+        ctx.fillRect(dstCol * pixelSize, dstRow * pixelSize, pixelSize, pixelSize);
     }
     ctx.globalAlpha = 1.0;
 }
 
 function applyStamp(col, row) {
     const pixelElements = Array.from(document.querySelectorAll('.pixel'));
-    const scale = currentGridSize / stampGridSize;
 
     actionStartState = pixelElements.map(p => ({
         color: p.style.backgroundColor || '#FFFFFF',
@@ -1049,8 +1045,8 @@ function applyStamp(col, row) {
         if (!pixel || pixel.isEmpty) continue;
         const srcCol = i % stampGridSize;
         const srcRow = Math.floor(i / stampGridSize);
-        const dstCol = col + Math.round(srcCol * scale);
-        const dstRow = row + Math.round(srcRow * scale);
+        const dstCol = col + srcCol;
+        const dstRow = row + srcRow;
         if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
         const dstIndex = dstRow * currentGridSize + dstCol;
         if (pixelElements[dstIndex]) {
