@@ -1005,28 +1005,29 @@ function exitStampMode(silent = false) {
     if (!silent) showNotification(tL('stampCancelled'), 'info');
 }
 
-function updateStampGhost(col, row, displayOffsetRows = 0) {
-    stampHoverCol = col;
-    stampHoverRow = row;
+function updateStampGhost(col, row) {
+    // Centre le tampon sur le curseur / doigt
+    const scale = currentGridSize / stampGridSize;
+    const half = Math.floor((stampGridSize * scale) / 2);
+    stampHoverCol = col - half;
+    stampHoverRow = row - half;
+
     const overlay = document.getElementById('stampOverlay');
     if (!overlay || !stampPixels) return;
     const ctx = overlay.getContext('2d');
     ctx.clearRect(0, 0, overlay.width, overlay.height);
     const pixelSize = overlay.width / currentGridSize;
-    const scale = currentGridSize / stampGridSize;
-    // displayOffsetRows décale le ghost visuellement (mobile: au-dessus du doigt)
-    const displayRow = row + displayOffsetRows;
     ctx.globalAlpha = 0.65;
     for (let i = 0; i < stampPixels.length; i++) {
         const pixel = stampPixels[i];
         if (!pixel || pixel.isEmpty) continue;
         const srcCol = i % stampGridSize;
         const srcRow = Math.floor(i / stampGridSize);
-        const dstCol = col + Math.round(srcCol * scale);
-        const dstDisplayRow = displayRow + Math.round(srcRow * scale);
-        if (dstCol < 0 || dstDisplayRow < 0 || dstCol >= currentGridSize || dstDisplayRow >= currentGridSize) continue;
+        const dstCol = stampHoverCol + Math.round(srcCol * scale);
+        const dstRow = stampHoverRow + Math.round(srcRow * scale);
+        if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
         ctx.fillStyle = pixel.color || '#000000';
-        ctx.fillRect(dstCol * pixelSize, dstDisplayRow * pixelSize,
+        ctx.fillRect(dstCol * pixelSize, dstRow * pixelSize,
             Math.max(1, Math.ceil(pixelSize * scale)),
             Math.max(1, Math.ceil(pixelSize * scale)));
     }
