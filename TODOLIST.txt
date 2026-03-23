@@ -1,0 +1,15 @@
+========================================
+  PIXEL EDITOR - LISTE DES AMÉLIORATIONS
+========================================
+
+[ ] OUTIL TAMPON (STAMP / IMPORT SPRITE)
+    Permettre d'importer un sprite depuis un projet sauvegardé
+    et de l'incruster sur le canvas courant à l'endroit choisi.
+    - Bouton "🪄 Importer un sprite" dans la toolbar
+    - Modal pour choisir le projet source + la frame
+    - Mode "stamp" : le sprite suit le curseur en semi-transparent
+    - Clic pour valider le placement
+    - Les pixels vides/transparents du sprite ne remplacent pas le fond
+    - Redimensionnement si grilles de tailles différentes
+
+========================================

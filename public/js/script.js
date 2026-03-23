@@ -7,6 +7,11 @@ let isEyedropperMode = false; // Pour la pipette
 let modifiedPixels = [new Set()]; // Pour suivre les pixels modifiés
 let clipboard = null; // Pour le copier-coller
 let copiedFrame = null;
+let isStampMode = false;  // Outil tampon
+let stampPixels = null;
+let stampGridSize = 32;
+let stampHoverCol = 0;
+let stampHoverRow = 0;
 let customColors = []; // Palette de couleurs personnalisées
 const maxCustomColors = 8; // Nombre maximum de couleurs personnalisées
 const CUSTOM_COLOR_REMOVE_DELAY = 2000; // Délai avant affichage de la croix de suppression
@@ -266,6 +271,16 @@ const TL = {
     // Watermark
     wmLabel:                { en: '✨ Add watermark "pixel-editor.app"', fr: '✨ Ajouter watermark "pixel-editor.app"' },
     wmHint:                 { en: 'Helps spread the word 🙏', fr: 'Aide à faire connaître l\'app 🙏' },
+    // Stamp tool
+    stampTitle:             { en: '🪄 Import a sprite', fr: '🪄 Importer un sprite' },
+    stampSubtitle:          { en: 'Choose a project then pick the frame to stamp on your canvas.', fr: 'Choisissez un projet puis la frame à incruster sur votre canvas.' },
+    stampNoProjects:        { en: '❌ No saved projects found.', fr: '❌ Aucun projet sauvegardé trouvé.' },
+    stampFramesAvail:       { en: (n) => `${n} frame${n>1?'s':''} available — pick one:`, fr: (n) => `${n} frame${n>1?'s':''} disponible${n>1?'s':''} — choisissez-en une :` },
+    stampConfirm:           { en: 'Stamp', fr: 'Tamponner' },
+    stampModeActive:        { en: '🪄 Stamp mode — click on the canvas to place the sprite (Esc to cancel)', fr: '🪄 Mode tampon — cliquez sur le canvas pour placer le sprite (Échap pour annuler)' },
+    stampCancelled:         { en: 'Stamp mode cancelled', fr: 'Mode tampon annulé' },
+    stampApplied:           { en: '✅ Sprite stamped!', fr: '✅ Sprite incrusté !' },
+    stampBtn:               { en: '🪄 Stamp sprite', fr: '🪄 Tampon sprite' },
 };
 const tL = (key, ...args) => {
     const lang = localStorage.getItem('lang') || 'en';
@@ -452,6 +467,17 @@ function initGrid(size = currentGridSize) {
         grid.addEventListener('mousedown', e => { if (e.button === 0) e.preventDefault(); });
         grid._mousedownListenerAdded = true;
         initZoomPan();
+
+        // Stamp mode: track hover position over the grid
+        grid.addEventListener('mousemove', (e) => {
+            if (!isStampMode) return;
+            const rect = grid.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+            const col = Math.max(0, Math.min(currentGridSize - 1, Math.floor(x * currentGridSize)));
+            const row = Math.max(0, Math.min(currentGridSize - 1, Math.floor(y * currentGridSize)));
+            updateStampGhost(col, row);
+        });
     }
 }
 
@@ -660,6 +686,12 @@ function initGridSizeModal() {
 
 // Fonctions de dessin
 function startDrawing(e) {
+    // Mode tampon : incruster le sprite
+    if (isStampMode) {
+        applyStamp(stampHoverCol, stampHoverRow);
+        return;
+    }
+
     // Mode pipette : récupérer la couleur du pixel cliqué
     if (isEyedropperMode && e.target.classList.contains('pixel')) {
         pickColorFromPixel(e.target);
@@ -904,6 +936,220 @@ function showEyedropperNotification(message) {
             setTimeout(() => notification.remove(), 300);
         }
     }, 2000);
+}
+
+// ========================================
+// OUTIL TAMPON (STAMP)
+// ========================================
+
+function getStampOverlay() {
+    let overlay = document.getElementById('stampOverlay');
+    if (!overlay) {
+        overlay = document.createElement('canvas');
+        overlay.id = 'stampOverlay';
+        overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;display:none;';
+        const grid = document.getElementById('pixelGrid');
+        if (grid) grid.appendChild(overlay);
+    }
+    return overlay;
+}
+
+function enterStampMode(pixels, gridSize) {
+    isStampMode = true;
+    stampPixels = pixels;
+    stampGridSize = gridSize;
+
+    const pixelGrid = document.getElementById('pixelGrid');
+    if (pixelGrid) pixelGrid.classList.add('stamp-mode');
+
+    const overlay = getStampOverlay();
+    overlay.width = pixelGrid ? pixelGrid.offsetWidth : 512;
+    overlay.height = pixelGrid ? pixelGrid.offsetHeight : 512;
+    overlay.style.display = 'block';
+
+    showNotification(tL('stampModeActive'), 'success');
+}
+
+function exitStampMode() {
+    isStampMode = false;
+    stampPixels = null;
+    const pixelGrid = document.getElementById('pixelGrid');
+    if (pixelGrid) pixelGrid.classList.remove('stamp-mode');
+    const overlay = document.getElementById('stampOverlay');
+    if (overlay) {
+        const ctx = overlay.getContext('2d');
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        overlay.style.display = 'none';
+    }
+    showNotification(tL('stampCancelled'), 'info');
+}
+
+function updateStampGhost(col, row) {
+    stampHoverCol = col;
+    stampHoverRow = row;
+    const overlay = document.getElementById('stampOverlay');
+    if (!overlay || !stampPixels) return;
+    const ctx = overlay.getContext('2d');
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    const pixelSize = overlay.width / currentGridSize;
+    const scale = currentGridSize / stampGridSize;
+    ctx.globalAlpha = 0.65;
+    for (let i = 0; i < stampPixels.length; i++) {
+        const pixel = stampPixels[i];
+        if (!pixel || pixel.isEmpty) continue;
+        const srcCol = i % stampGridSize;
+        const srcRow = Math.floor(i / stampGridSize);
+        const dstCol = col + Math.round(srcCol * scale);
+        const dstRow = row + Math.round(srcRow * scale);
+        if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
+        ctx.fillStyle = pixel.color || '#000000';
+        ctx.fillRect(dstCol * pixelSize, dstRow * pixelSize,
+            Math.max(1, Math.ceil(pixelSize * scale)),
+            Math.max(1, Math.ceil(pixelSize * scale)));
+    }
+    ctx.globalAlpha = 1.0;
+}
+
+function applyStamp(col, row) {
+    const pixelElements = Array.from(document.querySelectorAll('.pixel'));
+    const scale = currentGridSize / stampGridSize;
+
+    actionStartState = pixelElements.map(p => ({
+        color: p.style.backgroundColor || '#FFFFFF',
+        isEmpty: p.classList.contains('empty')
+    }));
+    currentActionPixels.clear();
+
+    for (let i = 0; i < stampPixels.length; i++) {
+        const pixel = stampPixels[i];
+        if (!pixel || pixel.isEmpty) continue;
+        const srcCol = i % stampGridSize;
+        const srcRow = Math.floor(i / stampGridSize);
+        const dstCol = col + Math.round(srcCol * scale);
+        const dstRow = row + Math.round(srcRow * scale);
+        if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
+        const dstIndex = dstRow * currentGridSize + dstCol;
+        if (pixelElements[dstIndex]) {
+            pixelElements[dstIndex].style.backgroundColor = pixel.color;
+            pixelElements[dstIndex].classList.remove('empty');
+            currentActionPixels.add(dstIndex);
+        }
+    }
+
+    if (currentActionPixels.size > 0) {
+        saveActionToHistory(actionStartState, currentActionPixels);
+    }
+    saveCurrentFrame();
+    updateAllThumbnails();
+    showNotification(tL('stampApplied'), 'success');
+}
+
+async function showStampModal() {
+    const lang = localStorage.getItem('lang') || 'en';
+    let projects = [];
+
+    try {
+        const result = await window.dbService.getAllProjects();
+        if (result.success) projects = result.data || [];
+    } catch (e) { /* ignore */ }
+
+    if (projects.length === 0) {
+        alert(tL('stampNoProjects'));
+        return;
+    }
+
+    const projectsHTML = projects.map((p, index) => {
+        const name = p.name || (lang === 'fr' ? 'Sans titre' : 'Untitled');
+        const frameCount = Array.isArray(p.frames) ? p.frames.length : 1;
+        const thumb = p.thumbnail
+            ? `<img src="${p.thumbnail}" style="width:40px;height:40px;image-rendering:pixelated;border-radius:4px;background:#fff;border:1px solid rgba(255,255,255,0.2);">`
+            : `<div style="width:40px;height:40px;background:rgba(255,255,255,0.1);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px;">🎨</div>`;
+        return `<div class="project-item stamp-project-item" data-index="${index}" style="cursor:pointer;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                ${thumb}
+                <div>
+                    <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(name)}</div>
+                    <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">${frameCount} frame${frameCount > 1 ? 's' : ''}</div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    const dialog = createMobileDialog(tL('stampTitle'), `
+        <p style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:12px;">${tL('stampSubtitle')}</p>
+        <div id="stampProjectList" class="projects-list">${projectsHTML}</div>
+        <div id="stampFramePicker" style="display:none;margin-top:12px;">
+            <p id="stampFrameLabel" style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:8px;"></p>
+            <div id="stampFrameList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;">
+            <button id="stampConfirmBtn" class="dialog-button" disabled>${tL('stampConfirm')}</button>
+            <button id="stampCancelBtn" class="dialog-button secondary">${tL('closeBtn')}</button>
+        </div>
+    `);
+
+    let selectedProjectIndex = -1;
+    let selectedFrameIndex = 0;
+
+    dialog.querySelectorAll('.stamp-project-item').forEach(item => {
+        item.addEventListener('click', () => {
+            dialog.querySelectorAll('.stamp-project-item').forEach(i => i.style.background = '');
+            item.style.background = 'rgba(0,122,255,0.25)';
+            selectedProjectIndex = parseInt(item.dataset.index);
+            selectedFrameIndex = 0;
+
+            const project = projects[selectedProjectIndex];
+            const framesData = Array.isArray(project.frames) ? project.frames : [];
+            const framePicker = dialog.querySelector('#stampFramePicker');
+            const frameLabel = dialog.querySelector('#stampFrameLabel');
+            const frameList = dialog.querySelector('#stampFrameList');
+
+            frameLabel.textContent = tL('stampFramesAvail', framesData.length);
+            frameList.innerHTML = '';
+
+            if (framesData.length <= 1) {
+                framePicker.style.display = 'none';
+            } else {
+                framePicker.style.display = 'block';
+                framesData.forEach((frame, fi) => {
+                    const size = 48;
+                    const c = document.createElement('canvas');
+                    c.width = size; c.height = size;
+                    c.style.cssText = `width:${size}px;height:${size}px;image-rendering:pixelated;border-radius:4px;cursor:pointer;border:2px solid ${fi === 0 ? '#007AFF' : 'transparent'};background:#fff;`;
+                    const ctx = c.getContext('2d');
+                    const rawPx = Array.isArray(frame) ? frame : (frame.pixels || []);
+                    const gs = Math.round(Math.sqrt(rawPx.length)) || 32;
+                    const ps = size / gs;
+                    rawPx.forEach((px, i) => {
+                        if (!px || px.isEmpty) return;
+                        ctx.fillStyle = px.color || '#000';
+                        ctx.fillRect((i % gs) * ps, Math.floor(i / gs) * ps, ps, ps);
+                    });
+                    c.addEventListener('click', () => {
+                        frameList.querySelectorAll('canvas').forEach(cv => cv.style.borderColor = 'transparent');
+                        c.style.borderColor = '#007AFF';
+                        selectedFrameIndex = fi;
+                    });
+                    frameList.appendChild(c);
+                });
+            }
+
+            dialog.querySelector('#stampConfirmBtn').disabled = false;
+        });
+    });
+
+    dialog.querySelector('#stampConfirmBtn').addEventListener('click', () => {
+        if (selectedProjectIndex < 0) return;
+        const project = projects[selectedProjectIndex];
+        const framesData = Array.isArray(project.frames) ? project.frames : [];
+        const rawFrame = framesData[selectedFrameIndex] || framesData[0] || [];
+        const rawPx = Array.isArray(rawFrame) ? rawFrame : (rawFrame.pixels || []);
+        const gs = Math.round(Math.sqrt(rawPx.length)) || 32;
+        dialog.remove();
+        enterStampMode(rawPx, gs);
+    });
+
+    dialog.querySelector('#stampCancelBtn').addEventListener('click', () => dialog.remove());
 }
 
 function getColorPickers() {
@@ -4104,6 +4350,10 @@ function handleKeyboardShortcuts(e) {
             
         case 'escape':
             // Fermer les modals ou désactiver les outils
+            if (isStampMode) {
+                exitStampMode();
+                return;
+            }
             if (isEyedropperMode) {
                 toggleEyedropper();
             }
@@ -4919,6 +5169,8 @@ function initEventListeners() {
     });
     document.getElementById('exportGifBtn')?.addEventListener('click', exportToGif);
     document.getElementById('exportSpriteSheetBtn')?.addEventListener('click', exportToSpriteSheet);
+    document.getElementById('stampSpriteBtn')?.addEventListener('click', showStampModal);
+    document.getElementById('stampSpriteBtn2')?.addEventListener('click', showStampModal);
     document.getElementById('copyFrameBtn')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
     document.getElementById('helpBtn')?.addEventListener('click', showHelp);
@@ -6982,6 +7234,14 @@ async function updateUserProfileDisplay() {
                     userDropdown.classList.remove('open');
                     const ssBtn = document.getElementById('exportSpriteSheetBtn') || document.getElementById('exportSpriteSheetBtn2');
                     if (ssBtn) ssBtn.click();
+                });
+            }
+
+            const stampSpriteBtnDropdown = document.getElementById('stampSpriteBtnDropdown');
+            if (stampSpriteBtnDropdown) {
+                stampSpriteBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    showStampModal();
                 });
             }
 

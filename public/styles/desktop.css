@@ -1040,6 +1040,14 @@ body {
     box-shadow: 0 0 8px rgba(0, 122, 255, 0.4);
 }
 
+#pixelGrid.stamp-mode {
+    cursor: copy;
+}
+
+#pixelGrid.stamp-mode .pixel {
+    cursor: copy;
+}
+
 /* Bouton pipette actif */
 .eyedropper-btn.active,
 #eyedropperBtn.active {
