@@ -1048,6 +1048,11 @@ body {
     cursor: copy;
 }
 
+/* Grandes grilles (128+ ) : supprimer les bordures inter-pixels, trop bruyantes */
+#pixelGrid.grid-large .pixel {
+    border: none;
+}
+
 /* Bouton pipette actif */
 .eyedropper-btn.active,
 #eyedropperBtn.active {

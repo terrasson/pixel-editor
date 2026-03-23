@@ -1289,6 +1289,10 @@ body.is-mobile .editor-container {
     cursor: copy;
 }
 
+#pixelGrid.grid-large .pixel {
+    border: none;
+}
+
 /* Bouton pipette actif */
 .eyedropper-btn.active,
 #eyedropperBtn.active {

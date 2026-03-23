@@ -440,6 +440,9 @@ function initGrid(size = currentGridSize) {
     grid.innerHTML = '';
     gridZoom = 1; gridPanX = 0; gridPanY = 0;
 
+    // Masquer les bordures inter-pixels pour les grandes grilles (visuellement trop bruyantes)
+    grid.classList.toggle('grid-large', size >= 128);
+
     // Créer le wrapper interne (reçoit le transform zoom/pan)
     const inner = document.createElement('div');
     inner.id = 'pixelGridInner';
