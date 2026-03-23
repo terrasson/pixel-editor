@@ -11,6 +11,33 @@
   PRIORITÉS FUTURES
 ----------------------------------------
 
+[ ] NAVIGATION PAN DANS LA GRILLE ZOOMÉE        🔴 PRIORITÉ HAUTE
+    Permettre de se déplacer dans la grille quand on a zoomé,
+    sans avoir à utiliser le clic droit (peu intuitif).
+    À implémenter pour chaque contexte :
+
+    Trackpad Mac (MacBook / Magic Trackpad) :
+    - 2 doigts glissés → pan horizontal et vertical
+    - Utiliser l'événement "wheel" avec e.deltaX / e.deltaY
+      quand la source est un trackpad (pas une molette souris)
+    - Détecter trackpad via e.deltaMode === 0 + valeurs faibles
+
+    Magic Mouse Apple :
+    - Swipe 1 doigt → pan (génère aussi des events "wheel")
+    - Même logique que trackpad mais sensibilité différente
+    - Différencier molette souris classique (zoom) vs Magic Mouse (pan)
+
+    Mobile / iPad :
+    - 2 doigts posés + glissé → pan (déjà partiellement géré via
+      pinch-zoom, mais le pan 2 doigts sans pinch n'est pas fluide)
+    - Distinguer : 2 doigts sans écart = pan / 2 doigts avec écart = zoom
+    - Sur iPad avec Apple Pencil : le crayon dessine, 2 doigts panent
+
+    Souris classique (1 bouton ou scroll) :
+    - Maintenir Space + clic glissé → pan (comme Figma / Photoshop)
+    - Ou maintenir le clic du milieu (bouton 3) → pan
+    - La molette seule continue de zoomer
+
 [ ] MIGRATION VERS LE RENDU CANVAS              🔴 PRIORITÉ HAUTE
     Remplacement du rendu basé sur des divs HTML (1 div par pixel)
     par un rendu sur un élément <canvas> unique.
