@@ -4818,12 +4818,20 @@ function optimizeTouchInteractions() {
             lastPinchMX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
             lastPinchMY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
         } else {
-            // 1 doigt → dessiner
             touchStarted = true;
             const touch = e.touches[0];
-            const element = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (element && element.classList.contains('pixel')) {
-                startDrawing({ target: element });
+            if (isStampMode) {
+                // Mode tampon : calculer position et afficher ghost
+                const rect = grid.getBoundingClientRect();
+                const col = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientX - rect.left) / rect.width) * currentGridSize)));
+                const row = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientY - rect.top) / rect.height) * currentGridSize)));
+                updateStampGhost(col, row);
+            } else {
+                // 1 doigt → dessiner
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (element && element.classList.contains('pixel')) {
+                    startDrawing({ target: element });
+                }
             }
         }
     }, { passive: false });
@@ -4839,13 +4847,11 @@ function optimizeTouchInteractions() {
 
             if (lastPinchDist) {
                 const rect = grid.getBoundingClientRect();
-                // Zoom centré sur le milieu des 2 doigts
                 const px = (lastPinchMX - rect.left - gridPanX) / gridZoom;
                 const py = (lastPinchMY - rect.top  - gridPanY) / gridZoom;
                 gridZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, gridZoom * (dist / lastPinchDist)));
                 gridPanX = lastPinchMX - rect.left - px * gridZoom;
                 gridPanY = lastPinchMY - rect.top  - py * gridZoom;
-                // Pan additionnel (déplacement du centre des 2 doigts)
                 gridPanX += mx - lastPinchMX;
                 gridPanY += my - lastPinchMY;
                 clampPan();
@@ -4857,11 +4863,19 @@ function optimizeTouchInteractions() {
             lastPinchMY = my;
 
         } else if (touchStarted) {
-            // 1 doigt → continuer le dessin
             const touch = e.touches[0];
-            const element = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (element && element.classList.contains('pixel')) {
-                draw({ target: element });
+            if (isStampMode) {
+                // Mode tampon : déplacer le ghost
+                const rect = grid.getBoundingClientRect();
+                const col = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientX - rect.left) / rect.width) * currentGridSize)));
+                const row = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientY - rect.top) / rect.height) * currentGridSize)));
+                updateStampGhost(col, row);
+            } else {
+                // 1 doigt → continuer le dessin
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (element && element.classList.contains('pixel')) {
+                    draw({ target: element });
+                }
             }
         }
     }, { passive: false });
@@ -4872,8 +4886,13 @@ function optimizeTouchInteractions() {
             lastPinchDist = null;
         }
         if (e.touches.length === 0) {
+            if (isStampMode && touchStarted) {
+                // Mode tampon : appliquer à la position courante
+                applyStamp(stampHoverCol, stampHoverRow);
+            } else {
+                stopDrawing();
+            }
             touchStarted = false;
-            stopDrawing();
         }
     }, { passive: false });
 
