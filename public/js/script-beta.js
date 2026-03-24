@@ -15,7 +15,7 @@
     
     // Attendre que script.js soit complètement chargé
     function waitForScript() {
-        if (typeof frames === 'undefined' || typeof GRID_SIZE === 'undefined') {
+        if (typeof frames === 'undefined' || typeof currentGridSize === 'undefined') {
             setTimeout(waitForScript, 100);
             return;
         }
@@ -206,22 +206,23 @@
             reader.onload = (e) => {
                 img.onload = () => {
                     try {
-                        // Créer un canvas pour redimensionner l'image à 32x32
+                        // Créer un canvas pour redimensionner l'image à la taille de la grille courante
+                        const size = currentGridSize;
                         const canvas = document.createElement('canvas');
-                        canvas.width = GRID_SIZE;
-                        canvas.height = GRID_SIZE;
+                        canvas.width = size;
+                        canvas.height = size;
                         const ctx = canvas.getContext('2d');
-                        
+
                         // Dessiner l'image redimensionnée
-                        ctx.drawImage(img, 0, 0, GRID_SIZE, GRID_SIZE);
-                        
+                        ctx.drawImage(img, 0, 0, size, size);
+
                         // Appliquer les ajustements si nécessaire
                         if (mode === 'quantized' && (contrast !== 1 || brightness !== 1)) {
-                            applyImageAdjustments(ctx, canvas.width, canvas.height, contrast, brightness);
+                            applyImageAdjustments(ctx, size, size, contrast, brightness);
                         }
-                        
+
                         // Obtenir les données des pixels
-                        const imageData = ctx.getImageData(0, 0, GRID_SIZE, GRID_SIZE);
+                        const imageData = ctx.getImageData(0, 0, size, size);
                         const pixels = imageData.data;
                         
                         // Convertir en format de frame
