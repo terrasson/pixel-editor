@@ -1075,6 +1075,12 @@ body {
     margin-top: 8px;
 }
 
+.ref-move-btn.active {
+    background: #FF7300 !important;
+    color: white !important;
+    border-color: #FF7300 !important;
+}
+
 /* Animations pour les notifications pipette */
 @keyframes fadeInOut {
     0% {

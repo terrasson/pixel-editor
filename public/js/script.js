@@ -13,6 +13,12 @@ let copiedFrame = null;
 // ── Grille de référence ───────────────────────────────────────────────────────
 let referenceImage = null;       // HTMLImageElement
 let referenceOpacity = 0.3;      // 0.0 to 1.0
+let referenceX = 0;              // offset X en unités cellSize
+let referenceY = 0;              // offset Y en unités cellSize
+let referenceScale = 1.0;        // multiplicateur de taille (1 = taille initiale ajustée)
+let referenceMoveMode = false;   // true = touches déplacent/zooment l'image ref
+let _refDragStart = null;        // {x, y, refX, refY} pour le drag
+let _refPinchDist = null;        // distance initiale du pinch
 // ── Sélection rectangulaire ───────────────────────────────────────────────────
 let isSelectionMode = false;
 let selection = null;            // { startCol, startRow, endCol, endRow } while drawing
@@ -610,10 +616,21 @@ function renderCanvas() {
         pixelCtx.globalAlpha = 1.0;
     }
 
-    // Grille de référence (image fantôme)
+    // Grille de référence (image fantôme — aspect ratio préservé + position/zoom)
     if (referenceImage) {
+        const gridPx = currentGridSize * cellSize;
+        const imgAspect = referenceImage.width / referenceImage.height;
+        // Taille de base : image inscrite dans la grille en préservant le ratio
+        let baseW, baseH;
+        if (imgAspect >= 1) { baseW = gridPx; baseH = gridPx / imgAspect; }
+        else                { baseH = gridPx; baseW = gridPx * imgAspect; }
+        const drawW = baseW * referenceScale;
+        const drawH = baseH * referenceScale;
+        // Centrage par défaut + offset utilisateur
+        const drawX = (gridPx - baseW) / 2 + referenceX;
+        const drawY = (gridPx - baseH) / 2 + referenceY;
         pixelCtx.globalAlpha = referenceOpacity;
-        pixelCtx.drawImage(referenceImage, 0, 0, currentGridSize * cellSize, currentGridSize * cellSize);
+        pixelCtx.drawImage(referenceImage, drawX + (baseW - drawW) / 2, drawY + (baseH - drawH) / 2, drawW, drawH);
         pixelCtx.globalAlpha = 1.0;
     }
 
@@ -1357,11 +1374,10 @@ function loadReferenceImage() {
         const img = new Image();
         img.onload = () => {
             referenceImage = img;
+            referenceX = 0; referenceY = 0; referenceScale = 1;
             scheduleRender();
-            // Desktop controls
             const controls = document.getElementById('referenceControls');
             if (controls) controls.style.display = 'flex';
-            // Mobile floating panel
             const mobilePanel = document.getElementById('mobileReferencePanel');
             if (mobilePanel) mobilePanel.style.display = 'flex';
         };
@@ -1372,11 +1388,97 @@ function loadReferenceImage() {
 
 function clearReferenceImage() {
     referenceImage = null;
+    referenceMoveMode = false;
     scheduleRender();
     const controls = document.getElementById('referenceControls');
     if (controls) controls.style.display = 'none';
     const mobilePanel = document.getElementById('mobileReferencePanel');
     if (mobilePanel) mobilePanel.style.display = 'none';
+    _updateRefMoveModeUI();
+}
+
+function resetReferencePosition() {
+    referenceX = 0; referenceY = 0; referenceScale = 1;
+    scheduleRender();
+}
+
+function toggleReferenceMoveMode() {
+    referenceMoveMode = !referenceMoveMode;
+    _updateRefMoveModeUI();
+}
+
+function _updateRefMoveModeUI() {
+    document.querySelectorAll('.ref-move-btn').forEach(btn => {
+        btn.classList.toggle('active', referenceMoveMode);
+    });
+    const grid = document.getElementById('pixelGrid');
+    if (grid) grid.style.cursor = referenceMoveMode ? 'grab' : '';
+}
+
+// ── Gestion touch/mouse pour déplacer la référence ───────────────────────────
+function _initReferenceMovHandlers() {
+    const grid = document.getElementById('pixelGrid');
+    if (!grid) return;
+
+    // Mouse drag
+    grid.addEventListener('mousedown', (e) => {
+        if (!referenceMoveMode || !referenceImage) return;
+        e.preventDefault();
+        e.stopPropagation();
+        _refDragStart = { x: e.clientX, y: e.clientY, refX: referenceX, refY: referenceY };
+    }, true);
+
+    document.addEventListener('mousemove', (e) => {
+        if (!_refDragStart || !referenceMoveMode) return;
+        const dx = (e.clientX - _refDragStart.x) / gridZoom;
+        const dy = (e.clientY - _refDragStart.y) / gridZoom;
+        referenceX = _refDragStart.refX + dx;
+        referenceY = _refDragStart.refY + dy;
+        scheduleRender();
+    });
+
+    document.addEventListener('mouseup', () => { _refDragStart = null; });
+
+    // Touch drag + pinch
+    grid.addEventListener('touchstart', (e) => {
+        if (!referenceMoveMode || !referenceImage) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.touches.length === 1) {
+            _refDragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, refX: referenceX, refY: referenceY };
+            _refPinchDist = null;
+        } else if (e.touches.length === 2) {
+            const dx = e.touches[1].clientX - e.touches[0].clientX;
+            const dy = e.touches[1].clientY - e.touches[0].clientY;
+            _refPinchDist = Math.hypot(dx, dy);
+            _refDragStart = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2, refX: referenceX, refY: referenceY, scale: referenceScale };
+        }
+    }, { passive: false, capture: true });
+
+    grid.addEventListener('touchmove', (e) => {
+        if (!referenceMoveMode || !referenceImage || !_refDragStart) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.touches.length === 1 && _refPinchDist === null) {
+            const dx = (e.touches[0].clientX - _refDragStart.x) / gridZoom;
+            const dy = (e.touches[0].clientY - _refDragStart.y) / gridZoom;
+            referenceX = _refDragStart.refX + dx;
+            referenceY = _refDragStart.refY + dy;
+        } else if (e.touches.length === 2 && _refPinchDist !== null) {
+            const dx = e.touches[1].clientX - e.touches[0].clientX;
+            const dy = e.touches[1].clientY - e.touches[0].clientY;
+            const newDist = Math.hypot(dx, dy);
+            referenceScale = Math.max(0.1, Math.min(10, _refDragStart.scale * newDist / _refPinchDist));
+            // Pan with 2-finger centroid
+            const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            referenceX = _refDragStart.refX + (cx - _refDragStart.x) / gridZoom;
+            referenceY = _refDragStart.refY + (cy - _refDragStart.y) / gridZoom;
+        }
+        scheduleRender();
+    }, { passive: false, capture: true });
+
+    grid.addEventListener('touchend', () => { _refDragStart = null; _refPinchDist = null; }, { capture: true });
 }
 
 // ── Export PNG frame par frame ────────────────────────────────────────────────
@@ -6124,6 +6226,9 @@ function initEventListeners() {
         if (desktopSlider) desktopSlider.value = e.target.value;
         scheduleRender();
     });
+
+    // Initialiser les handlers de déplacement référence
+    _initReferenceMovHandlers();
 
     // Les raccourcis clavier sont gérés par handleKeyboardShortcuts()
     
