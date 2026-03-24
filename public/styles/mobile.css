@@ -390,6 +390,13 @@ body.is-mobile .editor-container {
     background: var(--bg-hover, #F0F0F2);
 }
 
+/* Ligne outils dessin : Fill + Symétrie */
+.compact-draw-tools {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
 .compact-eraser-btn.active {
     background: var(--color-primary-light, #FFF3E8);
     border-color: var(--color-primary, #FF7300);
