@@ -326,12 +326,15 @@ body.is-mobile .editor-container {
     width: 100%;
 }
 
-/* Outils de gauche : Gomme + Couleur actuelle */
+/* Outils de gauche : Couleur actuelle + Gomme + Pipette */
 .compact-left-tools {
     display: flex;
     align-items: center;
     gap: 6px;
     flex-shrink: 0;
+    padding-right: 8px;
+    border-right: 1.5px solid #E5E5EA;
+    margin-right: 2px;
 }
 
 /* Outils de droite : Undo/Redo */
@@ -390,11 +393,29 @@ body.is-mobile .editor-container {
     background: var(--bg-hover, #F0F0F2);
 }
 
-/* Ligne outils dessin : Fill + Symétrie */
+/* Ligne outils dessin : + Palette / Fill / Symétrie */
 .compact-draw-tools {
     display: flex;
     gap: 6px;
     align-items: center;
+}
+
+/* Bouton + Palette : clairement différent des pastilles */
+.compact-add-color-btn {
+    padding: 6px 12px;
+    border: 1.5px dashed var(--color-primary, #FF7300);
+    border-radius: var(--radius-sm, 8px);
+    background: transparent;
+    color: var(--color-primary, #FF7300);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.compact-add-color-btn:active {
+    background: var(--color-primary-light, #FFF3E8);
 }
 
 .compact-eraser-btn.active {
