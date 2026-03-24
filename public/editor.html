@@ -141,6 +141,8 @@
                     <!-- Gauche : Gomme + Pipette + Valider + Couleur actuelle -->
                     <div class="compact-left-tools">
                         <button id="eraserBtn" class="compact-eraser-btn">Gomme</button>
+                        <button id="fillBtn" class="compact-eraser-btn fill-btn" title="Remplissage (F)">🪣</button>
+                        <button id="symmetryBtn" class="compact-eraser-btn symmetry-btn" title="Symétrie (X)">⬡</button>
                         <button id="eyedropperBtn" class="compact-eyedropper-btn eyedropper-btn" title="Pipette (I)">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"
                                 xmlns="http://www.w3.org/2000/svg">
@@ -271,6 +273,10 @@
                             <span class="grid-size-label">256×256</span>
                             <span class="grid-size-desc">Ultra détaillé</span>
                         </button>
+                        <button class="grid-size-btn" data-size="512">
+                            <span class="grid-size-label">512×512</span>
+                            <span class="grid-size-desc">Cinématique</span>
+                        </button>
                     </div>
                     <p class="grid-size-warning">⚠️ Changer la taille effacera le contenu actuel.</p>
                     <p class="grid-size-current">Taille actuelle : <strong class="grid-size-indicator">32×32</strong></p>
@@ -362,10 +368,12 @@
                     </div>
                 </div>
 
-                <!-- Ligne 3 : Gomme + Pipette -->
+                <!-- Ligne 3 : Gomme + Pipette + Fill + Symétrie -->
                 <div class="tools-row">
                     <button id="eraserBtn" class="eraser-btn">Gomme</button>
                     <button id="eyedropperBtn" class="eraser-btn eyedropper-btn" title="Pipette (I)">🎨 Pipette</button>
+                    <button id="fillBtn" class="eraser-btn fill-btn" title="Remplissage (F)">🪣 Fill</button>
+                    <button id="symmetryBtn" class="eraser-btn symmetry-btn" title="Symétrie (X)">⬡ Symétrie</button>
                 </div>
             </div>
 

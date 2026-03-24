@@ -4,6 +4,8 @@ let frames = [[]];
 let currentFrame = 0;
 let isErasing = false; // Pour la gomme
 let isEyedropperMode = false; // Pour la pipette
+let isFillMode = false; // Pour le remplissage (flood fill)
+let isSymmetryMode = false; // Miroir horizontal en temps réel
 let modifiedPixels = [new Set()]; // Pour suivre les pixels modifiés
 let clipboard = null; // Pour le copier-coller
 let copiedFrame = null;
@@ -40,7 +42,7 @@ let animationFPS = 24; // FPS par défaut (cinéma)
 let autoSaveProjects = []; // Projets sauvegardés automatiquement en local
 const maxAutoSaveProjects = 10; // Nombre maximum de projets auto-sauvegardés
 const DEFAULT_GRID_SIZE = 32;
-const VALID_GRID_SIZES = [8, 16, 32, 64, 128, 256];
+const VALID_GRID_SIZES = [8, 16, 32, 64, 128, 256, 512];
 let currentGridSize = DEFAULT_GRID_SIZE;
 let currentUserProfile = null;
 let profileModalContext = 'prompt';
@@ -659,6 +661,20 @@ function _drawAtIndex(index) {
     } else {
         currentFrameBuffer[index] = { color: currentColor, isEmpty: false };
     }
+    // Symétrie horizontale : mirror du pixel opposé sur la même ligne
+    if (isSymmetryMode) {
+        const col = index % currentGridSize;
+        const row = Math.floor(index / currentGridSize);
+        const mirrorIndex = row * currentGridSize + (currentGridSize - 1 - col);
+        if (mirrorIndex !== index) {
+            currentActionPixels.add(mirrorIndex);
+            if (isErasing) {
+                currentFrameBuffer[mirrorIndex] = { color: '#FFFFFF', isEmpty: true };
+            } else {
+                currentFrameBuffer[mirrorIndex] = { color: currentColor, isEmpty: false };
+            }
+        }
+    }
     scheduleRender();
     // saveCurrentFrame() est appelé dans stopDrawing() pour ne pas surcharger pendant le drag
 }
@@ -911,6 +927,19 @@ function startDrawing(e) {
             return;
         }
         if (index < 0) return;
+        if (isFillMode) {
+            actionStartState = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+            currentActionPixels.clear();
+            floodFill(index);
+            saveCurrentFrame();
+            if (currentActionPixels.size > 0) {
+                saveActionToHistory(actionStartState, currentActionPixels);
+                updateAllThumbnails();
+            }
+            currentActionPixels.clear();
+            actionStartState = null;
+            return;
+        }
         actionStartState = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
         currentActionPixels.clear();
         isDrawing = true;
@@ -1026,9 +1055,10 @@ function toggleEraser() {
 
 function setEraserState(active) {
     isErasing = active;
-    // Désactiver la pipette si on active la gomme
+    // Désactiver pipette et fill si on active la gomme
     if (active) {
         setEyedropperState(false);
+        setFillState(false);
     }
     const pixelGrid = document.getElementById('pixelGrid');
     if (pixelGrid) {
@@ -1046,9 +1076,10 @@ function toggleEyedropper() {
 
 function setEyedropperState(active) {
     isEyedropperMode = active;
-    // Désactiver la gomme si on active la pipette
+    // Désactiver gomme et fill si on active la pipette
     if (active) {
         setEraserState(false);
+        setFillState(false);
     }
     const pixelGrid = document.getElementById('pixelGrid');
     if (pixelGrid) {
@@ -1059,6 +1090,74 @@ function setEyedropperState(active) {
     });
     document.querySelectorAll('.eyedropper-btn').forEach(btn => {
         btn.classList.toggle('active', active);
+    });
+}
+
+// ── Outil Fill (pot de peinture / flood fill) ───────────────────────────────
+function toggleFill() {
+    setFillState(!isFillMode);
+}
+
+function setFillState(active) {
+    isFillMode = active;
+    if (active) {
+        setEraserState(false);
+        setEyedropperState(false);
+    }
+    document.querySelectorAll('#fillBtn').forEach(btn => {
+        btn.classList.toggle('active', active);
+    });
+}
+
+function floodFill(startIndex) {
+    const total = currentGridSize * currentGridSize;
+    const src = currentFrameBuffer[startIndex];
+    const srcColor = src ? src.color : '#FFFFFF';
+    const srcEmpty = src ? src.isEmpty : true;
+
+    // Même couleur que la cible → rien à faire
+    if (!isErasing && !srcEmpty && srcColor === currentColor) return;
+    if (isErasing && srcEmpty) return;
+
+    const visited = new Uint8Array(total);
+    const queue = [startIndex];
+    visited[startIndex] = 1;
+
+    while (queue.length > 0) {
+        const idx = queue.shift();
+        currentActionPixels.add(idx);
+        if (isErasing) {
+            currentFrameBuffer[idx] = { color: '#FFFFFF', isEmpty: true };
+        } else {
+            currentFrameBuffer[idx] = { color: currentColor, isEmpty: false };
+        }
+        const col = idx % currentGridSize;
+        const row = Math.floor(idx / currentGridSize);
+        const neighbors = [
+            row > 0                     ? idx - currentGridSize : -1,
+            row < currentGridSize - 1   ? idx + currentGridSize : -1,
+            col > 0                     ? idx - 1               : -1,
+            col < currentGridSize - 1   ? idx + 1               : -1
+        ];
+        for (const n of neighbors) {
+            if (n < 0 || visited[n]) continue;
+            const np = currentFrameBuffer[n];
+            const nColor = np ? np.color : '#FFFFFF';
+            const nEmpty = np ? np.isEmpty : true;
+            if (nColor === srcColor && nEmpty === srcEmpty) {
+                visited[n] = 1;
+                queue.push(n);
+            }
+        }
+    }
+    renderCanvas();
+}
+
+// ── Symétrie horizontale ────────────────────────────────────────────────────
+function toggleSymmetry() {
+    isSymmetryMode = !isSymmetryMode;
+    document.querySelectorAll('#symmetryBtn').forEach(btn => {
+        btn.classList.toggle('active', isSymmetryMode);
     });
 }
 
@@ -4661,7 +4760,23 @@ function handleKeyboardShortcuts(e) {
                 e.preventDefault();
                 saveProjectSmart();
                 return;
-                
+
+            case '+':
+            case '=':
+                e.preventDefault();
+                zoomAtPoint(1.25, window.innerWidth / 2, window.innerHeight / 2);
+                return;
+
+            case '-':
+                e.preventDefault();
+                zoomAtPoint(0.8, window.innerWidth / 2, window.innerHeight / 2);
+                return;
+
+            case '0':
+                e.preventDefault();
+                resetZoom();
+                return;
+
         }
     }
     
@@ -4685,10 +4800,20 @@ function handleKeyboardShortcuts(e) {
             e.preventDefault();
             toggleEyedropper();
             return;
-            
+
         case 'e':
             e.preventDefault();
             toggleEraser();
+            return;
+
+        case 'f':
+            e.preventDefault();
+            toggleFill();
+            return;
+
+        case 'x':
+            e.preventDefault();
+            toggleSymmetry();
             return;
             
         case ' ': // Espace pour play/pause
@@ -4737,12 +4862,10 @@ function handleKeyboardShortcuts(e) {
                 exitStampMode();
                 return;
             }
-            if (isEyedropperMode) {
-                toggleEyedropper();
-            }
-            if (isEraserMode) {
-                toggleEraser();
-            }
+            if (isEyedropperMode) toggleEyedropper();
+            if (isErasing) toggleEraser();
+            if (isFillMode) toggleFill();
+            if (isSymmetryMode) toggleSymmetry();
             return;
     }
 }
@@ -5617,7 +5740,17 @@ function initEventListeners() {
     document.querySelectorAll('#eyedropperBtn').forEach(btn => {
         btn.addEventListener('click', toggleEyedropper);
     });
-    
+
+    // Boutons fill (desktop + mobile)
+    document.querySelectorAll('#fillBtn').forEach(btn => {
+        btn.addEventListener('click', toggleFill);
+    });
+
+    // Boutons symétrie (desktop + mobile)
+    document.querySelectorAll('#symmetryBtn').forEach(btn => {
+        btn.addEventListener('click', toggleSymmetry);
+    });
+
     // Les raccourcis clavier sont gérés par handleKeyboardShortcuts()
     
     // Menu hamburger

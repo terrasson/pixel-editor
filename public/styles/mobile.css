@@ -390,6 +390,12 @@ body.is-mobile .editor-container {
     background: var(--bg-hover, #F0F0F2);
 }
 
+.compact-eraser-btn.active {
+    background: var(--color-primary-light, #FFF3E8);
+    border-color: var(--color-primary, #FF7300);
+    color: var(--color-primary, #FF7300);
+}
+
 /* Bouton pipette compact */
 .compact-eyedropper-btn {
     width: 32px;
