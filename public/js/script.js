@@ -15,11 +15,12 @@ let stampHoverRow = 0;
 let stampCenterCol = 0;  // centre visuel du bounding box (calculé à l'entrée en mode stamp)
 let stampCenterRow = 0;
 
-// ── Phase 1 : Canvas rendering (overlay non-destructif) ──────────────────────
-const CANVAS_RENDERING = false; // sera true en Phase 2
+// ── Phase 2 : Canvas rendering (source de vérité = buffer, divs ignorés) ─────
+const CANVAS_RENDERING = true;
 let pixelCanvas = null;
 let pixelCtx   = null;
-let cellSize   = 0;    // taille CSS d'une cellule en pixels
+let cellSize   = 0;            // taille CSS d'une cellule en pixels
+let currentFrameBuffer = [];   // buffer live de la frame en cours (Phase 2)
 // ─────────────────────────────────────────────────────────────────────────────
 let customColors = []; // Palette de couleurs personnalisées
 const maxCustomColors = 8; // Nombre maximum de couleurs personnalisées
@@ -360,10 +361,16 @@ function normaliseFrames(rawFrames) {
             return createEmptyFrame();
         }
         if (frame.length !== currentGridSize * currentGridSize) {
+            // Détecter la taille d'origine et mapper en 2D (coin haut-gauche)
+            const srcSize = Math.round(Math.sqrt(frame.length));
             const normalised = createEmptyFrame();
-            frame.slice(0, normalised.length).forEach((pixel, idx) => {
-                normalised[idx] = normalisePixel(pixel);
-            });
+            for (let i = 0; i < frame.length; i++) {
+                const srcCol = i % srcSize;
+                const srcRow = Math.floor(i / srcSize);
+                if (srcCol < currentGridSize && srcRow < currentGridSize) {
+                    normalised[srcRow * currentGridSize + srcCol] = normalisePixel(frame[i]);
+                }
+            }
             return normalised;
         }
         return frame.map(normalisePixel);
@@ -547,11 +554,10 @@ function applyGridTransform() {
     renderCanvas(); // Phase 1 : synchroniser le canvas au zoom/pan
 }
 
-// ── Phase 1 : rendu canvas (miroir des divs, pointer-events:none) ─────────────
+// ── Phase 2 : rendu canvas (source de vérité = currentFrameBuffer) ────────────
 function renderCanvas() {
     if (!pixelCtx || !pixelCanvas) return;
     if (!CANVAS_RENDERING) {
-        // Phase 1 : canvas présent mais invisible — les divs gèrent tout
         pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
         pixelCtx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
         return;
@@ -559,17 +565,44 @@ function renderCanvas() {
     const w = pixelCanvas.width;
     pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
     pixelCtx.clearRect(0, 0, w, w);
-    // Appliquer le même zoom/pan que les divs
     pixelCtx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
-    const frame = frames[currentFrame] || [];
-    frame.forEach((pixel, i) => {
+
+    // Onion skin : frame précédente (semi-transparent)
+    if (currentFrame > 0 && frames[currentFrame - 1]) {
+        pixelCtx.globalAlpha = 0.25;
+        frames[currentFrame - 1].forEach((pixel, i) => {
+            if (!pixel || pixel.isEmpty) return;
+            const col = i % currentGridSize;
+            const row = Math.floor(i / currentGridSize);
+            pixelCtx.fillStyle = pixel.color;
+            pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+        });
+        pixelCtx.globalAlpha = 1.0;
+    }
+
+    // Onion skin : frame suivante (encore plus transparent)
+    if (frames[currentFrame + 1]) {
+        pixelCtx.globalAlpha = 0.15;
+        frames[currentFrame + 1].forEach((pixel, i) => {
+            if (!pixel || pixel.isEmpty) return;
+            const col = i % currentGridSize;
+            const row = Math.floor(i / currentGridSize);
+            pixelCtx.fillStyle = pixel.color;
+            pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+        });
+        pixelCtx.globalAlpha = 1.0;
+    }
+
+    // Frame courante (depuis le buffer live)
+    currentFrameBuffer.forEach((pixel, i) => {
         if (!pixel || pixel.isEmpty) return;
         const col = i % currentGridSize;
         const row = Math.floor(i / currentGridSize);
         pixelCtx.fillStyle = pixel.color;
         pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
     });
-    // Lignes de grille uniquement sur les petites grilles (inutiles sur 128×128+)
+
+    // Lignes de grille uniquement sur les petites grilles
     if (currentGridSize <= 64) {
         pixelCtx.strokeStyle = 'rgba(0,0,0,0.08)';
         pixelCtx.lineWidth = 0.5 / gridZoom;
@@ -587,6 +620,57 @@ function renderCanvas() {
         }
     }
     pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+// Convertit des coordonnées client en index dans currentFrameBuffer
+function getPixelIndexFromPoint(clientX, clientY) {
+    const grid = document.getElementById('pixelGrid');
+    if (!grid) return -1;
+    const rect = grid.getBoundingClientRect();
+    const borderW = (rect.width  - grid.clientWidth)  / 2;
+    const borderH = (rect.height - grid.clientHeight) / 2;
+    const logicalCell = grid.clientWidth / currentGridSize;
+    const col = Math.floor((clientX - rect.left - borderW - gridPanX) / gridZoom / logicalCell);
+    const row = Math.floor((clientY - rect.top  - borderH - gridPanY) / gridZoom / logicalCell);
+    if (col < 0 || col >= currentGridSize || row < 0 || row >= currentGridSize) return -1;
+    return row * currentGridSize + col;
+}
+
+// Applique un coup de pinceau ou de gomme sur le buffer à l'index donné
+function _drawAtIndex(index) {
+    if (index < 0 || index >= currentFrameBuffer.length) return;
+    currentActionPixels.add(index);
+    if (isErasing) {
+        currentFrameBuffer[index] = { color: '#FFFFFF', isEmpty: true };
+    } else {
+        currentFrameBuffer[index] = { color: currentColor, isEmpty: false };
+    }
+    renderCanvas();
+    // saveCurrentFrame() est appelé dans stopDrawing() pour ne pas surcharger pendant le drag
+}
+
+// Pipette depuis le buffer (Phase 2)
+function pickColorFromIndex(index) {
+    const pixel = currentFrameBuffer[index];
+    if (!pixel || pixel.isEmpty) {
+        currentColor = '#FFFFFF';
+        updateCurrentColorDisplay();
+        setEraserState(false);
+        showEyedropperNotification('Couleur de base : #FFFFFF (pixel vide)');
+        return;
+    }
+    const hexColor = pixel.color.startsWith('rgb') ? rgbToHex(pixel.color) : pixel.color;
+    const normalizedColor = normalizeColor(hexColor || '#FFFFFF');
+    currentColor = normalizedColor;
+    updateCurrentColorDisplay();
+    setEraserState(false);
+    const defaultColors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    if (!defaultColors.includes(normalizedColor) && !customColors.includes(normalizedColor)) {
+        customColors.unshift(normalizedColor);
+        if (customColors.length > maxCustomColors) customColors = customColors.slice(0, maxCustomColors);
+        updateColorPalette();
+    }
+    showEyedropperNotification(`Couleur : ${normalizedColor}`);
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -800,51 +884,76 @@ function startDrawing(e) {
         return;
     }
 
+    if (CANVAS_RENDERING) {
+        const index = getPixelIndexFromPoint(e.clientX, e.clientY);
+        if (isEyedropperMode) {
+            if (index >= 0) pickColorFromIndex(index);
+            return;
+        }
+        if (index < 0) return;
+        actionStartState = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+        currentActionPixels.clear();
+        isDrawing = true;
+        _drawAtIndex(index);
+        return;
+    }
+
     // Mode pipette : récupérer la couleur du pixel cliqué
     if (isEyedropperMode && e.target.classList.contains('pixel')) {
         pickColorFromPixel(e.target);
         return; // Ne pas dessiner en mode pipette
     }
-    
+
     // Sauvegarder l'état de la grille au début de l'action
     const pixels = document.querySelectorAll('.pixel');
     actionStartState = Array.from(pixels).map(pixel => ({
         color: pixel.style.backgroundColor || '#FFFFFF',
         isEmpty: pixel.classList.contains('empty')
     }));
-    
+
     // Réinitialiser les pixels de l'action actuelle
     currentActionPixels.clear();
-    
+
     isDrawing = true;
     draw(e);
 }
 
 function draw(e) {
     if (!isDrawing) return;
-    
+
+    if (CANVAS_RENDERING) {
+        const index = getPixelIndexFromPoint(e.clientX, e.clientY);
+        if (index < 0) return;
+        if (isEyedropperMode) {
+            pickColorFromIndex(index);
+            return;
+        }
+        _drawAtIndex(index);
+        return;
+    }
+
     // Vérification stricte : le pixel doit être dans la grille ET être un élément pixel valide
     const pixelGrid = document.getElementById('pixelGrid');
-    if (e.target.classList.contains('pixel') && 
-        pixelGrid && 
+    if (e.target.classList.contains('pixel') &&
+        pixelGrid &&
         pixelGrid.contains(e.target) &&
         !e.target.classList.contains('previous-pixel-marker') &&
         !e.target.classList.contains('next-pixel-marker-1') &&
         !e.target.classList.contains('next-pixel-marker-2')) {
-        
+
         // Mode pipette : récupérer la couleur du pixel cliqué
         if (isEyedropperMode) {
             pickColorFromPixel(e.target);
             return; // Ne pas dessiner en mode pipette
         }
-        
+
         // Récupérer l'index du pixel
         const pixels = document.querySelectorAll('.pixel');
         const pixelIndex = Array.from(pixels).indexOf(e.target);
-        
+
         // Enregistrer ce pixel comme modifié dans l'action actuelle
         currentActionPixels.add(pixelIndex);
-        
+
         if (isErasing) {
             // Mode gomme
             e.target.style.backgroundColor = '#FFFFFF';
@@ -866,11 +975,14 @@ function stopDrawing() {
     });
     
     isDrawing = false;
-    
+
+    // Phase 2 : synchroniser frames[] depuis le buffer (fait une seule fois à la fin du trait)
+    if (CANVAS_RENDERING) saveCurrentFrame();
+
     // Sauvegarder l'action complète dans l'historique si des pixels ont été modifiés
     if (currentActionPixels.size > 0 && actionStartState) {
-        console.log('✅ Sauvegarde de l\'action dans l\'historique', { 
-            pixelsModifiés: currentActionPixels.size 
+        console.log('✅ Sauvegarde de l\'action dans l\'historique', {
+            pixelsModifiés: currentActionPixels.size
         });
         saveActionToHistory(actionStartState, currentActionPixels);
         // Mettre à jour la miniature de la frame actuelle après avoir terminé de dessiner
@@ -1152,6 +1264,43 @@ function updateStampGhost(col, row) {
 }
 
 function applyStamp(col, row) {
+    if (CANVAS_RENDERING) {
+        actionStartState = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+        currentActionPixels.clear();
+
+        for (let i = 0; i < stampPixels.length; i++) {
+            const pixel = stampPixels[i];
+            if (!pixel || pixel.isEmpty) continue;
+            const srcCol = i % stampGridSize;
+            const srcRow = Math.floor(i / stampGridSize);
+            const dstCol = col + srcCol;
+            const dstRow = row + srcRow;
+            if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
+            const dstIndex = dstRow * currentGridSize + dstCol;
+            currentFrameBuffer[dstIndex] = { color: pixel.color, isEmpty: false };
+            currentActionPixels.add(dstIndex);
+        }
+
+        if (currentActionPixels.size > 0) {
+            saveActionToHistory(actionStartState, currentActionPixels);
+        }
+        saveCurrentFrame();
+        updateAllThumbnails();
+        renderCanvas();
+
+        const overlay = document.getElementById('stampOverlay');
+        if (overlay) {
+            const ctx = overlay.getContext('2d');
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+        }
+
+        const isTouch = 'ontouchstart' in window;
+        if (isTouch) exitStampMode(true);
+
+        showNotification(tL('stampApplied'), 'success');
+        return;
+    }
+
     const pixelElements = Array.from(document.querySelectorAll('.pixel'));
 
     actionStartState = pixelElements.map(p => ({
@@ -3268,11 +3417,16 @@ function showNotification(message, type = 'info') {
 
 // Sauvegarder l'état actuel dans l'historique (méthode complète - pour l'initialisation)
 function saveToHistory() {
-    const pixels = document.querySelectorAll('.pixel');
-    const currentState = Array.from(pixels).map(pixel => ({
-        color: pixel.style.backgroundColor || '#FFFFFF',
-        isEmpty: pixel.classList.contains('empty')
-    }));
+    let currentState;
+    if (CANVAS_RENDERING) {
+        currentState = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+    } else {
+        const pixels = document.querySelectorAll('.pixel');
+        currentState = Array.from(pixels).map(pixel => ({
+            color: pixel.style.backgroundColor || '#FFFFFF',
+            isEmpty: pixel.classList.contains('empty')
+        }));
+    }
     
     // Supprimer les états futurs si on est au milieu de l'historique
     if (historyIndex < history.length - 1) {
@@ -3306,11 +3460,16 @@ function saveActionToHistory(startState, modifiedPixels) {
     }
     
     // Créer l'état final simple (tableau de pixels)
-    const pixels = document.querySelectorAll('.pixel');
-    const finalState = Array.from(pixels).map(pixel => ({
-        color: pixel.style.backgroundColor || '#FFFFFF',
-        isEmpty: pixel.classList.contains('empty')
-    }));
+    let finalState;
+    if (CANVAS_RENDERING) {
+        finalState = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+    } else {
+        const pixels = document.querySelectorAll('.pixel');
+        finalState = Array.from(pixels).map(pixel => ({
+            color: pixel.style.backgroundColor || '#FFFFFF',
+            isEmpty: pixel.classList.contains('empty')
+        }));
+    }
     
     // Ajouter l'état final à l'historique
     history.push(finalState);
@@ -3333,6 +3492,15 @@ function saveActionToHistory(startState, modifiedPixels) {
 
 // Restaurer un état depuis l'historique (pour undo et redo)
 function restoreFromHistory(state, isRedo = false) {
+    if (CANVAS_RENDERING) {
+        currentFrameBuffer = state.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+        frames[currentFrame] = currentFrameBuffer.map(p => ({ ...p }));
+        renderCanvas();
+        updateCurrentFrameThumbnail();
+        console.log(`%c${isRedo ? '✅ Action rétablie' : '↺ Action annulée'}`, 'color: #007bff;', { pixelsRestaurés: state.length });
+        return;
+    }
+
     const pixels = document.querySelectorAll('.pixel');
     let restoredCount = 0;
 
@@ -3348,9 +3516,9 @@ function restoreFromHistory(state, isRedo = false) {
             restoredCount++;
         }
     });
-    
+
     console.log(`%c${isRedo ? '✅ Action rétablie' : '↺ Action annulée'}`, 'color: #007bff;', { pixelsRestaurés: restoredCount });
-    
+
     // Ne pas sauvegarder la frame lors des opérations undo/redo
     // saveCurrentFrame(); // Commenté pour éviter les sauvegardes automatiques
 }
@@ -3419,15 +3587,28 @@ function updateUndoRedoButtons() {
 // Initialiser l'historique avec l'état vide
 function initHistory() {
     console.log('🔄 Initialisation de l\'historique...');
-    
+
     // Réinitialiser complètement l'historique
     history = [];
     historyIndex = -1; // Commencer à -1 pour que le premier état soit à l'index 0
-    
+
+    if (CANVAS_RENDERING) {
+        const initialState = currentFrameBuffer.length > 0
+            ? currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true })
+            : Array.from({ length: currentGridSize * currentGridSize }, () => ({ color: '#FFFFFF', isEmpty: true }));
+        history.push(initialState);
+        historyIndex = 0;
+        console.log('✅ Historique initialisé (canvas)', { historyIndex, historyLength: history.length });
+        // Attacher les boutons undo/redo (commun aux deux modes)
+        _attachUndoRedoListeners();
+        updateUndoRedoButtons();
+        return;
+    }
+
     // S'assurer que la grille est vraiment vide AVANT de créer l'état initial
     const pixels = document.querySelectorAll('.pixel');
     console.log('📊 Nombre de pixels trouvés:', pixels.length);
-    
+
     if (pixels.length === 0) {
         console.warn('⚠️ Aucun pixel trouvé, report de l\'initialisation de l\'historique');
         return;
@@ -3463,43 +3644,33 @@ function initHistory() {
         pixelsTotal: initialState.length
     });
     
-    // Configurer les event listeners pour les boutons mobile
+    // Configurer les event listeners pour les boutons undo/redo
+    _attachUndoRedoListeners();
+    updateUndoRedoButtons();
+}
+
+function _attachUndoRedoListeners() {
     const undoBtn = document.getElementById('undoBtn');
     const redoBtn = document.getElementById('redoBtn');
-    
-    if (undoBtn) {
-        undoBtn.addEventListener('click', undo);
-        console.log('✅ Event listener undo mobile attaché');
-    } else {
-        console.warn('❌ Bouton undo mobile non trouvé');
-    }
-    
-    if (redoBtn) {
-        redoBtn.addEventListener('click', redo);
-        console.log('✅ Event listener redo mobile attaché');
-    } else {
-        console.warn('❌ Bouton redo mobile non trouvé');
-    }
-    
-    // Configurer les event listeners pour les boutons desktop
     const undoBtnDesktop = document.getElementById('undoBtnDesktop');
     const redoBtnDesktop = document.getElementById('redoBtnDesktop');
-    
-    if (undoBtnDesktop) {
+
+    if (undoBtn && !undoBtn._undoListenerAttached) {
+        undoBtn.addEventListener('click', undo);
+        undoBtn._undoListenerAttached = true;
+    }
+    if (redoBtn && !redoBtn._redoListenerAttached) {
+        redoBtn.addEventListener('click', redo);
+        redoBtn._redoListenerAttached = true;
+    }
+    if (undoBtnDesktop && !undoBtnDesktop._undoListenerAttached) {
         undoBtnDesktop.addEventListener('click', undo);
-        console.log('✅ Event listener undo desktop attaché');
-    } else {
-        console.warn('❌ Bouton undo desktop non trouvé');
+        undoBtnDesktop._undoListenerAttached = true;
     }
-    
-    if (redoBtnDesktop) {
+    if (redoBtnDesktop && !redoBtnDesktop._redoListenerAttached) {
         redoBtnDesktop.addEventListener('click', redo);
-        console.log('✅ Event listener redo desktop attaché');
-    } else {
-        console.warn('❌ Bouton redo desktop non trouvé');
+        redoBtnDesktop._redoListenerAttached = true;
     }
-    
-    updateUndoRedoButtons();
 }
 
 // Fonctions de nettoyage pour éviter les débordements
@@ -3550,15 +3721,21 @@ function cleanUpOutsideElements() {
 
 // Gestion des frames
 function saveCurrentFrame() {
+    if (CANVAS_RENDERING) {
+        frames[currentFrame] = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+        updateCurrentFrameThumbnail();
+        return;
+    }
+
     const pixels = document.querySelectorAll('.pixel');
     const frameData = Array.from(pixels).map(pixel => {
         const bgColor = pixel.style.backgroundColor || '#FFFFFF';
-        const isEmpty = pixel.classList.contains('empty') || 
-                       bgColor === '#FFFFFF' || 
+        const isEmpty = pixel.classList.contains('empty') ||
+                       bgColor === '#FFFFFF' ||
                        bgColor === 'rgb(255, 255, 255)' ||
                        bgColor === 'white' ||
                        !bgColor || bgColor.trim() === '';
-        
+
         // Normaliser la couleur en hex
         let color = bgColor;
         if (color.startsWith('rgb')) {
@@ -3566,14 +3743,14 @@ function saveCurrentFrame() {
         } else if (!color.startsWith('#')) {
             color = '#FFFFFF';
         }
-        
+
         return {
             color: color,
             isEmpty: isEmpty
         };
     });
     frames[currentFrame] = frameData;
-    
+
     // Mettre à jour seulement la miniature de la frame actuelle (avec debounce)
     updateCurrentFrameThumbnail();
 }
@@ -3610,17 +3787,31 @@ function updateAllThumbnails() {
 
 function loadFrame(frameIndex) {
     if (!frames[frameIndex]) return;
-    
+
     // Arrêter l'animation si elle est en cours quand on change de frame manuellement
     if (isAnimationPlaying) {
         stopAnimation();
     }
-    
+
     // Réinitialiser l'historique pour la nouvelle frame
     history = [];
     historyIndex = -1;
     hasDrawnInCurrentAction = false;
-    
+
+    if (CANVAS_RENDERING) {
+        const total = currentGridSize * currentGridSize;
+        const rawFrame = frames[frameIndex] || [];
+        currentFrameBuffer = Array.from({ length: total }, (_, i) => {
+            const p = rawFrame[i];
+            return p ? { ...p } : { color: '#FFFFFF', isEmpty: true };
+        });
+        currentFrame = frameIndex;
+        updateFramesList();
+        renderCanvas();
+        setTimeout(() => { saveToHistory(); }, 10);
+        return;
+    }
+
     const pixels = document.querySelectorAll('.pixel');
     
     // Nettoyer tous les marqueurs existants de manière stricte
@@ -3873,9 +4064,18 @@ function deleteCurrentFrame() {
 // Ajouter la fonction clearAllFrames
 function clearAllFrames() {
     if (confirm(tL('confirmClearAll'))) {
-        frames = [[]];  // Réinitialiser avec une seule frame vide
+        frames = [[]];
         currentFrame = 0;
-        
+
+        if (CANVAS_RENDERING) {
+            currentFrameBuffer = Array.from({ length: currentGridSize * currentGridSize }, () => ({ color: '#FFFFFF', isEmpty: true }));
+            frames[0] = currentFrameBuffer.map(p => ({ ...p }));
+            initHistory();
+            updateFramesList();
+            renderCanvas();
+            return;
+        }
+
         // Effacer tous les pixels
         const pixels = document.querySelectorAll('.pixel');
         pixels.forEach(pixel => {
@@ -4197,14 +4397,20 @@ function startAnimation() {
             return;
         }
         
-        const pixels = document.querySelectorAll('.pixel');
-        frames[frameIndex].forEach((pixel, i) => {
-            if (pixels[i]) {
-                pixels[i].style.backgroundColor = pixel.isEmpty ? '#FFFFFF' : pixel.color;
-                pixels[i].classList.remove('empty');
-            }
-        });
-        
+        if (CANVAS_RENDERING) {
+            currentFrameBuffer = frames[frameIndex].map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+            currentFrame = frameIndex;
+            renderCanvas();
+        } else {
+            const pixels = document.querySelectorAll('.pixel');
+            frames[frameIndex].forEach((pixel, i) => {
+                if (pixels[i]) {
+                    pixels[i].style.backgroundColor = pixel.isEmpty ? '#FFFFFF' : pixel.color;
+                    pixels[i].classList.remove('empty');
+                }
+            });
+        }
+
         // Mettre à jour l'indicateur visuel
         updatePlayingIndicator(frameIndex);
         
@@ -4989,8 +5195,11 @@ function optimizeTouchInteractions() {
                 const col = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientX - rect.left) / rect.width) * currentGridSize)));
                 const row = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientY - rect.top) / rect.height) * currentGridSize)));
                 updateStampGhost(col, row);
+            } else if (CANVAS_RENDERING) {
+                // 1 doigt → dessiner via index canvas
+                startDrawing({ clientX: touch.clientX, clientY: touch.clientY });
             } else {
-                // 1 doigt → dessiner
+                // 1 doigt → dessiner via DOM
                 const element = document.elementFromPoint(touch.clientX, touch.clientY);
                 if (element && element.classList.contains('pixel')) {
                     startDrawing({ target: element });
@@ -5033,8 +5242,11 @@ function optimizeTouchInteractions() {
                 const col = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientX - rect.left) / rect.width) * currentGridSize)));
                 const row = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientY - rect.top) / rect.height) * currentGridSize)));
                 updateStampGhost(col, row);
+            } else if (CANVAS_RENDERING) {
+                // 1 doigt → continuer le dessin via index canvas
+                draw({ clientX: touch.clientX, clientY: touch.clientY });
             } else {
-                // 1 doigt → continuer le dessin
+                // 1 doigt → continuer le dessin via DOM
                 const element = document.elementFromPoint(touch.clientX, touch.clientY);
                 if (element && element.classList.contains('pixel')) {
                     draw({ target: element });
