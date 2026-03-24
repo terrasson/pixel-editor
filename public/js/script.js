@@ -12,6 +12,15 @@ let stampPixels = null;
 let stampGridSize = 32;
 let stampHoverCol = 0;
 let stampHoverRow = 0;
+let stampCenterCol = 0;  // centre visuel du bounding box (calculé à l'entrée en mode stamp)
+let stampCenterRow = 0;
+
+// ── Phase 1 : Canvas rendering (overlay non-destructif) ──────────────────────
+const CANVAS_RENDERING = false; // sera true en Phase 2
+let pixelCanvas = null;
+let pixelCtx   = null;
+let cellSize   = 0;    // taille CSS d'une cellule en pixels
+// ─────────────────────────────────────────────────────────────────────────────
 let customColors = []; // Palette de couleurs personnalisées
 const maxCustomColors = 8; // Nombre maximum de couleurs personnalisées
 const CUSTOM_COLOR_REMOVE_DELAY = 2000; // Délai avant affichage de la croix de suppression
@@ -473,26 +482,54 @@ function initGrid(size = currentGridSize) {
     }
     inner.appendChild(fragment);
 
+    // ── Phase 1 : canvas overlay (pointer-events:none, z-index au-dessus des divs) ──
+    if (pixelCanvas) pixelCanvas.remove();
+    pixelCanvas = document.createElement('canvas');
+    pixelCanvas.id = 'pixelCanvas';
+    pixelCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;';
+    grid.appendChild(pixelCanvas);
+    // clientWidth exclut la bordure → 1 unité canvas = 1 CSS px de zone contenu
+    const gw = grid.clientWidth || 512;
+    pixelCanvas.width  = gw;
+    pixelCanvas.height = gw;
+    pixelCtx = pixelCanvas.getContext('2d');
+    cellSize = gw / size;
+    // ─────────────────────────────────────────────────────────────────────────────────
+
     if (!grid._mousedownListenerAdded) {
         grid.addEventListener('mousedown', e => { if (e.button === 0) e.preventDefault(); });
         grid._mousedownListenerAdded = true;
         initZoomPan();
 
-        // Stamp mode: track hover position over the grid
+        // Stamp mode: track hover position (zoom/pan + border aware)
         grid.addEventListener('mousemove', (e) => {
             if (!isStampMode) return;
             const rect = grid.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / rect.width;
-            const y = (e.clientY - rect.top) / rect.height;
-            const col = Math.max(0, Math.min(currentGridSize - 1, Math.floor(x * currentGridSize)));
-            const row = Math.max(0, Math.min(currentGridSize - 1, Math.floor(y * currentGridSize)));
+            const borderW = (rect.width  - grid.clientWidth)  / 2; // ≈ border px
+            const borderH = (rect.height - grid.clientHeight) / 2;
+            const logicalCell = grid.clientWidth / currentGridSize;
+            const col = Math.max(0, Math.min(currentGridSize - 1,
+                Math.floor((e.clientX - rect.left - borderW - gridPanX) / gridZoom / logicalCell)));
+            const row = Math.max(0, Math.min(currentGridSize - 1,
+                Math.floor((e.clientY - rect.top  - borderH - gridPanY) / gridZoom / logicalCell)));
             updateStampGhost(col, row);
         });
     }
 }
 
 // Recalculer les CSS si la fenêtre est redimensionnée
-window.addEventListener('resize', () => applyGridCSSVariables(currentGridSize));
+window.addEventListener('resize', () => {
+    applyGridCSSVariables(currentGridSize);
+    // Phase 1 : redimensionner le canvas et recalculer cellSize
+    if (pixelCanvas) {
+        const grid = document.getElementById('pixelGrid');
+        const gw = grid ? grid.clientWidth : 512;
+        pixelCanvas.width  = gw;
+        pixelCanvas.height = gw;
+        cellSize = gw / currentGridSize;
+        renderCanvas();
+    }
+});
 
 // ========================================
 // ZOOM / PAN DE LA GRILLE
@@ -507,7 +544,51 @@ const MAX_ZOOM = 16;
 function applyGridTransform() {
     const inner = document.getElementById('pixelGridInner');
     if (inner) inner.style.transform = `translate(${gridPanX}px, ${gridPanY}px) scale(${gridZoom})`;
+    renderCanvas(); // Phase 1 : synchroniser le canvas au zoom/pan
 }
+
+// ── Phase 1 : rendu canvas (miroir des divs, pointer-events:none) ─────────────
+function renderCanvas() {
+    if (!pixelCtx || !pixelCanvas) return;
+    if (!CANVAS_RENDERING) {
+        // Phase 1 : canvas présent mais invisible — les divs gèrent tout
+        pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
+        pixelCtx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
+        return;
+    }
+    const w = pixelCanvas.width;
+    pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
+    pixelCtx.clearRect(0, 0, w, w);
+    // Appliquer le même zoom/pan que les divs
+    pixelCtx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
+    const frame = frames[currentFrame] || [];
+    frame.forEach((pixel, i) => {
+        if (!pixel || pixel.isEmpty) return;
+        const col = i % currentGridSize;
+        const row = Math.floor(i / currentGridSize);
+        pixelCtx.fillStyle = pixel.color;
+        pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+    });
+    // Lignes de grille uniquement sur les petites grilles (inutiles sur 128×128+)
+    if (currentGridSize <= 64) {
+        pixelCtx.strokeStyle = 'rgba(0,0,0,0.08)';
+        pixelCtx.lineWidth = 0.5 / gridZoom;
+        for (let c = 0; c <= currentGridSize; c++) {
+            pixelCtx.beginPath();
+            pixelCtx.moveTo(c * cellSize, 0);
+            pixelCtx.lineTo(c * cellSize, currentGridSize * cellSize);
+            pixelCtx.stroke();
+        }
+        for (let r = 0; r <= currentGridSize; r++) {
+            pixelCtx.beginPath();
+            pixelCtx.moveTo(0, r * cellSize);
+            pixelCtx.lineTo(currentGridSize * cellSize, r * cellSize);
+            pixelCtx.stroke();
+        }
+    }
+    pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 function clampPan() {
     const grid = document.getElementById('pixelGrid');
@@ -646,7 +727,7 @@ function changeGridSize(newSize, options = {}) {
     // sinon un simple clic colorie plusieurs cellules à la fois
     const grid = document.getElementById('pixelGrid');
     if (grid) {
-        const canvasSize = grid.offsetWidth || 600;
+        const canvasSize = grid.clientWidth || 600; // sans bordure → cohérent avec canvas
         const cellSize = canvasSize / newSize;
         const minCellPx = 4;
         if (cellSize < minCellPx) {
@@ -803,6 +884,7 @@ function stopDrawing() {
     // Réinitialiser pour la prochaine action
     currentActionPixels.clear();
     actionStartState = null;
+    renderCanvas(); // Phase 1 : mettre à jour le canvas après chaque coup de pinceau
 }
 
 // Gestion des couleurs
@@ -986,12 +1068,25 @@ function enterStampMode(pixels, gridSize) {
     stampPixels = pixels;
     stampGridSize = gridSize;
 
+    // Calculer le centre visuel (bounding box des pixels non-vides)
+    let minC = Infinity, maxC = -Infinity, minR = Infinity, maxR = -Infinity;
+    for (let i = 0; i < pixels.length; i++) {
+        if (pixels[i] && !pixels[i].isEmpty) {
+            const sc = i % gridSize;
+            const sr = Math.floor(i / gridSize);
+            if (sc < minC) minC = sc; if (sc > maxC) maxC = sc;
+            if (sr < minR) minR = sr; if (sr > maxR) maxR = sr;
+        }
+    }
+    stampCenterCol = isFinite(minC) ? Math.round((minC + maxC) / 2) : Math.floor(gridSize / 2);
+    stampCenterRow = isFinite(minR) ? Math.round((minR + maxR) / 2) : Math.floor(gridSize / 2);
+
     const pixelGrid = document.getElementById('pixelGrid');
     if (pixelGrid) pixelGrid.classList.add('stamp-mode');
 
     const overlay = getStampOverlay();
-    overlay.width = pixelGrid ? pixelGrid.offsetWidth : 512;
-    overlay.height = pixelGrid ? pixelGrid.offsetHeight : 512;
+    overlay.width  = pixelGrid ? pixelGrid.clientWidth  : 512;
+    overlay.height = pixelGrid ? pixelGrid.clientHeight : 512;
     overlay.style.display = 'block';
 
     // Bouton flottant "Annuler" visible pendant le mode tampon
@@ -1026,16 +1121,20 @@ function exitStampMode(silent = false) {
 }
 
 function updateStampGhost(col, row) {
-    // 1 pixel source = 1 pixel destination (taille native, sans mise à l'échelle)
-    const half = Math.floor(stampGridSize / 2);
-    stampHoverCol = col - half;
-    stampHoverRow = row - half;
+    // Ancrer sur le centre visuel du sprite (bounding box), pas le centre du canvas
+    stampHoverCol = col - stampCenterCol;
+    stampHoverRow = row - stampCenterRow;
 
     const overlay = document.getElementById('stampOverlay');
     if (!overlay || !stampPixels) return;
     const ctx = overlay.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, overlay.width, overlay.height);
-    const pixelSize = overlay.width / currentGridSize;
+    // clientWidth (sans bordure) → 1 unité canvas = 1 CSS px de contenu
+    const grid = document.getElementById('pixelGrid');
+    const pixelSize = grid ? grid.clientWidth / currentGridSize : overlay.width / currentGridSize;
+    // Appliquer le même zoom/pan que la grille pour que le ghost colle aux divs
+    ctx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
     ctx.globalAlpha = 0.65;
     for (let i = 0; i < stampPixels.length; i++) {
         const pixel = stampPixels[i];
@@ -1049,6 +1148,7 @@ function updateStampGhost(col, row) {
         ctx.fillRect(dstCol * pixelSize, dstRow * pixelSize, pixelSize, pixelSize);
     }
     ctx.globalAlpha = 1.0;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 function applyStamp(col, row) {
@@ -3587,7 +3687,8 @@ function loadFrame(frameIndex) {
     
     currentFrame = frameIndex;
     updateFramesList();
-    
+    renderCanvas(); // Phase 1 : synchroniser le canvas à la frame chargée
+
     // Sauvegarder l'état initial de la frame chargée dans l'historique
     setTimeout(() => {
         saveToHistory();

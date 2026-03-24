@@ -1286,7 +1286,7 @@ body.is-mobile .editor-container {
 
 #pixelGrid.stamp-mode,
 #pixelGrid.stamp-mode .pixel {
-    cursor: copy;
+    cursor: crosshair;
 }
 
 #pixelGrid.grid-large .pixel {

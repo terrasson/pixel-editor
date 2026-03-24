@@ -1041,11 +1041,11 @@ body {
 }
 
 #pixelGrid.stamp-mode {
-    cursor: copy;
+    cursor: crosshair;
 }
 
 #pixelGrid.stamp-mode .pixel {
-    cursor: copy;
+    cursor: crosshair;
 }
 
 /* Grandes grilles (128+ ) : supprimer les bordures inter-pixels, trop bruyantes */
