@@ -568,6 +568,7 @@ body.is-mobile .editor-container {
     position: relative;
     flex-shrink: 0;
     box-sizing: border-box;
+    touch-action: pan-x;
 }
 
 .compact-color-btn.custom-color {
