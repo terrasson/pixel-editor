@@ -6,9 +6,21 @@ let isErasing = false; // Pour la gomme
 let isEyedropperMode = false; // Pour la pipette
 let isFillMode = false; // Pour le remplissage (flood fill)
 let isSymmetryMode = false; // Miroir horizontal en temps réel
+let isSymmetryV = false; // Miroir vertical (haut/bas)
 let modifiedPixels = [new Set()]; // Pour suivre les pixels modifiés
 let clipboard = null; // Pour le copier-coller
 let copiedFrame = null;
+// ── Grille de référence ───────────────────────────────────────────────────────
+let referenceImage = null;       // HTMLImageElement
+let referenceOpacity = 0.3;      // 0.0 to 1.0
+// ── Sélection rectangulaire ───────────────────────────────────────────────────
+let isSelectionMode = false;
+let selection = null;            // { startCol, startRow, endCol, endRow } while drawing
+let selectionRect = null;        // { minCol, minRow, maxCol, maxRow } final bounds (inclusive)
+let selectionCut = null;         // Array of {offset, pixel} - pixels cut from original position
+let isMovingSelection = false;
+let selectionMoveStart = null;   // {col, row} where move drag started
+// ─────────────────────────────────────────────────────────────────────────────
 let isStampMode = false;  // Outil tampon
 let stampPixels = null;
 let stampGridSize = 32;
@@ -598,6 +610,13 @@ function renderCanvas() {
         pixelCtx.globalAlpha = 1.0;
     }
 
+    // Grille de référence (image fantôme)
+    if (referenceImage) {
+        pixelCtx.globalAlpha = referenceOpacity;
+        pixelCtx.drawImage(referenceImage, 0, 0, currentGridSize * cellSize, currentGridSize * cellSize);
+        pixelCtx.globalAlpha = 1.0;
+    }
+
     // Frame courante (depuis le buffer live)
     currentFrameBuffer.forEach((pixel, i) => {
         if (!pixel || pixel.isEmpty) return;
@@ -625,7 +644,31 @@ function renderCanvas() {
             pixelCtx.stroke();
         }
     }
+    // Overlay sélection rectangulaire
+    const _selRect = selectionRect || (selection ? normalizeSelectionRect(selection) : null);
+    if (_selRect) {
+        pixelCtx.strokeStyle = '#FF7300';
+        pixelCtx.lineWidth = 1.5 / gridZoom;
+        pixelCtx.setLineDash([3 / gridZoom, 3 / gridZoom]);
+        pixelCtx.strokeRect(
+            _selRect.minCol * cellSize,
+            _selRect.minRow * cellSize,
+            (_selRect.maxCol - _selRect.minCol + 1) * cellSize,
+            (_selRect.maxRow - _selRect.minRow + 1) * cellSize
+        );
+        pixelCtx.setLineDash([]);
+    }
+
     pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function normalizeSelectionRect(sel) {
+    return {
+        minCol: Math.min(sel.startCol, sel.endCol),
+        maxCol: Math.max(sel.startCol, sel.endCol),
+        minRow: Math.min(sel.startRow, sel.endRow),
+        maxRow: Math.max(sel.startRow, sel.endRow)
+    };
 }
 
 // Convertit des coordonnées client en index dans currentFrameBuffer
@@ -675,6 +718,20 @@ function _drawAtIndex(index) {
             }
         }
     }
+    // Symétrie verticale : mirror du pixel opposé sur la même colonne
+    if (isSymmetryV) {
+        const col = index % currentGridSize;
+        const row = Math.floor(index / currentGridSize);
+        const mirrorIndex = (currentGridSize - 1 - row) * currentGridSize + col;
+        if (mirrorIndex !== index) {
+            currentActionPixels.add(mirrorIndex);
+            if (isErasing) {
+                currentFrameBuffer[mirrorIndex] = { color: '#FFFFFF', isEmpty: true };
+            } else {
+                currentFrameBuffer[mirrorIndex] = { color: currentColor, isEmpty: false };
+            }
+        }
+    }
     scheduleRender();
     // saveCurrentFrame() est appelé dans stopDrawing() pour ne pas surcharger pendant le drag
 }
@@ -687,6 +744,7 @@ function pickColorFromIndex(index) {
         updateCurrentColorDisplay();
         setEraserState(false);
         showEyedropperNotification('Couleur de base : #FFFFFF (pixel vide)');
+        setEyedropperState(false);
         return;
     }
     const hexColor = pixel.color.startsWith('rgb') ? rgbToHex(pixel.color) : pixel.color;
@@ -701,6 +759,7 @@ function pickColorFromIndex(index) {
         updateColorPalette();
     }
     showEyedropperNotification(`Couleur : ${normalizedColor}`);
+    setEyedropperState(false);
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -926,6 +985,38 @@ function startDrawing(e) {
             if (index >= 0) pickColorFromIndex(index);
             return;
         }
+        if (isSelectionMode) {
+            if (index < 0) return;
+            const col = index % currentGridSize;
+            const row = Math.floor(index / currentGridSize);
+            isDrawing = true;
+            if (selectionRect && col >= selectionRect.minCol && col <= selectionRect.maxCol
+                && row >= selectionRect.minRow && row <= selectionRect.maxRow) {
+                // Start moving the selection
+                isMovingSelection = true;
+                selectionMoveStart = { col, row };
+                actionStartState = currentFrameBuffer.map(p => p ? {...p} : {color:'#FFFFFF',isEmpty:true});
+                currentActionPixels = new Set();
+                selectionCut = [];
+                for (let r = selectionRect.minRow; r <= selectionRect.maxRow; r++) {
+                    for (let c = selectionRect.minCol; c <= selectionRect.maxCol; c++) {
+                        const idx = r * currentGridSize + c;
+                        selectionCut.push({ offset: { dr: r - selectionRect.minRow, dc: c - selectionRect.minCol }, pixel: {...currentFrameBuffer[idx]} });
+                        currentFrameBuffer[idx] = { color: '#FFFFFF', isEmpty: true };
+                        currentActionPixels.add(idx);
+                    }
+                }
+                scheduleRender();
+            } else {
+                if (isMovingSelection) commitSelectionMove();
+                selection = { startCol: col, startRow: row, endCol: col, endRow: row };
+                selectionRect = null;
+                isMovingSelection = false;
+                selectionCut = null;
+                scheduleRender();
+            }
+            return;
+        }
         if (index < 0) return;
         if (isFillMode) {
             actionStartState = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
@@ -977,6 +1068,46 @@ function draw(e) {
             pickColorFromIndex(index);
             return;
         }
+        if (isSelectionMode) {
+            const col = index % currentGridSize;
+            const row = Math.floor(index / currentGridSize);
+            if (isMovingSelection && selectionCut && selectionRect) {
+                const dc = col - selectionMoveStart.col;
+                const dr = row - selectionMoveStart.row;
+                const newMinCol = selectionRect.minCol + dc;
+                const newMinRow = selectionRect.minRow + dr;
+                const newMaxCol = selectionRect.maxCol + dc;
+                const newMaxRow = selectionRect.maxRow + dr;
+                // Reset buffer to state at move start
+                currentFrameBuffer = (actionStartState || currentFrameBuffer).map(p => p ? {...p} : {color:'#FFFFFF',isEmpty:true});
+                // Clear original selection area
+                for (let r = selectionRect.minRow; r <= selectionRect.maxRow; r++) {
+                    for (let c = selectionRect.minCol; c <= selectionRect.maxCol; c++) {
+                        const idx = r * currentGridSize + c;
+                        currentFrameBuffer[idx] = { color: '#FFFFFF', isEmpty: true };
+                        currentActionPixels.add(idx);
+                    }
+                }
+                // Paint at new position
+                selectionCut.forEach(({ offset, pixel }) => {
+                    const newR = newMinRow + offset.dr;
+                    const newC = newMinCol + offset.dc;
+                    if (newR >= 0 && newR < currentGridSize && newC >= 0 && newC < currentGridSize) {
+                        const idx = newR * currentGridSize + newC;
+                        currentFrameBuffer[idx] = { ...pixel };
+                        currentActionPixels.add(idx);
+                    }
+                });
+                selectionRect = { minCol: newMinCol, minRow: newMinRow, maxCol: newMaxCol, maxRow: newMaxRow };
+                selectionMoveStart = { col, row };
+                scheduleRender();
+            } else if (selection) {
+                selection.endCol = col;
+                selection.endRow = row;
+                scheduleRender();
+            }
+            return;
+        }
         _drawAtIndex(index);
         return;
     }
@@ -1025,6 +1156,18 @@ function stopDrawing() {
     
     isDrawing = false;
 
+    // Phase 2 : gestion sélection
+    if (CANVAS_RENDERING && isSelectionMode) {
+        if (!isMovingSelection && selection) {
+            selectionRect = normalizeSelectionRect(selection);
+            selection = null;
+            scheduleRender();
+        } else if (isMovingSelection) {
+            saveCurrentFrame();
+        }
+        return;
+    }
+
     // Phase 2 : synchroniser frames[] depuis le buffer (fait une seule fois à la fin du trait)
     if (CANVAS_RENDERING) saveCurrentFrame();
 
@@ -1059,6 +1202,8 @@ function setEraserState(active) {
     if (active) {
         setEyedropperState(false);
         setFillState(false);
+        setSymmetryVState(false);
+        setSelectionState(false);
     }
     const pixelGrid = document.getElementById('pixelGrid');
     if (pixelGrid) {
@@ -1080,6 +1225,8 @@ function setEyedropperState(active) {
     if (active) {
         setEraserState(false);
         setFillState(false);
+        setSymmetryVState(false);
+        setSelectionState(false);
     }
     const pixelGrid = document.getElementById('pixelGrid');
     if (pixelGrid) {
@@ -1103,6 +1250,8 @@ function setFillState(active) {
     if (active) {
         setEraserState(false);
         setEyedropperState(false);
+        setSymmetryVState(false);
+        setSelectionState(false);
     }
     document.querySelectorAll('#fillBtn').forEach(btn => {
         btn.classList.toggle('active', active);
@@ -1158,6 +1307,100 @@ function toggleSymmetry() {
     isSymmetryMode = !isSymmetryMode;
     document.querySelectorAll('#symmetryBtn').forEach(btn => {
         btn.classList.toggle('active', isSymmetryMode);
+    });
+}
+
+// ── Symétrie verticale (haut/bas) ────────────────────────────────────────────
+function toggleSymmetryV() {
+    setSymmetryVState(!isSymmetryV);
+}
+
+function setSymmetryVState(active) {
+    isSymmetryV = active;
+    document.querySelectorAll('#symmetryVBtn').forEach(btn => {
+        btn.classList.toggle('active', active);
+    });
+}
+
+// ── Sélection rectangulaire ───────────────────────────────────────────────────
+function toggleSelection() { setSelectionState(!isSelectionMode); }
+
+function setSelectionState(active) {
+    if (!active && isMovingSelection) commitSelectionMove();
+    isSelectionMode = active;
+    if (!active) { selection = null; selectionRect = null; selectionCut = null; isMovingSelection = false; }
+    document.querySelectorAll('#selectionBtn').forEach(b => b.classList.toggle('active', active));
+    if (active) { setEraserState(false); setEyedropperState(false); setFillState(false); }
+}
+
+function commitSelectionMove() {
+    if (!selectionCut || !selectionRect) return;
+    saveCurrentFrame();
+    if (currentActionPixels.size > 0 && actionStartState) {
+        saveActionToHistory(actionStartState, currentActionPixels);
+        updateAllThumbnails();
+    }
+    selectionCut = null;
+    isMovingSelection = false;
+    actionStartState = null;
+    currentActionPixels.clear();
+}
+
+// ── Grille de référence ───────────────────────────────────────────────────────
+function loadReferenceImage() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const img = new Image();
+        img.onload = () => {
+            referenceImage = img;
+            scheduleRender();
+            const controls = document.getElementById('referenceControls');
+            if (controls) controls.style.display = 'flex';
+        };
+        img.src = URL.createObjectURL(file);
+    };
+    input.click();
+}
+
+function clearReferenceImage() {
+    referenceImage = null;
+    scheduleRender();
+    const controls = document.getElementById('referenceControls');
+    if (controls) controls.style.display = 'none';
+}
+
+// ── Export PNG frame par frame ────────────────────────────────────────────────
+function exportFramesAsPng() {
+    saveCurrentFrame();
+    const size = currentGridSize;
+    const scale = Math.max(1, Math.floor(512 / size));
+    const canvasSize = size * scale;
+
+    const offscreen = document.createElement('canvas');
+    offscreen.width = canvasSize;
+    offscreen.height = canvasSize;
+    const ctx = offscreen.getContext('2d');
+
+    const projectName = document.getElementById('projectNameInput')?.value || 'pixel-art';
+
+    frames.forEach((frame, i) => {
+        ctx.clearRect(0, 0, canvasSize, canvasSize);
+        frame.forEach((pixel, idx) => {
+            if (!pixel || pixel.isEmpty) return;
+            const col = idx % size;
+            const row = Math.floor(idx / size);
+            ctx.fillStyle = pixel.color;
+            ctx.fillRect(col * scale, row * scale, scale, scale);
+        });
+        const dataUrl = offscreen.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `${projectName}_frame${String(i + 1).padStart(3, '0')}.png`;
+        a.click();
     });
 }
 
@@ -4879,7 +5122,17 @@ function handleKeyboardShortcuts(e) {
             e.preventDefault();
             toggleSymmetry();
             return;
-            
+
+        case 'v':
+            e.preventDefault();
+            toggleSymmetryV();
+            return;
+
+        case 's':
+            e.preventDefault();
+            toggleSelection();
+            return;
+
         case ' ': // Espace pour play/pause
             e.preventDefault();
             if (isAnimationPlaying) {
@@ -4891,6 +5144,28 @@ function handleKeyboardShortcuts(e) {
             
         case 'delete':
         case 'backspace':
+            // Supprimer les pixels de la sélection si une sélection est active
+            if (selectionRect && !isMovingSelection) {
+                e.preventDefault();
+                actionStartState = currentFrameBuffer.map(p => p ? {...p} : {color:'#FFFFFF',isEmpty:true});
+                currentActionPixels = new Set();
+                for (let r = selectionRect.minRow; r <= selectionRect.maxRow; r++) {
+                    for (let c = selectionRect.minCol; c <= selectionRect.maxCol; c++) {
+                        const idx = r * currentGridSize + c;
+                        currentFrameBuffer[idx] = { color: '#FFFFFF', isEmpty: true };
+                        currentActionPixels.add(idx);
+                    }
+                }
+                saveCurrentFrame();
+                if (currentActionPixels.size > 0) {
+                    saveActionToHistory(actionStartState, currentActionPixels);
+                    updateAllThumbnails();
+                }
+                currentActionPixels.clear();
+                actionStartState = null;
+                scheduleRender();
+                return;
+            }
             // Supprimer la frame actuelle seulement si on n'est pas en train de dessiner
             if (!isDrawing) {
                 e.preventDefault();
@@ -4930,6 +5205,8 @@ function handleKeyboardShortcuts(e) {
             if (isErasing) toggleEraser();
             if (isFillMode) toggleFill();
             if (isSymmetryMode) toggleSymmetry();
+            if (isSymmetryV) setSymmetryVState(false);
+            if (isSelectionMode) setSelectionState(false);
             return;
     }
 }
@@ -5813,6 +6090,25 @@ function initEventListeners() {
     // Boutons symétrie (desktop + mobile)
     document.querySelectorAll('#symmetryBtn').forEach(btn => {
         btn.addEventListener('click', toggleSymmetry);
+    });
+
+    // Boutons symétrie verticale (desktop + mobile)
+    document.querySelectorAll('#symmetryVBtn').forEach(btn => {
+        btn.addEventListener('click', toggleSymmetryV);
+    });
+
+    // Boutons sélection (desktop + mobile)
+    document.querySelectorAll('#selectionBtn').forEach(btn => {
+        btn.addEventListener('click', toggleSelection);
+    });
+
+    // Bouton export PNG frames
+    document.getElementById('exportPngBtn')?.addEventListener('click', exportFramesAsPng);
+
+    // Slider opacité référence
+    document.getElementById('refOpacitySlider')?.addEventListener('input', (e) => {
+        referenceOpacity = parseFloat(e.target.value);
+        scheduleRender();
     });
 
     // Les raccourcis clavier sont gérés par handleKeyboardShortcuts()

@@ -150,7 +150,9 @@
                         </svg>
                     </button>
                     <button id="fillBtn" class="compact-eraser-btn fill-btn" title="Remplissage (F)">🪣</button>
-                    <button id="symmetryBtn" class="compact-eraser-btn symmetry-btn" title="Symétrie (X)">⬡</button>
+                    <button id="symmetryBtn" class="compact-eraser-btn symmetry-btn" title="Symétrie H (X)">⬡</button>
+                    <button id="symmetryVBtn" class="compact-eraser-btn symmetry-v-btn" title="Symétrie V (V)">↕</button>
+                    <button id="selectionBtn" class="compact-eraser-btn selection-btn" title="Sélection (S)">⬚</button>
                     <div class="compact-tools-spacer"></div>
                     <button id="undoBtn" class="compact-undo-redo-btn" title="Annuler">↺</button>
                     <button id="redoBtn" class="compact-undo-redo-btn" title="Rétablir">↻</button>
@@ -367,12 +369,23 @@
                     </div>
                 </div>
 
-                <!-- Grille 2×2 : Gomme / Pipette / Fill / Symétrie -->
+                <!-- Grille 2×2 : Gomme / Pipette / Fill / Symétrie + extras -->
                 <div class="tools-grid-2x2">
                     <button id="eraserBtn" class="tool-chip">Gomme</button>
                     <button id="eyedropperBtn" class="tool-chip eyedropper-btn" title="Pipette (I)">🎨 Pipette</button>
                     <button id="fillBtn" class="tool-chip fill-btn" title="Remplissage (F)">🪣 Fill</button>
-                    <button id="symmetryBtn" class="tool-chip symmetry-btn" title="Symétrie (X)">⬡ Symétrie</button>
+                    <button id="symmetryBtn" class="tool-chip symmetry-btn" title="Symétrie H (X)">⬡ Sym.H</button>
+                    <button id="symmetryVBtn" class="tool-chip symmetry-v-btn" title="Symétrie V (V)">↕ Sym.V</button>
+                    <button id="selectionBtn" class="tool-chip selection-btn" title="Sélection (S)">⬚ Select</button>
+                </div>
+                <!-- Section image de référence -->
+                <div class="tool-section">
+                    <button id="loadRefBtn" class="tool-btn" onclick="loadReferenceImage()" title="Charger une image de référence">📐 Référence</button>
+                    <div id="referenceControls" style="display:none; flex-direction:column; gap:4px; margin-top:6px;">
+                        <label style="font-size:11px; color:#666;">Opacité</label>
+                        <input type="range" id="refOpacitySlider" min="0.05" max="1" step="0.05" value="0.3" style="width:100%;">
+                        <button id="clearRefBtn" style="font-size:11px; padding:4px 8px;" onclick="clearReferenceImage()">✕ Effacer</button>
+                    </div>
                 </div>
             </div>
 
@@ -405,6 +418,7 @@
                 <button id="loadBtn2"         data-en="📂 Load"         data-fr="📂 Charger">📂 Load</button>
                 <button id="loadLocalBtn2"    data-en="🌐 My projects"  data-fr="🌐 Mes projets">🌐 My projects</button>
                 <button id="exportGifBtn2"    data-en="🎬 Export GIF"   data-fr="🎬 Export GIF">🎬 Export GIF</button>
+                <button id="exportPngBtn"     data-en="🖼 PNG frames"   data-fr="🖼 PNG frames" title="Exporter chaque frame en PNG">🖼 PNG frames</button>
                 <button id="exportSpriteSheetBtn2" data-en="🗂️ Sprite Sheet" data-fr="🗂️ Sprite Sheet">🗂️ Sprite Sheet</button>
                 <button id="stampSpriteBtn2" data-en="🪄 Stamp sprite" data-fr="🪄 Tampon sprite">🪄 Stamp sprite</button>
                 <button id="shareProjectBtn2" data-en="🔗 Share"        data-fr="🔗 Partager">🔗 Share</button>

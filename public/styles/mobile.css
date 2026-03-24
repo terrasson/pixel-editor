@@ -424,6 +424,20 @@ body.is-mobile .editor-container {
     color: var(--color-primary, #FF7300);
 }
 
+/* Symétrie V active (mobile) */
+.symmetry-v-btn.active {
+    background: #34C759 !important;
+    color: white !important;
+    border-color: #34C759 !important;
+}
+
+/* Sélection active (mobile) */
+.selection-btn.active {
+    background: #007AFF !important;
+    color: white !important;
+    border-color: #007AFF !important;
+}
+
 /* Bouton pipette compact */
 .compact-eyedropper-btn {
     width: 32px;

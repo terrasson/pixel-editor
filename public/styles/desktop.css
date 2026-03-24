@@ -1040,6 +1040,41 @@ body {
     box-shadow: 0 0 12px rgba(52, 199, 89, 0.4) !important;
 }
 
+/* Symétrie V active */
+.symmetry-v-btn.active {
+    background: #34C759 !important;
+    color: white !important;
+    border-color: #34C759 !important;
+}
+
+/* Sélection active */
+.selection-btn.active {
+    background: #007AFF !important;
+    color: white !important;
+    border-color: #007AFF !important;
+}
+
+/* Bouton référence */
+#loadRefBtn {
+    width: 100%;
+    padding: 8px;
+    background: #f5f5f7;
+    border: 1px solid #e5e5ea;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+}
+
+#loadRefBtn:hover {
+    background: #e8e8ed;
+}
+
+/* Section outil */
+.tool-section {
+    margin-top: 8px;
+}
+
 /* Animations pour les notifications pipette */
 @keyframes fadeInOut {
     0% {
