@@ -8142,6 +8142,14 @@ async function updateUserProfileDisplay() {
                 });
             }
 
+            const exportPngBtnDropdown = document.getElementById('exportPngBtnDropdown');
+            if (exportPngBtnDropdown) {
+                exportPngBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    exportFramesAsPng();
+                });
+            }
+
             const exportSpriteSheetBtnDropdown = document.getElementById('exportSpriteSheetBtnDropdown');
             if (exportSpriteSheetBtnDropdown) {
                 exportSpriteSheetBtnDropdown.addEventListener('click', () => {
