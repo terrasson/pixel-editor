@@ -1461,64 +1461,7 @@ input[type="color"]::-webkit-color-swatch {
     }
 }
 
-/* Styles pour les indicateurs de template (Modèles à Réaliser) */
-.pixel {
-    position: relative !important;
-}
-
-.pixel.has-template-indicator {
-    position: relative !important;
-    overflow: visible !important;
-}
-
-.pixel .template-indicator-svg {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    pointer-events: none !important;
-    z-index: 100 !important;
-    /* Très élevé pour être au-dessus de tout */
-    overflow: visible !important;
-    display: block !important;
-    visibility: visible !important;
-}
-
-.pixel .template-indicator-svg polygon {
-    transition: opacity 0.3s ease;
-    display: block !important;
-    visibility: visible !important;
-}
-
-.pixel.has-template-indicator:hover .template-indicator-svg polygon {
-    opacity: 1;
-    stroke-width: 2;
-}
-
-/* Assurer que les indicateurs sont visibles même en cas de conflit */
-#pixelGrid .pixel .template-indicator-svg {
-    z-index: 100 !important;
-}
-
-.pixel.template-completed {
-    /* Animation subtile quand le pixel est complété */
-    animation: templateCompleted 0.3s ease;
-}
-
-@keyframes templateCompleted {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-}
+/* Phase 3 : règles .pixel supprimées — rendu 100% canvas */
 
 /* ========================================
    MODAL TAILLE DE GRILLE

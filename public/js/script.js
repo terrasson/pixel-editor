@@ -424,27 +424,19 @@ let actionStartState = null; // État de la grille au début de l'action
 // Le viewport est TOUJOURS fixe (indépendant du nombre de cellules)
 function applyGridCSSVariables(size) {
     const grid = document.getElementById('pixelGrid');
-    const inner = document.getElementById('pixelGridInner');
     if (!grid) return;
 
     const isDesktop = window.innerWidth >= 1024;
 
-    // Taille viewport fixe — même espace visuel peu importe 8×8 ou 64×64
+    // Taille viewport fixe — même espace visuel peu importe 8×8 ou 256×256
     const viewportExpr = isDesktop
         ? 'min(calc(100vw - 480px), calc(100vh - 200px), 896px)'
         : 'min(calc(100vw - 4px), calc(100vh - 120px), 560px)';
 
-    // #pixelGrid = viewport fixe, overflow hidden
     grid.style.width  = `calc(${viewportExpr})`;
     grid.style.height = `calc(${viewportExpr})`;
     grid.style.setProperty('--grid-cols', size);
     grid.style.setProperty('--cell-size', `calc(${viewportExpr} / ${size})`);
-
-    // #pixelGridInner = grille CSS (reçoit le zoom/pan via transform)
-    if (inner) {
-        inner.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-        inner.style.gridTemplateRows    = `repeat(${size}, 1fr)`;
-    }
 }
 
 // Initialisation de la grille (dynamique)
@@ -455,47 +447,17 @@ function initGrid(size = currentGridSize) {
     // Vider la grille + reset zoom/pan
     grid.innerHTML = '';
     gridZoom = 1; gridPanX = 0; gridPanY = 0;
-
-    // Masquer les bordures inter-pixels pour les grandes grilles (visuellement trop bruyantes)
     grid.classList.toggle('grid-large', size >= 128);
-
-    // Créer le wrapper interne (reçoit le transform zoom/pan)
-    const inner = document.createElement('div');
-    inner.id = 'pixelGridInner';
-    inner.style.cssText = [
-        'display: grid',
-        'width: 100%',
-        'height: 100%',
-        'position: absolute',
-        'top: 0',
-        'left: 0',
-        'transform-origin: 0 0',
-    ].join(';');
-    grid.appendChild(inner);
 
     // Appliquer les variables CSS dynamiques
     applyGridCSSVariables(size);
 
-    // Créer les pixels via un DocumentFragment (1 seul reflow)
-    const fragment = document.createDocumentFragment();
-    const total = size * size;
-    for (let i = 0; i < total; i++) {
-        const pixel = document.createElement('div');
-        pixel.className = 'pixel empty';
-        pixel.addEventListener('mousedown', startDrawing);
-        pixel.addEventListener('mouseover', draw);
-        pixel.addEventListener('mouseup', stopDrawing);
-        fragment.appendChild(pixel);
-    }
-    inner.appendChild(fragment);
-
-    // ── Phase 1 : canvas overlay (pointer-events:none, z-index au-dessus des divs) ──
+    // ── Phase 3 : canvas uniquement, zéro div.pixel ───────────────────────────────
     if (pixelCanvas) pixelCanvas.remove();
     pixelCanvas = document.createElement('canvas');
     pixelCanvas.id = 'pixelCanvas';
     pixelCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;';
     grid.appendChild(pixelCanvas);
-    // clientWidth exclut la bordure → 1 unité canvas = 1 CSS px de zone contenu
     const gw = grid.clientWidth || 512;
     pixelCanvas.width  = gw;
     pixelCanvas.height = gw;
@@ -504,22 +466,31 @@ function initGrid(size = currentGridSize) {
     // ─────────────────────────────────────────────────────────────────────────────────
 
     if (!grid._mousedownListenerAdded) {
-        grid.addEventListener('mousedown', e => { if (e.button === 0) e.preventDefault(); });
         grid._mousedownListenerAdded = true;
         initZoomPan();
 
-        // Stamp mode: track hover position (zoom/pan + border aware)
+        // Dessin : mousedown démarre, mousemove continue, mouseup arrête
+        grid.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            startDrawing(e);
+        });
+
         grid.addEventListener('mousemove', (e) => {
-            if (!isStampMode) return;
-            const rect = grid.getBoundingClientRect();
-            const borderW = (rect.width  - grid.clientWidth)  / 2; // ≈ border px
-            const borderH = (rect.height - grid.clientHeight) / 2;
-            const logicalCell = grid.clientWidth / currentGridSize;
-            const col = Math.max(0, Math.min(currentGridSize - 1,
-                Math.floor((e.clientX - rect.left - borderW - gridPanX) / gridZoom / logicalCell)));
-            const row = Math.max(0, Math.min(currentGridSize - 1,
-                Math.floor((e.clientY - rect.top  - borderH - gridPanY) / gridZoom / logicalCell)));
-            updateStampGhost(col, row);
+            if (isStampMode) {
+                // Tampon : calculer position du ghost (zoom/pan + bordure)
+                const rect = grid.getBoundingClientRect();
+                const borderW = (rect.width  - grid.clientWidth)  / 2;
+                const borderH = (rect.height - grid.clientHeight) / 2;
+                const logicalCell = grid.clientWidth / currentGridSize;
+                const col = Math.max(0, Math.min(currentGridSize - 1,
+                    Math.floor((e.clientX - rect.left - borderW - gridPanX) / gridZoom / logicalCell)));
+                const row = Math.max(0, Math.min(currentGridSize - 1,
+                    Math.floor((e.clientY - rect.top  - borderH - gridPanY) / gridZoom / logicalCell)));
+                updateStampGhost(col, row);
+            } else if (isDrawing) {
+                draw(e);
+            }
         });
     }
 }
@@ -549,9 +520,7 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 16;
 
 function applyGridTransform() {
-    const inner = document.getElementById('pixelGridInner');
-    if (inner) inner.style.transform = `translate(${gridPanX}px, ${gridPanY}px) scale(${gridZoom})`;
-    renderCanvas(); // Phase 1 : synchroniser le canvas au zoom/pan
+    renderCanvas(); // Phase 3 : le canvas gère le zoom/pan via setTransform()
 }
 
 // ── Phase 2 : rendu canvas (source de vérité = currentFrameBuffer) ────────────
@@ -5710,6 +5679,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Système de raccourcis clavier complet
     document.addEventListener('keydown', handleKeyboardShortcuts);
+
+    // Phase 3 : stopper le dessin si la souris relâche hors de la grille
+    document.addEventListener('mouseup', stopDrawing);
     
     // Gérer le drag & drop pour importer des projets
     initDragAndDrop();

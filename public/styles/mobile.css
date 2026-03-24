@@ -1231,66 +1231,10 @@ body.is-mobile .editor-container {
     transition: all 0.2s ease;
 }
 
-/* La grille CSS (display:grid) est sur #pixelGridInner, géré par JS */
+/* Phase 3 : plus de div.pixel — rendu 100% canvas */
 
-.pixel {
-    width: 100%;
-    height: 100%;
-    border: 0.5px solid rgba(0, 0, 0, 0.08);
-    box-sizing: border-box;
-    background-color: #FFFFFF;
+#pixelGrid.stamp-mode {
     cursor: crosshair;
-    position: relative;
-    transition: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden; /* Pour respecter les angles arrondis de la grille */
-}
-
-.pixel:hover {
-    border-color: rgba(0, 0, 0, 0.15);
-}
-
-/* Angles arrondis pour les pixels aux coins de la grille sur mobile */
-#pixelGrid .pixel:nth-child(1) {
-    border-top-left-radius: 5px; /* 8px - 2px de border - 1px de marge */
-}
-
-#pixelGrid .pixel:nth-child(32) {
-    border-top-right-radius: 5px;
-}
-
-#pixelGrid .pixel:nth-child(993) {
-    border-bottom-left-radius: 5px; /* 32 * 31 + 1 = 993 */
-}
-
-#pixelGrid .pixel:nth-child(1024) {
-    border-bottom-right-radius: 5px; /* 32 * 32 = 1024 */
-}
-
-.pixel:active {
-    outline: 1px solid #007AFF;
-}
-
-/* Mode pipette - curseur spécial */
-#pixelGrid.eyedropper-mode .pixel {
-    cursor: crosshair;
-}
-
-#pixelGrid.eyedropper-mode .pixel:hover,
-#pixelGrid.eyedropper-mode .pixel:active {
-    border-color: rgba(0, 122, 255, 0.6);
-    border-width: 2px;
-    box-shadow: 0 0 8px rgba(0, 122, 255, 0.4);
-}
-
-#pixelGrid.stamp-mode,
-#pixelGrid.stamp-mode .pixel {
-    cursor: crosshair;
-}
-
-#pixelGrid.grid-large .pixel {
-    border: none;
 }
 
 /* Bouton pipette actif */
@@ -1942,39 +1886,7 @@ body.drag-over .grid-container {
     background: var(--bg-hover, #F0F0F2);
 }
 
-/* Marqueurs de pixels */
-.previous-pixel-marker {
-    position: absolute;
-    width: 25%;
-    height: 25%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.next-pixel-marker-1, .next-pixel-marker-2 {
-    position: absolute;
-    width: 20%;
-    height: 20%;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.next-pixel-marker-1 {
-    top: 25%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.next-pixel-marker-2 {
-    top: 75%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
+/* Phase 3 : marqueurs DOM supprimés — onion skin rendu sur canvas */
 
 /* Styles pour la modal des crédits */
 .credits-modal {
