@@ -507,6 +507,25 @@ function initGrid(size = currentGridSize) {
                 draw(e);
             }
         });
+
+        // Apple Pencil : pointerType 'pen' → dessin (évite conflit avec touch/mouse)
+        grid.addEventListener('pointerdown', (e) => {
+            if (e.pointerType !== 'pen') return;
+            e.preventDefault();
+            startDrawing({ clientX: e.clientX, clientY: e.clientY });
+        });
+        grid.addEventListener('pointermove', (e) => {
+            if (e.pointerType !== 'pen') return;
+            if (isDrawing) draw({ clientX: e.clientX, clientY: e.clientY });
+        });
+        grid.addEventListener('pointerup', (e) => {
+            if (e.pointerType !== 'pen') return;
+            stopDrawing();
+        });
+        grid.addEventListener('pointercancel', (e) => {
+            if (e.pointerType !== 'pen') return;
+            stopDrawing();
+        });
     }
 }
 
@@ -586,8 +605,9 @@ function renderCanvas() {
         pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
     });
 
-    // Lignes de grille uniquement sur les petites grilles
-    if (currentGridSize <= 64) {
+    // Lignes de grille : visibles si chaque cellule fait au moins 6px écran
+    const screenCellPx = cellSize * gridZoom;
+    if (screenCellPx >= 6) {
         pixelCtx.strokeStyle = 'rgba(0,0,0,0.08)';
         pixelCtx.lineWidth = 0.5 / gridZoom;
         for (let c = 0; c <= currentGridSize; c++) {
@@ -620,6 +640,16 @@ function getPixelIndexFromPoint(clientX, clientY) {
     return row * currentGridSize + col;
 }
 
+// rAF throttle : évite de redessiner plus de 60 fois/sec pendant le drag
+let _rafId = null;
+function scheduleRender() {
+    if (_rafId !== null) return;
+    _rafId = requestAnimationFrame(() => {
+        _rafId = null;
+        renderCanvas();
+    });
+}
+
 // Applique un coup de pinceau ou de gomme sur le buffer à l'index donné
 function _drawAtIndex(index) {
     if (index < 0 || index >= currentFrameBuffer.length) return;
@@ -629,7 +659,7 @@ function _drawAtIndex(index) {
     } else {
         currentFrameBuffer[index] = { color: currentColor, isEmpty: false };
     }
-    renderCanvas();
+    scheduleRender();
     // saveCurrentFrame() est appelé dans stopDrawing() pour ne pas surcharger pendant le drag
 }
 
@@ -702,10 +732,16 @@ function initZoomPan() {
     grid.addEventListener('wheel', (e) => {
         e.preventDefault();
         if (e.ctrlKey) {
-            // Pinch trackpad MacBook : deltaY proportionnel au pinch
+            // Pinch trackpad / Ctrl+molette → zoom
             zoomAtPoint(1 - e.deltaY * 0.01, e.clientX, e.clientY);
+        } else if (e.deltaX !== 0 || (e.deltaMode === 0 && Math.abs(e.deltaY) < 50)) {
+            // Trackpad deux doigts / Magic Mouse → pan
+            gridPanX -= e.deltaX;
+            gridPanY -= e.deltaY;
+            clampPan();
+            applyGridTransform();
         } else {
-            // Molette classique
+            // Molette classique → zoom
             zoomAtPoint(e.deltaY < 0 ? 1.15 : 0.87, e.clientX, e.clientY);
         }
     }, { passive: false });
