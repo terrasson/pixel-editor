@@ -528,6 +528,7 @@ body.is-mobile .editor-container {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.4) rgba(255, 255, 255, 0.1);
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
     /* Espace pour la scrollbar en bas */
     padding-bottom: 8px;
     margin-bottom: -4px;
