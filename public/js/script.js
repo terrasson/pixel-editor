@@ -327,6 +327,21 @@ function normalisePixel(pixel) {
     };
 }
 
+// Détecte la taille de grille depuis les données brutes et redimensionne si nécessaire
+function autoDetectAndResizeGrid(rawFramesData) {
+    const arr = typeof rawFramesData === 'string' ? JSON.parse(rawFramesData) : rawFramesData;
+    if (!Array.isArray(arr) || arr.length === 0) return;
+    const firstFrame = Array.isArray(arr[0]) ? arr[0] : (arr[0]?.pixels || null);
+    if (!Array.isArray(firstFrame) || firstFrame.length === 0) return;
+    const detectedSize = Math.round(Math.sqrt(firstFrame.length));
+    if (VALID_GRID_SIZES.includes(detectedSize) && detectedSize !== currentGridSize) {
+        currentGridSize = detectedSize;
+        initGrid(detectedSize);
+        updateGridSizeIndicator(detectedSize);
+        updateGridSizeBtnStates(detectedSize);
+    }
+}
+
 function normaliseFrames(rawFrames) {
     let framesArray = rawFrames;
 
@@ -1692,7 +1707,7 @@ async function showLocalProjects() {
                 window.currentTemplate = null;
             }
             
-            // Restaurer la taille de grille si présente
+            // Restaurer la taille de grille (champ explicite ou auto-détection)
             if (data.gridSize) {
                 const savedSize = data.gridSize.width || data.gridSize.height || DEFAULT_GRID_SIZE;
                 if (VALID_GRID_SIZES.includes(savedSize) && savedSize !== currentGridSize) {
@@ -1701,6 +1716,8 @@ async function showLocalProjects() {
                     updateGridSizeIndicator(savedSize);
                     updateGridSizeBtnStates(savedSize);
                 }
+            } else {
+                autoDetectAndResizeGrid(data.frames);
             }
 
             frames = normaliseFrames(data.frames);
@@ -5041,7 +5058,7 @@ async function loadFromServer() {
                         cleanUpMarkers();
                     }
                     
-                    // Restaurer la taille de grille si présente
+                    // Restaurer la taille de grille (champ explicite ou auto-détection)
                     if (data.gridSize) {
                         const savedSize = data.gridSize.width || data.gridSize.height || DEFAULT_GRID_SIZE;
                         if (VALID_GRID_SIZES.includes(savedSize) && savedSize !== currentGridSize) {
@@ -5050,6 +5067,8 @@ async function loadFromServer() {
                             updateGridSizeIndicator(savedSize);
                             updateGridSizeBtnStates(savedSize);
                         }
+                    } else {
+                        autoDetectAndResizeGrid(data.frames);
                     }
 
                     const parsedFrames = typeof data.frames === 'string' ? JSON.parse(data.frames) : data.frames;
