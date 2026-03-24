@@ -3078,6 +3078,8 @@ function initCompactColorButtons() {
             isLongPress = false;
         });
     });
+
+    initPaletteScrollbar();
 }
 
 // Fonction pour mettre à jour la sélection visuelle des couleurs compactes
@@ -3089,6 +3091,67 @@ function updateCompactColorSelection(selectedBtn) {
     
     // Ajouter la classe 'selected' au bouton cliqué
     selectedBtn.classList.add('selected');
+}
+
+// Scrollbar personnalisée pour la palette mobile
+function initPaletteScrollbar() {
+    const palette = document.querySelector('.compact-preset-colors');
+    const scrollbar = document.getElementById('paletteScrollbar');
+    const thumb = document.getElementById('paletteScrollbarThumb');
+    if (!palette || !scrollbar || !thumb) return;
+
+    function updateThumb() {
+        const ratio = palette.scrollWidth > palette.clientWidth
+            ? palette.clientWidth / palette.scrollWidth
+            : 1;
+        const thumbWidth = Math.max(24, ratio * scrollbar.clientWidth);
+        const maxScroll = palette.scrollWidth - palette.clientWidth;
+        const scrollFraction = maxScroll > 0 ? palette.scrollLeft / maxScroll : 0;
+        const maxLeft = scrollbar.clientWidth - thumbWidth;
+        thumb.style.width = thumbWidth + 'px';
+        thumb.style.left = (scrollFraction * maxLeft) + 'px';
+        scrollbar.style.display = ratio >= 1 ? 'none' : 'block';
+    }
+
+    palette.addEventListener('scroll', updateThumb, { passive: true });
+
+    // Drag sur le thumb
+    let dragStartX = 0, dragStartScroll = 0;
+
+    function onDragStart(clientX) {
+        dragStartX = clientX;
+        dragStartScroll = palette.scrollLeft;
+    }
+
+    function onDragMove(clientX) {
+        const dx = clientX - dragStartX;
+        const ratio = palette.scrollWidth > palette.clientWidth
+            ? (palette.scrollWidth - palette.clientWidth) / (scrollbar.clientWidth - thumb.offsetWidth)
+            : 1;
+        palette.scrollLeft = dragStartScroll + dx * ratio;
+    }
+
+    thumb.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        onDragStart(e.clientX);
+        const onMove = (e) => onDragMove(e.clientX);
+        const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    });
+
+    thumb.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        onDragStart(e.touches[0].clientX);
+        const onMove = (e) => { e.preventDefault(); onDragMove(e.touches[0].clientX); };
+        const onEnd = () => { document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onEnd); };
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+    }, { passive: false });
+
+    // Observer pour mettre à jour si la palette change de taille
+    new ResizeObserver(updateThumb).observe(palette);
+    updateThumb();
 }
 
 // Fonction pour afficher le dialogue de modification de couleur
@@ -3327,6 +3390,7 @@ function applyCompactPaletteColors(colors) {
     
     // Réinitialiser les event listeners pour tous les boutons
     initCompactColorButtons();
+    initPaletteScrollbar();
 }
 
 function loadCustomPalette(palette) {

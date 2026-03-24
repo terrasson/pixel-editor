@@ -136,49 +136,46 @@
         <!-- Interface compacte mobile intégrée -->
         <div class="tools-compact">
             <div class="compact-tools">
-                <!-- Ligne principale : Gomme + Couleur actuelle + Couleurs + Undo/Redo -->
+
+                <!-- Ligne 1 : Outils + Undo/Redo -->
                 <div class="compact-main-tools">
-                    <!-- Gauche : Couleur actuelle + Gomme + Pipette -->
-                    <div class="compact-left-tools">
-                        <div class="compact-current-color-container">
-                            <input type="color" id="colorPicker" value="#000000" class="compact-color-picker">
-                            <div class="compact-current-color" id="currentColorDisplay"></div>
+                    <div class="compact-current-color-container">
+                        <input type="color" id="colorPicker" value="#000000" class="compact-color-picker">
+                        <div class="compact-current-color" id="currentColorDisplay"></div>
+                    </div>
+                    <button id="eraserBtn" class="compact-eraser-btn">Gomme</button>
+                    <button id="eyedropperBtn" class="compact-eyedropper-btn eyedropper-btn" title="Pipette (I)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20.71 5.04l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75 1.83-1.84c.39-.38.39-1.02 0-1.41zM17.08 9.94l-3.75-3.75L4.27 15.17v3.75h3.75l9.06-9.06zM6 18v-1.83l6.83-6.83 1.83 1.83L7.83 18H6z" />
+                        </svg>
+                    </button>
+                    <button id="fillBtn" class="compact-eraser-btn fill-btn" title="Remplissage (F)">🪣</button>
+                    <button id="symmetryBtn" class="compact-eraser-btn symmetry-btn" title="Symétrie (X)">⬡</button>
+                    <div class="compact-tools-spacer"></div>
+                    <button id="undoBtn" class="compact-undo-redo-btn" title="Annuler">↺</button>
+                    <button id="redoBtn" class="compact-undo-redo-btn" title="Rétablir">↻</button>
+                </div>
+
+                <!-- Ligne 2 : Palette avec scrollbar custom -->
+                <div class="compact-palette-row">
+                    <div class="palette-scroll-wrapper">
+                        <div class="compact-preset-colors">
+                            <button class="compact-color-btn" style="background-color: #000000"></button>
+                            <button class="compact-color-btn" style="background-color: #FFFFFF"></button>
+                            <button class="compact-color-btn" style="background-color: #FF0000"></button>
+                            <button class="compact-color-btn" style="background-color: #00FF00"></button>
+                            <button class="compact-color-btn" style="background-color: #0000FF"></button>
+                            <button class="compact-color-btn" style="background-color: #FFFF00"></button>
+                            <button class="compact-color-btn" style="background-color: #FF00FF"></button>
+                            <button class="compact-color-btn" style="background-color: #00FFFF"></button>
                         </div>
-                        <button id="eraserBtn" class="compact-eraser-btn">Gomme</button>
-                        <button id="eyedropperBtn" class="compact-eyedropper-btn eyedropper-btn" title="Pipette (I)">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M20.71 5.04l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75 1.83-1.84c.39-.38.39-1.02 0-1.41zM17.08 9.94l-3.75-3.75L4.27 15.17v3.75h3.75l9.06-9.06zM6 18v-1.83l6.83-6.83 1.83 1.83L7.83 18H6z" />
-                            </svg>
-                        </button>
+                        <div class="palette-scrollbar" id="paletteScrollbar">
+                            <div class="palette-scrollbar-thumb" id="paletteScrollbarThumb"></div>
+                        </div>
                     </div>
-
-                    <!-- Centre : Couleurs preset -->
-                    <div class="compact-preset-colors">
-                        <button class="compact-color-btn" style="background-color: #000000"></button>
-                        <button class="compact-color-btn" style="background-color: #FFFFFF"></button>
-                        <button class="compact-color-btn" style="background-color: #FF0000"></button>
-                        <button class="compact-color-btn" style="background-color: #00FF00"></button>
-                        <button class="compact-color-btn" style="background-color: #0000FF"></button>
-                        <button class="compact-color-btn" style="background-color: #FFFF00"></button>
-                        <button class="compact-color-btn" style="background-color: #FF00FF"></button>
-                        <button class="compact-color-btn" style="background-color: #00FFFF"></button>
-                    </div>
-
-                    <!-- Droite : Undo/Redo -->
-                    <div class="compact-right-tools">
-                        <button id="undoBtn" class="compact-undo-redo-btn" title="Annuler (←)">↺</button>
-                        <button id="redoBtn" class="compact-undo-redo-btn" title="Rétablir (→)">↻</button>
-                    </div>
+                    <button id="validateColorBtnMobile" class="compact-add-color-btn" title="Sauvegarder la couleur actuelle dans la palette">＋</button>
                 </div>
 
-                <!-- Ligne outils dessin : + Palette / Fill / Symétrie -->
-                <div class="compact-draw-tools">
-                    <button id="validateColorBtnMobile" class="compact-add-color-btn" title="Ajouter la couleur actuelle à la palette">＋ Palette</button>
-                    <button id="fillBtn" class="compact-eraser-btn fill-btn" title="Remplissage (F)">🪣 Fill</button>
-                    <button id="symmetryBtn" class="compact-eraser-btn symmetry-btn" title="Symétrie (X)">⬡ Sym</button>
-                </div>
             </div>
         </div>
 

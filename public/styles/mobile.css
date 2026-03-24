@@ -533,46 +533,65 @@ body.is-mobile .editor-container {
     background: var(--bg-secondary, #F5F5F7);
 }
 
-/* Styles supprimés - plus de bouton de personnalisation */
+/* Ligne 2 palette */
+.compact-palette-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+
+/* Wrapper scrollable + scrollbar custom */
+.palette-scroll-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 3px;
+}
 
 /* Couleurs preset compactes */
 .compact-preset-colors {
     display: flex;
     gap: 4px;
-    justify-content: flex-start;
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
-    flex: 1;
-    min-width: 0;
-    padding: 4px 0;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.4) rgba(255, 255, 255, 0.1);
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x;
-    /* Espace pour la scrollbar en bas */
-    padding-bottom: 8px;
-    margin-bottom: -4px;
+    padding: 4px 0 2px 0;
+    /* Masquer la scrollbar native */
+    scrollbar-width: none;
 }
 
-/* Style de la scrollbar pour WebKit (Chrome, Safari, Edge) */
 .compact-preset-colors::-webkit-scrollbar {
+    display: none;
+}
+
+/* Scrollbar personnalisée */
+.palette-scrollbar {
     height: 6px;
-}
-
-.compact-preset-colors::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
+    background: #E5E5EA;
     border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+    touch-action: none;
 }
 
-.compact-preset-colors::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.4);
+.palette-scrollbar-thumb {
+    height: 100%;
+    background: var(--color-primary, #FF7300);
     border-radius: 3px;
-    transition: background 0.2s ease;
+    position: absolute;
+    top: 0;
+    left: 0;
+    min-width: 24px;
+    cursor: grab;
+    touch-action: none;
+    transition: background 0.15s ease;
 }
 
-.compact-preset-colors::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.6);
+.palette-scrollbar-thumb:active {
+    cursor: grabbing;
+    background: #E06200;
 }
 
 .compact-color-btn {
@@ -589,7 +608,7 @@ body.is-mobile .editor-container {
     position: relative;
     flex-shrink: 0;
     box-sizing: border-box;
-    touch-action: pan-x;
+    touch-action: manipulation;
 }
 
 .compact-color-btn.custom-color {
