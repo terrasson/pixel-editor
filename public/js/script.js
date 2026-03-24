@@ -247,18 +247,34 @@ const TL = {
     helpRedoAlt:            { en: '<strong>Ctrl/Cmd + Y:</strong> redo undone action (alternative)', fr: '<strong>Ctrl/Cmd + Y :</strong> rétablir l\'action annulée (alternative)' },
     helpSave:               { en: '<strong>Ctrl/Cmd + S:</strong> save project', fr: '<strong>Ctrl/Cmd + S :</strong> sauvegarder le projet' },
     helpNewFrameKey:        { en: '<strong>Ctrl/Cmd + Shift + F:</strong> create a new frame', fr: '<strong>Ctrl/Cmd + Shift + F :</strong> créer une nouvelle frame' },
-    helpEyedropper:         { en: '<strong>I:</strong> toggle eyedropper', fr: '<strong>I :</strong> activer/désactiver la pipette' },
+    helpEyedropper:         { en: '<strong>I:</strong> toggle eyedropper (auto-deactivates after picking)', fr: '<strong>I :</strong> activer/désactiver la pipette (se désactive automatiquement après le pick)' },
     helpEraserKey:          { en: '<strong>E:</strong> toggle eraser', fr: '<strong>E :</strong> activer/désactiver la gomme' },
+    helpFillKey:            { en: '<strong>F:</strong> toggle flood fill (bucket)', fr: '<strong>F :</strong> activer/désactiver le remplissage (seau)' },
+    helpSymHKey:            { en: '<strong>X:</strong> horizontal symmetry (left/right mirror while drawing)', fr: '<strong>X :</strong> symétrie horizontale (miroir gauche/droite en temps réel)' },
+    helpSymVKey:            { en: '<strong>V:</strong> vertical symmetry (top/bottom mirror while drawing)', fr: '<strong>V :</strong> symétrie verticale (miroir haut/bas en temps réel)' },
+    helpSelectionKey:       { en: '<strong>S:</strong> rectangle selection — drag to select, drag inside to move, Del to clear', fr: '<strong>S :</strong> sélection rectangulaire — glissez pour sélectionner, glissez à l\'intérieur pour déplacer, Suppr pour effacer' },
+    helpZoomKeys:           { en: '<strong>Cmd/Ctrl + / −:</strong> zoom in/out &nbsp;·&nbsp; <strong>Cmd/Ctrl + 0:</strong> reset zoom', fr: '<strong>Cmd/Ctrl + / − :</strong> zoom avant/arrière &nbsp;·&nbsp; <strong>Cmd/Ctrl + 0 :</strong> réinitialiser le zoom' },
     helpSpace:              { en: '<strong>Space:</strong> start/stop animation', fr: '<strong>Espace :</strong> lancer/arrêter l\'animation' },
     helpArrows:             { en: '<strong>← →:</strong> navigate between frames', fr: '<strong>← → :</strong> naviguer entre les frames' },
-    helpDelete:             { en: '<strong>Del/Backspace:</strong> delete current frame', fr: '<strong>Suppr/Backspace :</strong> supprimer la frame actuelle' },
-    helpEscape:             { en: '<strong>Esc:</strong> deactivate tools (eyedropper, eraser)', fr: '<strong>Échap :</strong> désactiver les outils (pipette, gomme)' },
+    helpDelete:             { en: '<strong>Del/Backspace:</strong> delete current frame (or clear selection if active)', fr: '<strong>Suppr/Backspace :</strong> supprimer la frame actuelle (ou effacer la sélection si active)' },
+    helpEscape:             { en: '<strong>Esc:</strong> deactivate all tools (eyedropper, eraser, fill, symmetry, selection)', fr: '<strong>Échap :</strong> désactiver tous les outils (pipette, gomme, fill, symétries, sélection)' },
     helpStorageTitle:       { en: '💾 Save & load', fr: '💾 Sauvegarde & chargement' },
     helpStorageSave:        { en: '<strong>Save:</strong> stores the project (frames, colors, FPS) to your account and creates a local backup.', fr: '<strong>Sauvegarder :</strong> enregistre le projet (frames, couleurs, FPS) sur votre compte et crée un backup local.' },
     helpStorageProjects:    { en: '<strong>My projects:</strong> find your creations, reload or delete them.', fr: '<strong>Mes projets :</strong> retrouvez vos créations, rechargez-les ou supprimez-les.' },
     helpStorageLoad:        { en: '<strong>Load:</strong> import a project exported from the app (.json). On iOS, use .txt format if .json is greyed out.', fr: '<strong>Charger :</strong> importez un projet exporté depuis l\'app (.json). Sur iOS, utilisez le format .txt si le fichier .json est grisé.' },
+    helpToolsTitle:         { en: '🛠️ Drawing tools', fr: '🛠️ Outils de dessin' },
+    helpToolFill:           { en: '<strong>Flood fill 🪣:</strong> fills a contiguous zone with the current color. Key: F.', fr: '<strong>Remplissage 🪣 :</strong> remplit une zone contiguë avec la couleur actuelle. Touche : F.' },
+    helpToolSymH:           { en: '<strong>Symmetry H ⬡:</strong> each pixel is mirrored horizontally in real time. Key: X.', fr: '<strong>Symétrie H ⬡ :</strong> chaque pixel est reflété horizontalement en temps réel. Touche : X.' },
+    helpToolSymV:           { en: '<strong>Symmetry V ↕:</strong> each pixel is mirrored vertically in real time. Key: V.', fr: '<strong>Symétrie V ↕ :</strong> chaque pixel est reflété verticalement en temps réel. Touche : V.' },
+    helpToolSelection:      { en: '<strong>Selection ⬚:</strong> drag to select a rectangle, drag inside to move it, Del to erase it. Key: S.', fr: '<strong>Sélection ⬚ :</strong> glissez pour sélectionner un rectangle, glissez à l\'intérieur pour le déplacer, Suppr pour l\'effacer. Touche : S.' },
+    helpToolGridSizes:      { en: '<strong>Grid sizes:</strong> 8×8, 16×16, 32×32, 64×64, 128×128, 256×256, 512×512.', fr: '<strong>Tailles de grille :</strong> 8×8, 16×16, 32×32, 64×64, 128×128, 256×256, 512×512.' },
+    helpRefTitle:           { en: '👻 Reference image', fr: '👻 Image de référence' },
+    helpRefDesc:            { en: 'Load a photo or drawing as a semi-transparent ghost behind the grid to trace it pixel by pixel. Available from the hamburger menu (mobile) or sidebar (desktop).', fr: 'Chargez une photo ou dessin en fantôme semi-transparent derrière la grille pour le tracer pixel par pixel. Accessible depuis le menu hamburger (mobile) ou la sidebar (desktop).' },
+    helpRefMove:            { en: '<strong>✋ Move:</strong> activates a mode where dragging repositions the image and pinching zooms it.', fr: '<strong>✋ Déplacer :</strong> active un mode où glisser repositionne l\'image et pincer la zoom.' },
+    helpRefOpacity:         { en: '<strong>Opacity slider:</strong> adjust the transparency of the reference (0 = invisible, 1 = opaque).', fr: '<strong>Slider opacité :</strong> ajustez la transparence de la référence (0 = invisible, 1 = opaque).' },
     helpExportTitle:        { en: '📤 Export & share', fr: '📤 Export & partage' },
     helpExportGif:          { en: '<strong>Export GIF:</strong> generates an animated GIF of all your frames.', fr: '<strong>Export GIF :</strong> génère un GIF animé de toutes vos frames.' },
+    helpExportPng:          { en: '<strong>PNG frames 📥:</strong> downloads each frame as an individual PNG file (useful for games or apps).', fr: '<strong>PNG frames 📥 :</strong> télécharge chaque frame en PNG individuel (utile pour les jeux ou apps).' },
     helpShare:              { en: '<strong>Share:</strong> generates a public link to your creation (iMessage, AirDrop, copy link). Option to publish to the community Gallery.', fr: '<strong>Partager :</strong> génère un lien public vers votre création (iMessage, AirDrop, copie du lien). Option pour publier dans la Galerie communautaire.' },
     helpGallery:            { en: '<strong>Gallery:</strong> browse creations shared by the community. Accessible from the menu.', fr: '<strong>Galerie :</strong> parcourez les créations partagées par la communauté. Accessible depuis le menu.' },
     helpMobileTitle:        { en: '📱 Mobile tips', fr: '📱 Astuces mobiles' },
@@ -5340,6 +5356,20 @@ function showHelp() {
             <div class="help-item">${tL('helpFPS')}</div>
                 </div>
             <div class="help-section">
+            <h3>${tL('helpToolsTitle')}</h3>
+            <div class="help-item">${tL('helpToolFill')}</div>
+            <div class="help-item">${tL('helpToolSymH')}</div>
+            <div class="help-item">${tL('helpToolSymV')}</div>
+            <div class="help-item">${tL('helpToolSelection')}</div>
+            <div class="help-item">${tL('helpToolGridSizes')}</div>
+                </div>
+            <div class="help-section">
+            <h3>${tL('helpRefTitle')}</h3>
+            <div class="help-item">${tL('helpRefDesc')}</div>
+            <div class="help-item">${tL('helpRefMove')}</div>
+            <div class="help-item">${tL('helpRefOpacity')}</div>
+                </div>
+            <div class="help-section">
             <h3>${tL('helpShortcutsTitle')}</h3>
             <div class="help-item">${tL('helpCopyFrame')}</div>
             <div class="help-item">${tL('helpPasteFrame')}</div>
@@ -5350,6 +5380,11 @@ function showHelp() {
             <div class="help-item">${tL('helpNewFrameKey')}</div>
             <div class="help-item">${tL('helpEyedropper')}</div>
             <div class="help-item">${tL('helpEraserKey')}</div>
+            <div class="help-item">${tL('helpFillKey')}</div>
+            <div class="help-item">${tL('helpSymHKey')}</div>
+            <div class="help-item">${tL('helpSymVKey')}</div>
+            <div class="help-item">${tL('helpSelectionKey')}</div>
+            <div class="help-item">${tL('helpZoomKeys')}</div>
             <div class="help-item">${tL('helpSpace')}</div>
             <div class="help-item">${tL('helpArrows')}</div>
             <div class="help-item">${tL('helpDelete')}</div>
@@ -5364,6 +5399,7 @@ function showHelp() {
             <div class="help-section">
             <h3>${tL('helpExportTitle')}</h3>
             <div class="help-item">${tL('helpExportGif')}</div>
+            <div class="help-item">${tL('helpExportPng')}</div>
             <div class="help-item">${tL('helpShare')}</div>
             <div class="help-item">${tL('helpGallery')}</div>
                 </div>
