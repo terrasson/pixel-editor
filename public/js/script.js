@@ -1358,8 +1358,12 @@ function loadReferenceImage() {
         img.onload = () => {
             referenceImage = img;
             scheduleRender();
+            // Desktop controls
             const controls = document.getElementById('referenceControls');
             if (controls) controls.style.display = 'flex';
+            // Mobile floating panel
+            const mobilePanel = document.getElementById('mobileReferencePanel');
+            if (mobilePanel) mobilePanel.style.display = 'flex';
         };
         img.src = URL.createObjectURL(file);
     };
@@ -1371,6 +1375,8 @@ function clearReferenceImage() {
     scheduleRender();
     const controls = document.getElementById('referenceControls');
     if (controls) controls.style.display = 'none';
+    const mobilePanel = document.getElementById('mobileReferencePanel');
+    if (mobilePanel) mobilePanel.style.display = 'none';
 }
 
 // ── Export PNG frame par frame ────────────────────────────────────────────────
@@ -6105,9 +6111,17 @@ function initEventListeners() {
     // Bouton export PNG frames
     document.getElementById('exportPngBtn')?.addEventListener('click', exportFramesAsPng);
 
-    // Slider opacité référence
+    // Slider opacité référence (desktop + mobile)
     document.getElementById('refOpacitySlider')?.addEventListener('input', (e) => {
         referenceOpacity = parseFloat(e.target.value);
+        const mobileSlider = document.getElementById('refOpacitySliderMobile');
+        if (mobileSlider) mobileSlider.value = e.target.value;
+        scheduleRender();
+    });
+    document.getElementById('refOpacitySliderMobile')?.addEventListener('input', (e) => {
+        referenceOpacity = parseFloat(e.target.value);
+        const desktopSlider = document.getElementById('refOpacitySlider');
+        if (desktopSlider) desktopSlider.value = e.target.value;
         scheduleRender();
     });
 
@@ -8176,6 +8190,14 @@ async function updateUserProfileDisplay() {
                 });
             }
             
+            const loadRefBtnDropdown = document.getElementById('loadRefBtnDropdown');
+            if (loadRefBtnDropdown) {
+                loadRefBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    loadReferenceImage();
+                });
+            }
+
             if (photoToPixelBtnDropdown) {
                 photoToPixelBtnDropdown.addEventListener('click', () => {
                     userDropdown.classList.remove('open');
