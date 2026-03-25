@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin.html
+Disallow: /design-preview.html
+Disallow: /design-preview-simple.html
+Disallow: /index-beta.html
+
+Sitemap: https://pixel-editor.app/sitemap.xml
