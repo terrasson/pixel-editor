@@ -870,10 +870,11 @@ function reorderLayer(fromIndex, toIndex, dropAbove) {
     if (layers[currentLayer]) {
         layers[currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
     }
+    // dropAbove=true → visually above target = higher array index (layers display reversed)
+    // dropAbove=false → visually below target = same array index as target
+    let insertAt = dropAbove ? toIndex + 1 : toIndex;
     const [moved] = layers.splice(fromIndex, 1);
-    // Recalculate toIndex after splice
-    let insertAt = toIndex > fromIndex ? toIndex - 1 : toIndex;
-    if (!dropAbove) insertAt += 1;
+    if (fromIndex < insertAt) insertAt--;
     insertAt = Math.max(0, Math.min(layers.length, insertAt));
     layers.splice(insertAt, 0, moved);
     // Keep currentLayer pointing to the same layer
