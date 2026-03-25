@@ -329,6 +329,24 @@ const TL = {
     helpStampTransparent:   { en: '<strong>Transparent pixels:</strong> empty pixels in the stamp are not applied — only colored pixels are stamped, preserving your background.', fr: '<strong>Pixels transparents :</strong> les pixels vides du tampon ne sont pas appliqués — seuls les pixels colorés sont incrustés, préservant votre fond.' },
     helpStampUndo:          { en: '<strong>Undo:</strong> Ctrl+Z to remove the stamp. <strong>Esc</strong> to cancel before placing.', fr: '<strong>Annuler :</strong> Ctrl+Z pour retirer le tampon. <strong>Échap</strong> pour annuler avant de poser.' },
     helpStampMobile:        { en: '<strong>Mobile:</strong> drag your finger to position the ghost, release to stamp.', fr: '<strong>Mobile :</strong> glissez votre doigt pour positionner l\'aperçu, relâchez pour incruster.' },
+
+    helpLayersTitle:        { en: '🗂 Layers', fr: '🗂 Calques' },
+    helpLayersDesc:         { en: 'Each frame can contain multiple independent layers, like in Photoshop. The final result is a composite of all visible layers from bottom to top.', fr: 'Chaque frame peut contenir plusieurs calques indépendants, comme dans Photoshop. Le résultat final est un composite de tous les calques visibles de bas en haut.' },
+    helpLayersAdd:          { en: '<strong>+ Add:</strong> adds a new transparent layer above the current one.', fr: '<strong>+ Ajouter :</strong> ajoute un nouveau calque transparent au-dessus du calque actuel.' },
+    helpLayersSelect:       { en: '<strong>Select a layer:</strong> click its name in the layers panel to make it active. Drawings apply to the active layer only.', fr: '<strong>Sélectionner un calque :</strong> cliquez sur son nom dans le panneau pour le rendre actif. Les dessins s\'appliquent uniquement au calque actif.' },
+    helpLayersVisibility:   { en: '<strong>Eye icon 👁:</strong> click to show/hide a layer without deleting it. Hidden layers are excluded from export and GIF.', fr: '<strong>Icône œil 👁 :</strong> cliquez pour afficher/masquer un calque sans le supprimer. Les calques cachés sont exclus de l\'export et du GIF.' },
+    helpLayersOpacity:      { en: '<strong>Opacity:</strong> adjust layer transparency from 5% to 100% via the slider (desktop sidebar).', fr: '<strong>Opacité :</strong> ajustez la transparence du calque de 5% à 100% via le curseur (sidebar desktop).' },
+    helpLayersReorder:      { en: '<strong>Reorder:</strong> drag the ⠿ handle to move a layer above or below another.', fr: '<strong>Réorganiser :</strong> glissez la poignée ⠿ pour déplacer un calque au-dessus ou en dessous d\'un autre.' },
+    helpLayersDuplicate:    { en: '<strong>Duplicate:</strong> creates an identical copy of the layer just above it.', fr: '<strong>Dupliquer :</strong> crée une copie identique du calque juste au-dessus.' },
+    helpLayersDelete:       { en: '<strong>Delete:</strong> removes the layer (minimum 1 layer per frame).', fr: '<strong>Supprimer :</strong> supprime le calque (minimum 1 calque par frame).' },
+    helpLayersCopyPaste:    { en: '<strong>Copy/Paste frame:</strong> copies all layers of the current frame, not just the composite image.', fr: '<strong>Copier/Coller une frame :</strong> copie tous les calques de la frame courante, pas seulement l\'image composite.' },
+    helpLayersSave:         { en: '<strong>Cloud save:</strong> all layers are saved to your account and fully restored when you reload the project.', fr: '<strong>Sauvegarde cloud :</strong> tous les calques sont sauvegardés sur votre compte et restaurés fidèlement au rechargement du projet.' },
+    helpLayersMobile:       { en: '<strong>Mobile:</strong> access the layers panel via the 🗂 button in the toolbar or the hamburger menu.', fr: '<strong>Mobile :</strong> accédez au panneau calques via le bouton 🗂 de la barre d\'outils ou le menu hamburger.' },
+
+    helpPhotoTitle:         { en: '📷 Photo → Pixel', fr: '📷 Photo → Pixel' },
+    helpPhotoDesc:          { en: 'Import a photo or image and automatically convert it to pixel art at your grid size. The app detects the pixel block size and centers the result.', fr: 'Importez une photo ou image et convertissez-la automatiquement en pixel art à la taille de votre grille. L\'app détecte la taille des blocs de pixels et centre le résultat.' },
+    helpPhotoColors:        { en: 'All colors detected in the image are automatically added to your custom palette.', fr: 'Toutes les couleurs détectées dans l\'image sont automatiquement ajoutées à votre palette personnalisée.' },
+    helpPhotoAccess:        { en: 'Available from the hamburger menu (mobile) or the sidebar (desktop).', fr: 'Accessible depuis le menu hamburger (mobile) ou la sidebar (desktop).' },
     // Stamp tool
     stampTitle:             { en: '🪄 Import a sprite', fr: '🪄 Importer un sprite' },
     stampSubtitle:          { en: 'Choose a project then pick the frame to stamp on your canvas.', fr: 'Choisissez un projet puis la frame à incruster sur votre canvas.' },
@@ -5796,6 +5814,26 @@ function showHelp() {
             <div class="help-item">${tL('helpExportPng')}</div>
             <div class="help-item">${tL('helpShare')}</div>
             <div class="help-item">${tL('helpGallery')}</div>
+                </div>
+            <div class="help-section">
+            <h3>${tL('helpLayersTitle')}</h3>
+            <div class="help-item">${tL('helpLayersDesc')}</div>
+            <div class="help-item">${tL('helpLayersAdd')}</div>
+            <div class="help-item">${tL('helpLayersSelect')}</div>
+            <div class="help-item">${tL('helpLayersVisibility')}</div>
+            <div class="help-item">${tL('helpLayersOpacity')}</div>
+            <div class="help-item">${tL('helpLayersReorder')}</div>
+            <div class="help-item">${tL('helpLayersDuplicate')}</div>
+            <div class="help-item">${tL('helpLayersDelete')}</div>
+            <div class="help-item">${tL('helpLayersCopyPaste')}</div>
+            <div class="help-item">${tL('helpLayersSave')}</div>
+            <div class="help-item">${tL('helpLayersMobile')}</div>
+                </div>
+            <div class="help-section">
+            <h3>${tL('helpPhotoTitle')}</h3>
+            <div class="help-item">${tL('helpPhotoDesc')}</div>
+            <div class="help-item">${tL('helpPhotoColors')}</div>
+            <div class="help-item">${tL('helpPhotoAccess')}</div>
                 </div>
             <div class="help-section">
             <h3>${tL('helpStampTitle')}</h3>
