@@ -3974,28 +3974,14 @@ function updateCurrentColorDisplay() {
     updateCompactColorSelectionByColor(currentColor);
 }
 
-// Fonction pour mettre à jour la sélection visuelle des couleurs compactes par couleur
+// Fonction pour mettre à jour la sélection visuelle des couleurs (mobile + desktop)
 function updateCompactColorSelectionByColor(color) {
-    console.log('🔍 Mise à jour sélection par couleur:', color);
-    
-    // Retirer la classe 'selected' de tous les boutons
-    document.querySelectorAll('.compact-color-btn').forEach(btn => {
-        btn.classList.remove('selected');
-    });
-    
-    // Trouver et sélectionner le bouton avec la couleur correspondante
-    document.querySelectorAll('.compact-color-btn').forEach(btn => {
-        const btnColor = btn.style.backgroundColor;
-        console.log('🎨 Comparaison:', btnColor, '===', color);
-        
-        // Normaliser les couleurs pour la comparaison
-        const normalizedBtnColor = normalizeColor(btnColor);
-        const normalizedColor = normalizeColor(color);
-        
-        if (normalizedBtnColor === normalizedColor) {
-            btn.classList.add('selected');
-            console.log('✅ Couleur sélectionnée:', btnColor);
-        }
+    const normalizedColor = normalizeColor(color);
+
+    // Mobile (.compact-color-btn) + Desktop (.color-btn)
+    document.querySelectorAll('.compact-color-btn, .color-btn').forEach(btn => {
+        const normalizedBtnColor = normalizeColor(btn.style.backgroundColor);
+        btn.classList.toggle('selected', normalizedBtnColor === normalizedColor);
     });
 }
 
