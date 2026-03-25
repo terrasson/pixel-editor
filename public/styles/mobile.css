@@ -321,9 +321,17 @@ body.is-mobile .editor-container {
 .compact-main-tools {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
     width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 2px;
+}
+
+.compact-main-tools::-webkit-scrollbar {
+    display: none;
 }
 
 /* Outils de gauche : Couleur actuelle + Gomme + Pipette */
@@ -387,6 +395,7 @@ body.is-mobile .editor-container {
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
+    flex-shrink: 0;
 }
 
 .compact-eraser-btn:hover {
@@ -573,6 +582,7 @@ body.is-mobile .editor-container {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     transition: all 0.15s ease;
     flex-shrink: 0;
 }
