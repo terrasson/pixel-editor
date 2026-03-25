@@ -1685,11 +1685,18 @@ body {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 14px;
-    padding: 0;
+    padding: 2px;
     flex-shrink: 0;
     line-height: 1;
+    color: #555;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
 }
+.layer-eye:hover { background: #E8E8ED; color: #1D1D1F; }
+.layer-eye.layer-hidden { color: #BBBBBB; }
+.layer-eye.layer-hidden:hover { color: #888; }
 
 .layer-name {
     flex: 1;
@@ -1699,7 +1706,9 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     cursor: text;
+    transition: opacity 0.15s;
 }
+.layer-name-hidden { opacity: 0.35; font-style: italic; }
 
 .layer-actions { display: flex; gap: 2px; flex-shrink: 0; }
 
