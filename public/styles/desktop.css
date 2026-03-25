@@ -1723,3 +1723,23 @@ body {
 }
 .layer-action-btn:hover { background: #F0F0F2; }
 .layer-delete-btn:hover { background: #FFE5E5; color: #FF3B30; border-color: #FF3B30; }
+
+/* ── Drag & Drop calques ─────────────────────────────────────────────────── */
+.layer-drag-handle {
+    cursor: grab;
+    color: #BBBBBB;
+    font-size: 14px;
+    flex-shrink: 0;
+    padding: 0 2px;
+    user-select: none;
+    line-height: 1;
+}
+.layer-drag-handle:hover { color: #888; }
+.layer-drag-handle:active { cursor: grabbing; }
+
+.layer-item.layer-dragging {
+    opacity: 0.4;
+    background: #F0F0F2;
+}
+.layer-item.layer-drop-above { border-top: 2px solid #FF7300; }
+.layer-item.layer-drop-below { border-bottom: 2px solid #FF7300; }

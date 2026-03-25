@@ -768,7 +768,9 @@ function _renderLayersList(container, layers) {
         const item = document.createElement('div');
         item.className = 'layer-item' + (isActive ? ' active' : '');
         item.dataset.layerIndex = i;
+        item.draggable = true;
         item.innerHTML = `
+            <span class="layer-drag-handle" title="Glisser pour réordonner">⠿</span>
             <button class="layer-eye ${layer.visible ? '' : 'layer-hidden'}" onclick="toggleLayerVisibility(${i})" title="${layer.visible ? 'Masquer le calque' : 'Afficher le calque'}">
                 ${layer.visible
                     ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
@@ -782,12 +784,110 @@ function _renderLayersList(container, layers) {
                 ${layers.length > 1 ? `<button class="layer-action-btn layer-delete-btn" onclick="deleteLayer(${i})" title="Supprimer">×</button>` : ''}
             </div>
         `;
+
+        // Sélectionner le calque au clic
         item.addEventListener('click', (e) => {
-            if (e.target.closest('button')) return;
+            if (e.target.closest('button') || e.target.closest('.layer-drag-handle')) return;
             setActiveLayer(i);
         });
+
+        // ── Drag & Drop desktop ──────────────────────────────────────────────
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(i));
+            setTimeout(() => item.classList.add('layer-dragging'), 0);
+        });
+        item.addEventListener('dragend', () => {
+            item.classList.remove('layer-dragging');
+            container.querySelectorAll('.layer-drop-above,.layer-drop-below').forEach(el => {
+                el.classList.remove('layer-drop-above', 'layer-drop-below');
+            });
+        });
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            container.querySelectorAll('.layer-drop-above,.layer-drop-below').forEach(el => {
+                el.classList.remove('layer-drop-above', 'layer-drop-below');
+            });
+            const rect = item.getBoundingClientRect();
+            const mid = rect.top + rect.height / 2;
+            item.classList.add(e.clientY < mid ? 'layer-drop-above' : 'layer-drop-below');
+        });
+        item.addEventListener('dragleave', () => {
+            item.classList.remove('layer-drop-above', 'layer-drop-below');
+        });
+        item.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+            const toIndex = parseInt(item.dataset.layerIndex);
+            const rect = item.getBoundingClientRect();
+            const dropAbove = e.clientY < rect.top + rect.height / 2;
+            item.classList.remove('layer-drop-above', 'layer-drop-below');
+            if (fromIndex !== toIndex) reorderLayer(fromIndex, toIndex, dropAbove);
+        });
+
+        // ── Touch drag mobile ────────────────────────────────────────────────
+        let _touchDragFrom = null;
+        item.querySelector('.layer-drag-handle').addEventListener('touchstart', (e) => {
+            _touchDragFrom = i;
+            item.classList.add('layer-dragging');
+        }, { passive: true });
+        item.querySelector('.layer-drag-handle').addEventListener('touchmove', (e) => {
+            if (_touchDragFrom === null) return;
+            const touch = e.touches[0];
+            const els = container.querySelectorAll('.layer-item');
+            container.querySelectorAll('.layer-drop-above,.layer-drop-below').forEach(el => {
+                el.classList.remove('layer-drop-above', 'layer-drop-below');
+            });
+            els.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                    el.classList.add(touch.clientY < rect.top + rect.height / 2 ? 'layer-drop-above' : 'layer-drop-below');
+                }
+            });
+        }, { passive: true });
+        item.querySelector('.layer-drag-handle').addEventListener('touchend', (e) => {
+            if (_touchDragFrom === null) return;
+            item.classList.remove('layer-dragging');
+            const target = container.querySelector('.layer-drop-above, .layer-drop-below');
+            if (target) {
+                const toIndex = parseInt(target.dataset.layerIndex);
+                const dropAbove = target.classList.contains('layer-drop-above');
+                target.classList.remove('layer-drop-above', 'layer-drop-below');
+                if (_touchDragFrom !== toIndex) reorderLayer(_touchDragFrom, toIndex, dropAbove);
+            }
+            _touchDragFrom = null;
+        });
+
         container.appendChild(item);
     }
+}
+
+function reorderLayer(fromIndex, toIndex, dropAbove) {
+    const layers = frameLayers[currentFrame];
+    if (!layers || fromIndex === toIndex) return;
+    // Save active layer first
+    if (layers[currentLayer]) {
+        layers[currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+    }
+    const [moved] = layers.splice(fromIndex, 1);
+    // Recalculate toIndex after splice
+    let insertAt = toIndex > fromIndex ? toIndex - 1 : toIndex;
+    if (!dropAbove) insertAt += 1;
+    insertAt = Math.max(0, Math.min(layers.length, insertAt));
+    layers.splice(insertAt, 0, moved);
+    // Keep currentLayer pointing to the same layer
+    if (currentLayer === fromIndex) {
+        currentLayer = insertAt;
+    } else {
+        // Adjust if needed
+        const cl = currentLayer > fromIndex ? currentLayer - 1 : currentLayer;
+        currentLayer = cl >= insertAt ? cl + 1 : cl;
+    }
+    currentLayer = Math.max(0, Math.min(layers.length - 1, currentLayer));
+    frames[currentFrame] = computeComposite(currentFrame);
+    updateLayersPanel();
+    scheduleRender();
 }
 
 function updateLayersPanel() {

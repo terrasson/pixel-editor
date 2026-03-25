@@ -2482,3 +2482,7 @@ body.drag-over .grid-container {
 #mobileLayersPanel .layer-eye { display: flex; align-items: center; color: #555; }
 #mobileLayersPanel .layer-eye.layer-hidden { color: #BBBBBB; }
 #mobileLayersPanel .layer-action-btn { padding: 4px 8px; font-size: 12px; }
+#mobileLayersPanel .layer-drag-handle { font-size: 18px; color: #BBBBBB; cursor: grab; padding: 0 4px; }
+#mobileLayersPanel .layer-item.layer-drop-above { border-top: 2px solid #FF7300; }
+#mobileLayersPanel .layer-item.layer-drop-below { border-bottom: 2px solid #FF7300; }
+#mobileLayersPanel .layer-item.layer-dragging { opacity: 0.4; }
