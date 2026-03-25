@@ -26,6 +26,10 @@ let selectionRect = null;        // { minCol, minRow, maxCol, maxRow } final bou
 let selectionCut = null;         // Array of {offset, pixel} - pixels cut from original position
 let isMovingSelection = false;
 let selectionMoveStart = null;   // {col, row} where move drag started
+// ── Multi-couches ─────────────────────────────────────────────────────────────
+let frameLayers = [];      // frameLayers[frameIndex] = [{id,name,visible,opacity,pixels}]
+let currentLayer = 0;      // index du calque actif
+let _nextLayerId = 0;      // compteur d'IDs uniques
 // ─────────────────────────────────────────────────────────────────────────────
 let isStampMode = false;  // Outil tampon
 let stampPixels = null;
@@ -593,6 +597,216 @@ function applyGridTransform() {
     renderCanvas(); // Phase 3 : le canvas gère le zoom/pan via setTransform()
 }
 
+// ── Système de calques ────────────────────────────────────────────────────────
+function _makeEmptyPixels() {
+    const n = currentGridSize * currentGridSize;
+    return Array.from({ length: n }, () => ({ color: '#FFFFFF', isEmpty: true }));
+}
+
+function createLayer(name) {
+    return { id: _nextLayerId++, name: name || 'Calque', visible: true, opacity: 1.0, pixels: _makeEmptyPixels() };
+}
+
+function computeComposite(frameIndex) {
+    const layers = frameLayers[frameIndex];
+    if (!layers || !layers.length) return (frames[frameIndex] || []).map(p => p ? {...p} : {color:'#FFFFFF',isEmpty:true});
+    const n = currentGridSize * currentGridSize;
+    const result = Array.from({ length: n }, () => ({ color: '#FFFFFF', isEmpty: true }));
+    layers.forEach(layer => {
+        if (!layer.visible) return;
+        layer.pixels.forEach((pixel, i) => {
+            if (pixel && !pixel.isEmpty) result[i] = { ...pixel };
+        });
+    });
+    return result;
+}
+
+function initLayersFromFrames() {
+    _nextLayerId = 0;
+    frameLayers = frames.map(frame => {
+        const layer = createLayer('Fond');
+        const n = currentGridSize * currentGridSize;
+        layer.pixels = Array.from({ length: n }, (_, i) => {
+            const p = frame ? frame[i] : null;
+            return p ? { ...p } : { color: '#FFFFFF', isEmpty: true };
+        });
+        return [layer];
+    });
+    currentLayer = 0;
+}
+
+function ensureFrameHasLayers(frameIndex) {
+    if (!frameLayers[frameIndex] || !frameLayers[frameIndex].length) {
+        const layer = createLayer('Fond');
+        const n = currentGridSize * currentGridSize;
+        const rawFrame = frames[frameIndex] || [];
+        layer.pixels = Array.from({ length: n }, (_, i) => {
+            const p = rawFrame[i];
+            return p ? { ...p } : { color: '#FFFFFF', isEmpty: true };
+        });
+        frameLayers[frameIndex] = [layer];
+    }
+}
+
+function setActiveLayer(index) {
+    if (!frameLayers[currentFrame] || index < 0 || index >= frameLayers[currentFrame].length) return;
+    // Save current layer before switching
+    if (frameLayers[currentFrame][currentLayer]) {
+        frameLayers[currentFrame][currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+    }
+    currentLayer = index;
+    // Load new layer into buffer
+    const n = currentGridSize * currentGridSize;
+    const layerPixels = frameLayers[currentFrame][currentLayer].pixels;
+    currentFrameBuffer = Array.from({ length: n }, (_, i) => {
+        const p = layerPixels[i];
+        return p ? { ...p } : { color: '#FFFFFF', isEmpty: true };
+    });
+    updateLayersPanel();
+    scheduleRender();
+}
+
+function addLayer() {
+    if (!frameLayers[currentFrame]) ensureFrameHasLayers(currentFrame);
+    // Save current state
+    if (frameLayers[currentFrame][currentLayer]) {
+        frameLayers[currentFrame][currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+    }
+    const name = `Calque ${frameLayers[currentFrame].length + 1}`;
+    const newLayer = createLayer(name);
+    frameLayers[currentFrame].push(newLayer);
+    currentLayer = frameLayers[currentFrame].length - 1;
+    const n = currentGridSize * currentGridSize;
+    currentFrameBuffer = Array.from({ length: n }, () => ({ color: '#FFFFFF', isEmpty: true }));
+    frames[currentFrame] = computeComposite(currentFrame);
+    updateLayersPanel();
+    scheduleRender();
+}
+
+function deleteLayer(index) {
+    if (!frameLayers[currentFrame] || frameLayers[currentFrame].length <= 1) return;
+    frameLayers[currentFrame].splice(index, 1);
+    if (currentLayer >= frameLayers[currentFrame].length) currentLayer = frameLayers[currentFrame].length - 1;
+    // Load new active layer
+    const n = currentGridSize * currentGridSize;
+    const layerPixels = frameLayers[currentFrame][currentLayer].pixels;
+    currentFrameBuffer = Array.from({ length: n }, (_, i) => {
+        const p = layerPixels[i];
+        return p ? { ...p } : { color: '#FFFFFF', isEmpty: true };
+    });
+    frames[currentFrame] = computeComposite(currentFrame);
+    updateLayersPanel();
+    scheduleRender();
+}
+
+function duplicateLayer(index) {
+    if (!frameLayers[currentFrame]?.[index]) return;
+    // Save current first
+    if (frameLayers[currentFrame][currentLayer]) {
+        frameLayers[currentFrame][currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+    }
+    const src = frameLayers[currentFrame][index];
+    const copy = { id: _nextLayerId++, name: src.name + ' copie', visible: src.visible, opacity: src.opacity, pixels: src.pixels.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true }) };
+    frameLayers[currentFrame].splice(index + 1, 0, copy);
+    setActiveLayer(index + 1);
+}
+
+function mergeLayerDown(index) {
+    const layers = frameLayers[currentFrame];
+    if (!layers || index <= 0 || index >= layers.length) return;
+    // Save current first
+    if (layers[currentLayer]) {
+        layers[currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+    }
+    const top = layers[index];
+    const bottom = layers[index - 1];
+    top.pixels.forEach((pixel, i) => {
+        if (pixel && !pixel.isEmpty) bottom.pixels[i] = { ...pixel };
+    });
+    layers.splice(index, 1);
+    if (currentLayer >= index) currentLayer = Math.max(0, currentLayer - 1);
+    // Load new active
+    const n = currentGridSize * currentGridSize;
+    const layerPixels = layers[currentLayer].pixels;
+    currentFrameBuffer = Array.from({ length: n }, (_, i) => {
+        const p = layerPixels[i];
+        return p ? { ...p } : { color: '#FFFFFF', isEmpty: true };
+    });
+    frames[currentFrame] = computeComposite(currentFrame);
+    updateLayersPanel();
+    scheduleRender();
+}
+
+function toggleLayerVisibility(index) {
+    if (!frameLayers[currentFrame]?.[index]) return;
+    frameLayers[currentFrame][index].visible = !frameLayers[currentFrame][index].visible;
+    frames[currentFrame] = computeComposite(currentFrame);
+    updateLayersPanel();
+    scheduleRender();
+}
+
+function setLayerOpacity(index, opacity) {
+    if (!frameLayers[currentFrame]?.[index]) return;
+    frameLayers[currentFrame][index].opacity = Math.max(0.05, Math.min(1, opacity));
+    frames[currentFrame] = computeComposite(currentFrame);
+    scheduleRender();
+}
+
+function renameLayer(index, name) {
+    if (!frameLayers[currentFrame]?.[index] || !name.trim()) return;
+    frameLayers[currentFrame][index].name = name.trim();
+    updateLayersPanel();
+}
+
+function _renderLayersList(container, layers) {
+    if (!container) return;
+    container.innerHTML = '';
+    // Display in reverse (top layer first visually)
+    for (let i = layers.length - 1; i >= 0; i--) {
+        const layer = layers[i];
+        const isActive = i === currentLayer;
+        const item = document.createElement('div');
+        item.className = 'layer-item' + (isActive ? ' active' : '');
+        item.dataset.layerIndex = i;
+        item.innerHTML = `
+            <button class="layer-eye" onclick="toggleLayerVisibility(${i})" title="${layer.visible ? 'Masquer' : 'Afficher'}">${layer.visible ? '👁' : '🙈'}</button>
+            <span class="layer-name" ondblclick="promptRenameLayer(${i})" title="Double-cliquer pour renommer">${layer.name}</span>
+            <div class="layer-actions">
+                ${i > 0 ? `<button class="layer-action-btn" onclick="mergeLayerDown(${i})" title="Fusionner avec le calque dessous">⬇</button>` : ''}
+                <button class="layer-action-btn" onclick="duplicateLayer(${i})" title="Dupliquer">⧉</button>
+                ${layers.length > 1 ? `<button class="layer-action-btn layer-delete-btn" onclick="deleteLayer(${i})" title="Supprimer">×</button>` : ''}
+            </div>
+        `;
+        item.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return;
+            setActiveLayer(i);
+        });
+        container.appendChild(item);
+    }
+}
+
+function updateLayersPanel() {
+    const layers = frameLayers[currentFrame] || [];
+    _renderLayersList(document.getElementById('layersList'), layers);
+    _renderLayersList(document.getElementById('layersListMobile'), layers);
+}
+
+function promptRenameLayer(index) {
+    const layer = frameLayers[currentFrame]?.[index];
+    if (!layer) return;
+    const newName = prompt('Nom du calque :', layer.name);
+    if (newName) renameLayer(index, newName);
+}
+
+function toggleMobileLayersPanel() {
+    const panel = document.getElementById('mobileLayersPanel');
+    if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function scheduleRender() {
+    requestAnimationFrame(() => renderCanvas());
+}
+
 // ── Phase 2 : rendu canvas (source de vérité = currentFrameBuffer) ────────────
 function renderCanvas() {
     if (!pixelCtx || !pixelCanvas) return;
@@ -650,14 +864,33 @@ function renderCanvas() {
         pixelCtx.globalAlpha = 1.0;
     }
 
-    // Frame courante (depuis le buffer live)
-    currentFrameBuffer.forEach((pixel, i) => {
-        if (!pixel || pixel.isEmpty) return;
-        const col = i % currentGridSize;
-        const row = Math.floor(i / currentGridSize);
-        pixelCtx.fillStyle = pixel.color;
-        pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-    });
+    // Calques (composite de bas en haut, calque actif depuis le buffer live)
+    const _layers = frameLayers[currentFrame] || [];
+    if (_layers.length > 0) {
+        for (let _li = 0; _li < _layers.length; _li++) {
+            const _layer = _layers[_li];
+            if (!_layer.visible) continue;
+            const _pixels = _li === currentLayer ? currentFrameBuffer : _layer.pixels;
+            if (_layer.opacity < 1.0) pixelCtx.globalAlpha = _layer.opacity;
+            _pixels.forEach((pixel, i) => {
+                if (!pixel || pixel.isEmpty) return;
+                const col = i % currentGridSize;
+                const row = Math.floor(i / currentGridSize);
+                pixelCtx.fillStyle = pixel.color;
+                pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+            });
+            if (_layer.opacity < 1.0) pixelCtx.globalAlpha = 1.0;
+        }
+    } else {
+        // Fallback : pas encore de calques, utiliser le buffer directement
+        currentFrameBuffer.forEach((pixel, i) => {
+            if (!pixel || pixel.isEmpty) return;
+            const col = i % currentGridSize;
+            const row = Math.floor(i / currentGridSize);
+            pixelCtx.fillStyle = pixel.color;
+            pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+        });
+    }
 
     // Lignes de grille : visibles si chaque cellule fait au moins 6px écran
     const screenCellPx = cellSize * gridZoom;
@@ -2228,6 +2461,15 @@ async function showLocalProjects() {
                 currentFrame = Math.max(0, frames.length - 1);
             }
 
+            // Restore layers or rebuild from composite frames
+            if (data.frameLayers && Array.isArray(data.frameLayers)) {
+                frameLayers = data.frameLayers;
+                _nextLayerId = data._nextLayerId || frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
+            } else {
+                initLayersFromFrames();
+            }
+            currentLayer = 0;
+
             const colors = data.custom_colors || data.customColors;
             customColors = [];
             if (colors) {
@@ -2252,12 +2494,12 @@ async function showLocalProjects() {
             if (data.fps) {
                 setAnimationFPSValue(data.fps);
             }
-            
+
             const title = document.getElementById('projectTitle');
             if (title) {
                 title.textContent = data.name || data.projectTitle || projectMeta.name;
             }
-            
+
             updateFramesList();
             loadFrame(currentFrame);
             logUsageEvent('project_loaded', {
@@ -4046,7 +4288,11 @@ function saveActionToHistory(startState, modifiedPixels) {
 function restoreFromHistory(state, isRedo = false) {
     if (CANVAS_RENDERING) {
         currentFrameBuffer = state.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
-        frames[currentFrame] = currentFrameBuffer.map(p => ({ ...p }));
+        // Sync active layer pixels with restored buffer
+        if (frameLayers[currentFrame]?.[currentLayer]) {
+            frameLayers[currentFrame][currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+        }
+        frames[currentFrame] = computeComposite(currentFrame);
         renderCanvas();
         updateCurrentFrameThumbnail();
         console.log(`%c${isRedo ? '✅ Action rétablie' : '↺ Action annulée'}`, 'color: #007bff;', { pixelsRestaurés: state.length });
@@ -4274,7 +4520,12 @@ function cleanUpOutsideElements() {
 // Gestion des frames
 function saveCurrentFrame() {
     if (CANVAS_RENDERING) {
-        frames[currentFrame] = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+        // Save active layer
+        if (frameLayers[currentFrame]?.[currentLayer]) {
+            frameLayers[currentFrame][currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+        }
+        // Recompute composite
+        frames[currentFrame] = computeComposite(currentFrame);
         updateCurrentFrameThumbnail();
         return;
     }
@@ -4352,13 +4603,16 @@ function loadFrame(frameIndex) {
 
     if (CANVAS_RENDERING) {
         const total = currentGridSize * currentGridSize;
-        const rawFrame = frames[frameIndex] || [];
+        currentFrame = frameIndex;
+        ensureFrameHasLayers(frameIndex);
+        if (currentLayer >= frameLayers[frameIndex].length) currentLayer = frameLayers[frameIndex].length - 1;
+        const layerPixels = frameLayers[frameIndex][currentLayer].pixels;
         currentFrameBuffer = Array.from({ length: total }, (_, i) => {
-            const p = rawFrame[i];
+            const p = layerPixels[i];
             return p ? { ...p } : { color: '#FFFFFF', isEmpty: true };
         });
-        currentFrame = frameIndex;
         updateFramesList();
+        updateLayersPanel();
         renderCanvas();
         setTimeout(() => { saveToHistory(); }, 10);
         return;
@@ -4441,7 +4695,9 @@ function loadFrame(frameIndex) {
 function addFrame() {
     saveCurrentFrame();
     frames.push([]);
+    frameLayers.push([createLayer('Fond')]);
     currentFrame = frames.length - 1;
+    currentLayer = 0;
     loadFrame(currentFrame);
 }
 
@@ -4591,6 +4847,10 @@ function insertFrame(index) {
     
     // Insérer la nouvelle frame à l'index spécifié
     frames.splice(index, 0, newFrame);
+    const newLayerForInsert = createLayer('Fond');
+    newLayerForInsert.pixels = newFrame.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+    frameLayers.splice(index, 0, [newLayerForInsert]);
+    currentLayer = 0;
     currentFrame = index;
     loadFrame(currentFrame);
     updateFramesList();
@@ -4605,9 +4865,11 @@ function deleteCurrentFrame() {
     
     if (confirm(tL('confirmDeleteFrame', currentFrame + 1))) {
         frames.splice(currentFrame, 1);
+        frameLayers.splice(currentFrame, 1);
         if (currentFrame >= frames.length) {
             currentFrame = frames.length - 1;
         }
+        currentLayer = 0;
         loadFrame(currentFrame);
         updateFramesList();
     }
@@ -4622,8 +4884,11 @@ function clearAllFrames() {
         if (CANVAS_RENDERING) {
             currentFrameBuffer = Array.from({ length: currentGridSize * currentGridSize }, () => ({ color: '#FFFFFF', isEmpty: true }));
             frames[0] = currentFrameBuffer.map(p => ({ ...p }));
+            initLayersFromFrames();
+            currentLayer = 0;
             initHistory();
             updateFramesList();
+            updateLayersPanel();
             renderCanvas();
             return;
         }
@@ -5096,12 +5361,15 @@ document.head.appendChild(styleSheet);
 function reorderFrames(fromIndex, toIndex) {
     // Sauvegarder la frame déplacée
     const frameToMove = frames[fromIndex];
-    
+    const layersToMove = frameLayers[fromIndex];
+
     // Supprimer la frame de son emplacement d'origine
     frames.splice(fromIndex, 1);
-    
+    frameLayers.splice(fromIndex, 1);
+
     // Insérer la frame à sa nouvelle position
     frames.splice(toIndex, 0, frameToMove);
+    frameLayers.splice(toIndex, 0, layersToMove);
     
     // Mettre à jour l'index courant si nécessaire
     if (currentFrame === fromIndex) {
@@ -5722,6 +5990,15 @@ async function loadFromServer() {
                         currentFrame = Math.max(0, frames.length - 1);
                     }
                     console.log('📐 Frames normalisées', { length: frames.length });
+
+                    // Restore layers or rebuild from composite frames
+                    if (data.frameLayers && Array.isArray(data.frameLayers)) {
+                        frameLayers = data.frameLayers;
+                        _nextLayerId = data._nextLayerId || frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
+                    } else {
+                        initLayersFromFrames();
+                    }
+                    currentLayer = 0;
 
                     const colors = data.custom_colors || data.customColors;
                     customColors = [];
@@ -6377,9 +6654,10 @@ document.addEventListener('DOMContentLoaded', () => {
         pasteBtn.disabled = !copiedFrame;
     }
     
+    initLayersFromFrames();
     updateFramesList();
     loadFrame(0);
-    
+
     // Système de raccourcis clavier complet
     document.addEventListener('keydown', handleKeyboardShortcuts);
 

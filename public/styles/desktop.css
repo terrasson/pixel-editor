@@ -1627,3 +1627,88 @@ body {
     background: rgba(255, 255, 255, 0.25) !important;
     transform: translateY(-1px) !important;
 }
+/* ── Panel calques ──────────────────────────────────────────────────────────── */
+.layers-panel {
+    margin-top: 12px;
+    border: 1px solid #E5E5EA;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.layers-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    background: #F5F5F7;
+    border-bottom: 1px solid #E5E5EA;
+}
+
+.layers-panel-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1D1D1F;
+}
+
+.add-layer-btn {
+    font-size: 11px;
+    padding: 3px 8px;
+    background: #FF7300;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.add-layer-btn:hover { background: #E06200; }
+
+.layers-list {
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.layer-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-bottom: 1px solid #F0F0F2;
+    transition: background 0.1s;
+}
+.layer-item:last-child { border-bottom: none; }
+.layer-item:hover { background: #F5F5F7; }
+.layer-item.active { background: #FFF3E8; border-left: 3px solid #FF7300; }
+
+.layer-eye {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.layer-name {
+    flex: 1;
+    font-size: 12px;
+    color: #1D1D1F;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: text;
+}
+
+.layer-actions { display: flex; gap: 2px; flex-shrink: 0; }
+
+.layer-action-btn {
+    background: none;
+    border: 1px solid #E5E5EA;
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-size: 11px;
+    cursor: pointer;
+    color: #666;
+}
+.layer-action-btn:hover { background: #F0F0F2; }
+.layer-delete-btn:hover { background: #FFE5E5; color: #FF3B30; border-color: #FF3B30; }

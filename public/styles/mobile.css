@@ -2419,3 +2419,64 @@ body.drag-over .grid-container {
 .play-button.playing::before {
     background: var(--color-primary, #FF7300);
 }
+
+/* ── Panel calques mobile ─────────────────────────────────────────────────── */
+#mobileLayersPanel {
+    position: fixed;
+    bottom: 90px;
+    left: 8px;
+    right: 8px;
+    background: white;
+    border: 1px solid #E5E5EA;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 1000;
+    max-height: 280px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-layers-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #E5E5EA;
+    background: #F5F5F7;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.mobile-add-layer-btn {
+    margin-left: auto;
+    font-size: 11px;
+    padding: 4px 10px;
+    background: #FF7300;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+#mobileLayersPanel .layers-list {
+    overflow-y: auto;
+    flex: 1;
+}
+
+#mobileLayersPanel .layer-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #F0F0F2;
+    cursor: pointer;
+}
+#mobileLayersPanel .layer-item.active {
+    background: #FFF3E8;
+    border-left: 3px solid #FF7300;
+}
+#mobileLayersPanel .layer-name { font-size: 13px; }
+#mobileLayersPanel .layer-eye { font-size: 16px; }
+#mobileLayersPanel .layer-action-btn { padding: 4px 8px; font-size: 12px; }

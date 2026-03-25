@@ -156,6 +156,7 @@
                     <button id="symmetryBtn" class="compact-eraser-btn symmetry-btn" title="Symétrie H (X)">⬡</button>
                     <button id="symmetryVBtn" class="compact-eraser-btn symmetry-v-btn" title="Symétrie V (V)">↕</button>
                     <button id="selectionBtn" class="compact-eraser-btn selection-btn" title="Sélection (S)">⬚</button>
+                    <button class="compact-eraser-btn layers-btn" onclick="toggleMobileLayersPanel()" title="Calques">🗂</button>
                     <div class="compact-tools-spacer"></div>
                     <button id="undoBtn" class="compact-undo-redo-btn" title="Annuler">↺</button>
                     <button id="redoBtn" class="compact-undo-redo-btn" title="Rétablir">↻</button>
@@ -191,6 +192,16 @@
             <button class="ref-move-btn mobile-ref-btn" onclick="toggleReferenceMoveMode()" title="Déplacer / zoomer l'image">✋</button>
             <button class="mobile-ref-btn" onclick="resetReferencePosition()" title="Recentrer">↺</button>
             <button class="mobile-ref-btn" onclick="clearReferenceImage()">✕</button>
+        </div>
+
+        <!-- Panneau calques mobile -->
+        <div id="mobileLayersPanel" style="display:none;">
+            <div class="mobile-layers-header">
+                <span>🗂 Calques</span>
+                <button onclick="addLayer()" class="mobile-add-layer-btn">+ Calque</button>
+                <button onclick="document.getElementById('mobileLayersPanel').style.display='none'" class="mobile-ref-btn">✕</button>
+            </div>
+            <div class="layers-list" id="layersListMobile"></div>
         </div>
 
         <!-- Modal pour personnaliser la palette -->
@@ -390,6 +401,15 @@
                     <button id="symmetryVBtn" class="tool-chip symmetry-v-btn" title="Symétrie V (V)">↕ Sym.V</button>
                     <button id="selectionBtn" class="tool-chip selection-btn" title="Sélection (S)">⬚ Select</button>
                 </div>
+                <!-- Panel calques -->
+                <div class="layers-panel" id="layersPanel">
+                    <div class="layers-panel-header">
+                        <span class="layers-panel-title">🗂 Calques</span>
+                        <button class="add-layer-btn" onclick="addLayer()" title="Nouveau calque">+ Calque</button>
+                    </div>
+                    <div class="layers-list" id="layersList"></div>
+                </div>
+
                 <!-- Section image de référence -->
                 <div class="tool-section">
                     <button id="loadRefBtn" class="tool-btn" onclick="loadReferenceImage()" title="Charger une image de référence">👻 Référence</button>
