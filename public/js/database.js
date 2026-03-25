@@ -32,7 +32,7 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
-            const { name, frames, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
+            const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
 
             // Check if project already exists
             const { data: existing } = await this.supabase
@@ -48,6 +48,8 @@ class DatabaseService {
                     .from('pixel_projects')
                     .update({
                         frames,
+                        frame_layers: frameLayers ?? null,
+                        next_layer_id: _nextLayerId ?? 0,
                         current_frame: currentFrame,
                         fps: fps || 24,
                         custom_palette: customPalette,
@@ -69,6 +71,8 @@ class DatabaseService {
                         user_id: userId,
                         name,
                         frames,
+                        frame_layers: frameLayers ?? null,
+                        next_layer_id: _nextLayerId ?? 0,
                         current_frame: currentFrame,
                         fps: fps || 24,
                         custom_palette: customPalette,

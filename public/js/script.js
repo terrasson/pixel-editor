@@ -2364,6 +2364,8 @@ function autoSaveProjectLocal(name) {
         id: Date.now().toString(),
         name: projectName,
         frames: frames,
+        frameLayers: frameLayers,
+        _nextLayerId: _nextLayerId,
         currentFrame: currentFrame,
         customColors: customColors,
         customPalette: customPalette,
@@ -2569,9 +2571,10 @@ async function showLocalProjects() {
             }
 
             // Restore layers or rebuild from composite frames
-            if (data.frameLayers && Array.isArray(data.frameLayers)) {
-                frameLayers = data.frameLayers;
-                _nextLayerId = data._nextLayerId || frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
+            const rawLayers = data.frame_layers || data.frameLayers;
+            if (rawLayers && Array.isArray(rawLayers)) {
+                frameLayers = typeof rawLayers === 'string' ? JSON.parse(rawLayers) : rawLayers;
+                _nextLayerId = data.next_layer_id || data._nextLayerId || frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
             } else {
                 initLayersFromFrames();
             }
@@ -5924,6 +5927,8 @@ function saveProject() {
         const projectName = (projectNameInput.value || 'pixel_animation').trim();
         const projectData = {
             frames: frames,
+            frameLayers: frameLayers,
+            _nextLayerId: _nextLayerId,
             currentFrame: currentFrame,
             fps: animationFPS || 24,
             customPalette: customPalette,
@@ -6115,9 +6120,10 @@ async function loadFromServer() {
                     console.log('📐 Frames normalisées', { length: frames.length });
 
                     // Restore layers or rebuild from composite frames
-                    if (data.frameLayers && Array.isArray(data.frameLayers)) {
-                        frameLayers = data.frameLayers;
-                        _nextLayerId = data._nextLayerId || frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
+                    const rawLayers2 = data.frame_layers || data.frameLayers;
+                    if (rawLayers2 && Array.isArray(rawLayers2)) {
+                        frameLayers = typeof rawLayers2 === 'string' ? JSON.parse(rawLayers2) : rawLayers2;
+                        _nextLayerId = data.next_layer_id || data._nextLayerId || frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
                     } else {
                         initLayersFromFrames();
                     }
@@ -6471,6 +6477,8 @@ async function saveProjectSmart() {
         const projectData = {
             name: fileName,
             frames: frames,
+            frameLayers: frameLayers,
+            _nextLayerId: _nextLayerId,
             currentFrame: currentFrame,
             fps: animationFPS || 24,
             customPalette: customPalette,
