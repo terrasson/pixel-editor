@@ -250,6 +250,8 @@ body {
     box-shadow: none;
     overflow-y: auto;
     gap: 16px;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 /* Toolbar original cachée sur desktop */
@@ -1662,7 +1664,7 @@ body {
 .add-layer-btn:hover { background: #E06200; }
 
 .layers-list {
-    max-height: 180px;
+    max-height: 140px;
     overflow-y: auto;
 }
 
