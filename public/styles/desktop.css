@@ -690,6 +690,11 @@ body {
     border-color: #FF7300;
 }
 
+.color-btn.selected {
+    border: 2px solid #FF7300;
+    box-shadow: 0 0 0 1px #FF7300;
+}
+
 /* ===================================================================
    STYLES POUR LES COULEURS PERSONNALISÉES
    =================================================================== */

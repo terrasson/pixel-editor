@@ -359,16 +359,10 @@
 
         <div class="tools-secondary">
             <div class="color-palette">
-                <!-- Ligne 1 : Couleur actuelle -->
-                <div class="color-picker-row">
-                    <div class="desktop-current-color-container">
-                        <span class="color-label">Couleur actuelle :</span>
-                        <div class="desktop-current-color" id="desktopCurrentColorDisplay"></div>
-                    </div>
-                    <input type="color" id="colorPicker" value="#000000">
-                </div>
+                <!-- colorPicker caché — utilisé en interne pour la sélection de couleur -->
+                <input type="color" id="colorPicker" value="#000000" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
 
-                <!-- Ligne 2 : Validate + Undo + Redo -->
+                <!-- Ligne 1 : Validate + Undo + Redo -->
                 <div class="tools-row validate-undo-redo-row">
                     <button id="validateColorBtn" class="validate-color-btn"
                         title="Ajouter cette couleur à la palette">✓</button>
