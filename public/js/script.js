@@ -7663,8 +7663,10 @@ async function importPixelArtImage(file) {
                         }
                     }
 
-                    // Appliquer la frame sur la grille courante
-                    frames[currentFrame] = newFrame;
+                    // Appliquer la frame sur le calque actuel (multi-couches)
+                    ensureFrameHasLayers(currentFrame);
+                    frameLayers[currentFrame][currentLayer].pixels = newFrame.map(p => ({ ...p }));
+                    frames[currentFrame] = computeComposite(currentFrame);
                     loadFrame(currentFrame);
                     updateFramesList();
 
