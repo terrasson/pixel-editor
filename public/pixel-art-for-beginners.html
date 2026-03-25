@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art for Beginners — How to Make Your First Pixel Art</title>
+    <meta name="description" content="New to pixel art? This beginner's guide teaches you how to make pixel art step by step. Start creating in minutes with our free online editor — no experience needed.">
+
+    <link rel="canonical" href="https://pixel-editor.app/pixel-art-for-beginners.html">
+
+    <meta property="og:title" content="Pixel Art for Beginners — How to Make Your First Pixel Art">
+    <meta property="og:description" content="Learn pixel art from scratch. Step-by-step guide for beginners with a free online editor to practice.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pixel-editor.app/pixel-art-for-beginners.html">
+    <meta property="og:image" content="https://pixel-editor.app/assets/og-image.svg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://pixel-editor.app/assets/og-image.svg">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I start making pixel art?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Open a free online pixel art editor like Pixel Editor, start with a small canvas (32x32 pixels), pick a few colors, and draw simple shapes. Start with inanimate objects like a coin or a gem before attempting characters." }
+        },
+        {
+          "@type": "Question",
+          "name": "What size canvas should a beginner use for pixel art?",
+          "acceptedAnswer": { "@type": "Answer", "text": "32x32 pixels is the ideal starting size for beginners. It's small enough to finish quickly, large enough to show detail, and the most common size for game sprites and icons." }
+        },
+        {
+          "@type": "Question",
+          "name": "How many colors should I use in pixel art?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Start with 4–6 colors per piece. Limiting your palette forces creative decisions and results in more cohesive art. Many classic pixel art masterpieces used only 4 colors." }
+        },
+        {
+          "@type": "Question",
+          "name": "What tools do I need to start making pixel art?",
+          "acceptedAnswer": { "@type": "Answer", "text": "You only need a browser. Free online editors like Pixel Editor have everything built in — a canvas, drawing tools, a color picker, and export. No software purchase needed." }
+        }
+      ]
+    }
+    </script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --blue: #007AFF; --purple: #5856D6; --bg: #0d0d1a; --card: rgba(255,255,255,0.05); --border: rgba(255,255,255,0.1); --text: #ffffff; --muted: rgba(255,255,255,0.55); }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; }
+        header { display: flex; align-items: center; justify-content: space-between; padding: 18px 32px; position: sticky; top: 0; z-index: 100; background: rgba(13,13,26,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+        .logo { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, var(--blue), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; }
+        .btn-primary { padding: 10px 22px; background: linear-gradient(135deg, var(--blue), var(--purple)); border: none; border-radius: 10px; color: white; font-weight: 600; font-size: 0.9rem; cursor: pointer; text-decoration: none; display: inline-block; }
+        .hero { text-align: center; padding: 80px 24px 60px; max-width: 800px; margin: 0 auto; }
+        .breadcrumb { font-size: 0.82rem; color: var(--muted); margin-bottom: 20px; }
+        .breadcrumb a { color: var(--muted); text-decoration: none; }
+        .breadcrumb a:hover { color: white; }
+        .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; line-height: 1.15; margin-bottom: 20px; letter-spacing: -0.5px; }
+        .hero h1 span { background: linear-gradient(135deg, var(--blue), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero p { font-size: 1.1rem; color: var(--muted); margin-bottom: 32px; line-height: 1.7; max-width: 620px; margin-left: auto; margin-right: auto; }
+        .btn-large { padding: 14px 32px; font-size: 1.05rem; }
+        .content { max-width: 860px; margin: 0 auto; padding: 0 24px 80px; }
+        .section { margin-bottom: 64px; }
+        .section h2 { font-size: 1.7rem; font-weight: 700; margin-bottom: 16px; }
+        .section p { color: var(--muted); line-height: 1.8; margin-bottom: 16px; font-size: 1rem; }
+        .steps { margin-top: 24px; }
+        .step { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 16px; display: flex; gap: 20px; align-items: flex-start; }
+        .step-num { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; }
+        .step-content h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .step-content p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin: 0; }
+        .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 24px; }
+        .principle-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+        .principle-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: white; }
+        .principle-card p { font-size: 0.88rem; color: var(--muted); line-height: 1.5; margin: 0; }
+        .mistakes { margin-top: 24px; }
+        .mistake { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+        .mistake:last-child { border-bottom: none; }
+        .mistake-label { flex-shrink: 0; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-top: 2px; }
+        .avoid { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+        .instead { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+        .mistake-content h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+        .mistake-content p { font-size: 0.88rem; color: var(--muted); line-height: 1.5; margin: 0; }
+        .faq { margin-top: 24px; }
+        .faq-item { border-bottom: 1px solid var(--border); padding: 20px 0; }
+        .faq-item h3 { font-size: 1rem; font-weight: 600; margin-bottom: 10px; }
+        .faq-item p { font-size: 0.9rem; color: var(--muted); line-height: 1.7; margin: 0; }
+        .related { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 24px; }
+        .related-link { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; text-decoration: none; color: white; transition: border-color 0.2s; }
+        .related-link:hover { border-color: rgba(0,122,255,0.4); }
+        .related-link span { display: block; font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+        .cta-block { text-align: center; padding: 60px 24px; background: linear-gradient(135deg, rgba(0,122,255,0.08), rgba(88,86,214,0.08)); border: 1px solid var(--border); border-radius: 20px; margin-top: 40px; }
+        .cta-block h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 12px; }
+        .cta-block p { color: var(--muted); margin-bottom: 28px; }
+        footer { text-align: center; padding: 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.82rem; }
+        footer a { color: var(--muted); text-decoration: none; }
+        footer a:hover { color: white; }
+        @media (max-width: 480px) { header { padding: 14px 16px; } .hero { padding: 50px 16px 40px; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="/" class="logo">🎨 Pixel Editor</a>
+    <a href="/editor.html" class="btn-primary">Open Editor</a>
+</header>
+
+<div class="hero">
+    <div class="breadcrumb"><a href="/">Home</a> › Pixel Art for Beginners</div>
+    <h1>Pixel Art <span>for Beginners</span></h1>
+    <p>Everything you need to create your first pixel art — no experience, no software, no cost required. This guide takes you from zero to your first finished piece.</p>
+    <a href="/editor.html" class="btn-primary btn-large">🎨 Practice as you read — it's free</a>
+</div>
+
+<div class="content">
+
+    <section class="section">
+        <h2>What is pixel art?</h2>
+        <p>Pixel art is a form of digital art where images are created at the individual pixel level — each colored square is placed deliberately, like a mosaic. It originated in the early days of video games when screens had limited resolution, but today it's a thriving art style loved for its clarity, nostalgia, and accessibility.</p>
+        <p>What makes pixel art great for beginners: every piece is made of the same building blocks — squares. You don't need to know how to draw "realistically." You need to understand color, shape, and contrast. Those skills come quickly with practice.</p>
+    </section>
+
+    <section class="section">
+        <h2>Your first pixel art in 5 steps</h2>
+        <p>Follow these steps to complete your first piece. Open Pixel Editor alongside this guide and create as you read.</p>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                    <h3>Choose a simple subject</h3>
+                    <p>Start with something small and iconic — a heart, a star, a coin, a mushroom. Avoid characters or faces for your first piece. Simple subjects with clear silhouettes teach you the most, fastest.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                    <h3>Limit your palette to 4–6 colors</h3>
+                    <p>Pick a base color, a highlight (lighter version), a shadow (darker version), and an outline color (usually very dark, not pure black). This 4-color approach works for almost anything.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-content">
+                    <h3>Draw the silhouette first</h3>
+                    <p>Use your outline color to draw the outer shape of your subject. Think in big blocks — don't add details yet. The silhouette should be recognizable on its own.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-content">
+                    <h3>Fill in the base color, then add shading</h3>
+                    <p>Fill the inside with your base color, then add the highlight on the upper-left area and shadow on the lower-right. Even a few pixels of shading makes a flat shape look 3D.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">5</div>
+                <div class="step-content">
+                    <h3>Step back and evaluate</h3>
+                    <p>Zoom out and look at your piece at normal size. Pixel art is meant to be viewed small. Adjust anything that looks unclear or "noisy" at 1x size.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>Core principles of pixel art</h2>
+
+        <div class="principles">
+            <div class="principle-card">
+                <h3>Limit your palette</h3>
+                <p>Fewer colors = more cohesion. Classic games used 4–16 colors. Constraints force better decisions.</p>
+            </div>
+            <div class="principle-card">
+                <h3>Strong silhouettes</h3>
+                <p>If you can't recognize the shape when filled with solid black, the design needs work. Silhouette = readability.</p>
+            </div>
+            <div class="principle-card">
+                <h3>Avoid "pillow shading"</h3>
+                <p>Don't just add lighter colors inward from the edge. Pick a consistent light source and shade from it.</p>
+            </div>
+            <div class="principle-card">
+                <h3>No isolated pixels</h3>
+                <p>Single "orphan" pixels surrounded by a different color look noisy. Keep pixels connected in clusters of 2+.</p>
+            </div>
+            <div class="principle-card">
+                <h3>Anti-aliasing selectively</h3>
+                <p>You can smooth diagonal lines with intermediate colors, but use it sparingly — too much looks blurry.</p>
+            </div>
+            <div class="principle-card">
+                <h3>Consistent light source</h3>
+                <p>Pick one direction for your light (upper-left is the most common) and stick to it across your entire piece.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>Common beginner mistakes to avoid</h2>
+
+        <div class="mistakes">
+            <div class="mistake">
+                <span class="mistake-label avoid">Avoid</span>
+                <div class="mistake-content">
+                    <h4>Starting with too large a canvas</h4>
+                    <p>A 128×128 or 256×256 canvas is overwhelming for beginners. Start with 32×32 — it forces you to work simply and finish pieces quickly.</p>
+                </div>
+            </div>
+            <div class="mistake">
+                <span class="mistake-label avoid">Avoid</span>
+                <div class="mistake-content">
+                    <h4>Using too many colors</h4>
+                    <p>Beginners often add more colors when something "doesn't look right." Usually the problem is shading technique, not color count. More colors rarely fix the issue.</p>
+                </div>
+            </div>
+            <div class="mistake">
+                <span class="mistake-label avoid">Avoid</span>
+                <div class="mistake-content">
+                    <h4>Copying reference at the wrong scale</h4>
+                    <p>Trying to reproduce a photo as pixel art 1:1 at 32×32 never works. Simplify. Ask yourself: what are the 5 most important shapes in this image?</p>
+                </div>
+            </div>
+            <div class="mistake">
+                <span class="mistake-label instead">Instead</span>
+                <div class="mistake-content">
+                    <h4>Practice with a daily tiny piece</h4>
+                    <p>Draw one small object every day — a fruit, a tool, a face. Finishing consistently beats working on one ambitious piece for weeks.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>Frequently asked questions</h2>
+        <div class="faq">
+            <div class="faq-item">
+                <h3>How do I start making pixel art?</h3>
+                <p>Open a free online pixel art editor, start with a 32×32 canvas, pick 4–6 colors, and draw a simple subject. The most important thing is to finish something small rather than plan something big.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What size canvas should a beginner use?</h3>
+                <p>32×32 pixels is ideal for beginners — it's the most common size for game sprites, forces simplicity, and is small enough to finish in one session.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How many colors should I use in pixel art?</h3>
+                <p>Start with 4–6 colors per piece. Limiting your palette forces better design decisions and produces more cohesive results.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What tools do I need to start making pixel art?</h3>
+                <p>Just a browser. Free online editors like Pixel Editor include everything — canvas, drawing tools, color picker, and export. No software purchase or download required.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How long does it take to get good at pixel art?</h3>
+                <p>You can create something that looks good within your first hour. Getting consistently good takes a few weeks of daily practice. Pixel art has one of the lowest barriers to entry of any art form.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>Explore more</h2>
+        <div class="related">
+            <a href="/pixel-art-editor-online.html" class="related-link">Online Pixel Art Editor <span>Draw in your browser</span></a>
+            <a href="/free-pixel-art-maker.html" class="related-link">Free Pixel Art Maker <span>No cost, no limits</span></a>
+            <a href="/pixel-art-animation.html" class="related-link">Pixel Art Animation <span>Animate your creations</span></a>
+            <a href="/gallery.html" class="related-link">Community Gallery <span>Get inspired</span></a>
+        </div>
+    </section>
+
+    <div class="cta-block">
+        <h2>Ready to make your first pixel art?</h2>
+        <p>Free online editor — no download, no account needed. Just open and draw.</p>
+        <a href="/editor.html" class="btn-primary btn-large">🎨 Start creating now</a>
+    </div>
+
+</div>
+
+<footer>
+    <p>© <span id="year"></span> Frédéric Terrasson &nbsp;·&nbsp;
+       <a href="/">Home</a> &nbsp;·&nbsp;
+       <a href="/editor.html">Editor</a> &nbsp;·&nbsp;
+       <a href="/gallery.html">Gallery</a> &nbsp;·&nbsp;
+       <a href="/pixel-art-editor-online.html">Online Pixel Art Editor</a> &nbsp;·&nbsp;
+       <a href="/free-pixel-art-maker.html">Free Pixel Art Maker</a> &nbsp;·&nbsp;
+       <a href="/pixel-art-animation.html">Pixel Art Animation</a>
+    </p>
+</footer>
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
