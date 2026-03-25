@@ -10,6 +10,7 @@ let isSymmetryV = false; // Miroir vertical (haut/bas)
 let modifiedPixels = [new Set()]; // Pour suivre les pixels modifiés
 let clipboard = null; // Pour le copier-coller
 let copiedFrame = null;
+let copiedFrameLayers = null;
 // ── Grille de référence ───────────────────────────────────────────────────────
 let referenceImage = null;       // HTMLImageElement
 let referenceOpacity = 0.3;      // 0.0 to 1.0
@@ -5493,21 +5494,37 @@ function reorderFrames(fromIndex, toIndex) {
 
 // Ajouter la fonction copyCurrentFrame
 function copyCurrentFrame() {
-    copiedFrame = JSON.parse(JSON.stringify(frames[currentFrame]));
-    const pasteBtn = document.getElementById('pasteFrameBtn');
-    if (pasteBtn) {
-        pasteBtn.disabled = false;
+    // Sauvegarder d'abord le buffer actif dans le calque courant
+    if (frameLayers[currentFrame] && frameLayers[currentFrame][currentLayer]) {
+        frameLayers[currentFrame][currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
     }
-    console.log('Frame copiée !'); // Debug pour vérifier que ça fonctionne
+    copiedFrame = JSON.parse(JSON.stringify(frames[currentFrame]));
+    copiedFrameLayers = JSON.parse(JSON.stringify(frameLayers[currentFrame] || []));
+    const pasteBtn = document.getElementById('pasteFrameBtn');
+    if (pasteBtn) pasteBtn.disabled = false;
 }
 
 // Fonction pour coller une frame
 function pasteFrame() {
-    if (copiedFrame) {
+    if (!copiedFrame) return;
+    if (copiedFrameLayers && copiedFrameLayers.length > 0) {
+        // Coller toutes les couches avec de nouveaux IDs pour éviter les conflits
+        frameLayers[currentFrame] = copiedFrameLayers.map(l => ({
+            ...l,
+            id: _nextLayerId++,
+            pixels: l.pixels.map(p => ({ ...p }))
+        }));
+        // Garder currentLayer dans les bornes
+        if (currentLayer >= frameLayers[currentFrame].length) {
+            currentLayer = frameLayers[currentFrame].length - 1;
+        }
+        frames[currentFrame] = computeComposite(currentFrame);
+    } else {
         frames[currentFrame] = [...copiedFrame];
-        loadFrame(currentFrame);
-        updateFramesList();
     }
+    loadFrame(currentFrame);
+    updateFramesList();
+    updateLayersPanel();
 }
 
 // Système de raccourcis clavier centralisé
