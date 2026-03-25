@@ -1,3 +1,51 @@
+// ── Police bitmap 5×7 pour l'outil texte ─────────────────────────────────────
+const BITMAP_FONT_5x7 = {
+  'A':['01110','10001','10001','11111','10001','10001','10001'],
+  'B':['11110','10001','10001','11110','10001','10001','11110'],
+  'C':['01110','10001','10000','10000','10000','10001','01110'],
+  'D':['11110','10001','10001','10001','10001','10001','11110'],
+  'E':['11111','10000','10000','11110','10000','10000','11111'],
+  'F':['11111','10000','10000','11110','10000','10000','10000'],
+  'G':['01110','10001','10000','10111','10001','10001','01111'],
+  'H':['10001','10001','10001','11111','10001','10001','10001'],
+  'I':['01110','00100','00100','00100','00100','00100','01110'],
+  'J':['00111','00010','00010','00010','00010','10010','01100'],
+  'K':['10001','10010','10100','11000','10100','10010','10001'],
+  'L':['10000','10000','10000','10000','10000','10000','11111'],
+  'M':['10001','11011','10101','10101','10001','10001','10001'],
+  'N':['10001','11001','10101','10011','10001','10001','10001'],
+  'O':['01110','10001','10001','10001','10001','10001','01110'],
+  'P':['11110','10001','10001','11110','10000','10000','10000'],
+  'Q':['01110','10001','10001','10001','10101','10010','01101'],
+  'R':['11110','10001','10001','11110','10100','10010','10001'],
+  'S':['01111','10000','10000','01110','00001','00001','11110'],
+  'T':['11111','00100','00100','00100','00100','00100','00100'],
+  'U':['10001','10001','10001','10001','10001','10001','01110'],
+  'V':['10001','10001','10001','10001','10001','01010','00100'],
+  'W':['10001','10001','10001','10101','10101','11011','10001'],
+  'X':['10001','10001','01010','00100','01010','10001','10001'],
+  'Y':['10001','10001','01010','00100','00100','00100','00100'],
+  'Z':['11111','00001','00010','00100','01000','10000','11111'],
+  '0':['01110','10001','10011','10101','11001','10001','01110'],
+  '1':['00100','01100','00100','00100','00100','00100','01110'],
+  '2':['01110','10001','00001','00010','00100','01000','11111'],
+  '3':['11111','00001','00010','00110','00001','10001','01110'],
+  '4':['00010','00110','01010','10010','11111','00010','00010'],
+  '5':['11111','10000','11110','00001','00001','10001','01110'],
+  '6':['00110','01000','10000','11110','10001','10001','01110'],
+  '7':['11111','00001','00010','00100','01000','01000','01000'],
+  '8':['01110','10001','10001','01110','10001','10001','01110'],
+  '9':['01110','10001','10001','01111','00001','00010','01100'],
+  ' ':['00000','00000','00000','00000','00000','00000','00000'],
+  '!':['00100','00100','00100','00100','00100','00000','00100'],
+  '?':['01110','10001','00001','00010','00100','00000','00100'],
+  '.':['00000','00000','00000','00000','00000','00000','00100'],
+  ',':['00000','00000','00000','00000','00110','00100','01000'],
+  '-':['00000','00000','00000','11111','00000','00000','00000'],
+  ':':['00000','00100','00000','00000','00000','00100','00000'],
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 let currentColor = '#000000';
 let isDrawing = false;
 let frames = [[]];
@@ -347,6 +395,28 @@ const TL = {
     helpPhotoDesc:          { en: 'Import a photo or image and automatically convert it to pixel art at your grid size. The app detects the pixel block size and centers the result.', fr: 'Importez une photo ou image et convertissez-la automatiquement en pixel art à la taille de votre grille. L\'app détecte la taille des blocs de pixels et centre le résultat.' },
     helpPhotoColors:        { en: 'All colors detected in the image are automatically added to your custom palette.', fr: 'Toutes les couleurs détectées dans l\'image sont automatiquement ajoutées à votre palette personnalisée.' },
     helpPhotoAccess:        { en: 'Available from the hamburger menu (mobile) or the sidebar (desktop).', fr: 'Accessible depuis le menu hamburger (mobile) ou la sidebar (desktop).' },
+
+    helpOnionTitle:         { en: '👁 Onion Skin', fr: '👁 Onion Skin' },
+    helpOnionDesc:          { en: 'Displays ghost images of adjacent frames behind your drawing to help with animation continuity.', fr: 'Affiche des images fantômes des frames adjacentes derrière votre dessin pour faciliter la continuité des animations.' },
+    helpOnionToggle:        { en: '<strong>Enable/Disable:</strong> toggle onion skin on or off entirely.', fr: '<strong>Activer/Désactiver :</strong> active ou désactive totalement l\'onion skin.' },
+    helpOnionOpacity:       { en: '<strong>Opacity:</strong> controls how transparent the ghost frames appear (5%–50%).', fr: '<strong>Opacité :</strong> contrôle la transparence des frames fantômes (5%–50%).' },
+    helpOnionFrames:        { en: '<strong>Previous / Next frames (1–3):</strong> choose how many frames before and after the current one are shown.', fr: '<strong>Frames précédentes / suivantes (1–3) :</strong> choisissez combien de frames avant et après la frame courante sont affichées.' },
+
+    helpHistoryTitle:       { en: '🕐 History', fr: '🕐 Historique' },
+    helpHistoryDesc:        { en: 'Visual history of all drawing states, up to 100 steps. Each state is shown as a thumbnail.', fr: 'Historique visuel de tous les états de dessin, jusqu\'à 100 étapes. Chaque état est affiché sous forme de miniature.' },
+    helpHistoryNav:         { en: '<strong>Click a state</strong> to jump directly to it. The current state is highlighted in blue.', fr: '<strong>Cliquez sur un état</strong> pour y revenir directement. L\'état actuel est mis en évidence en bleu.' },
+    helpHistoryUndo:        { en: 'Undo/Redo (Ctrl+Z / Ctrl+Shift+Z) navigates the same history step by step.', fr: 'Annuler/Rétablir (Ctrl+Z / Ctrl+Shift+Z) navigue dans le même historique étape par étape.' },
+
+    helpGradientTitle:      { en: '🌈 Gradient brush', fr: '🌈 Pinceau dégradé' },
+    helpGradientDesc:       { en: 'When active, each pixel you draw receives a color interpolated between Color A and Color B based on its position on the grid.', fr: 'Quand actif, chaque pixel dessiné reçoit une couleur interpolée entre Couleur A et Couleur B selon sa position sur la grille.' },
+    helpGradientColors:     { en: '<strong>Color A / Color B:</strong> pick the two endpoint colors of the gradient.', fr: '<strong>Couleur A / Couleur B :</strong> choisissez les deux couleurs extrêmes du dégradé.' },
+    helpGradientDir:        { en: '<strong>Direction:</strong> → Horizontal (left→right), ↓ Vertical (top→bottom), ↘ Diagonal (top-left→bottom-right).', fr: '<strong>Direction :</strong> → Horizontal (gauche→droite), ↓ Vertical (haut→bas), ↘ Diagonal (haut-gauche→bas-droite).' },
+    helpGradientPreview:    { en: 'A live preview bar shows the resulting gradient before you draw.', fr: 'Une barre de prévisualisation en temps réel montre le dégradé résultant avant de dessiner.' },
+
+    helpTextTitle:          { en: '✏️ Pixel Art Text', fr: '✏️ Texte Pixel Art' },
+    helpTextDesc:           { en: 'Type any text and it will be rendered as pixel art using a built-in 5×7 bitmap font (A–Z, 0–9, punctuation).', fr: 'Saisissez du texte et il sera rendu en pixel art via une police bitmap intégrée 5×7 (A–Z, 0–9, ponctuation).' },
+    helpTextOptions:        { en: '<strong>Color:</strong> choose the text color. <strong>Scale ×1 / ×2:</strong> double the size of each pixel for larger text.', fr: '<strong>Couleur :</strong> choisissez la couleur du texte. <strong>Taille ×1 / ×2 :</strong> double la taille de chaque pixel pour un texte plus grand.' },
+    helpTextApply:          { en: '<strong>Apply:</strong> writes the text pixels to the top-left of the active layer. Use Ctrl+Z to undo.', fr: '<strong>Appliquer :</strong> écrit les pixels du texte en haut à gauche du calque actif. Utilisez Ctrl+Z pour annuler.' },
     // Stamp tool
     stampTitle:             { en: '🪄 Import a sprite', fr: '🪄 Importer un sprite' },
     stampSubtitle:          { en: 'Choose a project then pick the frame to stamp on your canvas.', fr: 'Choisissez un projet puis la frame à incruster sur votre canvas.' },
@@ -357,6 +427,31 @@ const TL = {
     stampCancelled:         { en: 'Stamp mode cancelled', fr: 'Mode tampon annulé' },
     stampApplied:           { en: '✅ Sprite stamped!', fr: '✅ Sprite incrusté !' },
     stampBtn:               { en: '🪄 Stamp sprite', fr: '🪄 Tampon sprite' },
+    // Onion skin
+    onionSkinTitle:         { en: '👁 Onion Skin', fr: '👁 Onion Skin' },
+    onionSkinEnable:        { en: 'Enable onion skin', fr: 'Activer l\'onion skin' },
+    onionSkinOpacity:       { en: 'Opacity', fr: 'Opacité' },
+    onionSkinPrev:          { en: 'Previous frames', fr: 'Frames précédentes' },
+    onionSkinNext:          { en: 'Next frames', fr: 'Frames suivantes' },
+    // History
+    historyTitle:           { en: '🕐 History', fr: '🕐 Historique' },
+    historyCurrentState:    { en: 'Current state', fr: 'État actuel' },
+    historyState:           { en: 'State', fr: 'État' },
+    historyEmpty:           { en: 'No history available.', fr: 'Aucun historique disponible.' },
+    // Gradient
+    gradientTitle:          { en: '🌈 Gradient', fr: '🌈 Dégradé' },
+    gradientEnable:         { en: 'Enable gradient', fr: 'Activer le dégradé' },
+    gradientColorA:         { en: 'Color A', fr: 'Couleur A' },
+    gradientColorB:         { en: 'Color B', fr: 'Couleur B' },
+    gradientDirection:      { en: 'Direction', fr: 'Direction' },
+    gradientPreview:        { en: 'Preview', fr: 'Aperçu' },
+    // Text tool
+    textToolTitle:          { en: '✏️ Pixel Art Text', fr: '✏️ Texte Pixel Art' },
+    textToolText:           { en: 'Text', fr: 'Texte' },
+    textToolColor:          { en: 'Color', fr: 'Couleur' },
+    textToolScale:          { en: 'Scale (×)', fr: 'Taille (×)' },
+    textToolApply:          { en: 'Apply', fr: 'Appliquer' },
+    textToolPreview:        { en: 'Preview', fr: 'Aperçu' },
 };
 const tL = (key, ...args) => {
     const lang = localStorage.getItem('lang') || 'en';
@@ -490,7 +585,15 @@ let animationInterval = null;
 // Variables pour l'historique undo/redo
 let history = []; // Historique des changements de pixels
 let historyIndex = -1; // Index actuel dans l'historique
-const maxHistorySize = 50; // Nombre maximum d'étapes dans l'historique
+const maxHistorySize = 100; // Nombre maximum d'étapes dans l'historique
+let onionSkinEnabled = true;
+let onionSkinOpacity = 0.25;
+let onionSkinPrevCount = 1;  // nb frames précédentes (1-3)
+let onionSkinNextCount = 1;  // nb frames suivantes (1-3)
+let gradientMode = false;
+let gradientColorA = '#FF0000';
+let gradientColorB = '#0000FF';
+let gradientDirection = 'horizontal'; // 'horizontal' | 'vertical' | 'diagonal'
 let currentActionPixels = new Set(); // Pixels modifiés dans l'action actuelle
 let actionStartState = null; // État de la grille au début de l'action
 
@@ -945,30 +1048,34 @@ function renderCanvas() {
     pixelCtx.clearRect(0, 0, w, w);
     pixelCtx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
 
-    // Onion skin : frame précédente (semi-transparent)
-    if (currentFrame > 0 && frames[currentFrame - 1]) {
-        pixelCtx.globalAlpha = 0.25;
-        frames[currentFrame - 1].forEach((pixel, i) => {
-            if (!pixel || pixel.isEmpty) return;
-            const col = i % currentGridSize;
-            const row = Math.floor(i / currentGridSize);
-            pixelCtx.fillStyle = pixel.color;
-            pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-        });
-        pixelCtx.globalAlpha = 1.0;
-    }
-
-    // Onion skin : frame suivante (encore plus transparent)
-    if (frames[currentFrame + 1]) {
-        pixelCtx.globalAlpha = 0.15;
-        frames[currentFrame + 1].forEach((pixel, i) => {
-            if (!pixel || pixel.isEmpty) return;
-            const col = i % currentGridSize;
-            const row = Math.floor(i / currentGridSize);
-            pixelCtx.fillStyle = pixel.color;
-            pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-        });
-        pixelCtx.globalAlpha = 1.0;
+    // Onion skin configurable
+    if (onionSkinEnabled) {
+        for (let d = onionSkinPrevCount; d >= 1; d--) {
+            const fi = currentFrame - d;
+            if (fi >= 0 && frames[fi]) {
+                pixelCtx.globalAlpha = onionSkinOpacity / d;
+                frames[fi].forEach((pixel, i) => {
+                    if (!pixel || pixel.isEmpty) return;
+                    const col = i % currentGridSize, row = Math.floor(i / currentGridSize);
+                    pixelCtx.fillStyle = pixel.color;
+                    pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                });
+                pixelCtx.globalAlpha = 1.0;
+            }
+        }
+        for (let d = 1; d <= onionSkinNextCount; d++) {
+            const fi = currentFrame + d;
+            if (frames[fi]) {
+                pixelCtx.globalAlpha = (onionSkinOpacity * 0.6) / d;
+                frames[fi].forEach((pixel, i) => {
+                    if (!pixel || pixel.isEmpty) return;
+                    const col = i % currentGridSize, row = Math.floor(i / currentGridSize);
+                    pixelCtx.fillStyle = pixel.color;
+                    pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                });
+                pixelCtx.globalAlpha = 1.0;
+            }
+        }
     }
 
     // Grille de référence (image fantôme — aspect ratio préservé + position/zoom)
@@ -1093,7 +1200,8 @@ function _drawAtIndex(index) {
     if (isErasing) {
         currentFrameBuffer[index] = { color: '#FFFFFF', isEmpty: true };
     } else {
-        currentFrameBuffer[index] = { color: currentColor, isEmpty: false };
+        const paintColor = gradientMode ? getGradientColor(index) : currentColor;
+        currentFrameBuffer[index] = { color: paintColor, isEmpty: false };
     }
     // Symétrie horizontale : mirror du pixel opposé sur la même ligne
     if (isSymmetryMode) {
@@ -1105,7 +1213,8 @@ function _drawAtIndex(index) {
             if (isErasing) {
                 currentFrameBuffer[mirrorIndex] = { color: '#FFFFFF', isEmpty: true };
             } else {
-                currentFrameBuffer[mirrorIndex] = { color: currentColor, isEmpty: false };
+                const mirrorPaintColor = gradientMode ? getGradientColor(mirrorIndex) : currentColor;
+                currentFrameBuffer[mirrorIndex] = { color: mirrorPaintColor, isEmpty: false };
             }
         }
     }
@@ -1119,7 +1228,8 @@ function _drawAtIndex(index) {
             if (isErasing) {
                 currentFrameBuffer[mirrorIndex] = { color: '#FFFFFF', isEmpty: true };
             } else {
-                currentFrameBuffer[mirrorIndex] = { color: currentColor, isEmpty: false };
+                const mirrorPaintColor = gradientMode ? getGradientColor(mirrorIndex) : currentColor;
+                currentFrameBuffer[mirrorIndex] = { color: mirrorPaintColor, isEmpty: false };
             }
         }
     }
@@ -1153,6 +1263,361 @@ function pickColorFromIndex(index) {
     setEyedropperState(false);
 }
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ── Feature : Dégradé linéaire ────────────────────────────────────────────────
+function getGradientColor(pixelIndex) {
+    const col = pixelIndex % currentGridSize;
+    const row = Math.floor(pixelIndex / currentGridSize);
+    let t;
+    if (gradientDirection === 'horizontal') t = col / (currentGridSize - 1);
+    else if (gradientDirection === 'vertical') t = row / (currentGridSize - 1);
+    else t = (col + row) / (2 * (currentGridSize - 1));
+    t = Math.max(0, Math.min(1, t));
+    const parse = hex => [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+    const [r1,g1,b1] = parse(gradientColorA);
+    const [r2,g2,b2] = parse(gradientColorB);
+    const r = Math.round(r1 + (r2-r1)*t);
+    const g = Math.round(g1 + (g2-g1)*t);
+    const b = Math.round(b1 + (b2-b1)*t);
+    return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+
+function showGradientPanel() {
+    const lang = localStorage.getItem('lang') || 'en';
+    const title = lang === 'fr' ? '🌈 Dégradé' : '🌈 Gradient';
+    const labelMode = lang === 'fr' ? 'Activer le dégradé' : 'Enable gradient';
+    const labelA = lang === 'fr' ? 'Couleur A' : 'Color A';
+    const labelB = lang === 'fr' ? 'Couleur B' : 'Color B';
+    const labelDir = lang === 'fr' ? 'Direction' : 'Direction';
+    const labelPreview = lang === 'fr' ? 'Aperçu' : 'Preview';
+
+    const content = `
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:14px;">
+                <input type="checkbox" id="gradientModeToggle" ${gradientMode ? 'checked' : ''}>
+                ${labelMode}
+            </label>
+            <div style="display:flex;gap:12px;align-items:center;">
+                <label style="font-size:13px;">${labelA}</label>
+                <input type="color" id="gradientColorAInput" value="${gradientColorA}" style="width:40px;height:32px;border:none;cursor:pointer;">
+                <label style="font-size:13px;">${labelB}</label>
+                <input type="color" id="gradientColorBInput" value="${gradientColorB}" style="width:40px;height:32px;border:none;cursor:pointer;">
+            </div>
+            <div>
+                <div style="font-size:13px;margin-bottom:6px;">${labelDir}</div>
+                <div style="display:flex;gap:6px;">
+                    <button class="gradient-dir-btn${gradientDirection==='horizontal'?' active':''}" data-dir="horizontal" style="flex:1;padding:6px;border-radius:6px;border:1px solid #ccc;cursor:pointer;background:${gradientDirection==='horizontal'?'#007AFF':'#f5f5f7'};color:${gradientDirection==='horizontal'?'white':'#333'};">→ Horizontal</button>
+                    <button class="gradient-dir-btn${gradientDirection==='vertical'?' active':''}" data-dir="vertical" style="flex:1;padding:6px;border-radius:6px;border:1px solid #ccc;cursor:pointer;background:${gradientDirection==='vertical'?'#007AFF':'#f5f5f7'};color:${gradientDirection==='vertical'?'white':'#333'};">↓ Vertical</button>
+                    <button class="gradient-dir-btn${gradientDirection==='diagonal'?' active':''}" data-dir="diagonal" style="flex:1;padding:6px;border-radius:6px;border:1px solid #ccc;cursor:pointer;background:${gradientDirection==='diagonal'?'#007AFF':'#f5f5f7'};color:${gradientDirection==='diagonal'?'white':'#333'};">↘ Diagonal</button>
+                </div>
+            </div>
+            <div>
+                <div style="font-size:13px;margin-bottom:4px;">${labelPreview}</div>
+                <canvas id="gradientPreviewCanvas" width="240" height="32" style="width:100%;height:32px;border-radius:6px;border:1px solid #eee;display:block;"></canvas>
+            </div>
+        </div>
+    `;
+
+    const dialog = createMobileDialog(title, content);
+
+    function updateGradientPreview() {
+        const canvas = dialog.querySelector('#gradientPreviewCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        for (let x = 0; x < w; x++) {
+            const t = x / (w - 1);
+            const parse = hex => [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+            const [r1,g1,b1] = parse(gradientColorA);
+            const [r2,g2,b2] = parse(gradientColorB);
+            const r = Math.round(r1 + (r2-r1)*t);
+            const g = Math.round(g1 + (g2-g1)*t);
+            const b = Math.round(b1 + (b2-b1)*t);
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.fillRect(x, 0, 1, h);
+        }
+    }
+
+    updateGradientPreview();
+
+    dialog.querySelector('#gradientModeToggle').addEventListener('change', (e) => {
+        gradientMode = e.target.checked;
+        scheduleRender();
+    });
+    dialog.querySelector('#gradientColorAInput').addEventListener('input', (e) => {
+        gradientColorA = e.target.value.toUpperCase();
+        updateGradientPreview();
+        scheduleRender();
+    });
+    dialog.querySelector('#gradientColorBInput').addEventListener('input', (e) => {
+        gradientColorB = e.target.value.toUpperCase();
+        updateGradientPreview();
+        scheduleRender();
+    });
+    dialog.querySelectorAll('.gradient-dir-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            gradientDirection = btn.dataset.dir;
+            dialog.querySelectorAll('.gradient-dir-btn').forEach(b => {
+                b.style.background = b.dataset.dir === gradientDirection ? '#007AFF' : '#f5f5f7';
+                b.style.color = b.dataset.dir === gradientDirection ? 'white' : '#333';
+            });
+            updateGradientPreview();
+            scheduleRender();
+        });
+    });
+}
+
+// ── Feature : Onion skin configurable ────────────────────────────────────────
+function showOnionSkinPanel() {
+    const lang = localStorage.getItem('lang') || 'en';
+    const title = '👁 Onion Skin';
+    const labelEnabled = lang === 'fr' ? 'Activer l\'onion skin' : 'Enable onion skin';
+    const labelOpacity = lang === 'fr' ? 'Opacité' : 'Opacity';
+    const labelPrev = lang === 'fr' ? 'Frames précédentes' : 'Previous frames';
+    const labelNext = lang === 'fr' ? 'Frames suivantes' : 'Next frames';
+
+    const content = `
+        <div style="display:flex;flex-direction:column;gap:14px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:14px;">
+                <input type="checkbox" id="onionSkinToggle" ${onionSkinEnabled ? 'checked' : ''}>
+                ${labelEnabled}
+            </label>
+            <div>
+                <div style="font-size:13px;margin-bottom:4px;">${labelOpacity}: <span id="onionOpacityVal">${Math.round(onionSkinOpacity*100)}%</span></div>
+                <input type="range" id="onionOpacitySlider" min="5" max="50" step="5" value="${Math.round(onionSkinOpacity*100)}" style="width:100%;">
+            </div>
+            <div>
+                <div style="font-size:13px;margin-bottom:6px;">${labelPrev}: <span id="onionPrevVal">${onionSkinPrevCount}</span></div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button id="onionPrevMinus" style="width:36px;height:36px;border-radius:8px;border:1px solid #ccc;cursor:pointer;font-size:18px;background:#f5f5f7;">−</button>
+                    <span id="onionPrevDisplay" style="font-size:20px;font-weight:bold;width:24px;text-align:center;">${onionSkinPrevCount}</span>
+                    <button id="onionPrevPlus" style="width:36px;height:36px;border-radius:8px;border:1px solid #ccc;cursor:pointer;font-size:18px;background:#f5f5f7;">+</button>
+                </div>
+            </div>
+            <div>
+                <div style="font-size:13px;margin-bottom:6px;">${labelNext}: <span id="onionNextVal">${onionSkinNextCount}</span></div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button id="onionNextMinus" style="width:36px;height:36px;border-radius:8px;border:1px solid #ccc;cursor:pointer;font-size:18px;background:#f5f5f7;">−</button>
+                    <span id="onionNextDisplay" style="font-size:20px;font-weight:bold;width:24px;text-align:center;">${onionSkinNextCount}</span>
+                    <button id="onionNextPlus" style="width:36px;height:36px;border-radius:8px;border:1px solid #ccc;cursor:pointer;font-size:18px;background:#f5f5f7;">+</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const dialog = createMobileDialog(title, content);
+
+    dialog.querySelector('#onionSkinToggle').addEventListener('change', (e) => {
+        onionSkinEnabled = e.target.checked;
+        scheduleRender();
+    });
+
+    dialog.querySelector('#onionOpacitySlider').addEventListener('input', (e) => {
+        onionSkinOpacity = parseInt(e.target.value) / 100;
+        dialog.querySelector('#onionOpacityVal').textContent = e.target.value + '%';
+        scheduleRender();
+    });
+
+    dialog.querySelector('#onionPrevMinus').addEventListener('click', () => {
+        onionSkinPrevCount = Math.max(1, onionSkinPrevCount - 1);
+        dialog.querySelector('#onionPrevVal').textContent = onionSkinPrevCount;
+        dialog.querySelector('#onionPrevDisplay').textContent = onionSkinPrevCount;
+        scheduleRender();
+    });
+    dialog.querySelector('#onionPrevPlus').addEventListener('click', () => {
+        onionSkinPrevCount = Math.min(3, onionSkinPrevCount + 1);
+        dialog.querySelector('#onionPrevVal').textContent = onionSkinPrevCount;
+        dialog.querySelector('#onionPrevDisplay').textContent = onionSkinPrevCount;
+        scheduleRender();
+    });
+    dialog.querySelector('#onionNextMinus').addEventListener('click', () => {
+        onionSkinNextCount = Math.max(1, onionSkinNextCount - 1);
+        dialog.querySelector('#onionNextVal').textContent = onionSkinNextCount;
+        dialog.querySelector('#onionNextDisplay').textContent = onionSkinNextCount;
+        scheduleRender();
+    });
+    dialog.querySelector('#onionNextPlus').addEventListener('click', () => {
+        onionSkinNextCount = Math.min(3, onionSkinNextCount + 1);
+        dialog.querySelector('#onionNextVal').textContent = onionSkinNextCount;
+        dialog.querySelector('#onionNextDisplay').textContent = onionSkinNextCount;
+        scheduleRender();
+    });
+}
+
+// ── Feature : Historique visualisable ────────────────────────────────────────
+function drawHistoryThumb(canvas, pixels) {
+    const ctx = canvas.getContext('2d');
+    const s = canvas.width / currentGridSize;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pixels.forEach((p, i) => {
+        if (!p || p.isEmpty) return;
+        ctx.fillStyle = p.color;
+        ctx.fillRect((i % currentGridSize) * s, Math.floor(i / currentGridSize) * s, s, s);
+    });
+}
+
+function showHistoryPanel() {
+    const lang = localStorage.getItem('lang') || 'en';
+    const title = lang === 'fr' ? '🕐 Historique' : '🕐 History';
+    const labelCurrent = lang === 'fr' ? 'État actuel' : 'Current state';
+    const labelState = lang === 'fr' ? 'État' : 'State';
+
+    const items = history.map((h, i) => {
+        const isCurrent = i === historyIndex;
+        return `<div class="history-panel-item" data-index="${i}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;margin-bottom:4px;background:${isCurrent ? 'rgba(0,122,255,0.15)' : 'transparent'};border:${isCurrent ? '1px solid rgba(0,122,255,0.3)' : '1px solid transparent'};">
+            <canvas width="32" height="32" style="border-radius:4px;border:1px solid #eee;flex-shrink:0;image-rendering:pixelated;"></canvas>
+            <span style="font-size:13px;color:${isCurrent ? '#007AFF' : '#333'};font-weight:${isCurrent ? '600' : '400'};">${isCurrent ? labelCurrent : labelState + ' ' + (i + 1)}</span>
+        </div>`;
+    }).join('');
+
+    const content = `<div style="max-height:340px;overflow-y:auto;padding-right:4px;">${items || '<p style="color:#888;font-size:13px;">Aucun historique disponible.</p>'}</div>`;
+
+    const dialog = createMobileDialog(title, content);
+
+    // Dessiner les thumbnails
+    dialog.querySelectorAll('.history-panel-item').forEach((item, i) => {
+        const canvas = item.querySelector('canvas');
+        if (canvas && history[i]) drawHistoryThumb(canvas, history[i]);
+    });
+
+    // Clic pour restaurer un état
+    dialog.querySelectorAll('.history-panel-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const idx = parseInt(item.dataset.index);
+            if (!isNaN(idx) && history[idx]) {
+                historyIndex = idx;
+                currentFrameBuffer = history[idx].map(p => ({...p}));
+                scheduleRender();
+                updateFramesList();
+                dialog.remove();
+            }
+        });
+    });
+}
+
+// ── Feature : Texte pixel art ─────────────────────────────────────────────────
+function textToPixels(text, color, startX, startY, scale) {
+    const result = [];
+    const charWidth = 6; // 5 colonnes + 1 espace
+    const charHeight = 7;
+    const upperText = text.toUpperCase();
+    for (let ci = 0; ci < upperText.length; ci++) {
+        const ch = upperText[ci];
+        const bitmap = BITMAP_FONT_5x7[ch];
+        if (!bitmap) continue;
+        for (let row = 0; row < charHeight; row++) {
+            const rowStr = bitmap[row] || '00000';
+            for (let col = 0; col < 5; col++) {
+                if (rowStr[col] === '1') {
+                    for (let sy = 0; sy < scale; sy++) {
+                        for (let sx = 0; sx < scale; sx++) {
+                            const gx = startX + ci * charWidth * scale + col * scale + sx;
+                            const gy = startY + row * scale + sy;
+                            if (gx >= 0 && gx < currentGridSize && gy >= 0 && gy < currentGridSize) {
+                                result.push({ index: gy * currentGridSize + gx, color });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}
+
+function showTextTool() {
+    const lang = localStorage.getItem('lang') || 'en';
+    const title = lang === 'fr' ? '✏️ Texte Pixel Art' : '✏️ Pixel Art Text';
+    const labelText = lang === 'fr' ? 'Texte' : 'Text';
+    const labelColor = lang === 'fr' ? 'Couleur' : 'Color';
+    const labelScale = lang === 'fr' ? 'Taille (×)' : 'Scale (×)';
+    const labelApply = lang === 'fr' ? 'Appliquer' : 'Apply';
+    const labelPreview = lang === 'fr' ? 'Aperçu' : 'Preview';
+
+    const content = `
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            <div>
+                <label style="font-size:13px;display:block;margin-bottom:4px;">${labelText}</label>
+                <input type="text" id="textToolInput" value="HELLO" maxlength="20" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;">
+                <label style="font-size:13px;">${labelColor}</label>
+                <input type="color" id="textToolColor" value="${currentColor.startsWith('#') && currentColor.length === 7 ? currentColor : '#000000'}" style="width:40px;height:32px;border:none;cursor:pointer;">
+                <label style="font-size:13px;">${labelScale}</label>
+                <select id="textToolScale" style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;">
+                    <option value="1">×1</option>
+                    <option value="2">×2</option>
+                </select>
+            </div>
+            <div>
+                <div style="font-size:13px;margin-bottom:4px;">${labelPreview}</div>
+                <canvas id="textPreviewCanvas" width="300" height="60" style="width:100%;height:60px;border:1px solid #eee;border-radius:6px;background:#fff;display:block;image-rendering:pixelated;"></canvas>
+            </div>
+            <button id="textToolApply" style="padding:10px;background:#007AFF;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;">${labelApply}</button>
+        </div>
+    `;
+
+    const dialog = createMobileDialog(title, content);
+
+    function updateTextPreview() {
+        const canvas = dialog.querySelector('#textPreviewCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#f8f8f8';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const text = dialog.querySelector('#textToolInput').value || '';
+        const color = dialog.querySelector('#textToolColor').value;
+        const scale = parseInt(dialog.querySelector('#textToolScale').value);
+        const charWidth = 6;
+        const charHeight = 7;
+        const totalW = text.length * charWidth * scale;
+        const totalH = charHeight * scale;
+        const offsetX = Math.max(0, Math.floor((300 - totalW * (300 / Math.max(totalW, 1))) / 2));
+        // Draw on the preview canvas at a reasonable pixel size
+        const pixSize = Math.max(1, Math.min(6, Math.floor(280 / Math.max(text.length * charWidth, 1))));
+        for (let ci = 0; ci < text.toUpperCase().length; ci++) {
+            const ch = text.toUpperCase()[ci];
+            const bitmap = BITMAP_FONT_5x7[ch];
+            if (!bitmap) continue;
+            for (let row = 0; row < charHeight; row++) {
+                const rowStr = bitmap[row] || '00000';
+                for (let col = 0; col < 5; col++) {
+                    if (rowStr[col] === '1') {
+                        ctx.fillStyle = color;
+                        ctx.fillRect(
+                            10 + ci * 6 * scale * pixSize + col * scale * pixSize,
+                            10 + row * scale * pixSize,
+                            scale * pixSize,
+                            scale * pixSize
+                        );
+                    }
+                }
+            }
+        }
+        void totalW; void totalH; void offsetX;
+    }
+
+    updateTextPreview();
+
+    dialog.querySelector('#textToolInput').addEventListener('input', updateTextPreview);
+    dialog.querySelector('#textToolColor').addEventListener('input', updateTextPreview);
+    dialog.querySelector('#textToolScale').addEventListener('change', updateTextPreview);
+
+    dialog.querySelector('#textToolApply').addEventListener('click', () => {
+        const text = dialog.querySelector('#textToolInput').value || '';
+        const color = dialog.querySelector('#textToolColor').value.toUpperCase();
+        const scale = parseInt(dialog.querySelector('#textToolScale').value);
+        const pixels = textToPixels(text, color, 0, 0, scale);
+        pixels.forEach(({ index, color: c }) => {
+            currentFrameBuffer[index] = { color: c, isEmpty: false };
+        });
+        saveCurrentFrame();
+        scheduleRender();
+        dialog.remove();
+    });
+}
 
 function clampPan() {
     const grid = document.getElementById('pixelGrid');
@@ -5836,6 +6301,32 @@ function showHelp() {
             <div class="help-item">${tL('helpPhotoAccess')}</div>
                 </div>
             <div class="help-section">
+            <h3>${tL('helpOnionTitle')}</h3>
+            <div class="help-item">${tL('helpOnionDesc')}</div>
+            <div class="help-item">${tL('helpOnionToggle')}</div>
+            <div class="help-item">${tL('helpOnionOpacity')}</div>
+            <div class="help-item">${tL('helpOnionFrames')}</div>
+                </div>
+            <div class="help-section">
+            <h3>${tL('helpHistoryTitle')}</h3>
+            <div class="help-item">${tL('helpHistoryDesc')}</div>
+            <div class="help-item">${tL('helpHistoryNav')}</div>
+            <div class="help-item">${tL('helpHistoryUndo')}</div>
+                </div>
+            <div class="help-section">
+            <h3>${tL('helpGradientTitle')}</h3>
+            <div class="help-item">${tL('helpGradientDesc')}</div>
+            <div class="help-item">${tL('helpGradientColors')}</div>
+            <div class="help-item">${tL('helpGradientDir')}</div>
+            <div class="help-item">${tL('helpGradientPreview')}</div>
+                </div>
+            <div class="help-section">
+            <h3>${tL('helpTextTitle')}</h3>
+            <div class="help-item">${tL('helpTextDesc')}</div>
+            <div class="help-item">${tL('helpTextOptions')}</div>
+            <div class="help-item">${tL('helpTextApply')}</div>
+                </div>
+            <div class="help-section">
             <h3>${tL('helpStampTitle')}</h3>
             <div class="help-item">${tL('helpStampDesc')}</div>
             <div class="help-item">${tL('helpStampHow')}</div>
@@ -6645,6 +7136,10 @@ function initEventListeners() {
     document.getElementById('stampSpriteBtn2')?.addEventListener('click', showStampModal);
     document.getElementById('copyFrameBtn')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
+    document.getElementById('onionSkinBtn')?.addEventListener('click', showOnionSkinPanel);
+    document.getElementById('historyBtn')?.addEventListener('click', showHistoryPanel);
+    document.getElementById('gradientBtn')?.addEventListener('click', showGradientPanel);
+    document.getElementById('textToolBtn')?.addEventListener('click', showTextTool);
     document.getElementById('helpBtn')?.addEventListener('click', showHelp);
     document.getElementById('creditsBtn')?.addEventListener('click', showCredits);
     // Gestion du profil : ouvrir le profil créatif OU la gestion du pseudo
@@ -6754,6 +7249,10 @@ function initEventListeners() {
     document.getElementById('pasteFrameBtn2')?.addEventListener('click', () => {
         document.getElementById('pasteFrameBtn')?.click();
     });
+    document.getElementById('onionSkinBtn2')?.addEventListener('click', showOnionSkinPanel);
+    document.getElementById('historyBtn2')?.addEventListener('click', showHistoryPanel);
+    document.getElementById('gradientBtn2')?.addEventListener('click', showGradientPanel);
+    document.getElementById('textToolBtn2')?.addEventListener('click', showTextTool);
     document.getElementById('helpBtn2')?.addEventListener('click', () => {
         document.getElementById('helpBtn')?.click();
     });
