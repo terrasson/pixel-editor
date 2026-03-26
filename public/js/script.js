@@ -1126,9 +1126,11 @@ function renderCanvas() {
     if (onionSkinEnabled) {
         for (let d = onionSkinPrevCount; d >= 1; d--) {
             const fi = currentFrame - d;
-            if (fi >= 0 && frames[fi]) {
+            if (fi >= 0) {
+                const ghostPixels = frameLayers[fi] ? computeComposite(fi) : frames[fi];
+                if (!ghostPixels) continue;
                 pixelCtx.globalAlpha = onionSkinOpacity / d;
-                frames[fi].forEach((pixel, i) => {
+                ghostPixels.forEach((pixel, i) => {
                     if (!pixel || pixel.isEmpty) return;
                     const col = i % currentGridSize, row = Math.floor(i / currentGridSize);
                     pixelCtx.fillStyle = pixel.color;
@@ -1139,9 +1141,11 @@ function renderCanvas() {
         }
         for (let d = 1; d <= onionSkinNextCount; d++) {
             const fi = currentFrame + d;
-            if (frames[fi]) {
+            if (fi < frames.length) {
+                const ghostPixels = frameLayers[fi] ? computeComposite(fi) : frames[fi];
+                if (!ghostPixels) continue;
                 pixelCtx.globalAlpha = (onionSkinOpacity * 0.6) / d;
-                frames[fi].forEach((pixel, i) => {
+                ghostPixels.forEach((pixel, i) => {
                     if (!pixel || pixel.isEmpty) return;
                     const col = i % currentGridSize, row = Math.floor(i / currentGridSize);
                     pixelCtx.fillStyle = pixel.color;
@@ -5447,6 +5451,7 @@ function updateFramesList() {
         });
         
         frameBtn.addEventListener('click', () => {
+            saveCurrentFrame(); // sync frames[] before switching so onion skin is up to date
             currentFrame = index;
             loadFrame(currentFrame);
             // Faire défiler pour que la frame active soit visible
