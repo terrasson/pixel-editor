@@ -39,6 +39,27 @@
     /* Transitions */
     --transition-fast: 0.15s ease;
     --transition-normal: 0.25s ease;
+
+    /* Couleurs sémantiques */
+    --color-error: #e74c3c;
+    --color-error-light: #fdf0ef;
+    --color-error-rgb: 231, 76, 60;
+    --color-success: #27ae60;
+    --color-success-light: #edfaf3;
+    --color-success-rgb: 39, 174, 96;
+    --color-warning: #f39c12;
+    --color-warning-light: #fffbef;
+    --color-warning-rgb: 243, 156, 18;
+    --color-info: #3498db;
+    --color-info-light: #edf6fd;
+    --color-info-rgb: 52, 152, 219;
+
+    /* Espacements */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
 }
 
 /* Branding - Logo + Titre */

@@ -914,16 +914,19 @@ body.is-mobile .editor-container {
     background: var(--bg-secondary, #F5F5F7);
     border: 1px solid var(--border-color, #E5E5EA);
     color: var(--text-primary, #1D1D1F);
-    font-size: 24px;
+    font-size: 20px;
     cursor: pointer;
     padding: 0;
-    width: 30px;
-    height: 30px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     transition: all 0.2s ease;
+    touch-action: manipulation;
 }
 
 .close-btn:hover {
@@ -2063,21 +2066,21 @@ body.drag-over .grid-container {
    MEDIA QUERIES POUR DIFFÉRENTES TAILLES D'ÉCRAN
    =================================================================== */
 
-/* Très petits téléphones (iPhone SE 1st gen, etc.) */
+/* Très petits téléphones (iPhone SE 1st gen, etc. — 360px-374px) */
 @media screen and (max-width: 374px) {
     .project-info h2 {
         font-size: 0.95rem;
     }
-    
+
     .tools button {
         font-size: 0.65rem;
         padding: 8px 10px;
-        min-height: 36px;
+        min-height: 44px; /* touch target minimum iOS/Android */
     }
-    
+
     #pixelGrid {
         --cell-size: clamp(
-            6px,  /* Plus petit minimum pour très petits écrans */
+            6px,
             min(
                 calc((100vw - max(16px, env(safe-area-inset-right, 0px) + env(safe-area-inset-left, 0px)) - 4px) / 32),
                 calc((100vh - max(140px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) - 4px) / 32)
@@ -2089,15 +2092,100 @@ body.drag-over .grid-container {
         max-width: calc(12px * 32);
         max-height: calc(12px * 32);
     }
-    
+
     .color-btn {
         width: 28px;
         height: 28px;
     }
-    
+
     .frames-container {
         max-height: 100px;
         margin-bottom: 60px;
+    }
+
+    /* Modals : éviter le débordement horizontal */
+    .modal-content {
+        width: 95vw;
+        max-width: 95vw;
+        padding: 0;
+    }
+
+    .modal-header {
+        padding: 14px 16px;
+    }
+
+    .modal-body {
+        padding: 14px 16px;
+    }
+
+    .save-dialog {
+        padding: 12px;
+    }
+
+    .save-dialog-content {
+        padding: 18px 16px;
+        max-width: 100%;
+    }
+
+    /* Empiler les boutons du dialog verticalement */
+    .dialog-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .dialog-buttons button {
+        width: 100%;
+    }
+}
+
+/* Ultra-petits téléphones (iPhone SE 1st gen 320px, Galaxy A series) */
+@media screen and (max-width: 359px) {
+    .project-info h2 {
+        font-size: 0.85rem;
+    }
+
+    .tools button {
+        font-size: 0.6rem;
+        padding: 6px 8px;
+        min-height: 44px;
+    }
+
+    #pixelGrid {
+        --cell-size: clamp(
+            5px,
+            min(
+                calc((100vw - 8px) / 32),
+                calc((100vh - max(130px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))) / 32)
+            ),
+            10px
+        );
+        min-width: calc(5px * 32);
+        min-height: calc(5px * 32);
+        max-width: calc(10px * 32);
+        max-height: calc(10px * 32);
+    }
+
+    .color-btn {
+        width: 24px;
+        height: 24px;
+    }
+
+    .modal-content {
+        width: 98vw;
+        max-width: 98vw;
+        border-radius: 12px;
+    }
+
+    /* Réduire les paddings généraux */
+    .modal-header h3 {
+        font-size: 15px;
+    }
+
+    .close-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
     }
 }
 

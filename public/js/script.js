@@ -550,6 +550,46 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function debounce(fn, delay) {
+    let timer;
+    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
+}
+
+function sanitize(str) {
+    const el = document.createElement('div');
+    el.textContent = String(str ?? '');
+    return el.innerHTML;
+}
+
+function showToast(message, { type = 'info', duration = 3500 } = {}) {
+    const style = getComputedStyle(document.documentElement);
+    const colors = {
+        error:   style.getPropertyValue('--color-error').trim()   || '#e74c3c',
+        success: style.getPropertyValue('--color-success').trim() || '#27ae60',
+        warning: style.getPropertyValue('--color-warning').trim() || '#f39c12',
+        info:    style.getPropertyValue('--color-info').trim()    || '#555',
+    };
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);
+        background:${colors[type] || colors.info};color:#fff;
+        padding:10px 20px;border-radius:10px;font-size:0.875rem;font-weight:500;
+        box-shadow:0 4px 16px rgba(0,0,0,0.3);z-index:99999;
+        opacity:0;transition:opacity 0.2s,transform 0.2s;pointer-events:none;white-space:nowrap;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(8px)';
+        setTimeout(() => toast.remove(), 220);
+    }, duration);
+}
+
 async function ensureAuthenticatedUser(retries = 10, delay = 200) {
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
@@ -692,7 +732,7 @@ function initGrid(size = currentGridSize) {
 }
 
 // Recalculer les CSS si la fenêtre est redimensionnée
-window.addEventListener('resize', () => {
+window.addEventListener('resize', debounce(() => {
     applyGridCSSVariables(currentGridSize);
     // Phase 1 : redimensionner le canvas et recalculer cellSize
     if (pixelCanvas) {
@@ -703,7 +743,7 @@ window.addEventListener('resize', () => {
         cellSize = gw / currentGridSize;
         renderCanvas();
     }
-});
+}, 150));
 
 // ========================================
 // ZOOM / PAN DE LA GRILLE
@@ -899,7 +939,7 @@ function _renderLayersList(container, layers) {
                     : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
                 }
             </button>
-            <span class="layer-name ${layer.visible ? '' : 'layer-name-hidden'}" ondblclick="promptRenameLayer(${i})" title="Double-cliquer pour renommer">${layer.name}</span>
+            <span class="layer-name ${layer.visible ? '' : 'layer-name-hidden'}" ondblclick="promptRenameLayer(${i})" title="Double-cliquer pour renommer">${sanitize(layer.name)}</span>
             <div class="layer-actions">
                 ${i > 0 ? `<button class="layer-action-btn" onclick="mergeLayerDown(${i})" title="Fusionner avec le calque dessous">⬇</button>` : ''}
                 <button class="layer-action-btn" onclick="duplicateLayer(${i})" title="Dupliquer">⧉</button>
@@ -1722,18 +1762,10 @@ function initZoomPan() {
  *   newFrames {Array}     - Frames à charger directement (ex: chargement projet)
  */
 function changeGridSize(newSize, options = {}) {
-    const { skipConfirm = false, newFrames = null } = options;
+    const { newFrames = null } = options;
 
     if (!VALID_GRID_SIZES.includes(newSize)) return false;
     if (newSize === currentGridSize && !newFrames) return true;
-
-    // Vérifier si la grille contient du contenu
-    const hasContent = frames.some(f => f && f.some(p => p && !p.isEmpty));
-
-    if (hasContent && !skipConfirm) {
-        const ok = confirm(tL('changeGrid', currentGridSize, newSize));
-        if (!ok) return false;
-    }
 
     // Stopper l'animation si en cours
     if (isAnimationPlaying) stopAnimation();
@@ -1817,13 +1849,62 @@ function initGridSizeModal() {
     });
 
     modal.querySelectorAll('.grid-size-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const newSize = parseInt(btn.dataset.size, 10);
-            const success = changeGridSize(newSize);
+            if (newSize === currentGridSize) {
+                modal.style.display = 'none';
+                return;
+            }
+            const hasContent = frames.some(f => f && f.some(p => p && !p.isEmpty));
+            if (hasContent) {
+                modal.style.display = 'none';
+                const confirmed = await showConfirmDialog(
+                    tL('changeGrid', currentGridSize, newSize),
+                    { confirmLabel: tL('confirmBtn') || 'Confirmer', cancelLabel: tL('cancelBtn') || 'Annuler', danger: true }
+                );
+                if (!confirmed) {
+                    modal.style.display = 'flex';
+                    return;
+                }
+            }
+            const success = changeGridSize(newSize, { skipConfirm: true });
             if (success) {
                 modal.style.display = 'none';
             }
         });
+    });
+}
+
+function showConfirmDialog(message, { confirmLabel = 'Confirmer', cancelLabel = 'Annuler', danger = false } = {}) {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position:fixed;inset:0;background:rgba(0,0,0,0.6);
+            display:flex;align-items:center;justify-content:center;z-index:99999;
+        `;
+        overlay.innerHTML = `
+            <div style="
+                background:var(--bg-panel,#1e1e2e);color:var(--text-primary,#fff);
+                border-radius:16px;padding:28px 24px;max-width:360px;width:90%;
+                box-shadow:0 20px 50px rgba(0,0,0,0.5);text-align:center;
+            ">
+                <p style="margin:0 0 24px;font-size:0.95rem;line-height:1.5;white-space:pre-line">${message}</p>
+                <div style="display:flex;gap:12px;justify-content:center;">
+                    <button id="confirmDialogCancel" style="
+                        padding:10px 20px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);
+                        background:transparent;color:var(--text-primary,#fff);cursor:pointer;font-size:0.9rem;
+                    ">${cancelLabel}</button>
+                    <button id="confirmDialogOk" style="
+                        padding:10px 20px;border-radius:10px;border:none;cursor:pointer;font-size:0.9rem;font-weight:600;
+                        background:${danger ? '#e74c3c' : 'var(--color-primary,#FF7300)'};color:#fff;
+                    ">${confirmLabel}</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        overlay.querySelector('#confirmDialogOk').addEventListener('click', () => { overlay.remove(); resolve(true); });
+        overlay.querySelector('#confirmDialogCancel').addEventListener('click', () => { overlay.remove(); resolve(false); });
+        overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(false); } });
     });
 }
 
@@ -2814,6 +2895,76 @@ function saveCustomColors() {
 let currentProjectId = null; // ID du projet actuel pour les mises à jour
 window.currentProjectName = null; // Nom du projet actif (pour le partage)
 
+// Applique les données d'un projet chargé à l'état de l'app.
+// Utilisé par showLocalProjects, loadFromServer, et tout futur point de chargement.
+function applyProjectData(data, projectName) {
+    // Désactiver le mode template si actif
+    if (typeof window.isTemplateMode !== 'undefined' && window.isTemplateMode) {
+        window.isTemplateMode = false;
+        window.currentTemplate = null;
+        if (typeof cleanUpMarkers === 'function') cleanUpMarkers();
+    }
+
+    // Restaurer la taille de grille
+    if (data.gridSize) {
+        const savedSize = data.gridSize.width || data.gridSize.height || DEFAULT_GRID_SIZE;
+        if (VALID_GRID_SIZES.includes(savedSize) && savedSize !== currentGridSize) {
+            currentGridSize = savedSize;
+            initGrid(savedSize);
+            updateGridSizeIndicator(savedSize);
+            updateGridSizeBtnStates(savedSize);
+        }
+    } else {
+        autoDetectAndResizeGrid(data.frames);
+    }
+
+    // Normaliser et appliquer les frames
+    const rawFrames = typeof data.frames === 'string' ? JSON.parse(data.frames) : data.frames;
+    frames = normaliseFrames(rawFrames);
+    currentFrame = data.current_frame ?? data.currentFrame ?? 0;
+    if (currentFrame >= frames.length) currentFrame = Math.max(0, frames.length - 1);
+
+    // Restaurer les calques
+    const rawLayers = data.frame_layers || data.frameLayers;
+    if (rawLayers && Array.isArray(rawLayers)) {
+        frameLayers = typeof rawLayers === 'string' ? JSON.parse(rawLayers) : rawLayers;
+        _nextLayerId = data.next_layer_id || data._nextLayerId ||
+            frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
+    } else {
+        initLayersFromFrames();
+    }
+    currentLayer = 0;
+
+    // Restaurer les couleurs personnalisées
+    const colors = data.custom_colors || data.customColors;
+    customColors = [];
+    if (colors) {
+        const parsed = typeof colors === 'string' ? JSON.parse(colors) : colors;
+        if (Array.isArray(parsed)) parsed.forEach(c => addCustomColor(c));
+    }
+
+    // Restaurer la palette
+    const paletteSource = data.custom_palette || data.customPalette;
+    if (paletteSource) {
+        customPalette = typeof paletteSource === 'string' ? JSON.parse(paletteSource) : paletteSource;
+        updateCompactPalette();
+    }
+
+    updateColorPalette();
+
+    if (data.fps) setAnimationFPSValue(data.fps);
+
+    // Mettre à jour le titre
+    const title = document.getElementById('projectTitle');
+    if (title) title.textContent = data.name || data.projectTitle || projectName;
+
+    window.currentProjectName = projectName;
+
+    updateFramesList();
+    loadFrame(currentFrame);
+    logUsageEvent('project_loaded', { name: projectName, frames: frames.length, fps: animationFPS });
+}
+
 async function loadSupabaseProjects() {
     try {
         await ensureAuthenticatedUser();
@@ -2827,6 +2978,7 @@ async function loadSupabaseProjects() {
     } catch (error) {
         console.error('Erreur chargement projets:', error);
         loadAutoSaveProjects();
+        showToast(tL('cloudSyncOffline') || '⚠️ Cloud indisponible — projets locaux chargés', { type: 'warning', duration: 5000 });
     }
 }
 
@@ -3012,97 +3164,13 @@ async function showLocalProjects() {
         const projectMeta = autoSaveProjects[selectedProject.index];
         try {
             const result = await window.dbService.loadProject(projectMeta.name);
-
             if (!result.success) {
                 alert(tL('loadProjectError', result.error));
                 return;
             }
-
-            window.currentProjectName = projectMeta.name;
-
-            const data = result.data;
-            console.log('📥 Projet Supabase chargé depuis dialog', {
-                name: data.name,
-                current: data.current_frame,
-                hasFrames: !!data.frames,
-                type: typeof data.frames
-            });
-
-            // Désactiver le mode template si actif
-            if (typeof window.isTemplateMode !== 'undefined' && window.isTemplateMode) {
-                window.isTemplateMode = false;
-                window.currentTemplate = null;
-            }
-            
-            // Restaurer la taille de grille (champ explicite ou auto-détection)
-            if (data.gridSize) {
-                const savedSize = data.gridSize.width || data.gridSize.height || DEFAULT_GRID_SIZE;
-                if (VALID_GRID_SIZES.includes(savedSize) && savedSize !== currentGridSize) {
-                    currentGridSize = savedSize;
-                    initGrid(savedSize);
-                    updateGridSizeIndicator(savedSize);
-                    updateGridSizeBtnStates(savedSize);
-                }
-            } else {
-                autoDetectAndResizeGrid(data.frames);
-            }
-
-            frames = normaliseFrames(data.frames);
-            currentFrame = data.current_frame ?? data.currentFrame ?? 0;
-            if (currentFrame >= frames.length) {
-                currentFrame = Math.max(0, frames.length - 1);
-            }
-
-            // Restore layers or rebuild from composite frames
-            const rawLayers = data.frame_layers || data.frameLayers;
-            if (rawLayers && Array.isArray(rawLayers)) {
-                frameLayers = typeof rawLayers === 'string' ? JSON.parse(rawLayers) : rawLayers;
-                _nextLayerId = data.next_layer_id || data._nextLayerId || frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
-            } else {
-                initLayersFromFrames();
-            }
-            currentLayer = 0;
-
-            const colors = data.custom_colors || data.customColors;
-            customColors = [];
-            if (colors) {
-                const projectColors = typeof colors === 'string' ? JSON.parse(colors) : colors;
-                if (Array.isArray(projectColors)) {
-                    projectColors.forEach(color => addCustomColor(color));
-                }
-            }
-
-            if (data.custom_palette || data.customPalette) {
-                const paletteSource = data.custom_palette || data.customPalette;
-                const paletteArray = typeof paletteSource === 'string' ? JSON.parse(paletteSource) : paletteSource;
-                if (Array.isArray(paletteArray)) {
-                    customPalette = paletteArray;
-                    updateCompactPalette();
-                }
-            }
-
-            // Mettre à jour l'affichage des couleurs personnalisées
-            updateColorPalette();
-
-            if (data.fps) {
-                setAnimationFPSValue(data.fps);
-            }
-
-            const title = document.getElementById('projectTitle');
-            if (title) {
-                title.textContent = data.name || data.projectTitle || projectMeta.name;
-            }
-
-            updateFramesList();
-            loadFrame(currentFrame);
-            logUsageEvent('project_loaded', {
-                name: data.name || projectMeta.name,
-                frames: frames.length,
-                fps: animationFPS
-            });
-            
+            applyProjectData(result.data, projectMeta.name);
             dialog.remove();
-            alert(tL('projectLoaded', data.name || projectMeta.name));
+            alert(tL('projectLoaded', projectMeta.name));
         } catch (error) {
             console.error('Erreur chargement projet Supabase:', error);
             alert(tL('projectLoadErrorDetail'));
@@ -6547,8 +6615,8 @@ async function loadFromServer() {
         const projectsList = projects.map(p => {
             const date = new Date(p.updated_at).toLocaleDateString(tL('dateLocale'));
             const time = new Date(p.updated_at).toLocaleTimeString(tL('dateLocale'), {hour: '2-digit', minute: '2-digit'});
-            return `<div class="project-item" data-name="${p.name}">
-                <strong>${p.name}</strong><br>
+            return `<div class="project-item" data-name="${sanitize(p.name)}">
+                <strong>${sanitize(p.name)}</strong><br>
                 <small>${date} ${tL('at')} ${time}</small>
             </div>`;
         }).join('');
@@ -6586,97 +6654,13 @@ async function loadFromServer() {
             item.addEventListener('click', async () => {
                 const projectName = item.dataset.name;
                 dialog.remove();
-
                 try {
                     const loadResult = await window.dbService.loadProject(projectName);
-                    if (loadResult.success) window.currentProjectName = projectName;
-
                     if (!loadResult.success) {
                         alert(tL('loadProjectsError', loadResult.error));
                         return;
                     }
-
-                    const data = loadResult.data;
-                    console.log('📥 Projet Supabase chargé', {
-                        rawFramesType: typeof data.frames,
-                        hasCustomColors: !!(data.custom_colors || data.customColors),
-                        hasCustomPalette: !!(data.custom_palette || data.customPalette),
-                        fps: data.fps,
-                        currentFrame: data.current_frame ?? data.currentFrame
-                    });
-
-                    // Désactiver le mode template si actif et nettoyer les indicateurs
-                    if (typeof window.isTemplateMode !== 'undefined' && window.isTemplateMode) {
-                        window.isTemplateMode = false;
-                        window.currentTemplate = null;
-                        // Nettoyer les indicateurs de template
-                        cleanUpMarkers();
-                    }
-                    
-                    // Restaurer la taille de grille (champ explicite ou auto-détection)
-                    if (data.gridSize) {
-                        const savedSize = data.gridSize.width || data.gridSize.height || DEFAULT_GRID_SIZE;
-                        if (VALID_GRID_SIZES.includes(savedSize) && savedSize !== currentGridSize) {
-                            currentGridSize = savedSize;
-                            initGrid(savedSize);
-                            updateGridSizeIndicator(savedSize);
-                            updateGridSizeBtnStates(savedSize);
-                        }
-                    } else {
-                        autoDetectAndResizeGrid(data.frames);
-                    }
-
-                    const parsedFrames = typeof data.frames === 'string' ? JSON.parse(data.frames) : data.frames;
-                    frames = normaliseFrames(parsedFrames);
-                    currentFrame = data.current_frame ?? data.currentFrame ?? 0;
-                    if (currentFrame >= frames.length) {
-                        currentFrame = Math.max(0, frames.length - 1);
-                    }
-                    console.log('📐 Frames normalisées', { length: frames.length });
-
-                    // Restore layers or rebuild from composite frames
-                    const rawLayers2 = data.frame_layers || data.frameLayers;
-                    if (rawLayers2 && Array.isArray(rawLayers2)) {
-                        frameLayers = typeof rawLayers2 === 'string' ? JSON.parse(rawLayers2) : rawLayers2;
-                        _nextLayerId = data.next_layer_id || data._nextLayerId || frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
-                    } else {
-                        initLayersFromFrames();
-                    }
-                    currentLayer = 0;
-
-                    const colors = data.custom_colors || data.customColors;
-                    customColors = [];
-                    if (colors) {
-                        const projectColors = typeof colors === 'string' ? JSON.parse(colors) : colors;
-                        if (Array.isArray(projectColors)) {
-                            projectColors.forEach(color => addCustomColor(color));
-                        }
-                    }
-                    console.log('🎨 Couleurs personnalisées appliquées', { count: customColors.length });
-
-                    if (data.custom_palette || data.customPalette) {
-                        const palette = data.custom_palette || data.customPalette;
-                        customPalette = typeof palette === 'string' ? JSON.parse(palette) : palette;
-                        updateCompactPalette();
-                    }
-
-                    // Mettre à jour l'affichage des couleurs personnalisées
-                    updateColorPalette();
-
-                    if (data.fps) {
-                        setAnimationFPSValue(data.fps);
-                    }
-
-                    const title = document.getElementById('projectTitle');
-                    if (title) {
-                        title.textContent = data.name || data.projectTitle || projectName;
-                    }
-
-                    console.log('🖼️ Mise à jour interface', { currentFrame, framesLength: frames.length });
-
-                    updateFramesList();
-                    loadFrame(currentFrame);
-
+                    applyProjectData(loadResult.data, projectName);
                     alert(tL('projectLoaded', projectName));
                 } catch (err) {
                     console.error('Error loading project:', err);
@@ -6715,9 +6699,9 @@ function initMobileFeatures() {
         }, 100);
     });
     
-    window.addEventListener('resize', () => {
+    window.addEventListener('resize', debounce(() => {
         adjustForOrientation();
-    });
+    }, 150));
 }
 
 function optimizeTouchInteractions() {

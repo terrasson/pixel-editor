@@ -7,44 +7,157 @@
     sur le canvas courant. Ghost preview centré sur le curseur,
     pixels transparents préservés, undo supporté, mobile OK.
 
+[x] AUDIT COMPLET DU PROJET (mars 2025)         ✅ Réalisé
+    Code quality + design audit avec les skills :
+    - requesting-code-review (obra/superpowers — 31.8K installs)
+    - frontend-design (anthropics/skills — officiel)
+    - canvas-design (anthropics/skills — officiel)
+    Résultat : B+ code / C+ design / 75% prêt au lancement
+
 ----------------------------------------
-  PRIORITÉS FUTURES
+  🚨 CRITIQUE — BLOQUANTS AVANT LANCEMENT     ✅ TOUS RÉSOLUS
+----------------------------------------
+
+[x] CONFIRMATION AVANT CHANGEMENT DE TAILLE     ✅ Livré
+    Remplacé confirm() natif par showConfirmDialog() — modal stylée
+    thème dark, bouton rouge, annulation réouvre le panel.
+
+[x] GESTION DES ERREURS AUTH SILENCIEUSES       ✅ Livré
+    Ajout showToast() + toast d'avertissement quand cloud est down.
+    "⚠️ Cloud indisponible — projets locaux chargés" (5s, orange).
+
+[x] SANITISATION DES innerHTML                  ✅ Livré
+    Ajout sanitize() + appliqué sur layer.name et p.name (project).
+
+----------------------------------------
+  ⚠️  IMPORTANT — À CORRIGER AVANT LANCEMENT  ✅ TOUS RÉSOLUS
+----------------------------------------
+
+[x] SYSTÈME DE COULEURS CSS                     ✅ Livré
+    Ajout --color-error/success/warning/info + variantes light/rgb
+    + --space-xs/sm/md/lg/xl dans common.css.
+    Toast utilise maintenant ces variables CSS.
+
+[x] DEBOUNCE SUR LE RESIZE WINDOW               ✅ Livré
+    Ajout debounce(fn, 150ms) sur les 2 handlers resize.
+
+[x] QUERY DIRECTE SUR auth.users                ✅ Livré
+    Remplacé par .rpc('get_user_email') + SQL function créée dans Supabase.
+
+[x] RESPONSIVE MOBILE < 375px + TOUCH TARGETS  ✅ Livré
+    - close-btn 30px → 44px (standard iOS/Android)
+    - tools button min-height 36px → 44px à <374px
+    - Nouveau breakpoint @media (max-width: 359px) pour 320px phones
+    - Modals : max-width 95vw, dialog-buttons vertical à <374px
+
+[x] LOGIQUE CHARGEMENT PROJETS DUPLIQUÉE        ✅ Livré
+    Extrait applyProjectData(data, name) — fonction commune.
+    showLocalProjects + loadFromServer utilisent maintenant cette fonction.
+    ~100 lignes supprimées, 0 divergence possible.
+
+[ ] DÉCOUPE DE script.js (~9 500 LIGNES)        🟡 CHANTIER LONG
+    Plan établi — à faire en sessions dédiées.
+
+    PHASE 1 — Quick wins (1-2 sessions)
+    → constants.js   : bitmap font, TL(), config (lignes 1-462)
+    → export.js      : GIF + PNG + sprite sheet (lignes 8354-8668)
+    → image-import.js: photo-to-pixel (lignes 8170-8327)
+
+    PHASE 2 — Features isolables (2-3 sessions)
+    → layers.js      : système multi-calques (762-1077)
+    → palette.js     : couleurs personnalisées (4674-4868)
+    → onion-skin.js  : animation preview (1411-1487)
+    → sharing.js     : QR codes, share links (7587-8169)
+
+    PHASE 3 — Outils (3-4 sessions)
+    → tools/brush.js    : pencil, eraser, gradient
+    → tools/fill.js     : flood fill
+    → tools/stamp.js    : outil tampon (2552-4673, 1200 lignes!)
+    → tools/text.js     : pixel art text (1539-1752)
+    → tools/selection.js: sélection rectangulaire
+
+    PHASE 4 — Core (planifier séparément)
+    → history.js  : undo/redo stack (4869-7420 — 2500 lignes!)
+    → rendering/  : canvas + viewport + zoom/pan
+    → script.js   : réduit à init + DOM listeners (~1500 lignes)
+
+----------------------------------------
+  ✨ POLISH — QUALITÉ ET DESIGN
+----------------------------------------
+
+[ ] NOTIFICATIONS TOAST                         🟢 PRIORITÉ BASSE
+    Aucun feedback visuel pour sauvegardes, copies, partage.
+    Ajouter : système de toast léger (2s, coin bas droit).
+
+[ ] SYSTÈME TYPOGRAPHIQUE FORMALISÉ             🟢 PRIORITÉ BASSE
+    Tailles et graisses disparates dans les CSS.
+    Ajouter : variables --font-size-xs/sm/base/lg/xl + --font-weight-*.
+
+[ ] HARMONISATION DES ICÔNES                    🟢 PRIORITÉ BASSE
+    Mix emojis (🪣 🗑️) + SVG custom (eyedropper).
+    Choisir : tout-emoji ou tout-SVG (recommandé : SVG pour la cohérence).
+
+[ ] ANIMATIONS AVEC SPRING EASING               🟢 PRIORITÉ BASSE
+    Toutes les animations utilisent ease/linear.
+    Fix : cubic-bezier(0.34, 1.56, 0.64, 1) pour layers drag et modals.
+
+[ ] COULEUR SECONDAIRE DISTINCTIVE              🟢 PRIORITÉ BASSE
+    Orange #FF7300 seul = design générique (copie Apple HIG).
+    Ajouter : teal ou magenta comme accent secondaire.
+
+[ ] sessionId CRYPTOGRAPHIQUEMENT FORT          🟢 PRIORITÉ BASSE
+    database.js — sessionId basé sur Date.now() + Math.random().
+    Fix : crypto.getRandomValues() pour plus d'entropie.
+
+----------------------------------------
+  FEATURES FUTURES (ROADMAP)
 ----------------------------------------
 
 [ ] NAVIGATION PAN DANS LA GRILLE ZOOMÉE        🔴 PRIORITÉ HAUTE
-    Permettre de se déplacer dans la grille quand on a zoomé,
-    sans avoir à utiliser le clic droit (peu intuitif).
-
-    Trackpad Mac (MacBook / Magic Trackpad) :
-    - 2 doigts glissés → pan via event "wheel" (deltaX / deltaY)
-    - Détecter trackpad via e.deltaMode === 0 + valeurs faibles
-
-    Magic Mouse Apple :
-    - Swipe 1 doigt → pan (même API wheel, sensibilité différente)
-    - Différencier molette souris (zoom) vs Magic Mouse (pan)
-
-    Mobile / iPad :
-    - 2 doigts sans pinch → pan fluide
-    - 2 doigts avec écart → zoom (déjà partiel)
-    - iPad + Apple Pencil : crayon dessine, 2 doigts panent
-
-    Souris classique :
-    - Space + clic glissé → pan (comme Figma / Photoshop)
-    - Clic molette (bouton 3) → pan
-    - Molette seule → zoom (inchangé)
-
-    Note : cette feature sera naturellement incluse dans la
-    migration canvas (voir ci-dessous). Peut être implémentée
-    avant, mais sera de toute façon réécrite.
+    Trackpad Mac : 2 doigts → pan (event wheel deltaX/deltaY)
+    Magic Mouse : swipe 1 doigt → pan
+    Mobile/iPad : 2 doigts sans pinch → pan, avec écart → zoom
+    Souris : Space + drag, clic molette, molette = zoom
+    Note : sera réécrite lors de la migration canvas.
 
 [ ] MIGRATION VERS LE RENDU CANVAS              🔴 PRIORITÉ HAUTE
     Voir CANVAS-MIGRATION-PLAN.md pour le plan technique complet.
+    Remplacer les N divs par 3 <canvas> superposés.
+    Débloque : grilles 512×512+, pan fluide, Apple Pencil,
+    performances mobile, zoom pixel-perfect. 4 phases progressives.
 
-    Résumé :
-    - Remplacer les N divs par 3 <canvas> superposés
-    - Conserver le modèle de données frames[] intact
-    - 4 phases progressives, chaque phase = app fonctionnelle
-    - Débloque : grilles 512×512+, pan fluide, Apple Pencil,
-      performances mobile, zoom pixel-perfect
+[ ] LANCEMENT REDDIT / PRODUCT HUNT             🟡 À PLANIFIER
+    Skills installés : product-hunt-launch (inferen-sh — 7.9K installs)
+    Préparer : tagline, gallery images, maker comment, timing du post.
+    Subreddits cibles : r/PixelArt, r/gamedev, r/SideProject, r/webdev
+
+----------------------------------------
+  SKILLS INSTALLÉS (disponibles avec /nom)
+----------------------------------------
+
+  /frontend-design        — UI/UX design et dev frontend (Anthropic)
+  /canvas-design          — Design visuel canvas/PNG/PDF (Anthropic)
+  /requesting-code-review — Demander une code review (obra — 31.8K)
+  /receiving-code-review  — Appliquer du feedback de review (obra — 25.5K)
+  /product-hunt-launch    — Stratégie lancement PH (inferen-sh — 7.9K)
+  /simplify               — Revue qualité/efficacité du code
+  /seo-audit              — Audit SEO
+  /seo-geo                — SEO + optimisation IA (ChatGPT, Perplexity...)
+
+========================================
+  NOTES
+========================================
+
+  Note globale audit mars 2025 :
+    Code  : B+  (solide architecture, lacunes error handling)
+    Design: C+  (fonctionnel, trop générique, manque de personnalité)
+    Launch: 75% ready
+
+  Points forts à conserver :
+    ✅ Orange #FF7300 — distinctif
+    ✅ Architecture services auth.js / database.js — propre
+    ✅ Toolbar mobile compacte — bonne UX
+    ✅ Onion skin, layers, multi-size grid — features solides
+    ✅ Animation GIF export
 
 ========================================

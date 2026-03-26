@@ -641,17 +641,24 @@ class DatabaseService {
 
             if (error) throw error;
 
-            // Get owner emails
+            // Get owner emails via RPC (auth.users n'est pas accessible directement côté client)
+            // Requires a Supabase SQL function: get_user_email(user_id uuid) RETURNS text
+            // CREATE OR REPLACE FUNCTION get_user_email(user_id uuid)
+            // RETURNS text LANGUAGE sql SECURITY DEFINER AS $$
+            //   SELECT email FROM auth.users WHERE id = user_id;
+            // $$;
             const enrichedData = await Promise.all(data.map(async (share) => {
-                const { data: owner } = await this.supabase
-                    .from('auth.users')
-                    .select('email')
-                    .eq('id', share.owner_id)
-                    .single();
-
+                let owner_email = 'Unknown';
+                try {
+                    const { data: email } = await this.supabase
+                        .rpc('get_user_email', { user_id: share.owner_id });
+                    if (email) owner_email = email;
+                } catch {
+                    // RPC non disponible — continuer sans l'email
+                }
                 return {
                     ...share,
-                    owner_email: owner?.email || 'Unknown',
+                    owner_email,
                     project: share.pixel_projects
                 };
             }));
