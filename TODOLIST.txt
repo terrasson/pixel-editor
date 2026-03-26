@@ -55,6 +55,18 @@
     showLocalProjects + loadFromServer utilisent maintenant cette fonction.
     ~100 lignes supprimées, 0 divergence possible.
 
+[ ] TESTS AUTOMATISÉS (prérequis à la découpe)  🟡 AVANT DÉCOUPE
+    À mettre en place AVANT de découper script.js pour éviter
+    les régressions lors de la migration en modules.
+    Outil recommandé : Vitest (léger, moderne, compatible ESM)
+    Périmètre prioritaire (logique pure, sans UI) :
+    → createEmptyFrame(), normalisePixel(), normaliseFrames()
+    → computeComposite() — fusion des calques
+    → detectPixelBlockSize() — import photo
+    → saveActionToHistory() / undo / redo
+    → Export GIF : calcul des frames, palette de couleurs
+    Objectif : couvrir les fonctions critiques avant tout refacto.
+
 [ ] DÉCOUPE DE script.js (~9 500 LIGNES)        🟡 CHANTIER LONG
     Plan établi — à faire en sessions dédiées.
 
