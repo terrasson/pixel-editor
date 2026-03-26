@@ -1039,17 +1039,6 @@ class DatabaseService {
         }
     }
 
-    // Set gallery visibility for a share
-    async setGalleryVisibility(shareId, isPublic) {
-        if (!this.supabase) this.init();
-        const { error } = await this.supabase
-            .from('public_shares')
-            .update({ is_public_gallery: isPublic })
-            .eq('id', shareId);
-        if (error) throw error;
-        return { success: true };
-    }
-
     // Delete a gallery share (owner only)
     async deleteGalleryShare(shareId) {
         if (!this.supabase) this.init();

@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public_shares (
 
     -- Configuration
     allow_duplicate BOOLEAN DEFAULT true,
+    is_public_gallery BOOLEAN DEFAULT false,
     expires_at TIMESTAMPTZ,
 
     -- Timestamps
@@ -146,11 +147,18 @@ CREATE POLICY "Owners can delete their public shares"
 -- RLS pour public_share_analytics
 ALTER TABLE public_share_analytics ENABLE ROW LEVEL SECURITY;
 
--- Policy 5: Tout le monde peut créer des analytics (pour tracking)
+-- Policy 5: Uniquement pour des partages publics valides et non expirés
 CREATE POLICY "Anyone can log analytics"
     ON public_share_analytics
     FOR INSERT
-    WITH CHECK (true);
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public_shares
+            WHERE id = share_id
+            AND is_public_gallery = true
+            AND (expires_at IS NULL OR expires_at > NOW())
+        )
+    );
 
 -- Policy 6: Les propriétaires peuvent voir les analytics de leurs partages
 CREATE POLICY "Owners can view analytics of their shares"
