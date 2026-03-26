@@ -97,25 +97,22 @@
   ✨ POLISH — QUALITÉ ET DESIGN
 ----------------------------------------
 
-[ ] NOTIFICATIONS TOAST                         🟢 PRIORITÉ BASSE
-    Aucun feedback visuel pour sauvegardes, copies, partage.
-    Ajouter : système de toast léger (2s, coin bas droit).
+[x] NOTIFICATIONS TOAST                         ✅ Livré
+    Tous les alert() remplacés par showToast() (warning/error/success).
+    Système complet avec durée et type configurables.
 
-[ ] SYSTÈME TYPOGRAPHIQUE FORMALISÉ             🟢 PRIORITÉ BASSE
-    Tailles et graisses disparates dans les CSS.
-    Ajouter : variables --font-size-xs/sm/base/lg/xl + --font-weight-*.
+[x] SYSTÈME TYPOGRAPHIQUE FORMALISÉ             ✅ Livré
+    Variables CSS ajoutées dans common.css (commit ed1db37).
+
+[x] ANIMATIONS AVEC SPRING EASING               ✅ Livré
+    cubic-bezier appliqué sur modals et layers (commit ed1db37).
+
+[x] COULEUR SECONDAIRE DISTINCTIVE              ✅ Livré
+    Accent secondaire ajouté (commit ed1db37).
 
 [ ] HARMONISATION DES ICÔNES                    🟢 PRIORITÉ BASSE
     Mix emojis (🪣 🗑️) + SVG custom (eyedropper).
     Choisir : tout-emoji ou tout-SVG (recommandé : SVG pour la cohérence).
-
-[ ] ANIMATIONS AVEC SPRING EASING               🟢 PRIORITÉ BASSE
-    Toutes les animations utilisent ease/linear.
-    Fix : cubic-bezier(0.34, 1.56, 0.64, 1) pour layers drag et modals.
-
-[ ] COULEUR SECONDAIRE DISTINCTIVE              🟢 PRIORITÉ BASSE
-    Orange #FF7300 seul = design générique (copie Apple HIG).
-    Ajouter : teal ou magenta comme accent secondaire.
 
 [ ] sessionId CRYPTOGRAPHIQUEMENT FORT          🟢 PRIORITÉ BASSE
     database.js — sessionId basé sur Date.now() + Math.random().
@@ -133,14 +130,14 @@
     → Nettoyer database.js pour supprimer ~400 lignes mortes.
 
 [ ] TESTER LA GALERIE APRÈS CORRECTION RLS                   🟡 PRIORITÉ MOYENNE
-    La colonne is_public_gallery a été ajoutée en base.
-    Vérifier que "Publier dans la galerie" fonctionne toujours
-    correctement côté UI (publier, dépublier, affichage galerie).
+    La colonne is_public_gallery a été ajoutée en base (SQL exécuté).
+    Vérifier manuellement : publier, dépublier, affichage galerie.
 
-[ ] AJOUTER sessionId CRYPTOGRAPHIQUEMENT FORT               🟢 PRIORITÉ BASSE
-    database.js — sessionId basé sur Date.now() + Math.random().
-    Fix : crypto.getRandomValues() pour plus d'entropie.
-    (déjà noté dans Polish mais confirmé lors de l'audit sécurité)
+[ ] SUPPRIMER LES FONCTIONS project_shares DANS database.js  🟢 PRIORITÉ BASSE
+    ~400 lignes mortes jamais appelées (sharing.js désactivé).
+
+[ ] sessionId CRYPTOGRAPHIQUEMENT FORT                       🟢 PRIORITÉ BASSE
+    Fix : crypto.getRandomValues() au lieu de Date.now() + Math.random().
 
 ----------------------------------------
   FEATURES FUTURES (ROADMAP)
@@ -185,6 +182,16 @@
     Code  : B+  (solide architecture, lacunes error handling)
     Design: C+  (fonctionnel, trop générique, manque de personnalité)
     Launch: 75% ready
+
+  Session mars 2026 — sécurité + nettoyage :
+    ✅ Tous les alert() → showToast()
+    ✅ XSS, parseInt, memory leaks corrigés
+    ✅ Onion skin et photo→pixel fixés
+    ✅ btoa() supprimé, sharing.js retiré
+    ✅ Galerie : 3 failles RLS corrigées
+    ✅ Vue SQL exposant les emails supprimée
+    ✅ Fichiers morts supprimés (script-beta.js, sharing.js)
+    Launch: ~85% ready
 
   Points forts à conserver :
     ✅ Orange #FF7300 — distinctif
