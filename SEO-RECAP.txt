@@ -1,0 +1,142 @@
+═══════════════════════════════════════════════════════════
+  PIXEL EDITOR — RÉCAPITULATIF SEO (25 mars 2026)
+═══════════════════════════════════════════════════════════
+
+─────────────────────────────────────────────────────────
+  CE QUI A ÉTÉ MIS EN PLACE
+─────────────────────────────────────────────────────────
+
+1. FICHIERS TECHNIQUES
+   ├── public/robots.txt
+   │     → Autorise Google à crawler le site
+   │     → Bloque admin.html, design-preview.html, index-beta.html
+   │     → Référence le sitemap
+   │
+   ├── public/sitemap.xml
+   │     → 8 URLs indexables soumises à Google Search Console
+   │     → Soumis et validé le 25/03/2026 ("Traitement réussi")
+   │
+   └── public/assets/og-image.svg
+         → Image sociale 1200×630 pour les partages (Twitter, LinkedIn, etc.)
+
+2. CORRECTIONS SUR LES PAGES EXISTANTES
+   ├── index.html
+   │     → Balise canonical ajoutée
+   │     → og:image ajouté (vraie URL, plus data URI)
+   │     → Twitter Card ajouté
+   │     → Schema JSON-LD WebApplication ajouté
+   │     → Section "Learn & explore" ajoutée (liens vers les 4 nouvelles pages)
+   │     → Footer enrichi avec liens SEO
+   │
+   ├── editor.html
+   │     → lang="fr" corrigé en lang="en"
+   │     → Title corrigé en anglais
+   │     → Meta description ajoutée
+   │     → Canonical ajouté
+   │     → og:image data URI remplacé par vraie URL
+   │     → Twitter Card ajouté
+   │
+   ├── gallery.html
+   │     → lang="fr" corrigé en lang="en"
+   │     → Title corrigé
+   │     → Meta description ajoutée
+   │     → Canonical + og:url + og:image ajoutés
+   │     → Twitter Card ajouté
+   │
+   ├── shared.html
+   │     → Meta description ajoutée
+   │     → og:image vide remplacé par image de fallback
+   │     → Twitter Card ajouté
+   │
+   ├── login.html
+   │     → Meta description ajoutée
+   │     → Canonical ajouté
+   │
+   ├── admin.html           → noindex, nofollow ajouté
+   ├── design-preview.html  → noindex, nofollow ajouté
+   ├── design-preview-simple.html → noindex, nofollow ajouté
+   └── index-beta.html      → noindex, nofollow ajouté
+
+3. NOUVELLES PAGES DE CONTENU (Programmatic SEO)
+   ├── /pixel-art-editor-online.html
+   │     Keyword : "online pixel art editor" / "pixel art editor online"
+   │     Contenu : features, tutoriel 4 étapes, FAQ (5 questions)
+   │
+   ├── /free-pixel-art-maker.html
+   │     Keyword : "free pixel art maker" / "free pixel art creator"
+   │     Contenu : liste de ce qui est gratuit, tableau comparatif, FAQ
+   │
+   ├── /pixel-art-animation.html
+   │     Keyword : "pixel art animation online" / "pixel art gif maker"
+   │     Contenu : features animation, guide 5 étapes, tips, FAQ
+   │
+   └── /pixel-art-for-beginners.html
+         Keyword : "pixel art for beginners" / "how to make pixel art"
+         Contenu : guide complet, principes, erreurs à éviter, FAQ
+
+   Chaque page contient :
+   ✓ Contenu unique et utile (non dupliqué)
+   ✓ Schema JSON-LD FAQPage (éligible aux rich results Google)
+   ✓ Canonical + OG tags + Twitter Card
+   ✓ Liens internes vers toutes les autres pages
+   ✓ CTA vers l'éditeur
+
+4. GOOGLE SEARCH CONSOLE
+   ✓ Propriété "pixel-editor.app" vérifiée (domaine)
+   ✓ Sitemap soumis : https://pixel-editor.app/sitemap.xml
+   ✓ Statut : "Traitement réussi" — 4 pages découvertes (ancienne version)
+   → Google relira automatiquement et découvrira les 8 URLs sous 24-48h
+
+5. VERCEL
+   ✓ Headers Content-Type corrects pour sitemap.xml et robots.txt
+
+─────────────────────────────────────────────────────────
+  OBJECTIFS FUTURS
+─────────────────────────────────────────────────────────
+
+COURT TERME (1-4 semaines)
+  □ Vérifier dans Search Console → Indexation → Pages
+    que les 8 URLs sont bien indexées
+  □ Aller dans Search Console → Performances pour voir
+    les premiers mots-clés générateurs d'impressions
+  □ Demander l'indexation manuelle des 4 nouvelles pages
+    via Inspection d'URL dans Search Console
+
+MOYEN TERME (1-3 mois)
+  □ Ajouter des pages SEO supplémentaires si besoin :
+      - /pixel-art-for-kids.html
+      - /pixel-art-for-games.html
+      - /pixel-art-sprite-maker.html
+  □ Convertir l'og-image.svg en PNG pour meilleure
+    compatibilité avec Facebook et Twitter
+  □ Ajouter des vrais screenshots/images dans les pages
+    de contenu pour améliorer l'engagement
+  □ Soumettre le site à Bing Webmaster Tools
+    (bing.com/webmasters) pour couvrir Bing + Copilot
+
+LONG TERME (3-6 mois)
+  □ Obtenir des backlinks : soumettre le projet sur
+    Product Hunt, Hacker News (Show HN), Reddit r/gamedev
+  □ Analyser les pages qui rankent et améliorer le contenu
+    en fonction des requêtes réelles (Search Console)
+  □ Envisager le skill seo-geo pour optimiser pour les
+    moteurs de recherche IA (ChatGPT, Perplexity, Gemini)
+
+─────────────────────────────────────────────────────────
+  URLS IMPORTANTES
+─────────────────────────────────────────────────────────
+
+Site                : https://pixel-editor.app
+Éditeur             : https://pixel-editor.app/editor.html
+Galerie             : https://pixel-editor.app/gallery.html
+Sitemap             : https://pixel-editor.app/sitemap.xml
+Robots              : https://pixel-editor.app/robots.txt
+Search Console      : https://search.google.com/search-console
+
+Pages SEO :
+  https://pixel-editor.app/pixel-art-editor-online.html
+  https://pixel-editor.app/free-pixel-art-maker.html
+  https://pixel-editor.app/pixel-art-animation.html
+  https://pixel-editor.app/pixel-art-for-beginners.html
+
+═══════════════════════════════════════════════════════════
