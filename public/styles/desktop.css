@@ -1001,9 +1001,9 @@ body {
 /* Bouton pipette actif */
 .eyedropper-btn.active,
 #eyedropperBtn.active {
-    background: rgba(0, 122, 255, 0.3) !important;
-    border-color: rgba(0, 122, 255, 0.6) !important;
-    box-shadow: 0 0 12px rgba(0, 122, 255, 0.4) !important;
+    background: rgba(var(--color-secondary-rgb, 0, 180, 166), 0.15) !important;
+    border-color: var(--color-secondary, #00B4A6) !important;
+    box-shadow: 0 0 12px rgba(var(--color-secondary-rgb, 0, 180, 166), 0.3) !important;
 }
 
 /* Grille 2×2 outils (Gomme / Pipette / Fill / Symétrie) */
@@ -1056,9 +1056,9 @@ body {
 
 /* Sélection active */
 .selection-btn.active {
-    background: #007AFF !important;
+    background: var(--color-secondary, #00B4A6) !important;
     color: white !important;
-    border-color: #007AFF !important;
+    border-color: var(--color-secondary, #00B4A6) !important;
 }
 
 /* Bouton référence */

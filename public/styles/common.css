@@ -12,6 +12,12 @@
     --color-primary-light: #FFF3E8;
     --color-primary-rgb: 255, 115, 0;
 
+    /* Couleur secondaire — teal pour les accents, états actifs, liens */
+    --color-secondary: #00B4A6;
+    --color-secondary-hover: #009E91;
+    --color-secondary-light: #E6F9F8;
+    --color-secondary-rgb: 0, 180, 166;
+
     /* Arrière-plans */
     --bg-main: #FFFFFF;
     --bg-secondary: #F5F5F7;
@@ -39,6 +45,8 @@
     /* Transitions */
     --transition-fast: 0.15s ease;
     --transition-normal: 0.25s ease;
+    --transition-spring: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     /* Couleurs sémantiques */
     --color-error: #e74c3c;
@@ -60,6 +68,23 @@
     --space-md: 16px;
     --space-lg: 24px;
     --space-xl: 32px;
+
+    /* Typographie */
+    --font-size-xs:   0.75rem;   /* 12px — labels, badges */
+    --font-size-sm:   0.875rem;  /* 14px — secondaire, dates */
+    --font-size-base: 1rem;      /* 16px — corps de texte */
+    --font-size-lg:   1.125rem;  /* 18px — titres panels */
+    --font-size-xl:   1.3rem;    /* ~21px — titres modals */
+    --font-size-2xl:  1.5rem;    /* 24px — titres section */
+
+    --font-weight-normal:   400;
+    --font-weight-medium:   500;
+    --font-weight-semibold: 600;
+    --font-weight-bold:     700;
+
+    --line-height-tight:   1.2;
+    --line-height-normal:  1.5;
+    --line-height-relaxed: 1.75;
 }
 
 /* Branding - Logo + Titre */
@@ -122,12 +147,12 @@ body {
 @keyframes slideIn {
     from {
         opacity: 0;
-        transform: translateY(-20px);
+        transform: translateY(-16px) scale(0.97);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
@@ -203,7 +228,7 @@ body {
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-    animation: slideIn 0.3s ease;
+    animation: slideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Fenêtre modale pour projets - Style simple unifié */

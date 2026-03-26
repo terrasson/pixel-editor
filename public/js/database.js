@@ -362,7 +362,9 @@ class DatabaseService {
     getSessionId() {
         let sessionId = sessionStorage.getItem('pixel_editor_session_id');
         if (!sessionId) {
-            sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const arr = new Uint32Array(3);
+            crypto.getRandomValues(arr);
+            sessionId = `session_${arr[0].toString(36)}${arr[1].toString(36)}${arr[2].toString(36)}`;
             sessionStorage.setItem('pixel_editor_session_id', sessionId);
         }
         return sessionId;

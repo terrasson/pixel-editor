@@ -3170,7 +3170,7 @@ async function showLocalProjects() {
             }
             applyProjectData(result.data, projectMeta.name);
             dialog.remove();
-            alert(tL('projectLoaded', projectMeta.name));
+            showToast(tL('projectLoaded', projectMeta.name), { type: 'success' });
         } catch (error) {
             console.error('Erreur chargement projet Supabase:', error);
             alert(tL('projectLoadErrorDetail'));
@@ -3188,7 +3188,7 @@ async function showLocalProjects() {
 
                 if (result.success) {
                     console.log('✅ Projet supprimé de Supabase');
-                    alert(tL('deleteSuccess'));
+                    showToast(tL('deleteSuccess'), { type: 'success' });
                     dialog.remove();
                     showLocalProjects(); // Refresh the list
                 } else {
@@ -5591,7 +5591,7 @@ async function saveToFile() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            alert(tL('savedDownloaded'));
+            showToast(tL('savedDownloaded'), { type: 'success' });
             return;
         }
         
@@ -5601,7 +5601,7 @@ async function saveToFile() {
             titleElement.textContent = projectName;
         }
         
-        alert(tL('savedLocally'));
+        showToast(tL('savedLocally'), { type: 'success' });
         
     } catch (err) {
         console.error('Erreur lors de la sauvegarde:', err);
@@ -6661,7 +6661,7 @@ async function loadFromServer() {
                         return;
                     }
                     applyProjectData(loadResult.data, projectName);
-                    alert(tL('projectLoaded', projectName));
+                    showToast(tL('projectLoaded', projectName), { type: 'success' });
                 } catch (err) {
                     console.error('Error loading project:', err);
                     alert(tL('loadProjectErrorShort'));
@@ -6941,7 +6941,7 @@ async function loadFromServerMobile() {
                     loadFrame(currentFrame);
                     
                     dialog.remove();
-                    alert(tL('projectLoadedShort'));
+                    showToast(tL('projectLoadedShort'), { type: 'success' });
                 } catch (err) {
                     console.error('Erreur lors du chargement:', err);
                     alert(tL('loadErrorShort'));
@@ -7477,7 +7477,7 @@ function importProjectData(projectData) {
         
         // Notification de succès
         setTimeout(() => {
-            alert(tL('sharedProjectOpened', projectData.name || tL('sharedProject')));
+            showToast(tL('sharedProjectOpened', projectData.name || tL('sharedProject')), { type: 'success' });
         }, 500);
         
     } catch (error) {
@@ -7647,14 +7647,14 @@ function showShareDialog(blob, fileName, projectData) {
             } else {
                 // Fallback : copier le lien
                 await navigator.clipboard.writeText(shareUrl);
-                alert(tL('linkCopiedDetail'));
+                showToast(tL('linkCopied'), { type: 'success' });
             }
             dialog.remove();
         } catch (error) {
             // Si le partage échoue, copier dans le presse-papier
             try {
                 await navigator.clipboard.writeText(shareUrl);
-                alert(tL('linkCopied'));
+                showToast(tL('linkCopied'), { type: 'success' });
                 dialog.remove();
             } catch (clipboardError) {
                 // Afficher le lien pour copie manuelle
@@ -7818,7 +7818,7 @@ async function importSharedProject(file) {
         updateFramesList();
         loadFrame(currentFrame);
         
-        alert(tL('importSuccess', projectName));
+        showToast(tL('importSuccess', projectName), { type: 'success' });
         
     } catch (error) {
         console.error('Erreur lors de l\'import:', error);
@@ -9026,7 +9026,7 @@ async function submitProfileForm(event) {
             if (typeof showNotification === 'function') {
                 showNotification(tL('profileUpdated'), 'success');
             } else {
-                alert(tL('profileUpdated'));
+                showToast(tL('profileUpdated'), { type: 'success' });
             }
             logUsageEvent('profile_saved', {
                 age_range: result.data.age_range,
