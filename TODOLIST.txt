@@ -110,34 +110,35 @@
 [x] COULEUR SECONDAIRE DISTINCTIVE              ✅ Livré
     Accent secondaire ajouté (commit ed1db37).
 
-[ ] HARMONISATION DES ICÔNES                    🟢 PRIORITÉ BASSE
-    Mix emojis (🪣 🗑️) + SVG custom (eyedropper).
-    Choisir : tout-emoji ou tout-SVG (recommandé : SVG pour la cohérence).
+----------------------------------------
+  🔧 POUR DEMAIN — CORRECTIONS NON CRITIQUES
+----------------------------------------
 
-[ ] sessionId CRYPTOGRAPHIQUEMENT FORT          🟢 PRIORITÉ BASSE
+[ ] SUPPRIMER LES FONCTIONS project_shares DANS database.js
+    ~400 lignes mortes jamais appelées (sharing.js désactivé).
+    Fonctions à supprimer : shareProject(), getSharedWithMeProjects(),
+    getPendingSharesCount(), acceptShare(), declineShare(),
+    duplicateSharedProject(), getSharedProjectData(), getMyShares(), revokeShare()
+
+[ ] sessionId CRYPTOGRAPHIQUEMENT FORT
     database.js — sessionId basé sur Date.now() + Math.random().
     Fix : crypto.getRandomValues() pour plus d'entropie.
 
-----------------------------------------
-  🧹 NETTOYAGE LONG TERME (non urgent)
-----------------------------------------
+[ ] HARMONISATION DES ICÔNES
+    Mix emojis (🪣 🗑️) + SVG custom (eyedropper).
+    Choisir : tout-emoji ou tout-SVG (recommandé : SVG pour cohérence).
 
-[ ] SUPPRIMER LES FONCTIONS project_shares DANS database.js  🟢 PRIORITÉ BASSE
-    Les fonctions shareProject(), getSharedWithMeProjects(),
-    getPendingSharesCount(), acceptShare(), declineShare(),
-    duplicateSharedProject(), getSharedProjectData(), getMyShares(),
-    revokeShare() sont toujours présentes mais jamais appelées.
-    → Nettoyer database.js pour supprimer ~400 lignes mortes.
-
-[x] TESTER LA GALERIE APRÈS CORRECTION RLS                   ✅ Livré
-    Colonne is_public_gallery ajoutée, bug INSERT corrigé.
-    Bouton "Publier dans la galerie" fonctionnel (testé mars 2026).
-
-[ ] SUPPRIMER LES FONCTIONS project_shares DANS database.js  🟢 PRIORITÉ BASSE
-    ~400 lignes mortes jamais appelées (sharing.js désactivé).
-
-[ ] sessionId CRYPTOGRAPHIQUEMENT FORT                       🟢 PRIORITÉ BASSE
-    Fix : crypto.getRandomValues() au lieu de Date.now() + Math.random().
+[ ] TESTS AUTOMATISÉS — MISE EN PLACE (Vitest)
+    Installer Vitest et écrire les premiers tests sur les fonctions pures.
+    Ordre suggéré :
+    1. createEmptyFrame(w, h) — retourne w*h pixels vides
+    2. normalisePixel(pixel) — corrige couleurs invalides
+    3. normaliseFrames(rawFrames) — gère tous les formats d'import
+    4. computeComposite(frameIndex) — fusion des calques
+    5. detectPixelBlockSize(w, h) — import photo
+    6. saveActionToHistory() / undo / redo — pile d'historique
+    7. Export GIF — calcul frames et palette
+    Commande : npm install -D vitest && npx vitest run
 
 ----------------------------------------
   FEATURES FUTURES (ROADMAP)
