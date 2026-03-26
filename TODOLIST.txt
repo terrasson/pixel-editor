@@ -143,18 +143,12 @@
   FEATURES FUTURES (ROADMAP)
 ----------------------------------------
 
-[ ] NAVIGATION PAN DANS LA GRILLE ZOOMÉE        🔴 PRIORITÉ HAUTE
-    Trackpad Mac : 2 doigts → pan (event wheel deltaX/deltaY)
-    Magic Mouse : swipe 1 doigt → pan
-    Mobile/iPad : 2 doigts sans pinch → pan, avec écart → zoom
-    Souris : Space + drag, clic molette, molette = zoom
-    Note : sera réécrite lors de la migration canvas.
+[x] NAVIGATION PAN DANS LA GRILLE ZOOMÉE        ✅ Livré (mars 2026)
+    Trackpad, Magic Mouse, mobile 2 doigts, Space+drag — tous supportés.
 
-[ ] MIGRATION VERS LE RENDU CANVAS              🔴 PRIORITÉ HAUTE
-    Voir CANVAS-MIGRATION-PLAN.md pour le plan technique complet.
-    Remplacer les N divs par 3 <canvas> superposés.
-    Débloque : grilles 512×512+, pan fluide, Apple Pencil,
-    performances mobile, zoom pixel-perfect. 4 phases progressives.
+[x] MIGRATION VERS LE RENDU CANVAS              ✅ Livré (mars 2026)
+    3 <canvas> superposés, grilles 512×512+, pan fluide, zoom pixel-perfect.
+    Apple Pencil, performances mobile améliorées.
 
 [ ] LANCEMENT REDDIT / PRODUCT HUNT             🟡 À PLANIFIER
     Skills installés : product-hunt-launch (inferen-sh — 7.9K installs)
@@ -192,6 +186,11 @@
     ✅ Vue SQL exposant les emails supprimée
     ✅ Fichiers morts supprimés (script-beta.js, sharing.js)
     Launch: ~85% ready
+
+  Session mars 2026 — canvas + pan :
+    ✅ Migration rendu canvas (3 canvas superposés)
+    ✅ Navigation pan (trackpad, touch, Space+drag)
+    Launch: ~95% ready
 
   Points forts à conserver :
     ✅ Orange #FF7300 — distinctif
