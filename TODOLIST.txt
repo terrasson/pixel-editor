@@ -110,6 +110,27 @@
     Fix : crypto.getRandomValues() pour plus d'entropie.
 
 ----------------------------------------
+  🧹 NETTOYAGE LONG TERME (non urgent)
+----------------------------------------
+
+[ ] SUPPRIMER LES FONCTIONS project_shares DANS database.js  🟢 PRIORITÉ BASSE
+    Les fonctions shareProject(), getSharedWithMeProjects(),
+    getPendingSharesCount(), acceptShare(), declineShare(),
+    duplicateSharedProject(), getSharedProjectData(), getMyShares(),
+    revokeShare() sont toujours présentes mais jamais appelées.
+    → Nettoyer database.js pour supprimer ~400 lignes mortes.
+
+[ ] TESTER LA GALERIE APRÈS CORRECTION RLS                   🟡 PRIORITÉ MOYENNE
+    La colonne is_public_gallery a été ajoutée en base.
+    Vérifier que "Publier dans la galerie" fonctionne toujours
+    correctement côté UI (publier, dépublier, affichage galerie).
+
+[ ] AJOUTER sessionId CRYPTOGRAPHIQUEMENT FORT               🟢 PRIORITÉ BASSE
+    database.js — sessionId basé sur Date.now() + Math.random().
+    Fix : crypto.getRandomValues() pour plus d'entropie.
+    (déjà noté dans Polish mais confirmé lors de l'audit sécurité)
+
+----------------------------------------
   FEATURES FUTURES (ROADMAP)
 ----------------------------------------
 
