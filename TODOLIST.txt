@@ -129,9 +129,9 @@
     revokeShare() sont toujours présentes mais jamais appelées.
     → Nettoyer database.js pour supprimer ~400 lignes mortes.
 
-[ ] TESTER LA GALERIE APRÈS CORRECTION RLS                   🟡 PRIORITÉ MOYENNE
-    La colonne is_public_gallery a été ajoutée en base (SQL exécuté).
-    Vérifier manuellement : publier, dépublier, affichage galerie.
+[x] TESTER LA GALERIE APRÈS CORRECTION RLS                   ✅ Livré
+    Colonne is_public_gallery ajoutée, bug INSERT corrigé.
+    Bouton "Publier dans la galerie" fonctionnel (testé mars 2026).
 
 [ ] SUPPRIMER LES FONCTIONS project_shares DANS database.js  🟢 PRIORITÉ BASSE
     ~400 lignes mortes jamais appelées (sharing.js désactivé).
