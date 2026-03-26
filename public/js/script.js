@@ -7085,6 +7085,8 @@ function initEventListeners() {
         if (typeof handleShareButtonClick === 'function') handleShareButtonClick();
         else shareProject();
     });
+    document.getElementById('publishGalleryBtn')?.addEventListener('click', publishToGallery);
+    document.getElementById('publishGalleryBtn2')?.addEventListener('click', publishToGallery);
     document.getElementById('exportGifBtn')?.addEventListener('click', exportToGif);
     document.getElementById('exportSpriteSheetBtn')?.addEventListener('click', exportToSpriteSheet);
     document.getElementById('stampSpriteBtn')?.addEventListener('click', showStampModal);
@@ -7507,6 +7509,36 @@ function createShareableProject() {
     };
     
     return projectData;
+}
+
+// Publier le projet courant dans la galerie publique
+async function publishToGallery() {
+    if (!window.dbService) {
+        showToast(tL('notAuthenticated') || 'Connexion requise', { type: 'warning' });
+        return;
+    }
+
+    if (!window.currentProjectName) {
+        showToast(tL('saveBeforePublish') || '⚠️ Sauvegardez d\'abord votre projet avant de le publier', { type: 'warning', duration: 4000 });
+        return;
+    }
+
+    // Synchroniser la frame courante avant publication
+    saveCurrentFrame();
+
+    showToast('⏳ Publication en cours…', { type: 'info', duration: 2000 });
+
+    try {
+        const result = await window.dbService.createPublicShare(window.currentProjectName, { publishToGallery: true });
+        if (result.success) {
+            showToast('✅ Projet publié dans la galerie !', { type: 'success', duration: 5000 });
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        console.error('Erreur publication galerie:', error);
+        showToast('❌ Erreur : ' + error.message, { type: 'error', duration: 5000 });
+    }
 }
 
 // Partager un projet via Web Share API ou téléchargement
@@ -9076,6 +9108,14 @@ async function updateUserProfileDisplay() {
                 });
             }
             
+            const publishGalleryBtnDropdown = document.getElementById('publishGalleryBtnDropdown');
+            if (publishGalleryBtnDropdown) {
+                publishGalleryBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    publishToGallery();
+                });
+            }
+
             const galleryBtnDropdown = document.getElementById('galleryBtnDropdown');
             if (galleryBtnDropdown) {
                 galleryBtnDropdown.addEventListener('click', () => {
