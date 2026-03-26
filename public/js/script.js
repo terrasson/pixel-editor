@@ -8110,9 +8110,11 @@ async function importPixelArtImage(file) {
                     if (maxDim > currentGridSize) {
                         const fittingSize = VALID_GRID_SIZES.find(s => s >= maxDim);
                         if (fittingSize) {
-                            const ok = confirm(tL('imageResizeConfirm', artW, artH, currentGridSize, fittingSize));
+                            const ok = await showConfirmDialog(tL('imageResizeConfirm', artW, artH, currentGridSize, fittingSize));
                             if (ok) {
-                                changeGridSize(fittingSize, { skipConfirm: true });
+                                changeGridSize(fittingSize);
+                                // reset frame after grid change so we write into a clean state
+                                currentFrame = 0;
                             }
                         }
                     }
@@ -8181,10 +8183,13 @@ async function importPixelArtImage(file) {
 
                     // Appliquer la frame sur le calque actuel (multi-couches)
                     ensureFrameHasLayers(currentFrame);
+                    currentLayer = 0;
                     frameLayers[currentFrame][currentLayer].pixels = newFrame.map(p => ({ ...p }));
                     frames[currentFrame] = computeComposite(currentFrame);
-                    loadFrame(currentFrame);
+                    // Sync buffer directement pour garantir l'affichage
+                    currentFrameBuffer = newFrame.map(p => ({ ...p }));
                     updateFramesList();
+                    renderCanvas();
 
                     // Ajouter les couleurs détectées à la palette personnalisée
                     colorsUsed.forEach(color => addCustomColor(color));
