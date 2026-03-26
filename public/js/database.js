@@ -1018,7 +1018,7 @@ class DatabaseService {
                     project_thumbnail: project.thumbnail,
                     allow_duplicate: options.allowDuplicate !== false,
                     expires_at: expiresAt,
-                    is_public_gallery: false
+                    is_public_gallery: options.publishToGallery === true
                 })
                 .select()
                 .single();
