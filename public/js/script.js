@@ -7260,6 +7260,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('gridSizeBtnSidebar')?.addEventListener('click', showGridSizeModal);
     updateGridSizeIndicator(currentGridSize);
     
+    // Initialiser la fonctionnalité Photo → Pixel Art
+    initPhotoToPixelFeature();
+
     // Initialiser l'historique undo/redo APRÈS que la grille soit prête
     setTimeout(() => {
         initHistory();
@@ -9372,4 +9375,260 @@ async function updateUserProfileDisplay() {
 window.updateUserProfileDisplay = updateUserProfileDisplay;
 
 
+// ============================================================
+// Fonctionnalité Photo → Pixel Art
+// ============================================================
 
+function initPhotoToPixelFeature() {
+    const photoBtn = document.getElementById('photoToPixelBtn');
+    const photoBtn2 = document.getElementById('photoToPixelBtn2');
+    if (photoBtn) photoBtn.addEventListener('click', showPhotoToPixelDialog);
+    if (photoBtn2) photoBtn2.addEventListener('click', showPhotoToPixelDialog);
+}
+
+function showPhotoToPixelDialog() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+    content.style.cssText = 'max-width:500px;width:90%;background:linear-gradient(155deg,rgba(36,48,94,.98),rgba(28,38,80,.95));border:1px solid rgba(255,255,255,.2);border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.6);padding:20px;color:rgba(255,255,255,.95)';
+
+    const title = document.createElement('h3');
+    title.textContent = '📷 Convertir une photo en Pixel Art';
+    title.style.cssText = 'margin-top:0;text-align:center;color:rgba(255,255,255,.98);font-weight:600';
+
+    const fileLabel = document.createElement('label');
+    fileLabel.textContent = 'Sélectionner une image :';
+    fileLabel.style.cssText = 'display:block;margin-bottom:10px;font-weight:600';
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.id = 'photoInput';
+    fileInput.accept = 'image/*';
+    fileInput.style.cssText = 'width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:rgba(255,255,255,.95);font-size:14px;box-sizing:border-box';
+
+    const modeLabel = document.createElement('label');
+    modeLabel.textContent = 'Mode de conversion :';
+    modeLabel.style.cssText = 'display:block;margin:15px 0 10px;font-weight:600';
+    const modeSelect = document.createElement('select');
+    modeSelect.id = 'conversionMode';
+    modeSelect.style.cssText = 'width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(36,48,94,.98);color:rgba(255,255,255,.95);font-size:14px';
+    [['simple', '⚡ Simple (conversion directe)'], ['quantized', '🎨 Avancé (quantification de couleurs)']].forEach(([val, txt]) => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = txt;
+        modeSelect.appendChild(opt);
+    });
+
+    const advancedDiv = document.createElement('div');
+    advancedDiv.style.display = 'none';
+
+    const colorLabel = document.createElement('label');
+    colorLabel.textContent = 'Nombre de couleurs :';
+    colorLabel.style.cssText = 'display:block;margin-bottom:10px;font-weight:600';
+    const colorSelect = document.createElement('select');
+    colorSelect.id = 'colorCount';
+    colorSelect.style.cssText = 'width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(36,48,94,.98);color:rgba(255,255,255,.95);font-size:14px';
+    [['8','8 couleurs (style rétro)'],['16','16 couleurs (recommandé)'],['32','32 couleurs (plus détaillé)']].forEach(([val, txt]) => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = txt;
+        if (val === '16') opt.selected = true;
+        colorSelect.appendChild(opt);
+    });
+
+    const contrastLabel = document.createElement('label');
+    contrastLabel.textContent = 'Contraste :';
+    contrastLabel.style.cssText = 'display:block;margin:15px 0 10px;font-weight:600';
+    const contrastSlider = document.createElement('input');
+    contrastSlider.type = 'range';
+    contrastSlider.min = '0'; contrastSlider.max = '200'; contrastSlider.value = '100';
+    contrastSlider.style.width = '100%';
+    const contrastValue = document.createElement('span');
+    contrastValue.textContent = '100%';
+    contrastValue.style.cssText = 'display:block;text-align:center;margin-top:5px';
+
+    const brightnessLabel = document.createElement('label');
+    brightnessLabel.textContent = 'Luminosité :';
+    brightnessLabel.style.cssText = 'display:block;margin:15px 0 10px;font-weight:600';
+    const brightnessSlider = document.createElement('input');
+    brightnessSlider.type = 'range';
+    brightnessSlider.min = '0'; brightnessSlider.max = '200'; brightnessSlider.value = '100';
+    brightnessSlider.style.width = '100%';
+    const brightnessValue = document.createElement('span');
+    brightnessValue.textContent = '100%';
+    brightnessValue.style.cssText = 'display:block;text-align:center;margin-top:5px';
+
+    advancedDiv.append(colorLabel, colorSelect, contrastLabel, contrastSlider, contrastValue, brightnessLabel, brightnessSlider, brightnessValue);
+
+    const tip = document.createElement('div');
+    tip.style.cssText = 'margin:20px 0;padding:15px;background:rgba(0,122,255,.3);border-radius:8px;border:1px solid rgba(0,122,255,.5);font-size:.9rem';
+    const tipText = document.createElement('p');
+    tipText.style.margin = '0';
+    tipText.innerHTML = '💡 <strong>Astuce :</strong> Le mode avancé réduit le nombre de couleurs pour un rendu plus "pixel art" authentique.';
+    tip.appendChild(tipText);
+
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:10px;margin-top:20px';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Annuler';
+    cancelBtn.style.cssText = 'flex:1;padding:12px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.95);cursor:pointer;font-weight:600';
+    const convertBtn = document.createElement('button');
+    convertBtn.textContent = 'Convertir';
+    convertBtn.disabled = true;
+    convertBtn.style.cssText = 'flex:1;padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,#FF6B6B,#FF8E53);color:#fff;cursor:pointer;font-weight:600';
+    btnRow.append(cancelBtn, convertBtn);
+
+    content.append(title, fileLabel, fileInput, modeLabel, modeSelect, advancedDiv, tip, btnRow);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    modeSelect.addEventListener('change', e => {
+        advancedDiv.style.display = e.target.value === 'quantized' ? 'block' : 'none';
+    });
+    contrastSlider.addEventListener('input', e => { contrastValue.textContent = e.target.value + '%'; });
+    brightnessSlider.addEventListener('input', e => { brightnessValue.textContent = e.target.value + '%'; });
+    fileInput.addEventListener('change', e => { convertBtn.disabled = !e.target.files || !e.target.files.length; });
+    cancelBtn.addEventListener('click', () => modal.remove());
+
+    convertBtn.addEventListener('click', async () => {
+        const file = fileInput.files[0];
+        if (!file) { showToast(tL('selectImageFirst') || 'Veuillez sélectionner une image', { type: 'warning' }); return; }
+
+        const mode = modeSelect.value;
+        const colorCount = parseInt(colorSelect.value, 10);
+        const contrast = parseInt(contrastSlider.value, 10) / 100;
+        const brightness = parseInt(brightnessSlider.value, 10) / 100;
+
+        convertBtn.disabled = true;
+        convertBtn.textContent = '⏳ Conversion...';
+
+        try {
+            const result = await convertPhotoToPixelArt(file, mode, colorCount, contrast, brightness);
+            modal.remove();
+            let msg = '✅ Photo convertie avec succès !\n\n📊 Statistiques :\n';
+            if (result) {
+                msg += `- Couleurs uniques : ${result.totalColors}\n`;
+                msg += `- Couleurs ajoutées à la palette : ${result.addedColors}\n`;
+                if (result.defaultColors > 0) msg += `- Couleurs de base (non ajoutées) : ${result.defaultColors}\n`;
+            }
+            showToast(msg, { type: 'success', duration: 6000 });
+        } catch (error) {
+            console.error('Erreur lors de la conversion:', error);
+            showToast('❌ Erreur lors de la conversion : ' + error.message, { type: 'error', duration: 5000 });
+            convertBtn.disabled = false;
+            convertBtn.textContent = 'Convertir';
+        }
+    });
+}
+
+function convertPhotoToPixelArt(file, mode, colorCount, contrast, brightness) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = e => {
+            img.onload = () => {
+                try {
+                    const size = currentGridSize;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, size, size);
+
+                    if (mode === 'quantized' && (contrast !== 1 || brightness !== 1)) {
+                        _photoApplyAdjustments(ctx, size, size, contrast, brightness);
+                    }
+
+                    const imageData = ctx.getImageData(0, 0, size, size);
+                    const pixels = imageData.data;
+                    const newFrame = [];
+                    const colorsUsed = new Set();
+
+                    for (let i = 0; i < pixels.length; i += 4) {
+                        let r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+                        const a = pixels[i + 3];
+                        if (a < 128) { r = 255; g = 255; b = 255; }
+                        if (mode === 'quantized') {
+                            const q = _photoQuantizeColor(r, g, b, colorCount);
+                            r = q.r; g = q.g; b = q.b;
+                        }
+                        const color = _photoRgbToHex(r, g, b);
+                        newFrame.push({ color, isEmpty: false });
+                        colorsUsed.add(color);
+                    }
+
+                    if (frames && frames.length > 0 && typeof currentFrame !== 'undefined') {
+                        ensureFrameHasLayers(currentFrame);
+                        currentLayer = 0;
+                        frameLayers[currentFrame][0].pixels = newFrame.map(p => ({ ...p }));
+                        frames[currentFrame] = computeComposite(currentFrame);
+                        loadFrame(currentFrame);
+                        updateFramesList();
+                        const result = _photoAddColorsToPalette(Array.from(colorsUsed));
+                        resolve(result);
+                    } else {
+                        reject(new Error('Impossible d\'accéder aux frames'));
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            img.onerror = () => reject(new Error('Impossible de charger l\'image'));
+            img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error('Erreur lors de la lecture du fichier'));
+        reader.readAsDataURL(file);
+    });
+}
+
+function _photoApplyAdjustments(ctx, width, height, contrast, brightness) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        data[i]   = Math.max(0, Math.min(255, ((data[i]   - 128) * contrast) + 128));
+        data[i+1] = Math.max(0, Math.min(255, ((data[i+1] - 128) * contrast) + 128));
+        data[i+2] = Math.max(0, Math.min(255, ((data[i+2] - 128) * contrast) + 128));
+        data[i]   = Math.max(0, Math.min(255, data[i]   * brightness));
+        data[i+1] = Math.max(0, Math.min(255, data[i+1] * brightness));
+        data[i+2] = Math.max(0, Math.min(255, data[i+2] * brightness));
+    }
+    ctx.putImageData(imageData, 0, 0);
+}
+
+function _photoQuantizeColor(r, g, b, colorCount) {
+    const levels = Math.sqrt(colorCount);
+    const step = 255 / (levels - 1);
+    return {
+        r: Math.max(0, Math.min(255, Math.round(r / step) * step)),
+        g: Math.max(0, Math.min(255, Math.round(g / step) * step)),
+        b: Math.max(0, Math.min(255, Math.round(b / step) * step))
+    };
+}
+
+function _photoRgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(x => {
+        const h = Math.round(x).toString(16);
+        return h.length === 1 ? '0' + h : h;
+    }).join('').toUpperCase();
+}
+
+function _photoAddColorsToPalette(colors) {
+    const defaultColors = ['#000000','#FFFFFF','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF'];
+    const stats = { totalColors: colors.length, addedColors: 0, skippedColors: 0, defaultColors: 0 };
+    const photoLimit = 64;
+
+    colors.forEach(color => {
+        const c = color.startsWith('#') ? color.toUpperCase() : '#' + color.toUpperCase();
+        if (defaultColors.includes(c)) { stats.defaultColors++; return; }
+        if (customColors.includes(c)) { stats.skippedColors++; return; }
+        if (customColors.length < photoLimit) { customColors.push(c); stats.addedColors++; }
+    });
+
+    if (typeof updateColorPalette === 'function') updateColorPalette();
+    if (typeof updateCompactPalette === 'function') updateCompactPalette();
+    if (typeof saveCustomColors === 'function') saveCustomColors();
+    return stats;
+}

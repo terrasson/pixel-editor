@@ -263,7 +263,15 @@
                         
                         // Appliquer la frame à la grille actuelle
                         if (frames && frames.length > 0 && typeof currentFrame !== 'undefined') {
-                            frames[currentFrame] = newFrame;
+                            // Écrire dans le système de couches (source de vérité)
+                            if (typeof ensureFrameHasLayers === 'function') {
+                                ensureFrameHasLayers(currentFrame);
+                            }
+                            currentLayer = 0;
+                            frameLayers[currentFrame][0].pixels = newFrame.map(p => ({ ...p }));
+                            frames[currentFrame] = (typeof computeComposite === 'function')
+                                ? computeComposite(currentFrame)
+                                : newFrame;
                             loadFrame(currentFrame);
                             updateFramesList();
                             
