@@ -931,21 +931,55 @@ function _renderLayersList(container, layers) {
         item.className = 'layer-item' + (isActive ? ' active' : '');
         item.dataset.layerIndex = i;
         item.draggable = true;
-        item.innerHTML = `
-            <span class="layer-drag-handle" title="Glisser pour réordonner">⠿</span>
-            <button class="layer-eye ${layer.visible ? '' : 'layer-hidden'}" onclick="toggleLayerVisibility(${i})" title="${layer.visible ? 'Masquer le calque' : 'Afficher le calque'}">
-                ${layer.visible
-                    ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
-                    : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
-                }
-            </button>
-            <span class="layer-name ${layer.visible ? '' : 'layer-name-hidden'}" ondblclick="promptRenameLayer(${i})" title="Double-cliquer pour renommer">${sanitize(layer.name)}</span>
-            <div class="layer-actions">
-                ${i > 0 ? `<button class="layer-action-btn" onclick="mergeLayerDown(${i})" title="Fusionner avec le calque dessous">⬇</button>` : ''}
-                <button class="layer-action-btn" onclick="duplicateLayer(${i})" title="Dupliquer">⧉</button>
-                ${layers.length > 1 ? `<button class="layer-action-btn layer-delete-btn" onclick="deleteLayer(${i})" title="Supprimer">×</button>` : ''}
-            </div>
-        `;
+        const eyeSvgVisible = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+        const eyeSvgHidden = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+        const eyeBtn = document.createElement('button');
+        eyeBtn.className = `layer-eye ${layer.visible ? '' : 'layer-hidden'}`;
+        eyeBtn.title = layer.visible ? 'Masquer le calque' : 'Afficher le calque';
+        eyeBtn.innerHTML = layer.visible ? eyeSvgVisible : eyeSvgHidden;
+        eyeBtn.addEventListener('click', () => toggleLayerVisibility(i));
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = `layer-name ${layer.visible ? '' : 'layer-name-hidden'}`;
+        nameSpan.title = 'Double-cliquer pour renommer';
+        nameSpan.textContent = layer.name;
+        nameSpan.addEventListener('dblclick', () => promptRenameLayer(i));
+
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'layer-actions';
+
+        if (i > 0) {
+            const mergeBtn = document.createElement('button');
+            mergeBtn.className = 'layer-action-btn';
+            mergeBtn.title = 'Fusionner avec le calque dessous';
+            mergeBtn.textContent = '⬇';
+            mergeBtn.addEventListener('click', () => mergeLayerDown(i));
+            actionsDiv.appendChild(mergeBtn);
+        }
+
+        const dupBtn = document.createElement('button');
+        dupBtn.className = 'layer-action-btn';
+        dupBtn.title = 'Dupliquer';
+        dupBtn.textContent = '⧉';
+        dupBtn.addEventListener('click', () => duplicateLayer(i));
+        actionsDiv.appendChild(dupBtn);
+
+        if (layers.length > 1) {
+            const delBtn = document.createElement('button');
+            delBtn.className = 'layer-action-btn layer-delete-btn';
+            delBtn.title = 'Supprimer';
+            delBtn.textContent = '×';
+            delBtn.addEventListener('click', () => deleteLayer(i));
+            actionsDiv.appendChild(delBtn);
+        }
+
+        const dragHandle = document.createElement('span');
+        dragHandle.className = 'layer-drag-handle';
+        dragHandle.title = 'Glisser pour réordonner';
+        dragHandle.textContent = '⠿';
+
+        item.append(dragHandle, eyeBtn, nameSpan, actionsDiv);
 
         // Sélectionner le calque au clic
         item.addEventListener('click', (e) => {
@@ -980,8 +1014,8 @@ function _renderLayersList(container, layers) {
         });
         item.addEventListener('drop', (e) => {
             e.preventDefault();
-            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-            const toIndex = parseInt(item.dataset.layerIndex);
+            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+            const toIndex = parseInt(item.dataset.layerIndex, 10);
             const rect = item.getBoundingClientRect();
             const dropAbove = e.clientY < rect.top + rect.height / 2;
             item.classList.remove('layer-drop-above', 'layer-drop-below');
@@ -1013,7 +1047,7 @@ function _renderLayersList(container, layers) {
             item.classList.remove('layer-dragging');
             const target = container.querySelector('.layer-drop-above, .layer-drop-below');
             if (target) {
-                const toIndex = parseInt(target.dataset.layerIndex);
+                const toIndex = parseInt(target.dataset.layerIndex, 10);
                 const dropAbove = target.classList.contains('layer-drop-above');
                 target.classList.remove('layer-drop-above', 'layer-drop-below');
                 if (_touchDragFrom !== toIndex) reorderLayer(_touchDragFrom, toIndex, dropAbove);
@@ -1454,7 +1488,7 @@ function showOnionSkinPanel() {
     });
 
     dialog.querySelector('#onionOpacitySlider').addEventListener('input', (e) => {
-        onionSkinOpacity = parseInt(e.target.value) / 100;
+        onionSkinOpacity = parseInt(e.target.value, 10) / 100;
         dialog.querySelector('#onionOpacityVal').textContent = e.target.value + '%';
         scheduleRender();
     });
@@ -1524,7 +1558,7 @@ function showHistoryPanel() {
     // Clic pour restaurer un état
     dialog.querySelectorAll('.history-panel-item').forEach(item => {
         item.addEventListener('click', () => {
-            const idx = parseInt(item.dataset.index);
+            const idx = parseInt(item.dataset.index, 10);
             if (!isNaN(idx) && history[idx]) {
                 historyIndex = idx;
                 currentFrameBuffer = history[idx].map(p => ({...p}));
@@ -1609,7 +1643,7 @@ function showTextTool() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         const text = dialog.querySelector('#textToolInput').value || '';
         const color = dialog.querySelector('#textToolColor').value;
-        const scale = parseInt(dialog.querySelector('#textToolScale').value);
+        const scale = parseInt(dialog.querySelector('#textToolScale').value, 10);
         const charWidth = 6;
         const charHeight = 7;
         const totalW = text.length * charWidth * scale;
@@ -1648,7 +1682,7 @@ function showTextTool() {
     dialog.querySelector('#textToolApply').addEventListener('click', () => {
         const text = dialog.querySelector('#textToolInput').value || '';
         const color = dialog.querySelector('#textToolColor').value.toUpperCase();
-        const scale = parseInt(dialog.querySelector('#textToolScale').value);
+        const scale = parseInt(dialog.querySelector('#textToolScale').value, 10);
         const pixels = textToPixels(text, color, 0, 0, scale);
         pixels.forEach(({ index, color: c }) => {
             currentFrameBuffer[index] = { color: c, isEmpty: false };
@@ -1882,28 +1916,42 @@ function showConfirmDialog(message, { confirmLabel = 'Confirmer', cancelLabel = 
             position:fixed;inset:0;background:rgba(0,0,0,0.6);
             display:flex;align-items:center;justify-content:center;z-index:99999;
         `;
-        overlay.innerHTML = `
-            <div style="
-                background:var(--bg-panel,#1e1e2e);color:var(--text-primary,#fff);
-                border-radius:16px;padding:28px 24px;max-width:360px;width:90%;
-                box-shadow:0 20px 50px rgba(0,0,0,0.5);text-align:center;
-            ">
-                <p style="margin:0 0 24px;font-size:0.95rem;line-height:1.5;white-space:pre-line">${message}</p>
-                <div style="display:flex;gap:12px;justify-content:center;">
-                    <button id="confirmDialogCancel" style="
-                        padding:10px 20px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);
-                        background:transparent;color:var(--text-primary,#fff);cursor:pointer;font-size:0.9rem;
-                    ">${cancelLabel}</button>
-                    <button id="confirmDialogOk" style="
-                        padding:10px 20px;border-radius:10px;border:none;cursor:pointer;font-size:0.9rem;font-weight:600;
-                        background:${danger ? '#e74c3c' : 'var(--color-primary,#FF7300)'};color:#fff;
-                    ">${confirmLabel}</button>
-                </div>
-            </div>
+
+        const panel = document.createElement('div');
+        panel.style.cssText = `
+            background:var(--bg-panel,#1e1e2e);color:var(--text-primary,#fff);
+            border-radius:16px;padding:28px 24px;max-width:360px;width:90%;
+            box-shadow:0 20px 50px rgba(0,0,0,0.5);text-align:center;
         `;
+
+        const pMsg = document.createElement('p');
+        pMsg.style.cssText = 'margin:0 0 24px;font-size:0.95rem;line-height:1.5;white-space:pre-line';
+        pMsg.textContent = message;
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:12px;justify-content:center;';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.style.cssText = `
+            padding:10px 20px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);
+            background:transparent;color:var(--text-primary,#fff);cursor:pointer;font-size:0.9rem;
+        `;
+        cancelBtn.textContent = cancelLabel;
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.style.cssText = `
+            padding:10px 20px;border-radius:10px;border:none;cursor:pointer;font-size:0.9rem;font-weight:600;
+            background:${danger ? '#e74c3c' : 'var(--color-primary,#FF7300)'};color:#fff;
+        `;
+        confirmBtn.textContent = confirmLabel;
+
+        btnRow.append(cancelBtn, confirmBtn);
+        panel.append(pMsg, btnRow);
+        overlay.append(panel);
         document.body.appendChild(overlay);
-        overlay.querySelector('#confirmDialogOk').addEventListener('click', () => { overlay.remove(); resolve(true); });
-        overlay.querySelector('#confirmDialogCancel').addEventListener('click', () => { overlay.remove(); resolve(false); });
+
+        confirmBtn.addEventListener('click', () => { overlay.remove(); resolve(true); });
+        cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(false); });
         overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(false); } });
     });
 }
@@ -2085,12 +2133,6 @@ function draw(e) {
 }
 
 function stopDrawing() {
-    console.log('🛑 stopDrawing appelé', { 
-        isDrawing, 
-        currentActionPixelsSize: currentActionPixels.size, 
-        actionStartStateExists: !!actionStartState 
-    });
-    
     isDrawing = false;
 
     // Phase 2 : gestion sélection
@@ -2110,16 +2152,9 @@ function stopDrawing() {
 
     // Sauvegarder l'action complète dans l'historique si des pixels ont été modifiés
     if (currentActionPixels.size > 0 && actionStartState) {
-        console.log('✅ Sauvegarde de l\'action dans l\'historique', {
-            pixelsModifiés: currentActionPixels.size
-        });
         saveActionToHistory(actionStartState, currentActionPixels);
         // Mettre à jour la miniature de la frame actuelle après avoir terminé de dessiner
         updateAllThumbnails();
-    } else {
-        console.log('❌ Action NON sauvegardée', { 
-            raison: currentActionPixels.size === 0 ? 'Aucun pixel modifié' : 'actionStartState manquant' 
-        });
     }
     
     // Réinitialiser pour la prochaine action
@@ -2292,7 +2327,9 @@ function loadReferenceImage() {
         const file = e.target.files[0];
         if (!file) return;
         const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
         img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
             referenceImage = img;
             referenceX = 0; referenceY = 0; referenceScale = 1;
             scheduleRender();
@@ -2301,7 +2338,8 @@ function loadReferenceImage() {
             const mobilePanel = document.getElementById('mobileReferencePanel');
             if (mobilePanel) mobilePanel.style.display = 'flex';
         };
-        img.src = URL.createObjectURL(file);
+        img.onerror = () => URL.revokeObjectURL(objectUrl);
+        img.src = objectUrl;
     };
     input.click();
 }
@@ -2747,7 +2785,7 @@ async function showStampModal() {
     } catch (e) { /* ignore */ }
 
     if (projects.length === 0) {
-        alert(tL('stampNoProjects'));
+        showToast(tL('stampNoProjects'), { type: 'warning' });
         return;
     }
 
@@ -2788,7 +2826,7 @@ async function showStampModal() {
         item.addEventListener('click', () => {
             dialog.querySelectorAll('.stamp-project-item').forEach(i => i.style.background = '');
             item.style.background = 'rgba(0,122,255,0.25)';
-            selectedProjectIndex = parseInt(item.dataset.index);
+            selectedProjectIndex = parseInt(item.dataset.index, 10);
             selectedFrameIndex = 0;
 
             const project = projects[selectedProjectIndex];
@@ -2974,7 +3012,6 @@ async function loadSupabaseProjects() {
             throw new Error(result.error || 'Réponse Supabase invalide');
         }
         autoSaveProjects = result.data;
-        console.log(`📱 ${autoSaveProjects.length} projets chargés depuis Supabase`);
     } catch (error) {
         console.error('Erreur chargement projets:', error);
         loadAutoSaveProjects();
@@ -3018,26 +3055,23 @@ function autoSaveProjectLocal(name) {
     }
     
     localStorage.setItem('pixelEditor_autoSaveProjects', JSON.stringify(autoSaveProjects));
-    console.log(`Projet sauvé localement : ${projectName}`);
 }
 
 async function showLocalProjects() {
-    console.log('🔍 showLocalProjects appelée - Loading from Supabase');
 
     // Load projects from Supabase (cloud storage)
     try {
         const result = await window.dbService.getAllProjects();
 
         if (!result.success) {
-            alert(tL('loadProjectsError', result.error));
+            showToast(tL('loadProjectsError', result.error), { type: 'error', duration: 5000 });
             return;
         }
 
         const projects = result.data;
-        console.log('📱 Projets trouvés:', projects.length);
 
         if (projects.length === 0) {
-            alert(tL('noProjectsFound'));
+            showToast(tL('noProjectsFound'), { type: 'warning' });
             return;
         }
 
@@ -3045,7 +3079,7 @@ async function showLocalProjects() {
         autoSaveProjects = projects;
     } catch (error) {
         console.error('Error loading projects:', error);
-        alert(tL('loadProjectsErrorShort'));
+        showToast(tL('loadProjectsErrorShort'), { type: 'error', duration: 5000 });
         return;
     }
     
@@ -3147,7 +3181,7 @@ async function showLocalProjects() {
             item.classList.add('selected');
             selectedProject = {
                 id: item.dataset.projectId,
-                index: parseInt(item.dataset.index)
+                index: parseInt(item.dataset.index, 10)
             };
             
             loadBtn.disabled = false;
@@ -3165,7 +3199,7 @@ async function showLocalProjects() {
         try {
             const result = await window.dbService.loadProject(projectMeta.name);
             if (!result.success) {
-                alert(tL('loadProjectError', result.error));
+                showToast(tL('loadProjectError', result.error), { type: 'error', duration: 5000 });
                 return;
             }
             applyProjectData(result.data, projectMeta.name);
@@ -3173,7 +3207,7 @@ async function showLocalProjects() {
             showToast(tL('projectLoaded', projectMeta.name), { type: 'success' });
         } catch (error) {
             console.error('Erreur chargement projet Supabase:', error);
-            alert(tL('projectLoadErrorDetail'));
+            showToast(tL('projectLoadErrorDetail'), { type: 'error', duration: 5000 });
         }
     });
 
@@ -3187,17 +3221,16 @@ async function showLocalProjects() {
                 const result = await window.dbService.deleteProjectById(project.id);
 
                 if (result.success) {
-                    console.log('✅ Projet supprimé de Supabase');
                     showToast(tL('deleteSuccess'), { type: 'success' });
                     dialog.remove();
                     showLocalProjects(); // Refresh the list
                 } else {
-                    alert(tL('deleteError', result.error));
+                    showToast(tL('deleteError', result.error), { type: 'error', duration: 5000 });
                 }
 
             } catch (error) {
                 console.error('Erreur suppression:', error);
-                alert(tL('deleteErrorRetry'));
+                showToast(tL('deleteErrorRetry'), { type: 'error', duration: 5000 });
             }
         }
     });
@@ -3374,7 +3407,6 @@ function removeCustomColor(color) {
     if (customColors.length !== initialLength) {
         saveCustomColors();
         updateColorPalette();
-        console.log('🗑️ Couleur personnalisée supprimée:', normalized);
     }
 }
 
@@ -4067,7 +4099,7 @@ function normalizeColor(color) {
         const rgb = color.match(/\d+/g);
         if (rgb && rgb.length === 3) {
             const hex = '#' + rgb.map(x => {
-                const hex = parseInt(x).toString(16);
+                const hex = parseInt(x, 10).toString(16);
                 return hex.length === 1 ? '0' + hex : hex;
             }).join('').toUpperCase();
             return hex;
@@ -4147,7 +4179,6 @@ function setAnimationFPSValue(fps) {
     animationFPS = sanitized;
     updateFPSModalUI(sanitized);
     updateFPSSidebarUI(sanitized);
-    console.log('🎬 FPS appliqué:', sanitized);
 }
 
 // Fonction pour initialiser le modal FPS
@@ -4234,7 +4265,6 @@ function initFPSSidebarPanel() {
 // Fonction pour initialiser les event listeners des couleurs compactes
 function initCompactColorButtons() {
     const compactColorButtons = document.querySelectorAll('.compact-color-btn');
-    console.log('🔍 Boutons de couleur compacte trouvés:', compactColorButtons.length);
     
     compactColorButtons.forEach(btn => {
         // Supprimer les anciens event listeners
@@ -4248,15 +4278,12 @@ function initCompactColorButtons() {
         
         // Clic normal - sélectionner la couleur
         btn.addEventListener('click', (e) => {
-            console.log('🖱️ Clic sur couleur compacte détecté');
             if (!isLongPress) {
                 // Récupérer la couleur depuis le style background-color
                 const color = btn.style.backgroundColor;
-                console.log('🎨 Couleur récupérée:', color);
                 if (color) {
                     // Normaliser la couleur
                     const normalizedColor = normalizeColor(color);
-                    console.log('🎨 Couleur normalisée:', normalizedColor);
                     
                     currentColor = normalizedColor;
                     updateCurrentColorDisplay();
@@ -4265,7 +4292,6 @@ function initCompactColorButtons() {
                     // Mettre à jour la sélection visuelle
                     updateCompactColorSelection(btn);
                     
-                    console.log('✅ Couleur compacte sélectionnée:', normalizedColor);
                 }
             }
             isLongPress = false;
@@ -4309,12 +4335,10 @@ function initCompactColorButtons() {
             if (!isLongPress && longPressTimer) {
                 // Récupérer la couleur depuis le style background-color
                 const color = btn.style.backgroundColor;
-                console.log('📱 Touch: Couleur récupérée:', color);
                 
                 if (color) {
                     // Normaliser la couleur
                     const normalizedColor = normalizeColor(color);
-                    console.log('📱 Touch: Couleur normalisée:', normalizedColor);
                     
                     currentColor = normalizedColor;
                     updateCurrentColorDisplay();
@@ -4323,7 +4347,6 @@ function initCompactColorButtons() {
                     // Mettre à jour la sélection visuelle
                     updateCompactColorSelection(btn);
                     
-                    console.log('✅ Touch: Couleur compacte sélectionnée:', normalizedColor);
                 }
             }
             
@@ -4581,7 +4604,6 @@ function updateCompactColor(colorBtn, newColor) {
     // Sauvegarder la palette personnalisée
     saveCustomPalette();
     
-    console.log('🎨 Couleur compacte mise à jour:', newColor);
 }
 
 // Fonction pour sauvegarder la palette personnalisée
@@ -4652,7 +4674,6 @@ function applyCompactPaletteColors(colors) {
 function loadCustomPalette(palette) {
     if (!palette || !Array.isArray(palette)) return;
     applyCompactPaletteColors(palette);
-    console.log('📂 Palette personnalisée chargée:', palette);
 }
 
 // Fonction pour charger la palette personnalisée
@@ -4778,7 +4799,7 @@ function generatePaletteCustomizer() {
     const colorInputs = grid.querySelectorAll('.palette-color-input');
     colorInputs.forEach(input => {
         input.addEventListener('change', (e) => {
-            const index = parseInt(e.target.dataset.colorIndex);
+            const index = parseInt(e.target.dataset.colorIndex, 10);
             const newColor = e.target.value;
             const preview = e.target.previousElementSibling;
             preview.style.backgroundColor = newColor;
@@ -4814,7 +4835,6 @@ function saveCustomPalette() {
     // Afficher un message de confirmation
     showNotification(tL('paletteSaved'), 'success');
     } else {
-        console.log('💾 Palette compacte sauvegardée:', customPalette);
     }
 }
 
@@ -4888,13 +4908,7 @@ function saveToHistory() {
 }
 
 // Sauvegarder une action complète (trait, forme, etc.)
-function saveActionToHistory(startState, modifiedPixels) {
-    console.log('💾 Sauvegarde de l\'action dans l\'historique', { 
-        pixelsModifiés: modifiedPixels.size,
-        historyIndex,
-        historyLength: history.length
-    });
-    
+function saveActionToHistory(startState) {
     // Supprimer les états futurs si on est au milieu de l'historique
     if (historyIndex < history.length - 1) {
         history = history.slice(0, historyIndex + 1);
@@ -4915,12 +4929,7 @@ function saveActionToHistory(startState, modifiedPixels) {
     // Ajouter l'état final à l'historique
     history.push(finalState);
     historyIndex++;
-    
-    console.log('✅ Action sauvegardée', { 
-        nouveauHistoryIndex: historyIndex,
-        nouvelleHistoryLength: history.length
-    });
-    
+
     // Limiter la taille de l'historique
     if (history.length > maxHistorySize) {
         history = history.slice(-maxHistorySize);
@@ -4942,7 +4951,6 @@ function restoreFromHistory(state, isRedo = false) {
         frames[currentFrame] = computeComposite(currentFrame);
         renderCanvas();
         updateCurrentFrameThumbnail();
-        console.log(`%c${isRedo ? '✅ Action rétablie' : '↺ Action annulée'}`, 'color: #007bff;', { pixelsRestaurés: state.length });
         return;
     }
 
@@ -4962,7 +4970,6 @@ function restoreFromHistory(state, isRedo = false) {
         }
     });
 
-    console.log(`%c${isRedo ? '✅ Action rétablie' : '↺ Action annulée'}`, 'color: #007bff;', { pixelsRestaurés: restoredCount });
 
     // Ne pas sauvegarder la frame lors des opérations undo/redo
     // saveCurrentFrame(); // Commenté pour éviter les sauvegardes automatiques
@@ -4972,27 +4979,21 @@ function restoreFromHistory(state, isRedo = false) {
 
 // Fonction Undo (annuler)
 function undo() {
-    console.log('↺ Fonction undo appelée', { historyIndex, historyLength: history.length });
     if (historyIndex > 0) {
         historyIndex--; // Aller à l'état précédent
         restoreFromHistory(history[historyIndex]); // Restaurer cet état
         updateUndoRedoButtons();
-        console.log('✅ Undo effectué', { newHistoryIndex: historyIndex });
     } else {
-        console.log('❌ Undo impossible - déjà au début (grille vierge)');
     }
 }
 
 // Fonction Redo (rétablir)
 function redo() {
-    console.log('🔄 Fonction redo appelée', { historyIndex, historyLength: history.length });
     if (historyIndex < history.length - 1) {
         historyIndex++; // Aller à l'état suivant
         restoreFromHistory(history[historyIndex], true); // Restaurer cet état (isRedo = true)
         updateUndoRedoButtons();
-        console.log('✅ Redo effectué', { newHistoryIndex: historyIndex });
     } else {
-        console.log('❌ Redo impossible - déjà à la fin');
     }
 }
 
@@ -5031,7 +5032,6 @@ function updateUndoRedoButtons() {
 
 // Initialiser l'historique avec l'état vide
 function initHistory() {
-    console.log('🔄 Initialisation de l\'historique...');
 
     // Réinitialiser complètement l'historique
     history = [];
@@ -5043,7 +5043,6 @@ function initHistory() {
             : Array.from({ length: currentGridSize * currentGridSize }, () => ({ color: '#FFFFFF', isEmpty: true }));
         history.push(initialState);
         historyIndex = 0;
-        console.log('✅ Historique initialisé (canvas)', { historyIndex, historyLength: history.length });
         // Attacher les boutons undo/redo (commun aux deux modes)
         _attachUndoRedoListeners();
         updateUndoRedoButtons();
@@ -5052,7 +5051,6 @@ function initHistory() {
 
     // S'assurer que la grille est vraiment vide AVANT de créer l'état initial
     const pixels = document.querySelectorAll('.pixel');
-    console.log('📊 Nombre de pixels trouvés:', pixels.length);
 
     if (pixels.length === 0) {
         console.warn('⚠️ Aucun pixel trouvé, report de l\'initialisation de l\'historique');
@@ -5060,16 +5058,10 @@ function initHistory() {
     }
     
     // Forcer une grille complètement vide
-    pixels.forEach((pixel, index) => {
+    pixels.forEach((pixel) => {
         pixel.style.backgroundColor = '#FFFFFF';
         pixel.classList.add('empty');
         pixel.classList.remove('colored');
-        if (index < 5) { // Log des 5 premiers pixels pour debug
-            console.log(`Pixel ${index}:`, {
-                backgroundColor: pixel.style.backgroundColor,
-                isEmpty: pixel.classList.contains('empty')
-            });
-        }
     });
     
     // Créer un état initial vraiment vide (tous les pixels blancs)
@@ -5080,15 +5072,8 @@ function initHistory() {
     
     // Ajouter l'état initial à l'historique
     history.push(initialState);
-    historyIndex = 0; // Maintenant on est à l'index 0
-    
-    console.log('✅ Historique initialisé avec grille vide', { 
-        historyIndex, 
-        historyLength: history.length,
-        pixelsVides: initialState.filter(p => p.isEmpty).length,
-        pixelsTotal: initialState.length
-    });
-    
+    historyIndex = 0;
+
     // Configurer les event listeners pour les boutons undo/redo
     _attachUndoRedoListeners();
     updateUndoRedoButtons();
@@ -5453,7 +5438,7 @@ function updateFramesList() {
         frameBtn.addEventListener('drop', (e) => {
             e.preventDefault();
             frameBtn.classList.remove('drag-over');
-            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
             const toIndex = index;
             
             if (fromIndex !== toIndex) {
@@ -5504,13 +5489,14 @@ function insertFrame(index) {
 }
 
 // Ajouter la fonction deleteCurrentFrame
-function deleteCurrentFrame() {
+async function deleteCurrentFrame() {
     if (frames.length <= 1) {
-        alert(tL('cannotDeleteLast'));
+        showToast(tL('cannotDeleteLast'), { type: 'warning' });
         return;
     }
-    
-    if (confirm(tL('confirmDeleteFrame', currentFrame + 1))) {
+
+    const ok = await showConfirmDialog(tL('confirmDeleteFrame', currentFrame + 1), { danger: true });
+    if (ok) {
         frames.splice(currentFrame, 1);
         frameLayers.splice(currentFrame, 1);
         if (currentFrame >= frames.length) {
@@ -5523,8 +5509,9 @@ function deleteCurrentFrame() {
 }
 
 // Ajouter la fonction clearAllFrames
-function clearAllFrames() {
-    if (confirm(tL('confirmClearAll'))) {
+async function clearAllFrames() {
+    const ok = await showConfirmDialog(tL('confirmClearAll'), { danger: true });
+    if (ok) {
         frames = [[]];
         currentFrame = 0;
 
@@ -5581,6 +5568,7 @@ async function saveToFile() {
             autoSaveProjectLocal(projectName);
         } catch (saveError) {
             console.error('Erreur localStorage:', saveError);
+            showToast(tL('saveErrorShort'), { type: 'error', duration: 5000 });
             // Plan B : Téléchargement direct du fichier
             const blob = new Blob([JSON.stringify(projectData, null, 2)], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
@@ -5605,7 +5593,7 @@ async function saveToFile() {
         
     } catch (err) {
         console.error('Erreur lors de la sauvegarde:', err);
-        alert(tL('saveErrorShort'));
+        showToast(tL('saveErrorShort'), { type: 'error', duration: 5000 });
     }
 }
 
@@ -5804,10 +5792,10 @@ function previewAnimation() {
 
 function startAnimation() {
     if (frames.length <= 1) {
-        alert(tL('minFrames'));
+        showToast(tL('minFrames'), { type: 'warning' });
         return;
     }
-    
+
     // Sauvegarder la frame actuelle
     saveCurrentFrame();
     
@@ -5944,7 +5932,7 @@ function rgbToHex(rgb) {
     // Format rgb(r, g, b) ou rgba(r, g, b, a)
     const values = rgb.match(/\d+/g);
     if (values && values.length >= 3) {
-        return `#${values.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+        return `#${values.slice(0, 3).map(x => parseInt(x, 10).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
     }
     
     return '#000000'; // Fallback
@@ -6562,12 +6550,10 @@ async function saveToServer() {
             thumbnail: thumbnail
         };
 
-        console.log('Saving project to Supabase...', fileName);
         const result = await window.dbService.saveProject(projectData);
 
         if (result.success) {
             const action = tL(result.isUpdate ? 'updated' : 'created2');
-            console.log('Project saved:', result.data);
             await showSaveResultDialog({
                 title: tL('saveSuccessTitle'),
                 message: tL('saveSuccessMsg', fileName, action),
@@ -6593,18 +6579,17 @@ async function saveToServer() {
 // Fonction pour charger depuis Supabase (cloud)
 async function loadFromServer() {
     try {
-        console.log('Loading projects from Supabase...');
         const result = await window.dbService.getAllProjects();
 
         if (!result.success) {
-            alert(tL('loadProjectsError', result.error));
+            showToast(tL('loadProjectsError', result.error), { type: 'error', duration: 5000 });
             return;
         }
 
         const projects = result.data;
 
         if (projects.length === 0) {
-            alert(tL('noProjectsSave'));
+            showToast(tL('noProjectsSave'), { type: 'warning' });
             return;
         }
 
@@ -6657,14 +6642,14 @@ async function loadFromServer() {
                 try {
                     const loadResult = await window.dbService.loadProject(projectName);
                     if (!loadResult.success) {
-                        alert(tL('loadProjectsError', loadResult.error));
+                        showToast(tL('loadProjectsError', loadResult.error), { type: 'error', duration: 5000 });
                         return;
                     }
                     applyProjectData(loadResult.data, projectName);
                     showToast(tL('projectLoaded', projectName), { type: 'success' });
                 } catch (err) {
                     console.error('Error loading project:', err);
-                    alert(tL('loadProjectErrorShort'));
+                    showToast(tL('loadProjectErrorShort'), { type: 'error', duration: 5000 });
                 }
             });
         });
@@ -6675,7 +6660,7 @@ async function loadFromServer() {
 
     } catch (err) {
         console.error('Erreur lors du chargement:', err);
-        alert(tL('loadErrorConnected'));
+        showToast(tL('loadErrorConnected'), { type: 'error', duration: 5000 });
     }
 }
 
@@ -6876,7 +6861,7 @@ async function loadFromServerMobile() {
         const projects = await fetch('/api/projects').then(res => res.json());
         
         if (projects.length === 0) {
-            alert(tL('noProjectsFoundShort'));
+            showToast(tL('noProjectsFoundShort'), { type: 'warning' });
             return;
         }
 
@@ -6944,7 +6929,7 @@ async function loadFromServerMobile() {
                     showToast(tL('projectLoadedShort'), { type: 'success' });
                 } catch (err) {
                     console.error('Erreur lors du chargement:', err);
-                    alert(tL('loadErrorShort'));
+                    showToast(tL('loadErrorShort'), { type: 'error', duration: 5000 });
                 }
             });
         });
@@ -6955,7 +6940,7 @@ async function loadFromServerMobile() {
 
     } catch (err) {
         console.error('Erreur lors du chargement:', err);
-        alert(tL('loadErrorRetry'));
+        showToast(tL('loadErrorRetry'), { type: 'error', duration: 5000 });
     }
 }
 
@@ -6992,7 +6977,6 @@ async function saveProjectSmart() {
         };
 
         // 1️⃣ ESSAYER SUPABASE EN PREMIER
-        console.log('🔄 Tentative de sauvegarde sur Supabase...', fileName);
         
         try {
             const result = await window.dbService.saveProject(projectData);
@@ -7000,7 +6984,6 @@ async function saveProjectSmart() {
             if (result.success) {
                 const action = tL(result.isUpdate ? 'updated' : 'created2');
                 window.currentProjectName = fileName;
-                console.log('✅ Project saved to Supabase:', result.data);
                 logUsageEvent('project_saved', {
                     name: fileName,
                     frames: frames.length,
@@ -7010,7 +6993,6 @@ async function saveProjectSmart() {
                 // Aussi sauvegarder en local pour backup
                 try {
                     localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
-                    console.log('💾 Backup local créé');
                 } catch (localError) {
                     console.warn('⚠️ Impossible de créer le backup local:', localError);
                 }
@@ -7030,11 +7012,9 @@ async function saveProjectSmart() {
             console.warn('⚠️ Erreur Supabase:', supabaseError);
             
             // 2️⃣ FALLBACK VERS LOCALSTORAGE
-            console.log('🔄 Fallback vers sauvegarde locale...');
             
             try {
                 localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
-                console.log('💾 Projet sauvegardé en local');
                 logUsageEvent('project_saved_local', {
                     name: fileName,
                     frames: frames.length,
@@ -7482,7 +7462,7 @@ function importProjectData(projectData) {
         
     } catch (error) {
         console.error('Erreur lors de l\'import:', error);
-        alert(tL('sharedProjectError', error.message));
+        showToast(tL('sharedProjectError', error.message), { type: 'error', duration: 5000 });
     }
 }
 
@@ -7555,8 +7535,8 @@ async function shareProject() {
         
     } catch (error) {
         console.error('Erreur lors du partage:', error);
-        alert(tL('shareError'));
-        
+        showToast(tL('shareError'), { type: 'error', duration: 5000 });
+
         // Fallback ultime : simple téléchargement
         const projectData = createShareableProject();
         const jsonString = JSON.stringify(projectData, null, 2);
@@ -7822,7 +7802,7 @@ async function importSharedProject(file) {
         
     } catch (error) {
         console.error('Erreur lors de l\'import:', error);
-        alert(tL('importError', error.message));
+        showToast(tL('importError', error.message), { type: 'error', duration: 5000 });
     }
 }
 
@@ -7877,7 +7857,7 @@ function initDragAndDrop() {
                 file.name.endsWith('.txt')) {
                 importSharedProject(file);
             } else {
-                alert(tL('invalidFileType'));
+                showToast(tL('invalidFileType'), { type: 'warning' });
             }
         }
     }
@@ -7885,7 +7865,6 @@ function initDragAndDrop() {
 
 // Améliorer la fonction de chargement existante
 async function loadFromFile() {
-    console.log('🔍 loadFromFile appelée');
     // Afficher un dialogue avec options pour iOS
     showFileLoadDialog();
 }
@@ -7961,9 +7940,9 @@ function showFileLoadDialog() {
                 try {
                     const result = await importPixelArtImage(file);
                     dialog.remove();
-                    alert(tL('imageImportSuccess', result.artW, result.artH, result.pixelSize, result.totalColors));
+                    showToast(tL('imageImportSuccess', result.artW, result.artH, result.pixelSize, result.totalColors), { type: 'success', duration: 5000 });
                 } catch (err) {
-                    alert(tL('imageImportError', err.message));
+                    showToast(tL('imageImportError', err.message), { type: 'error', duration: 5000 });
                 }
             }
         };
@@ -8003,10 +7982,10 @@ function showFileLoadDialog() {
                 // Pas du JSON valide
             }
             
-            alert(tL('clipboardError'));
-            
+            showToast(tL('clipboardError'), { type: 'warning' });
+
         } catch (error) {
-            alert(tL('clipboardAccessError'));
+            showToast(tL('clipboardAccessError'), { type: 'error', duration: 5000 });
         }
     });
     
@@ -8049,9 +8028,9 @@ function showFileLoadDialog() {
                 try {
                     const result = await importPixelArtImage(file);
                     dialog.remove();
-                    alert(tL('imageImportSuccess', result.artW, result.artH, result.pixelSize, result.totalColors));
+                    showToast(tL('imageImportSuccess', result.artW, result.artH, result.pixelSize, result.totalColors), { type: 'success', duration: 5000 });
                 } catch (err) {
-                    alert(tL('imageImportError', err.message));
+                    showToast(tL('imageImportError', err.message), { type: 'error', duration: 5000 });
                 }
             // Projet JSON / .pixelart / .txt
             } else if (file.type === 'application/json' ||
@@ -8063,7 +8042,7 @@ function showFileLoadDialog() {
                 await importSharedProject(file);
                 dialog.remove();
             } else {
-                alert(tL('unsupportedFormat'));
+                showToast(tL('unsupportedFormat'), { type: 'warning' });
             }
         }
     });
@@ -8259,7 +8238,7 @@ function drawWatermark(ctx, width, height) {
 
 function exportToSpriteSheet() {
     if (frames.length === 0) {
-        alert(tL('ssNoFrames'));
+        showToast(tL('ssNoFrames'), { type: 'warning' });
         return;
     }
     saveCurrentFrame();
@@ -8322,12 +8301,12 @@ function showSpriteSheetExportDialog() {
 
     // Mettre à jour le texte de preview quand le zoom change
     dialog.querySelector('#ssZoom').addEventListener('change', (e) => {
-        const z = parseInt(e.target.value);
+        const z = parseInt(e.target.value, 10);
         dialog.querySelector('#ssPreviewText').textContent = tL('ssPreviewInfo', fc, g, z);
     });
 
     dialog.querySelector('#createSpriteSheetBtn').addEventListener('click', () => {
-        const zoom = parseInt(dialog.querySelector('#ssZoom').value);
+        const zoom = parseInt(dialog.querySelector('#ssZoom').value, 10);
         const bg = dialog.querySelector('#ssBg').value;
         const watermark = dialog.querySelector('#ssWatermark').checked;
         dialog.remove();
@@ -8399,7 +8378,7 @@ function createAndDownloadSpriteSheet(zoom, bg, watermark = false) {
 // Exporter l'animation en GIF
 async function exportToGif() {
     if (frames.length === 0) {
-        alert(tL('noFrames'));
+        showToast(tL('noFrames'), { type: 'warning' });
         return;
     }
     
@@ -8488,10 +8467,10 @@ function showGifExportDialog() {
 
     // Créer le GIF
     dialog.querySelector('#createGifBtn').addEventListener('click', async () => {
-        const size = parseInt(dialog.querySelector('#gifSize').value);
-        const speed = parseInt(dialog.querySelector('#gifSpeed').value);
-        const repeat = parseInt(dialog.querySelector('#gifLoop').value);
-        const quality = parseInt(dialog.querySelector('#gifQuality').value);
+        const size = parseInt(dialog.querySelector('#gifSize').value, 10);
+        const speed = parseInt(dialog.querySelector('#gifSpeed').value, 10);
+        const repeat = parseInt(dialog.querySelector('#gifLoop').value, 10);
+        const quality = parseInt(dialog.querySelector('#gifQuality').value, 10);
         const watermark = dialog.querySelector('#gifWatermark').checked;
 
         dialog.remove();
@@ -8563,7 +8542,7 @@ async function createAnimatedGif(size, frameDelay, repeat, quality, watermark = 
         } catch (gifJsError) {
             console.error('❌ Échec complet gif.js et Supabase:', gifJsError);
             progressDiv.remove();
-            alert(tL('gifError', supabaseError.message, gifJsError.message));
+            showToast(tL('gifError', supabaseError.message, gifJsError.message), { type: 'error', duration: 7000 });
         }
     }
 }
@@ -8575,7 +8554,6 @@ async function createAnimatedGif(size, frameDelay, repeat, quality, watermark = 
 // Créer un GIF via Supabase Edge Function
 async function createGifWithSupabase(frames, config) {
     try {
-        console.log('🚀 Appel Supabase Edge Function pour création GIF');
         
         // Préparer les données pour l'Edge Function
         const payload = {
@@ -8603,7 +8581,6 @@ async function createGifWithSupabase(frames, config) {
         
         // Convertir la réponse en Blob
         const gifBlob = new Blob([data], { type: 'image/gif' });
-        console.log('✅ GIF créé via Supabase:', { size: gifBlob.size });
         
         return gifBlob;
         
@@ -8633,7 +8610,7 @@ function downloadGif(gifBlob, size, frameDelay) {
         
         // Message de succès
         setTimeout(() => {
-            alert(tL('gifSuccessServer', fileName, frames.length, size, frameDelay));
+            showToast(tL('gifSuccessServer', fileName, frames.length, size, frameDelay), { type: 'success', duration: 5000 });
         }, 500);
         
         logUsageEvent('gif_exported', {
@@ -8645,7 +8622,7 @@ function downloadGif(gifBlob, size, frameDelay) {
         
     } catch (error) {
         console.error('❌ Erreur téléchargement:', error);
-        alert(tL('gifDownloadError'));
+        showToast(tL('gifDownloadError'), { type: 'error', duration: 5000 });
     }
 }
 
@@ -8661,7 +8638,6 @@ async function createGifWithGifJS(frames, config, progressText, progressBar, can
                 return;
             }
             
-            console.log('🎬 Fallback vers gif.js:', { size, frameDelay, repeat, quality, frameCount: frames.length });
             progressText.textContent = 'Initialisation GIF local...';
             
             let gif;
@@ -8674,7 +8650,6 @@ async function createGifWithGifJS(frames, config, progressText, progressBar, can
                     repeat: repeat
                 });
                 
-                console.log('✅ GIF object créé:', gif);
             } catch (error) {
                 reject(new Error(`Erreur initialisation: ${error.message}`));
                 return;
@@ -8726,7 +8701,6 @@ async function createGifWithGifJS(frames, config, progressText, progressBar, can
                 if (watermark) drawWatermark(ctx, size, size);
 
                 // Ajouter la frame au GIF
-                console.log(`📸 Ajout frame locale ${frameIndex + 1}/${frames.length}`);
                 gif.addFrame(canvas, { delay: frameDelay, copy: true });
             }
             
@@ -8740,10 +8714,8 @@ async function createGifWithGifJS(frames, config, progressText, progressBar, can
             progressBar.style.width = '60%';
             
             // Configuration des événements gif.js
-            console.log('🔧 Configuration des événements GIF locaux...');
             
             gif.on('finished', function(blob) {
-                console.log('🎉 GIF local terminé!', { size: blob.size, type: blob.type });
                 
                 // Télécharger le GIF (version fallback)
                 const projectName = document.getElementById('projectTitle')?.textContent || 'animation';
@@ -8761,15 +8733,7 @@ async function createGifWithGifJS(frames, config, progressText, progressBar, can
                 
                 // Message de succès fallback
                 setTimeout(() => {
-                    alert(`🎉 GIF créé en mode local !
-
-📁 Fichier: ${fileName}
-🎬 ${frames.length} frames  
-📏 Taille: ${size}x${size}
-⚡ Vitesse: ${frameDelay}ms par frame
-💻 Traité localement (fallback)
-
-Votre animation GIF est prête ! 🎨`);
+                    showToast(tL('gifSuccessServer', fileName, frames.length, size, frameDelay), { type: 'success', duration: 5000 });
                 }, 500);
                 
                 resolve(blob);
@@ -8778,17 +8742,14 @@ Votre animation GIF est prête ! 🎨`);
             gif.on('progress', function(progress) {
                 const percent = Math.round(progress * 100);
                 const totalProgress = 60 + (progress * 40);
-                console.log(`📊 Progression locale: ${percent}% (total: ${totalProgress}%)`);
                 progressText.textContent = `Génération GIF local... ${percent}%`;
                 progressBar.style.width = `${totalProgress}%`;
             });
             
             gif.on('start', function() {
-                console.log('🚀 Début génération GIF locale');
             });
             
             gif.on('abort', function() {
-                console.log('❌ GIF génération locale annulée');
                 reject(new Error('Génération locale annulée'));
             });
             
@@ -8798,7 +8759,6 @@ Votre animation GIF est prête ! 🎨`);
             });
             
             // Lancer la génération
-            console.log('🎬 Lancement gif.render() local...');
             gif.render();
             
         } catch (error) {
@@ -8960,7 +8920,7 @@ function showProfileMenu() {
         if (typeof window.showUsernameDialog === 'function') {
             window.showUsernameDialog();
         } else {
-            alert(tL('profileUsernameNotLoaded'));
+            showToast(tL('profileUsernameNotLoaded'), { type: 'error', duration: 5000 });
         }
     });
     
@@ -9042,7 +9002,7 @@ async function submitProfileForm(event) {
         if (typeof showNotification === 'function') {
             showNotification(tL('profileSaveError'), 'error');
         } else {
-            alert('❌ ' + tL('profileSaveError'));
+            showToast(tL('profileSaveError'), { type: 'error', duration: 5000 });
         }
     }
 }
@@ -9131,7 +9091,6 @@ async function updateUserProfileDisplay() {
                 if (userDropdown) {
                     const isOpen = userDropdown.classList.contains('open');
                     userDropdown.classList.toggle('open');
-                    console.log('Dropdown toggled, isOpen:', !isOpen);
                 } else {
                     console.warn('userDropdown non trouvé dans le click handler');
                 }
