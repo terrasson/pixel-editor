@@ -8186,8 +8186,15 @@ async function importPixelArtImage(file) {
                     currentLayer = 0;
                     frameLayers[currentFrame][currentLayer].pixels = newFrame.map(p => ({ ...p }));
                     frames[currentFrame] = computeComposite(currentFrame);
-                    // Sync buffer directement pour garantir l'affichage
-                    currentFrameBuffer = newFrame.map(p => ({ ...p }));
+                    currentFrameBuffer = frameLayers[currentFrame][0].pixels.map(p => ({ ...p }));
+                    // Forcer le recalcul de cellSize au cas où le canvas n'était pas encore visible
+                    if (pixelCanvas && cellSize === 0) {
+                        const grid = document.getElementById('pixelGrid');
+                        const gw = grid ? (grid.clientWidth || 512) : 512;
+                        pixelCanvas.width = gw;
+                        pixelCanvas.height = gw;
+                        cellSize = gw / currentGridSize;
+                    }
                     updateFramesList();
                     renderCanvas();
 
