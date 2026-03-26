@@ -7509,228 +7509,44 @@ function createShareableProject() {
     return projectData;
 }
 
-// Partager un projet via Web Share API ou fallback
+// Partager un projet via Web Share API ou téléchargement
 async function shareProject() {
-    try {
-        const projectData = createShareableProject();
-        const jsonString = JSON.stringify(projectData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        const fileName = `${projectData.name.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.json`;
-        
-        logUsageEvent('share_initiated', {
-            frames: frames.length,
-            fps: animationFPS
-        });
-        
-        // Vérifier si Web Share API est supportée et si on peut partager des fichiers
-        if (navigator.share && navigator.canShare) {
-            const file = new File([blob], fileName, { type: 'application/json' });
-            
-            if (navigator.canShare({ files: [file] })) {
+    const projectData = createShareableProject();
+    const jsonString = JSON.stringify(projectData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const fileName = `${projectData.name.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.json`;
+
+    // Web Share API (AirDrop, iMessage, etc.)
+    if (navigator.share && navigator.canShare) {
+        const file = new File([blob], fileName, { type: 'application/json' });
+        if (navigator.canShare({ files: [file] })) {
+            try {
                 await navigator.share({
                     title: `🎨 ${projectData.name} - Pixel Art`,
-                    text: `Découvre mon animation pixel art ! Ouvre ce fichier dans l'Éditeur Pixel Art pour la voir.`,
+                    text: `Découvre mon animation pixel art !`,
                     files: [file]
                 });
-+                logUsageEvent('share_completed', { method: 'native', frames: frames.length });
                 return;
+            } catch (error) {
+                if (error.name === 'AbortError') return; // utilisateur a annulé
+                console.error('Web Share API error:', error);
             }
         }
-        
-        // Fallback : téléchargement + options de partage
-        showShareDialog(blob, fileName, projectData);
-        
-    } catch (error) {
-        console.error('Erreur lors du partage:', error);
-        showToast(tL('shareError'), { type: 'error', duration: 5000 });
-
-        // Fallback ultime : simple téléchargement
-        const projectData = createShareableProject();
-        const jsonString = JSON.stringify(projectData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${projectData.name.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
     }
+
+    // Fallback : téléchargement direct
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(tL('projectDownloaded') || 'Fichier téléchargé', { type: 'success' });
 }
 
-// Interface de partage avec options
-function showShareDialog(blob, fileName, projectData) {
-    // Créer une URL de partage avec les données intégrées (pour iOS)
-    const compressedData = btoa(JSON.stringify(projectData));
-    const currentUrl = window.location.origin + window.location.pathname;
-    const shareUrl = `${currentUrl}?project=${encodeURIComponent(compressedData)}`;
-    
-    const shareContent = `
-        <div class="share-content">
-            <h3>📤 Partager "${projectData.name}"</h3>
-            <p>Choisissez votre méthode de partage :</p>
-            
-            <div class="share-options">
-                <button id="linkShare" class="share-option">
-                    🔗 Partager par lien
-                    <small>Lien direct - Fonctionne sur tous les appareils</small>
-                </button>
-                
-                <button id="downloadShare" class="share-option">
-                    📥 Télécharger (.json)
-                    <small>Format standard - Compatible iOS/Android</small>
-                </button>
-                
-                <button id="downloadTxtShare" class="share-option">
-                    📄 Télécharger (.txt)
-                    <small>Spécial iOS - Si .json est grisé</small>
-                </button>
-                
-                <button id="emailShare" class="share-option">
-                    📧 Partager par email
-                    <small>Email avec lien et fichier</small>
-                </button>
-                
-                <button id="messageShare" class="share-option">
-                    💬 Partager par message
-                    <small>SMS/iMessage avec lien</small>
-                </button>
-                
-                <button id="gifExportShare" class="share-option">
-                    🎬 Créer Animation GIF
-                    <small>Partage visuel - Visible directement</small>
-                </button>
-            </div>
-            
-            <div class="share-instructions">
-                <p><strong>💡 Guide iOS :</strong></p>
-                <p><strong>Option 1 (Recommandée) :</strong> "🔗 Partager par lien" pour ouverture directe</p>
-                <p><strong>Option 2 :</strong> Si les fichiers .json sont grisés, utilisez "📄 Télécharger (.txt)"</p>
-                <ol>
-                    <li>Téléchargez le fichier (.json ou .txt)</li>
-                    <li>Dans l'app, cliquez "⬆️ Charger"</li>
-                    <li>Si le fichier est grisé, changez pour .txt</li>
-                    <li>Sélectionnez votre fichier</li>
-                </ol>
-            </div>
-        </div>
-    `;
-    
-    const dialog = createMobileDialog('📤 Partager le projet', shareContent);
-    logUsageEvent('share_dialog_opened');
-    
-    // Partager par lien (recommandé pour iOS)
-    dialog.querySelector('#linkShare').addEventListener('click', async () => {
-+        logUsageEvent('share_option_selected', { method: 'link' });
-        try {
-            if (navigator.share) {
-                // Utiliser l'API de partage native (iOS/Android)
-                await navigator.share({
-                    title: `🎨 ${projectData.name} - Pixel Art`,
-                    text: `Découvre mon animation pixel art ! Clique sur le lien pour l'ouvrir directement dans l'Éditeur Pixel Art.`,
-                    url: shareUrl
-                });
-            } else {
-                // Fallback : copier le lien
-                await navigator.clipboard.writeText(shareUrl);
-                showToast(tL('linkCopied'), { type: 'success' });
-            }
-            dialog.remove();
-        } catch (error) {
-            // Si le partage échoue, copier dans le presse-papier
-            try {
-                await navigator.clipboard.writeText(shareUrl);
-                showToast(tL('linkCopied'), { type: 'success' });
-                dialog.remove();
-            } catch (clipboardError) {
-                // Afficher le lien pour copie manuelle
-                prompt('Copiez ce lien pour le partager:', shareUrl);
-                dialog.remove();
-            }
-        }
-    });
-    
-    // Partager par message
-    dialog.querySelector('#messageShare').addEventListener('click', () => {
-        logUsageEvent('share_option_selected', { method: 'message' });
-        const messageText = encodeURIComponent(`🎨 Regarde mon animation pixel art "${projectData.name}" ! Clique ici pour l'ouvrir : ${shareUrl}`);
-        window.open(`sms:?&body=${messageText}`);
-        dialog.remove();
-    });
-    
-    // Télécharger le fichier JSON
-    dialog.querySelector('#downloadShare').addEventListener('click', () => {
-+        logUsageEvent('share_option_selected', { method: 'download_json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        dialog.remove();
-    });
-    
-    // Télécharger en format .txt pour iOS
-    dialog.querySelector('#downloadTxtShare').addEventListener('click', () => {
-+        logUsageEvent('share_option_selected', { method: 'download_txt' });
-        const jsonString = JSON.stringify(projectData, null, 2);
-        const txtBlob = new Blob([jsonString], { type: 'text/plain' });
-        const txtFileName = fileName.replace('.json', '.txt');
-        
-        const url = URL.createObjectURL(txtBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = txtFileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        dialog.remove();
-    });
-    
-    // Partager par email
-    dialog.querySelector('#emailShare').addEventListener('click', () => {
-+        logUsageEvent('share_option_selected', { method: 'email' });
-        const subject = encodeURIComponent(`🎨 ${projectData.name} - Animation Pixel Art`);
-        const body = encodeURIComponent(`Salut !
-
-J'ai créé une animation pixel art avec l'Éditeur Pixel Art et je voulais la partager avec toi !
-
-🔗 Lien direct : ${shareUrl}
-
-Clique sur le lien ci-dessus pour ouvrir directement le projet dans l'Éditeur Pixel Art !
-
-Alternative : Le fichier "${fileName}" est aussi en pièce jointe si tu préfères le télécharger.
-
-🎨 Amusez-vous bien !`);
-        
-        window.open(`mailto:?subject=${subject}&body=${body}`);
-        
-        // Également télécharger le fichier pour l'attacher
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        dialog.remove();
-    });
-    
-    // Créer et partager un GIF
-    dialog.querySelector('#gifExportShare').addEventListener('click', () => {
-+        logUsageEvent('share_option_selected', { method: 'gif_export' });
-        dialog.remove();
-        // Lancer l'export GIF depuis le partage
-        exportToGif();
-    });
-}
 
 // Améliorer l'import pour accepter les projets partagés
 async function importSharedProject(file) {
