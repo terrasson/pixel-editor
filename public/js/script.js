@@ -1069,6 +1069,7 @@ function updateLayersPanel() {
             reorderLayer(from, to, false);
         });
     }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function promptRenameLayer(index) {

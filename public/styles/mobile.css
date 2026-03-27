@@ -2723,7 +2723,12 @@ body.drag-over .grid-container {
     justify-content: center;
     border-radius: 8px;
     padding: 0;
+    background: none;
+    border: 1px solid #E5E5EA;
+    color: #666;
+    cursor: pointer;
 }
+#mobilePanelLeft .frame-row-del:hover { background: #FFE5E5; color: #FF3B30; border-color: #FF3B30; }
 #mobilePanelLeft .frame-row-del svg { width: 16px; height: 16px; }
 
 /* Calques dans panneau droit */
@@ -2763,8 +2768,14 @@ body.drag-over .grid-container {
     justify-content: center;
     border-radius: 8px;
     padding: 0;
-    font-size: 0;
+    font-size: 16px;
+    background: none;
+    border: 1px solid #E5E5EA;
+    color: #666;
+    cursor: pointer;
 }
+#mobilePanelRight .layer-action-btn:hover { background: #F0F0F2; }
+#mobilePanelRight .layer-delete-btn:hover { background: #FFE5E5; color: #FF3B30; border-color: #FF3B30; }
 #mobilePanelRight .layer-action-btn svg,
 #mobilePanelRight .layer-delete-btn svg { width: 16px; height: 16px; }
 
@@ -2795,10 +2806,22 @@ body.drag-over .grid-container {
     justify-content: center;
     border-radius: 8px;
     padding: 0;
+    background: none;
+    border: 1px solid #E5E5EA;
+    color: #666;
+    cursor: pointer;
 }
+#mobilePanelRight .stamp-row-del:hover { background: #FFE5E5; color: #FF3B30; border-color: #FF3B30; }
 #mobilePanelRight .stamp-row-del svg { width: 16px; height: 16px; }
 
 /* Header des panneaux */
 .mobile-panel-hdr { padding: 9px 12px; }
 .mobile-panel-title { font-size: 12px; }
 .mobile-inner-tab { padding: 10px 0; font-size: 11px; }
+
+/* Boutons header panneau — taille touch confortable */
+.mobile-panel-hdr .frames-hdr-btn {
+    width: 36px;
+    height: 36px;
+}
+.mobile-panel-hdr .frames-hdr-btn svg { width: 15px; height: 15px; }
