@@ -1748,3 +1748,260 @@ body {
 }
 .layer-item.layer-drop-above { border-top: 2px solid #FF7300; }
 .layer-item.layer-drop-below { border-bottom: 2px solid #FF7300; }
+
+/* ── Frames panel redesign ───────────────────────────────────────────────── */
+.frames-container {
+    grid-area: right-sidebar;
+    display: flex;
+    flex-direction: column;
+    background: #FAFAFA;
+    border-left: 1px solid #E5E5EA;
+    overflow: hidden;
+    padding: 0;
+    gap: 0;
+}
+
+.frames-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    background: #F5F5F7;
+    border-bottom: 1px solid #E5E5EA;
+    flex-shrink: 0;
+}
+.stamps-header { border-top: 1px solid #E5E5EA; margin-top: 4px; }
+
+.frames-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.frames-panel-title svg { width: 13px; height: 13px; }
+
+.frames-panel-actions { display: flex; gap: 4px; }
+
+.frames-hdr-btn {
+    background: none;
+    border: 1px solid #D1D1D6;
+    border-radius: 5px;
+    padding: 3px 7px;
+    font-size: 11px;
+    cursor: pointer;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    transition: background 0.1s;
+}
+.frames-hdr-btn:hover { background: #E8E8ED; }
+.frames-hdr-btn svg { width: 13px; height: 13px; }
+.frames-hdr-btn.primary {
+    background: #FF7300;
+    border-color: #FF7300;
+    color: white;
+    padding: 3px 9px;
+    font-weight: 600;
+}
+.frames-hdr-btn.primary:hover { background: #e56600; }
+
+/* Liste frames */
+#framesList {
+    overflow-y: auto;
+    flex-shrink: 0;
+    max-height: 240px;
+}
+
+/* Ligne frame — style identique aux calques */
+.frame-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-bottom: 1px solid #F0F0F2;
+    transition: background 0.1s;
+    user-select: none;
+}
+.frame-row:last-child { border-bottom: none; }
+.frame-row:hover { background: #F5F5F7; }
+.frame-row.active { background: #FFF3E8; border-left: 3px solid #FF7300; }
+.frame-row.frame-dragging { opacity: 0.4; background: #F0F0F2; }
+.frame-row.frame-drop-above { border-top: 2px solid #FF7300; }
+.frame-row.frame-drop-below { border-bottom: 2px solid #FF7300; }
+
+.frame-drag-handle {
+    cursor: grab;
+    color: #BBBBBB;
+    font-size: 13px;
+    flex-shrink: 0;
+    padding: 0 2px;
+    user-select: none;
+    line-height: 1;
+}
+.frame-drag-handle:hover { color: #888; }
+.frame-drag-handle:active { cursor: grabbing; }
+
+.frame-row-thumb {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #D1D1D6;
+    border-radius: 3px;
+    background: white;
+    flex-shrink: 0;
+    image-rendering: pixelated;
+}
+
+.frame-row-name {
+    flex: 1;
+    font-size: 12px;
+    color: #1D1D1F;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.frame-row-del {
+    background: none;
+    border: 1px solid #E5E5EA;
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-size: 11px;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.1s, background 0.1s;
+}
+.frame-row-del svg { width: 11px; height: 11px; }
+.frame-row:hover .frame-row-del { opacity: 1; }
+.frame-row-del:hover { background: #FFE5E5; color: #FF3B30; border-color: #FF3B30; }
+
+/* Bouton ajouter frame */
+.frames-add-row {
+    padding: 5px 8px;
+    border-bottom: 1px solid #E5E5EA;
+    flex-shrink: 0;
+}
+.frames-add-btn {
+    width: 100%;
+    background: none;
+    border: 1px dashed #D1D1D6;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #888;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: background 0.1s, color 0.1s;
+}
+.frames-add-btn svg { width: 12px; height: 12px; }
+.frames-add-btn:hover { background: #F5F5F7; color: #555; border-color: #AAAAAA; }
+
+/* Liste tampons */
+#stampsList {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Ligne tampon — identique aux calques */
+.stamp-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-bottom: 1px solid #F0F0F2;
+    transition: background 0.1s;
+    user-select: none;
+}
+.stamp-row:last-child { border-bottom: none; }
+.stamp-row:hover { background: #F5F5F7; }
+.stamp-row.active { background: #FFF3E8; border-left: 3px solid #FF7300; padding-left: 5px; }
+
+.stamp-drag-handle {
+    cursor: grab;
+    color: #BBBBBB;
+    font-size: 13px;
+    flex-shrink: 0;
+    padding: 0 2px;
+    line-height: 1;
+}
+.stamp-drag-handle:hover { color: #888; }
+
+.stamp-eye-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    flex-shrink: 0;
+    color: #555;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+.stamp-eye-btn svg { width: 14px; height: 14px; }
+.stamp-eye-btn:hover { background: #E8E8ED; }
+.stamp-eye-btn.hidden-stamp { color: #BBBBBB; }
+
+.stamp-row.frame-dragging { opacity: 0.4; background: #F0F0F2; }
+.stamp-row.stamp-drop-above { border-top: 2px solid #FF7300; }
+.stamp-row.stamp-drop-below { border-bottom: 2px solid #FF7300; }
+
+.stamp-row-thumb {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #D1D1D6;
+    border-radius: 3px;
+    background: white;
+    flex-shrink: 0;
+    image-rendering: pixelated;
+}
+
+.stamp-row-name {
+    flex: 1;
+    font-size: 12px;
+    color: #1D1D1F;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.stamp-row-name.dimmed { opacity: 0.35; font-style: italic; }
+
+.stamp-row-del {
+    background: none;
+    border: 1px solid #E5E5EA;
+    border-radius: 4px;
+    padding: 2px 5px;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+.stamp-row-del svg { width: 11px; height: 11px; }
+.stamp-row:hover .stamp-row-del { opacity: 1; }
+.stamp-row-del:hover { background: #FFE5E5; color: #FF3B30; border-color: #FF3B30; }
+
+.stamps-empty {
+    padding: 20px 12px;
+    text-align: center;
+    color: #BBBBBB;
+    font-size: 11px;
+    line-height: 1.6;
+}
+.stamps-empty svg { width: 20px; height: 20px; margin-bottom: 6px; opacity: 0.35; display: block; margin-inline: auto; }

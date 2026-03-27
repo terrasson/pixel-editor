@@ -483,14 +483,30 @@
         </div>
 
         <div class="frames-container">
-            <div class="frame-actions">
-                <button id="copyFrameBtnMain" class="frame-action-btn copy-btn"
-                    title="Copier la frame actuelle">C</button>
-                <button id="addFrameBtn" data-en="+ New Frame" data-fr="+ Nouvelle Frame">+ New Frame</button>
-                <button id="pasteFrameBtnMain" class="frame-action-btn paste-btn"
-                    title="Coller la frame copiée">V</button>
+            <!-- Header frames -->
+            <div class="frames-panel-header">
+                <span class="frames-panel-title"><i data-lucide="film"></i> Frames</span>
+                <div class="frames-panel-actions">
+                    <button id="copyFrameBtnMain" class="frames-hdr-btn" title="Copier la frame"><i data-lucide="copy"></i></button>
+                    <button id="pasteFrameBtnMain" class="frames-hdr-btn" title="Coller la frame"><i data-lucide="clipboard"></i></button>
+                </div>
             </div>
+            <!-- Liste frames compacte -->
             <div id="framesList"></div>
+            <!-- Ajouter frame -->
+            <div class="frames-add-row">
+                <button id="addFrameBtn" class="frames-add-btn" data-en="+ New Frame" data-fr="+ Nouvelle Frame"><i data-lucide="plus"></i> New Frame</button>
+            </div>
+
+            <!-- Section tampons -->
+            <div class="frames-panel-header stamps-header">
+                <span class="frames-panel-title"><i data-lucide="stamp"></i> Tampons</span>
+                <div class="frames-panel-actions">
+                    <button id="importStampBtn" class="frames-hdr-btn" title="Importer depuis un projet sauvegardé"><i data-lucide="folder-open"></i></button>
+                    <button id="saveStampBtn" class="frames-hdr-btn primary" title="Sauvegarder la frame courante comme tampon"><i data-lucide="plus"></i></button>
+                </div>
+            </div>
+            <div id="stampsList"></div>
         </div>
 
         <!-- Espace réservé pour la publicité future -->

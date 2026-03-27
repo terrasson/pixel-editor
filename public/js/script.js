@@ -83,6 +83,7 @@ let _nextLayerId = 0;      // compteur d'IDs uniques
 let isStampMode = false;  // Outil tampon
 let stampPixels = null;
 let stampGridSize = 32;
+let activeStampId = null; // id du tampon actuellement en mode stamp
 let stampHoverCol = 0;
 let stampHoverRow = 0;
 let stampCenterCol = 0;  // centre visuel du bounding box (calculé à l'entrée en mode stamp)
@@ -2180,6 +2181,7 @@ function setEraserState(active) {
         setFillState(false);
         setSymmetryVState(false);
         setSelectionState(false);
+        if (isStampMode) exitStampMode(true);
     }
     const pixelGrid = document.getElementById('pixelGrid');
     if (pixelGrid) {
@@ -2228,6 +2230,7 @@ function setFillState(active) {
         setEyedropperState(false);
         setSymmetryVState(false);
         setSelectionState(false);
+        if (isStampMode) exitStampMode(true);
     }
     document.querySelectorAll('#fillBtn').forEach(btn => {
         btn.classList.toggle('active', active);
@@ -2659,9 +2662,11 @@ function exitStampMode(silent = false) {
         ctx.clearRect(0, 0, overlay.width, overlay.height);
         overlay.style.display = 'none';
     }
+    activeStampId = null;
     const cancelBar = document.getElementById('stampCancelBar');
     if (cancelBar) cancelBar.style.display = 'none';
     if (!silent) showNotification(tL('stampCancelled'), 'info');
+    renderStampsList();
 }
 
 function updateStampGhost(col, row) {
@@ -2697,9 +2702,22 @@ function updateStampGhost(col, row) {
 
 function applyStamp(col, row) {
     if (CANVAS_RENDERING) {
-        actionStartState = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
-        currentActionPixels.clear();
+        // 1. Sauvegarder le calque courant avant de créer le nouveau
+        if (frameLayers[currentFrame]?.[currentLayer]) {
+            frameLayers[currentFrame][currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+        }
 
+        // 2. Créer le nouveau calque tampon
+        const stampName = (activeStampId !== null)
+            ? (window.stamps.find(s => s.id === activeStampId)?.name || 'Tampon')
+            : 'Tampon';
+        const stampLayer = createLayer(stampName);
+        frameLayers[currentFrame].push(stampLayer);
+        currentLayer = frameLayers[currentFrame].length - 1;
+
+        // 3. Construire le buffer du nouveau calque avec les pixels positionnés
+        const n = currentGridSize * currentGridSize;
+        const newBuffer = Array.from({ length: n }, () => ({ color: '#FFFFFF', isEmpty: true }));
         for (let i = 0; i < stampPixels.length; i++) {
             const pixel = stampPixels[i];
             if (!pixel || pixel.isEmpty) continue;
@@ -2709,22 +2727,20 @@ function applyStamp(col, row) {
             const dstRow = row + srcRow;
             if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
             const dstIndex = dstRow * currentGridSize + dstCol;
-            currentFrameBuffer[dstIndex] = { color: pixel.color, isEmpty: false };
-            currentActionPixels.add(dstIndex);
+            newBuffer[dstIndex] = { color: pixel.color || '#000000', isEmpty: false };
         }
 
-        if (currentActionPixels.size > 0) {
-            saveActionToHistory(actionStartState, currentActionPixels);
-        }
-        saveCurrentFrame();
-        updateAllThumbnails();
+        // 4. Synchroniser buffer ET layer.pixels pour que renderCanvas et computeComposite soient cohérents
+        currentFrameBuffer = newBuffer;
+        stampLayer.pixels = newBuffer.map(p => ({ ...p }));
+
+        frames[currentFrame] = computeComposite(currentFrame);
+        updateLayersPanel();
         renderCanvas();
+        updateFramesList();
 
         const overlay = document.getElementById('stampOverlay');
-        if (overlay) {
-            const ctx = overlay.getContext('2d');
-            ctx.clearRect(0, 0, overlay.width, overlay.height);
-        }
+        if (overlay) overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height);
 
         const isTouch = 'ontouchstart' in window;
         if (isTouch) exitStampMode(true);
@@ -2803,7 +2819,7 @@ async function showStampModal() {
             <div style="display:flex;align-items:center;gap:10px;">
                 ${thumb}
                 <div>
-                    <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(name)}</div>
+                    <div style="font-weight:600;font-size:0.9rem;">${sanitize(name)}</div>
                     <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">${frameCount} frame${frameCount > 1 ? 's' : ''}</div>
                 </div>
             </div>
@@ -5396,80 +5412,100 @@ function createFrameThumbnail(frame, frameIndex) {
 function updateFramesList() {
     const framesList = document.getElementById('framesList');
     framesList.innerHTML = '';
-    
+
     frames.forEach((frame, index) => {
-        const frameContainer = document.createElement('div');
-        frameContainer.className = 'frame-container';
-        
-        const insertBeforeBtn = document.createElement('button');
-        insertBeforeBtn.textContent = '+';
-        insertBeforeBtn.className = 'insert-frame-btn';
-        insertBeforeBtn.title = 'Insérer une frame ici';
-        insertBeforeBtn.addEventListener('click', (e) => {
+        const row = document.createElement('div');
+        row.className = `frame-row${index === currentFrame ? ' active' : ''}`;
+        row.draggable = true;
+        row.dataset.frameIndex = index;
+
+        // Drag handle
+        const handle = document.createElement('span');
+        handle.className = 'frame-drag-handle';
+        handle.textContent = '⠿';
+
+        // Miniature canvas
+        const thumb = document.createElement('canvas');
+        thumb.className = 'frame-row-thumb';
+        thumb.width = 28;
+        thumb.height = 28;
+        _drawFrameThumb(thumb, frame);
+
+        // Nom
+        const name = document.createElement('span');
+        name.className = 'frame-row-name';
+        name.textContent = `Frame ${index + 1}`;
+
+        // Bouton supprimer
+        const delBtn = document.createElement('button');
+        delBtn.className = 'frame-row-del';
+        delBtn.title = 'Supprimer';
+        delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+        delBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            insertFrame(index);
+            currentFrame = index;
+            deleteCurrentFrame();
         });
-        
-        const frameBtn = document.createElement('button');
-        frameBtn.className = `frame-preview ${index === currentFrame ? 'active' : ''}`;
-        frameBtn.draggable = true; // Rendre l'élément déplaçable
-        frameBtn.title = `Frame ${index + 1}`;
-        frameBtn.dataset.frameIndex = index; // Attribut pour identifier la frame
-        
-        // Créer la miniature de la frame
-        const thumbnail = createFrameThumbnail(frame, index);
-        frameBtn.appendChild(thumbnail);
-        
-        // Ajouter les événements de drag & drop
-        frameBtn.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', index);
-            frameBtn.classList.add('dragging');
-        });
-        
-        frameBtn.addEventListener('dragend', () => {
-            frameBtn.classList.remove('dragging');
-        });
-        
-        frameBtn.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            frameBtn.classList.add('drag-over');
-        });
-        
-        frameBtn.addEventListener('dragleave', () => {
-            frameBtn.classList.remove('drag-over');
-        });
-        
-        frameBtn.addEventListener('drop', (e) => {
-            e.preventDefault();
-            frameBtn.classList.remove('drag-over');
-            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
-            const toIndex = index;
-            
-            if (fromIndex !== toIndex) {
-                reorderFrames(fromIndex, toIndex);
-            }
-        });
-        
-        frameBtn.addEventListener('click', () => {
-            saveCurrentFrame(); // sync frames[] before switching so onion skin is up to date
+
+        row.append(handle, thumb, name, delBtn);
+
+        // Sélection frame
+        row.addEventListener('click', () => {
+            saveCurrentFrame();
             currentFrame = index;
             loadFrame(currentFrame);
-            // Faire défiler pour que la frame active soit visible
-            frameBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
-        
-        frameContainer.appendChild(insertBeforeBtn);
-        frameContainer.appendChild(frameBtn);
-        framesList.appendChild(frameContainer);
+
+        // Drag & drop
+        row.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', index);
+            row.classList.add('frame-dragging');
+        });
+        row.addEventListener('dragend', () => {
+            row.classList.remove('frame-dragging');
+            document.querySelectorAll('.frame-drop-above,.frame-drop-below').forEach(el => {
+                el.classList.remove('frame-drop-above', 'frame-drop-below');
+            });
+        });
+        row.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+            document.querySelectorAll('.frame-drop-above,.frame-drop-below').forEach(el => {
+                el.classList.remove('frame-drop-above', 'frame-drop-below');
+            });
+            row.classList.add(index <= from ? 'frame-drop-above' : 'frame-drop-below');
+        });
+        row.addEventListener('dragleave', () => {
+            row.classList.remove('frame-drop-above', 'frame-drop-below');
+        });
+        row.addEventListener('drop', (e) => {
+            e.preventDefault();
+            row.classList.remove('frame-drop-above', 'frame-drop-below');
+            const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+            if (from !== index) reorderFrames(from, index);
+        });
+
+        framesList.appendChild(row);
     });
-    
-    // Bouton d'insertion après la dernière frame
-    const insertLastBtn = document.createElement('button');
-    insertLastBtn.textContent = '+';
-    insertLastBtn.className = 'insert-frame-btn';
-    insertLastBtn.title = 'Ajouter une frame à la fin';
-    insertLastBtn.addEventListener('click', () => insertFrame(frames.length));
-    framesList.appendChild(insertLastBtn);
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// Dessine la miniature d'une frame dans un canvas 28x28
+function _drawFrameThumb(canvas, frame) {
+    const ctx = canvas.getContext('2d');
+    const size = currentGridSize;
+    const cw = canvas.width, ch = canvas.height;
+    ctx.clearRect(0, 0, cw, ch);
+    if (!frame || frame.length === 0) return;
+    const pw = cw / size, ph = ch / size;
+    for (let i = 0; i < size * size; i++) {
+        const p = frame[i];
+        if (!p || p.isEmpty) continue;
+        ctx.fillStyle = p.color || '#fff';
+        ctx.fillRect((i % size) * pw, Math.floor(i / size) * ph, pw, ph);
+    }
 }
 
 // Ajouter la fonction insertFrame
@@ -7093,8 +7129,8 @@ function initEventListeners() {
     document.getElementById('publishGalleryBtn2')?.addEventListener('click', publishToGallery);
     document.getElementById('exportGifBtn')?.addEventListener('click', exportToGif);
     document.getElementById('exportSpriteSheetBtn')?.addEventListener('click', exportToSpriteSheet);
-    document.getElementById('stampSpriteBtn')?.addEventListener('click', showStampModal);
-    document.getElementById('stampSpriteBtn2')?.addEventListener('click', showStampModal);
+    document.getElementById('stampSpriteBtn')?.addEventListener('click', showImportStampModal);
+    document.getElementById('stampSpriteBtn2')?.addEventListener('click', showImportStampModal);
     document.getElementById('copyFrameBtn')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtn')?.addEventListener('click', pasteFrame);
     document.getElementById('onionSkinBtn')?.addEventListener('click', showOnionSkinPanel);
@@ -9067,7 +9103,7 @@ async function updateUserProfileDisplay() {
             if (stampSpriteBtnDropdown) {
                 stampSpriteBtnDropdown.addEventListener('click', () => {
                     userDropdown.classList.remove('open');
-                    showStampModal();
+                    showImportStampModal();
                 });
             }
 
@@ -9492,3 +9528,330 @@ function _photoAddColorsToPalette(colors) {
     if (typeof saveCustomColors === 'function') saveCustomColors();
     return stats;
 }
+
+// ─── Stamps / Tampons ────────────────────────────────────────────────────────
+
+window.stamps = window.stamps || [];
+
+function _loadStamps() {
+    window.stamps = [];
+}
+
+function _saveStamps() {
+    // Tampons non persistés — remis à zéro au rechargement
+}
+
+function saveCurrentDrawingAsStamp() {
+    // Utilise le buffer live directement (plus fiable que frames[currentFrame])
+    const pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+    const hasContent = pixels.some(p => !p.isEmpty);
+    if (!hasContent) {
+        showToast('Le canvas est vide — dessine quelque chose d\'abord', { type: 'warning' });
+        return;
+    }
+    _addStamp(pixels, `Frame ${currentFrame + 1}`);
+}
+
+function _addStamp(pixels, nameHint) {
+    const stamp = {
+        id: Date.now(),
+        name: nameHint || `Tampon ${window.stamps.length + 1}`,
+        pixels,
+        hidden: false
+    };
+    window.stamps.unshift(stamp);
+    _saveStamps();
+    renderStampsList();
+    showToast(`Tampon "${stamp.name}" sauvegardé`, { type: 'success' });
+}
+
+function showImportStampModal() {
+    // Lire les projets locaux immédiatement (synchrone)
+    const localProjects = _getLocalProjects();
+
+    // Ouvrir la modal tout de suite avec les projets locaux
+    const allProjects = localProjects.map(p => ({ ...p, _source: 'local' }));
+    const dialog = _buildImportStampDialog(allProjects);
+
+    // Charger les projets cloud en arrière-plan et mettre à jour la liste
+    if (window.dbService) {
+        const list = dialog.querySelector('#importStampProjectList');
+        if (list && allProjects.length === 0) {
+            list.innerHTML = '<div style="padding:12px;color:rgba(255,255,255,0.4);font-size:0.85rem;">Chargement des projets cloud…</div>';
+        }
+        window.dbService.getAllProjects().then(result => {
+            if (!result?.success || !dialog.isConnected) return;
+            const cloud = (result.data || []).map(p => ({ ...p, _source: 'cloud' }));
+            if (cloud.length === 0) return;
+            // Ajouter en tête sans dupliquer
+            const merged = [...cloud, ...allProjects];
+            allProjects.length = 0;
+            merged.forEach(p => allProjects.push(p));
+            _refreshImportStampList(dialog, allProjects);
+        }).catch(() => {});
+    }
+}
+
+function _getLocalProjects() {
+    const projects = [];
+    // Clés pixelart_* (sauvegardes manuelles)
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('pixelart_')) {
+                const raw = localStorage.getItem(key);
+                if (raw) {
+                    const p = JSON.parse(raw);
+                    if (p && p.frames) projects.push({ ...p, name: p.name || key.replace('pixelart_', '') });
+                }
+            }
+        }
+    } catch (e) {}
+    // Auto-save array
+    try {
+        const saved = localStorage.getItem('pixelEditor_autoSaveProjects');
+        if (saved) {
+            const arr = JSON.parse(saved);
+            arr.forEach(p => { if (p && p.frames) projects.push(p); });
+        }
+    } catch (e) {}
+    return projects;
+}
+
+function _buildImportStampDialog(allProjects) {
+    const dialog = createMobileDialog('Importer un tampon', `
+        <p style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:12px;">Choisissez un projet puis une frame à ajouter comme tampon.</p>
+        <div id="importStampProjectList" class="projects-list" style="max-height:280px;overflow-y:auto;"></div>
+        <div id="importStampFramePicker" style="display:none;margin-top:12px;">
+            <p id="importStampFrameLabel" style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:8px;"></p>
+            <div id="importStampFrameList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;">
+            <button id="importStampConfirmBtn" class="dialog-button" disabled>Ajouter comme tampon</button>
+            <button id="importStampCancelBtn" class="dialog-button secondary">Annuler</button>
+        </div>
+    `);
+
+    dialog._selectedProject = null;
+    dialog._selectedFrame = 0;
+
+    _refreshImportStampList(dialog, allProjects);
+
+    dialog.querySelector('#importStampConfirmBtn').addEventListener('click', () => {
+        const project = dialog._selectedProject;
+        if (!project) return;
+        const framesData = Array.isArray(project.frames) ? project.frames : [];
+        const rawFrame = framesData[dialog._selectedFrame] || framesData[0] || [];
+        const rawPx = Array.isArray(rawFrame) ? rawFrame : (rawFrame.pixels || []);
+        const normalised = normaliseFrames([rawPx])[0];
+        const name = (project.name || 'Sans titre') + (framesData.length > 1 ? ` F${dialog._selectedFrame + 1}` : '');
+        _addStamp(normalised, name);
+        dialog.remove();
+    });
+
+    dialog.querySelector('#importStampCancelBtn').addEventListener('click', () => dialog.remove());
+    return dialog;
+}
+
+function _refreshImportStampList(dialog, allProjects) {
+    const list = dialog.querySelector('#importStampProjectList');
+    if (!list) return;
+
+    if (allProjects.length === 0) {
+        list.innerHTML = `<div style="text-align:center;padding:24px;color:rgba(255,255,255,0.5);font-size:0.9rem;">
+            Aucun projet local trouvé.<br>Sauvegarde via <strong>Fichier → Sauvegarder</strong> d'abord.
+        </div>`;
+        return;
+    }
+
+    // Attacher chaque projet directement à son élément DOM (évite les bugs d'index)
+    list.innerHTML = allProjects.map((p, index) => {
+        const name = p.name || 'Sans titre';
+        const frameCount = Array.isArray(p.frames) ? p.frames.length : 1;
+        const badge = p._source === 'cloud'
+            ? '<span style="font-size:0.65rem;background:rgba(0,122,255,0.3);color:#5AC8FA;padding:1px 5px;border-radius:3px;margin-left:4px;">☁</span>'
+            : '<span style="font-size:0.65rem;background:rgba(255,149,0,0.3);color:#FF9500;padding:1px 5px;border-radius:3px;margin-left:4px;">local</span>';
+        const thumb = p.thumbnail
+            ? `<img src="${p.thumbnail}" style="width:40px;height:40px;image-rendering:pixelated;border-radius:4px;background:#fff;">`
+            : `<div style="width:40px;height:40px;background:rgba(255,255,255,0.1);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px;">🎨</div>`;
+        return `<div class="project-item stamp-project-item" data-index="${index}" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:8px;">
+            ${thumb}
+            <div>
+                <div style="font-weight:600;font-size:0.9rem;">${sanitize(name)}${badge}</div>
+                <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">${frameCount} frame${frameCount > 1 ? 's' : ''}</div>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Attacher les données projet directement aux éléments DOM (stable même si allProjects mute)
+    list.querySelectorAll('.stamp-project-item').forEach((item, idx) => {
+        item._project = allProjects[idx];
+    });
+
+    list.querySelectorAll('.stamp-project-item').forEach(item => {
+        item.addEventListener('click', () => {
+            list.querySelectorAll('.stamp-project-item').forEach(i => i.style.background = '');
+            item.style.background = 'rgba(255,115,0,0.25)';
+            dialog._selectedFrame = 0;
+            dialog._selectedProject = item._project;
+
+            const project = item._project;
+            const framesData = Array.isArray(project.frames) ? project.frames : [];
+            const framePicker = dialog.querySelector('#importStampFramePicker');
+            const frameLabel = dialog.querySelector('#importStampFrameLabel');
+            const frameList = dialog.querySelector('#importStampFrameList');
+
+            frameList.innerHTML = '';
+            if (framesData.length <= 1) {
+                framePicker.style.display = 'none';
+            } else {
+                framePicker.style.display = 'block';
+                frameLabel.textContent = `${framesData.length} frames — choisissez celle à utiliser`;
+                framesData.forEach((frame, fi) => {
+                    const c = document.createElement('canvas');
+                    c.width = 48; c.height = 48;
+                    c.style.cssText = `width:48px;height:48px;image-rendering:pixelated;border-radius:4px;cursor:pointer;border:2px solid ${fi === 0 ? '#FF7300' : 'transparent'};background:#fff;`;
+                    const ctx = c.getContext('2d');
+                    const rawPx = Array.isArray(frame) ? frame : (frame.pixels || []);
+                    const gs = Math.round(Math.sqrt(rawPx.length)) || 32;
+                    const ps = 48 / gs;
+                    rawPx.forEach((px, i) => {
+                        if (!px || px.isEmpty) return;
+                        ctx.fillStyle = px.color || '#000';
+                        ctx.fillRect((i % gs) * ps, Math.floor(i / gs) * ps, ps, ps);
+                    });
+                    c.addEventListener('click', () => {
+                        frameList.querySelectorAll('canvas').forEach(cv => cv.style.borderColor = 'transparent');
+                        c.style.borderColor = '#FF7300';
+                        dialog._selectedFrame = fi;
+                    });
+                    frameList.appendChild(c);
+                });
+            }
+            dialog.querySelector('#importStampConfirmBtn').disabled = false;
+        });
+    });
+}
+
+function renderStampsList() {
+    const list = document.getElementById('stampsList');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (window.stamps.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'stamps-empty';
+        empty.textContent = 'Aucun tampon — dessine quelque chose puis clique +';
+        list.appendChild(empty);
+        return;
+    }
+
+    window.stamps.forEach((stamp, index) => {
+        const row = document.createElement('div');
+        const isActive = isStampMode && activeStampId === stamp.id;
+        row.className = `stamp-row${isActive ? ' active' : ''}`;
+        row.draggable = true;
+        row.dataset.stampIndex = index;
+
+        // Drag handle
+        const handle = document.createElement('span');
+        handle.className = 'stamp-drag-handle';
+        handle.textContent = '⠿';
+
+        // Miniature
+        const thumb = document.createElement('canvas');
+        thumb.className = 'stamp-row-thumb';
+        thumb.width = 28;
+        thumb.height = 28;
+        _drawFrameThumb(thumb, stamp.pixels);
+
+        // Nom
+        const name = document.createElement('span');
+        name.className = 'stamp-row-name';
+        name.textContent = stamp.name;
+
+        // Bouton supprimer
+        const delBtn = document.createElement('button');
+        delBtn.className = 'stamp-row-del';
+        delBtn.title = 'Supprimer';
+        delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+        delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.stamps.splice(index, 1);
+            _saveStamps();
+            renderStampsList();
+        });
+
+        row.append(handle, thumb, name, delBtn);
+
+        // Clic pour entrer en mode tampon (preview + placement sur canvas)
+        row.title = 'Cliquer pour activer → puis cliquer sur le canvas pour placer';
+        row.addEventListener('click', () => {
+            activeStampId = stamp.id;
+            enterStampMode(stamp.pixels, currentGridSize);
+            renderStampsList();
+        });
+
+        // Drag & drop pour réordonner
+        row.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', index);
+            row.classList.add('frame-dragging');
+        });
+        row.addEventListener('dragend', () => {
+            row.classList.remove('frame-dragging');
+            document.querySelectorAll('.stamp-drop-above,.stamp-drop-below').forEach(el => {
+                el.classList.remove('stamp-drop-above', 'stamp-drop-below');
+            });
+        });
+        row.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+            document.querySelectorAll('.stamp-drop-above,.stamp-drop-below').forEach(el => {
+                el.classList.remove('stamp-drop-above', 'stamp-drop-below');
+            });
+            row.classList.add(index <= from ? 'stamp-drop-above' : 'stamp-drop-below');
+        });
+        row.addEventListener('dragleave', () => {
+            row.classList.remove('stamp-drop-above', 'stamp-drop-below');
+        });
+        row.addEventListener('drop', (e) => {
+            e.preventDefault();
+            row.classList.remove('stamp-drop-above', 'stamp-drop-below');
+            const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+            if (from !== index) {
+                const moved = window.stamps.splice(from, 1)[0];
+                window.stamps.splice(index, 0, moved);
+                _saveStamps();
+                renderStampsList();
+            }
+        });
+
+        list.appendChild(row);
+    });
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function _applyStamp(stamp) {
+    saveCurrentFrame();
+    const src = stamp.pixels;
+    const dst = frames[currentFrame];
+    for (let i = 0; i < src.length && i < dst.length; i++) {
+        if (!src[i].isEmpty) {
+            dst[i] = { ...src[i] };
+        }
+    }
+    loadFrame(currentFrame);
+    updateFramesList();
+    saveToHistory();
+    showToast(`Tampon "${stamp.name}" appliqué`, { type: 'success' });
+}
+
+// Initialisation des tampons au démarrage
+document.addEventListener('DOMContentLoaded', () => {
+    _loadStamps();
+    renderStampsList();
+
+    document.getElementById('saveStampBtn')?.addEventListener('click', saveCurrentDrawingAsStamp);
+    document.getElementById('importStampBtn')?.addEventListener('click', showImportStampModal);
+});
