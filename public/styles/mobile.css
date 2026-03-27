@@ -2697,131 +2697,37 @@ body.drag-over .grid-container {
    ══════════════════════════════════════════ */
 
 /* Frames */
-#mobilePanelLeft .frame-row {
-    padding: 10px 10px;
-    gap: 10px;
-    min-height: 52px;
-}
-#mobilePanelLeft .frame-row-thumb {
-    width: 38px;
-    height: 38px;
-}
-#mobilePanelLeft .frame-row-name {
-    font-size: 14px;
-}
-#mobilePanelLeft .frame-drag-handle {
-    font-size: 20px;
-    padding: 0 6px;
-    color: #AAAAAA;
-}
-#mobilePanelLeft .frame-row-del {
-    opacity: 1;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    padding: 0;
-    background: none;
-    border: 1px solid #E5E5EA;
-    color: #666;
-    cursor: pointer;
-}
-#mobilePanelLeft .frame-row-del:hover { background: #FFE5E5; color: #FF3B30; border-color: #FF3B30; }
-#mobilePanelLeft .frame-row-del svg { width: 16px; height: 16px; }
+/* ── Touch size overrides for mobile sliding panels ─────────────────────── */
+/* Frames (left panel) */
+#mobilePanelLeft .frame-row { padding: 8px 10px; gap: 8px; min-height: 48px; }
+#mobilePanelLeft .frame-row-thumb { width: 34px; height: 34px; }
+#mobilePanelLeft .frame-drag-handle { font-size: 18px; padding: 0 5px; }
+#mobilePanelLeft .frame-row-del { opacity: 1; width: 32px; height: 32px; padding: 0; justify-content: center; }
+#mobilePanelLeft .frame-row-del svg { width: 14px; height: 14px; }
 
-/* Calques dans panneau droit */
-#mobilePanelRight .layer-item {
-    padding: 10px 10px;
-    gap: 10px;
-    min-height: 52px;
-    flex-wrap: nowrap;
-}
-#mobilePanelRight .layer-drag-handle {
-    font-size: 20px;
-    padding: 0 4px;
-    color: #AAAAAA;
-}
-#mobilePanelRight .layer-eye {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    flex-shrink: 0;
-}
-#mobilePanelRight .layer-eye svg { width: 18px; height: 18px; }
-#mobilePanelRight .layer-name {
-    font-size: 14px;
-    flex: 1;
-}
-#mobilePanelRight .layer-actions {
-    display: flex;
-    gap: 4px;
-    flex-shrink: 0;
-}
+/* Layers (right panel) */
+#mobilePanelRight .layer-item { padding: 8px 10px; gap: 8px; min-height: 48px; }
+#mobilePanelRight .layer-drag-handle { font-size: 18px; padding: 0 4px; }
+#mobilePanelRight .layer-eye { width: 32px; height: 32px; padding: 0; justify-content: center; }
+#mobilePanelRight .layer-eye svg { width: 16px; height: 16px; }
+#mobilePanelRight .layer-actions { gap: 4px; }
 #mobilePanelRight .layer-action-btn,
-#mobilePanelRight .layer-delete-btn {
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    padding: 0;
-    font-size: 16px;
-    background: none;
-    border: 1px solid #E5E5EA;
-    color: #666;
-    cursor: pointer;
-}
-#mobilePanelRight .layer-action-btn:hover { background: #F0F0F2; }
-#mobilePanelRight .layer-delete-btn:hover { background: #FFE5E5; color: #FF3B30; border-color: #FF3B30; }
-#mobilePanelRight .layer-action-btn svg,
-#mobilePanelRight .layer-delete-btn svg { width: 16px; height: 16px; }
+#mobilePanelRight .layer-delete-btn { width: 30px; height: 30px; padding: 0; justify-content: center; font-size: 14px; border-radius: 6px; }
 
-/* Tampons dans panneau droit */
-#mobilePanelRight .stamp-row {
-    padding: 10px 10px;
-    gap: 10px;
-    min-height: 52px;
-}
-#mobilePanelRight .stamp-row-thumb {
-    width: 38px;
-    height: 38px;
-}
-#mobilePanelRight .stamp-row-name {
-    font-size: 14px;
-}
-#mobilePanelRight .stamp-drag-handle {
-    font-size: 20px;
-    padding: 0 6px;
-    color: #AAAAAA;
-}
-#mobilePanelRight .stamp-row-del {
-    opacity: 1;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    padding: 0;
-    background: none;
-    border: 1px solid #E5E5EA;
-    color: #666;
-    cursor: pointer;
-}
-#mobilePanelRight .stamp-row-del:hover { background: #FFE5E5; color: #FF3B30; border-color: #FF3B30; }
-#mobilePanelRight .stamp-row-del svg { width: 16px; height: 16px; }
+/* Stamps (right panel) */
+#mobilePanelRight .stamp-row { padding: 8px 10px; gap: 8px; min-height: 48px; }
+#mobilePanelRight .stamp-row-thumb { width: 34px; height: 34px; }
+#mobilePanelRight .stamp-drag-handle { font-size: 18px; padding: 0 5px; }
+#mobilePanelRight .stamp-row-del { opacity: 1; width: 32px; height: 32px; padding: 0; justify-content: center; }
+#mobilePanelRight .stamp-row-del svg { width: 14px; height: 14px; }
+
+/* Delete buttons always visible on touch + touch-friendly shape */
+#mobilePanelLeft .frame-row-del,
+#mobilePanelRight .stamp-row-del { border-radius: 6px; }
 
 /* Header des panneaux */
 .mobile-panel-hdr { padding: 9px 12px; }
 .mobile-panel-title { font-size: 12px; }
 .mobile-inner-tab { padding: 10px 0; font-size: 11px; }
-
-/* Boutons header panneau — taille touch confortable */
-.mobile-panel-hdr .frames-hdr-btn {
-    width: 36px;
-    height: 36px;
-}
-.mobile-panel-hdr .frames-hdr-btn svg { width: 15px; height: 15px; }
+.mobile-panel-hdr .frames-hdr-btn { width: 34px; height: 34px; }
+.mobile-panel-hdr .frames-hdr-btn svg { width: 14px; height: 14px; }
