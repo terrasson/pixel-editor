@@ -2691,3 +2691,114 @@ body.drag-over .grid-container {
 #mobileLayersPanel .layer-item.layer-drop-above { border-top: 2px solid #FF7300; }
 #mobileLayersPanel .layer-item.layer-drop-below { border-bottom: 2px solid #FF7300; }
 #mobileLayersPanel .layer-item.layer-dragging { opacity: 0.4; }
+
+/* ══════════════════════════════════════════
+   Panneaux glissants mobiles — cibles tactiles agrandies
+   ══════════════════════════════════════════ */
+
+/* Frames */
+#mobilePanelLeft .frame-row {
+    padding: 10px 10px;
+    gap: 10px;
+    min-height: 52px;
+}
+#mobilePanelLeft .frame-row-thumb {
+    width: 38px;
+    height: 38px;
+}
+#mobilePanelLeft .frame-row-name {
+    font-size: 14px;
+}
+#mobilePanelLeft .frame-drag-handle {
+    font-size: 20px;
+    padding: 0 6px;
+    color: #AAAAAA;
+}
+#mobilePanelLeft .frame-row-del {
+    opacity: 1;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    padding: 0;
+}
+#mobilePanelLeft .frame-row-del svg { width: 16px; height: 16px; }
+
+/* Calques dans panneau droit */
+#mobilePanelRight .layer-item {
+    padding: 10px 10px;
+    gap: 10px;
+    min-height: 52px;
+    flex-wrap: nowrap;
+}
+#mobilePanelRight .layer-drag-handle {
+    font-size: 20px;
+    padding: 0 4px;
+    color: #AAAAAA;
+}
+#mobilePanelRight .layer-eye {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+#mobilePanelRight .layer-eye svg { width: 18px; height: 18px; }
+#mobilePanelRight .layer-name {
+    font-size: 14px;
+    flex: 1;
+}
+#mobilePanelRight .layer-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+#mobilePanelRight .layer-action-btn,
+#mobilePanelRight .layer-delete-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    padding: 0;
+    font-size: 0;
+}
+#mobilePanelRight .layer-action-btn svg,
+#mobilePanelRight .layer-delete-btn svg { width: 16px; height: 16px; }
+
+/* Tampons dans panneau droit */
+#mobilePanelRight .stamp-row {
+    padding: 10px 10px;
+    gap: 10px;
+    min-height: 52px;
+}
+#mobilePanelRight .stamp-row-thumb {
+    width: 38px;
+    height: 38px;
+}
+#mobilePanelRight .stamp-row-name {
+    font-size: 14px;
+}
+#mobilePanelRight .stamp-drag-handle {
+    font-size: 20px;
+    padding: 0 6px;
+    color: #AAAAAA;
+}
+#mobilePanelRight .stamp-row-del {
+    opacity: 1;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    padding: 0;
+}
+#mobilePanelRight .stamp-row-del svg { width: 16px; height: 16px; }
+
+/* Header des panneaux */
+.mobile-panel-hdr { padding: 9px 12px; }
+.mobile-panel-title { font-size: 12px; }
+.mobile-inner-tab { padding: 10px 0; font-size: 11px; }
