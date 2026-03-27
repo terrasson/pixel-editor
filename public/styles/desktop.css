@@ -1144,28 +1144,6 @@ body {
 }
 
 /* Bouton Nouvelle Frame - Couleur orange principale */
-#addFrameBtn {
-    padding: 12px 16px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    background: var(--color-primary, #FF7300);
-    border: none;
-    border-radius: var(--radius-sm, 8px);
-    color: #FFFFFF;
-    cursor: pointer;
-    transition: all var(--transition-fast, 0.15s ease);
-    box-shadow: 0 2px 8px rgba(255, 115, 0, 0.25);
-}
-
-#addFrameBtn:hover {
-    background: var(--color-primary-hover, #E66800);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(255, 115, 0, 0.35);
-}
-
-#addFrameBtn:active {
-    transform: translateY(0);
-}
 
 /* ========================================
    BOUTONS FRAME ACTIONS DESKTOP (Copier/Coller)
@@ -1216,13 +1194,6 @@ body {
     background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
 }
 
-#addFrameBtn {
-    flex: 1;
-    min-height: clamp(42px, 3vw, 50px);
-    font-size: clamp(0.72rem, 1.3vw, 0.95rem);
-    border-radius: 11px;
-    padding-inline: clamp(6px, 1vw, 12px);
-}
 
 /* Styles obsolètes pour .frame - remplacés par .frame-preview */
 
@@ -1790,14 +1761,18 @@ body {
     background: none;
     border: 1px solid #D1D1D6;
     border-radius: 5px;
-    padding: 3px 7px;
+    padding: 0;
+    width: 28px;
+    height: 28px;
     font-size: 11px;
     cursor: pointer;
     color: #555;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 3px;
     transition: background 0.1s;
+    flex-shrink: 0;
 }
 .frames-hdr-btn:hover { background: #E8E8ED; }
 .frames-hdr-btn svg { width: 13px; height: 13px; }
@@ -1805,7 +1780,6 @@ body {
     background: #FF7300;
     border-color: #FF7300;
     color: white;
-    padding: 3px 9px;
     font-weight: 600;
 }
 .frames-hdr-btn.primary:hover { background: #e56600; }
