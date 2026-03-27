@@ -1732,6 +1732,12 @@ body {
     gap: 0;
 }
 
+/* Panneaux glissants mobiles : invisibles sur desktop */
+.mobile-slide-panel,
+.mobile-trait-handle {
+    display: none;
+}
+
 .frames-panel-header {
     display: flex;
     align-items: center;

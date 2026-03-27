@@ -480,6 +480,49 @@
 
         <div class="grid-container">
             <div id="pixelGrid"></div>
+
+            <!-- ── Panneaux glissants mobiles ── -->
+            <!-- Gauche : Frames -->
+            <div id="mobilePanelLeft" class="mobile-slide-panel mobile-slide-left">
+                <div class="mobile-panel-hdr">
+                    <span class="mobile-panel-title"><i data-lucide="film"></i> Frames</span>
+                    <div class="mobile-panel-actions">
+                        <button id="copyFrameBtnMobile" class="frames-hdr-btn" title="Copier"><i data-lucide="copy"></i></button>
+                        <button id="pasteFrameBtnMobile" class="frames-hdr-btn" title="Coller"><i data-lucide="clipboard"></i></button>
+                        <button id="addFrameBtnMobile" class="frames-hdr-btn primary" title="Nouvelle frame"><i data-lucide="plus"></i></button>
+                    </div>
+                </div>
+                <div id="framesListMobile" class="mobile-panel-body"></div>
+            </div>
+            <div id="mobileHandleLeft" class="mobile-trait-handle mobile-trait-left" onclick="toggleMobilePanel('left')"></div>
+
+            <!-- Droite : Calques + Tampons -->
+            <div id="mobilePanelRight" class="mobile-slide-panel mobile-slide-right">
+                <div class="mobile-inner-tabs">
+                    <button class="mobile-inner-tab active" data-target="mobileTabLayers" onclick="switchMobileTab(this)"><i data-lucide="layers"></i> Calques</button>
+                    <button class="mobile-inner-tab" data-target="mobileTabStamps" onclick="switchMobileTab(this)"><i data-lucide="stamp"></i> Tampons</button>
+                </div>
+                <!-- Calques -->
+                <div id="mobileTabLayers" class="mobile-tab-pane active">
+                    <div class="mobile-panel-hdr">
+                        <span class="mobile-panel-title" id="mobileLayersPanelTitle">Frame 1</span>
+                        <button class="frames-hdr-btn primary" onclick="addLayer()" title="Nouveau calque"><i data-lucide="plus"></i></button>
+                    </div>
+                    <div class="layers-list mobile-panel-body" id="layersListMobile2"></div>
+                </div>
+                <!-- Tampons -->
+                <div id="mobileTabStamps" class="mobile-tab-pane">
+                    <div class="mobile-panel-hdr">
+                        <span class="mobile-panel-title"><i data-lucide="stamp"></i> Tampons</span>
+                        <div class="mobile-panel-actions">
+                            <button id="importStampBtnMobile" class="frames-hdr-btn" title="Importer"><i data-lucide="folder-open"></i></button>
+                            <button id="saveStampBtnMobile" class="frames-hdr-btn primary" title="Sauvegarder"><i data-lucide="plus"></i></button>
+                        </div>
+                    </div>
+                    <div id="stampsListMobile" class="mobile-panel-body"></div>
+                </div>
+            </div>
+            <div id="mobileHandleRight" class="mobile-trait-handle mobile-trait-right" onclick="toggleMobilePanel('right')"></div>
         </div>
 
         <div class="frames-container">

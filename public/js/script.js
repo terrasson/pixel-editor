@@ -1092,6 +1092,9 @@ function updateLayersPanel() {
     const layers = frameLayers[currentFrame] || [];
     _renderLayersList(document.getElementById('layersList'), layers);
     _renderLayersList(document.getElementById('layersListMobile'), layers);
+    _renderLayersList(document.getElementById('layersListMobile2'), layers);
+    const titleEl = document.getElementById('mobileLayersPanelTitle');
+    if (titleEl) titleEl.textContent = `Frame ${currentFrame + 1}`;
 }
 
 function promptRenameLayer(index) {
@@ -5489,6 +5492,10 @@ function updateFramesList() {
         framesList.appendChild(row);
     });
 
+    // Miroir mobile
+    const mobileList = document.getElementById('framesListMobile');
+    if (mobileList) mobileList.innerHTML = framesList.innerHTML;
+
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -9829,6 +9836,10 @@ function renderStampsList() {
         list.appendChild(row);
     });
 
+    // Miroir mobile
+    const mobileList = document.getElementById('stampsListMobile');
+    if (mobileList) mobileList.innerHTML = list.innerHTML;
+
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -9854,4 +9865,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('saveStampBtn')?.addEventListener('click', saveCurrentDrawingAsStamp);
     document.getElementById('importStampBtn')?.addEventListener('click', showImportStampModal);
+
+    // Boutons mobiles
+    document.getElementById('saveStampBtnMobile')?.addEventListener('click', saveCurrentDrawingAsStamp);
+    document.getElementById('importStampBtnMobile')?.addEventListener('click', showImportStampModal);
+    document.getElementById('copyFrameBtnMobile')?.addEventListener('click', copyCurrentFrame);
+    document.getElementById('pasteFrameBtnMobile')?.addEventListener('click', pasteFrame);
+    document.getElementById('addFrameBtnMobile')?.addEventListener('click', addFrame);
 });
+
+function toggleMobilePanel(side) {
+    const panel  = document.getElementById(side === 'left' ? 'mobilePanelLeft'  : 'mobilePanelRight');
+    const handle = document.getElementById(side === 'left' ? 'mobileHandleLeft' : 'mobileHandleRight');
+    if (!panel) return;
+    const opening = !panel.classList.contains('open');
+    // Fermer l'autre côté si on en ouvre un
+    if (opening) {
+        const other = document.getElementById(side === 'left' ? 'mobilePanelRight' : 'mobilePanelLeft');
+        const otherH = document.getElementById(side === 'left' ? 'mobileHandleRight' : 'mobileHandleLeft');
+        other?.classList.remove('open');
+        otherH?.classList.remove('open');
+    }
+    panel.classList.toggle('open', opening);
+    handle.classList.toggle('open', opening);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function switchMobileTab(btn) {
+    const panel = btn.closest('.mobile-slide-panel');
+    panel.querySelectorAll('.mobile-inner-tab').forEach(t => t.classList.remove('active'));
+    panel.querySelectorAll('.mobile-tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const target = document.getElementById(btn.dataset.target);
+    if (target) target.classList.add('active');
+}
