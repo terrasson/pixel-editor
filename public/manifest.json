@@ -5,44 +5,48 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#007AFF",
+  "theme_color": "#FF7300",
   "orientation": "any",
-  
   "icons": [
-    {
-      "src": "assets/icons/favicon.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/icons/favicon.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
     {
       "src": "assets/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "assets/icons/icon-512.svg",
+      "src": "assets/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
-  
   "file_handlers": [
     {
       "action": "/",
       "accept": {
-        "application/json": [".pixelart", ".json"],
-        "text/plain": [".pixelart"]
+        "application/json": [
+          ".pixelart",
+          ".json"
+        ],
+        "text/plain": [
+          ".pixelart"
+        ]
       }
     }
   ],
-  
   "share_target": {
     "action": "/",
     "method": "POST",
@@ -54,15 +58,21 @@
       "files": [
         {
           "name": "files",
-          "accept": ["application/json", ".pixelart", ".json"]
+          "accept": [
+            "application/json",
+            ".pixelart",
+            ".json"
+          ]
         }
       ]
     }
   },
-  
-  "categories": ["entertainment", "games", "graphics"],
+  "categories": [
+    "entertainment",
+    "games",
+    "graphics"
+  ],
   "lang": "fr",
-  
   "screenshots": [
     {
       "src": "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='540' height='720' viewBox='0 0 540 720'%3e%3crect width='540' height='720' fill='%23f0f0f0'/%3e%3ctext x='270' y='360' font-family='Arial' font-size='40' text-anchor='middle' fill='%23333'%3eÉditeur Pixel Art%3c/text%3e%3c/svg%3e",
@@ -71,4 +81,4 @@
       "form_factor": "narrow"
     }
   ]
-} 
+}
