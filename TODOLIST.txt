@@ -120,9 +120,8 @@
     getPendingSharesCount(), acceptShare(), declineShare(),
     duplicateSharedProject(), getSharedProjectData(), getMyShares(), revokeShare()
 
-[ ] sessionId CRYPTOGRAPHIQUEMENT FORT
-    database.js — sessionId basé sur Date.now() + Math.random().
-    Fix : crypto.getRandomValues() pour plus d'entropie.
+[x] sessionId CRYPTOGRAPHIQUEMENT FORT          ✅ Déjà en place
+    crypto.getRandomValues() utilisé depuis le début (ligne 366 database.js).
 
 [ ] HARMONISATION DES ICÔNES
     Mix emojis (🪣 🗑️) + SVG custom (eyedropper).
