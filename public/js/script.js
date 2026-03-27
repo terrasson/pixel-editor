@@ -7235,9 +7235,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     initGrid();
     initEventListeners();
-    
+
     // Réinitialiser les couleurs personnalisées au démarrage pour toujours avoir les couleurs de base
     customColors = [];
     updateColorPalette();

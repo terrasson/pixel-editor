@@ -61,6 +61,13 @@
     <!-- CSS conditionnel selon l'écran -->
     <link rel="stylesheet" href="styles/mobile.css" media="screen and (max-width: 1023px)">
     <link rel="stylesheet" href="styles/desktop.css" media="screen and (min-width: 1024px)">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        button svg.lucide { width: 16px; height: 16px; stroke: currentColor; vertical-align: middle; flex-shrink: 0; }
+        button { display: inline-flex; align-items: center; gap: 5px; }
+    </style>
 </head>
 
 <body>
@@ -83,26 +90,26 @@
                         <div class="user-dropdown-header">
                             <span class="user-dropdown-name" id="dropdownUserName">Utilisateur</span>
                         </div>
-                        <button id="profileBtn" class="dropdown-item" data-en="👤 Profile" data-fr="👤 Profil">👤 Profile</button>
+                        <button id="profileBtn" class="dropdown-item" data-en="Profile" data-fr="Profil"><i data-lucide="user"></i> Profile</button>
                         <div class="dropdown-divider"></div>
-                        <button id="saveBtnDropdown" class="dropdown-item" data-en="💾 Save" data-fr="💾 Sauvegarder">💾 Save</button>
-                        <button id="loadBtnDropdown" class="dropdown-item" data-en="📂 Load" data-fr="📂 Charger">📂 Load</button>
-                        <button id="loadLocalBtnDropdown" class="dropdown-item" data-en="🌐 My projects" data-fr="🌐 Mes projets">🌐 My projects</button>
-                        <button id="exportGifBtnDropdown" class="dropdown-item" data-en="🎬 Export GIF" data-fr="🎬 Export GIF">🎬 Export GIF</button>
-                        <button id="exportPngBtnDropdown" class="dropdown-item" data-en="📥 PNG frames" data-fr="📥 PNG frames">📥 PNG frames</button>
-                        <button id="exportSpriteSheetBtnDropdown" class="dropdown-item" data-en="🗂️ Sprite Sheet" data-fr="🗂️ Sprite Sheet">🗂️ Sprite Sheet</button>
-                        <button id="stampSpriteBtnDropdown" class="dropdown-item" data-en="🪄 Stamp sprite" data-fr="🪄 Tampon sprite">🪄 Stamp sprite</button>
-                        <button id="shareProjectBtnDropdown" class="dropdown-item" data-en="🔗 Share" data-fr="🔗 Partager">🔗 Share</button>
+                        <button id="saveBtnDropdown" class="dropdown-item" data-en="Save" data-fr="Sauvegarder"><i data-lucide="save"></i> Save</button>
+                        <button id="loadBtnDropdown" class="dropdown-item" data-en="Load" data-fr="Charger"><i data-lucide="folder-open"></i> Load</button>
+                        <button id="loadLocalBtnDropdown" class="dropdown-item" data-en="My projects" data-fr="Mes projets"><i data-lucide="layout-grid"></i> My projects</button>
+                        <button id="exportGifBtnDropdown" class="dropdown-item" data-en="Export GIF" data-fr="Export GIF"><i data-lucide="film"></i> Export GIF</button>
+                        <button id="exportPngBtnDropdown" class="dropdown-item" data-en="PNG frames" data-fr="PNG frames"><i data-lucide="image-down"></i> PNG frames</button>
+                        <button id="exportSpriteSheetBtnDropdown" class="dropdown-item" data-en="Sprite Sheet" data-fr="Sprite Sheet"><i data-lucide="layers"></i> Sprite Sheet</button>
+                        <button id="stampSpriteBtnDropdown" class="dropdown-item" data-en="Stamp sprite" data-fr="Tampon sprite"><i data-lucide="stamp"></i> Stamp sprite</button>
+                        <button id="shareProjectBtnDropdown" class="dropdown-item" data-en="Share" data-fr="Partager"><i data-lucide="share-2"></i> Share</button>
                         <div class="dropdown-divider"></div>
-                        <button id="loadRefBtnDropdown" class="dropdown-item" data-en="👻 Reference image" data-fr="👻 Image de référence">👻 Image de référence</button>
-                        <button id="photoToPixelBtnDropdown" class="dropdown-item" data-en="📷 Photo → Pixel" data-fr="📷 Photo → Pixel">📷 Photo → Pixel</button>
-                        <button id="templateBtnDropdown" class="dropdown-item" data-en="🧩 Templates" data-fr="🧩 Modèles à Réaliser">🧩 Templates</button>
-                        <button id="publishTemplateBtnDropdown" class="dropdown-item" data-en="✨ Publish a template" data-fr="✨ Publier un Modèle">✨ Publish a template</button>
-                        <button id="publishGalleryBtnDropdown" class="dropdown-item" data-en="🖼️ Publish to gallery" data-fr="🖼️ Publier dans la galerie">🖼️ Publier dans la galerie</button>
-                        <button id="galleryBtnDropdown" class="dropdown-item" data-en="🖼️ Gallery" data-fr="🖼️ Galerie">🖼️ Gallery</button>
+                        <button id="loadRefBtnDropdown" class="dropdown-item" data-en="Reference image" data-fr="Image de référence"><i data-lucide="image"></i> Reference image</button>
+                        <button id="photoToPixelBtnDropdown" class="dropdown-item" data-en="Photo → Pixel" data-fr="Photo → Pixel"><i data-lucide="camera"></i> Photo → Pixel</button>
+                        <button id="templateBtnDropdown" class="dropdown-item" data-en="Templates" data-fr="Modèles à Réaliser"><i data-lucide="puzzle"></i> Templates</button>
+                        <button id="publishTemplateBtnDropdown" class="dropdown-item" data-en="Publish a template" data-fr="Publier un Modèle"><i data-lucide="upload-cloud"></i> Publish a template</button>
+                        <button id="publishGalleryBtnDropdown" class="dropdown-item" data-en="Publish to gallery" data-fr="Publier dans la galerie"><i data-lucide="image-plus"></i> Publish to gallery</button>
+                        <button id="galleryBtnDropdown" class="dropdown-item" data-en="Gallery" data-fr="Galerie"><i data-lucide="gallery-horizontal"></i> Gallery</button>
                         <div class="dropdown-divider"></div>
-                        <button id="helpBtnDropdown" class="dropdown-item" data-en="❓ Help" data-fr="❓ Aide">❓ Help</button>
-                        <button id="creditsBtnDropdown" class="dropdown-item" data-en="ℹ️ Credits" data-fr="ℹ️ Crédits">ℹ️ Credits</button>
+                        <button id="helpBtnDropdown" class="dropdown-item" data-en="Help" data-fr="Aide"><i data-lucide="help-circle"></i> Help</button>
+                        <button id="creditsBtnDropdown" class="dropdown-item" data-en="Credits" data-fr="Crédits"><i data-lucide="info"></i> Credits</button>
                         <div class="dropdown-divider"></div>
                         <div style="display:flex;gap:4px;padding:6px 12px;">
                             <button class="lang-btn-editor" data-lang="en" title="English" style="background:none;border:1px solid rgba(255,255,255,0.2);border-radius:6px;cursor:pointer;font-size:0.95rem;padding:4px 8px;color:white;transition:all 0.2s;">🇬🇧 EN</button>
@@ -118,31 +125,31 @@
 
         <div class="toolbar">
             <div class="tools">
-                <button id="clearBtn"         data-en="🗑️ Clear all"       data-fr="🗑️ Effacer tout">🗑️ Clear all</button>
-                <button id="deleteFrameBtn"  data-en="🗑️ Delete frame"    data-fr="🗑️ Supprimer la frame">🗑️ Delete frame</button>
-                <button id="previewBtn" title="Play/Stop animation">▶️</button>
-                <button id="fpsBtn"          data-en="⚙️ FPS"             data-fr="⚙️ FPS">⚙️ FPS</button>
-                <button id="gridSizeBtn"     data-en="📐 Size"            data-fr="📐 Taille">📐 <span class="grid-size-indicator">32×32</span></button>
-                <button id="saveBtn"         data-en="💾 Save"            data-fr="💾 Sauvegarder">💾 Save</button>
-                <button id="loadBtn"         data-en="📂 Load"            data-fr="📂 Charger">📂 Load</button>
-                <button id="loadLocalBtn"    data-en="🌐 My projects"     data-fr="🌐 Mes projets">🌐 My projects</button>
-                <button id="exportGifBtn"    data-en="🎬 Export GIF"      data-fr="🎬 Export GIF">🎬 Export GIF</button>
-                <button id="exportSpriteSheetBtn" data-en="🗂️ Sprite Sheet" data-fr="🗂️ Sprite Sheet">🗂️ Sprite Sheet</button>
-                <button id="stampSpriteBtn" data-en="🪄 Stamp sprite" data-fr="🪄 Tampon sprite">🪄 Stamp sprite</button>
-                <button id="shareProjectBtn" data-en="🔗 Share"           data-fr="🔗 Partager">🔗 Share</button>
-                <button id="publishGalleryBtn" style="background: linear-gradient(135deg, #FF6B6B, #E91E8C);" data-en="🖼️ Publish" data-fr="🖼️ Galerie +">🖼️ Galerie +</button>
-                <button id="galleryBtnMobile" onclick="window.location.href='/gallery.html'" data-en="🖼️ Gallery" data-fr="🖼️ Galerie">🖼️ Gallery</button>
-                <button id="loadRefBtnMobile" onclick="loadReferenceImage()" data-en="👻 Reference image" data-fr="👻 Image de référence">👻 Image de référence</button>
-                <button id="photoToPixelBtn" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);" data-en="📷 Photo → Pixel" data-fr="📷 Photo → Pixel">📷 Photo → Pixel</button>
-                <button id="templateBtn"     style="background: linear-gradient(135deg, #4CAF50, #45A049);" data-en="🧩 Templates"     data-fr="🧩 Modèles à Réaliser">🧩 Templates</button>
-                <button id="publishTemplateBtnMobile" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);" data-en="✨ Publish" data-fr="✨ Publier">✨ Publish</button>
-                <button id="profileBtnMobile" data-en="👤 Profile"        data-fr="👤 Profil">👤 Profile</button>
-                <button id="onionSkinBtn"     data-en="👁 Onion skin"      data-fr="👁 Onion skin">👁 Onion skin</button>
-                <button id="historyBtn"       data-en="🕐 History"         data-fr="🕐 Historique">🕐 History</button>
-                <button id="gradientBtn"      data-en="🌈 Gradient"        data-fr="🌈 Dégradé">🌈 Gradient</button>
-                <button id="textToolBtn"      data-en="✏️ Text"             data-fr="✏️ Texte">✏️ Text</button>
-                <button id="helpBtn"          data-en="❓ Help"            data-fr="❓ Aide">❓ Help</button>
-                <button id="creditsBtn"       data-en="ℹ️ Credits"         data-fr="ℹ️ Crédits">ℹ️ Credits</button>
+                <button id="clearBtn"         data-en="Clear all"       data-fr="Effacer tout"><i data-lucide="trash-2"></i> Clear all</button>
+                <button id="deleteFrameBtn"  data-en="Delete frame"    data-fr="Supprimer la frame"><i data-lucide="trash-2"></i> Delete frame</button>
+                <button id="previewBtn" title="Play/Stop animation"><i data-lucide="play"></i></button>
+                <button id="fpsBtn"          data-en="FPS"             data-fr="FPS"><i data-lucide="settings"></i> FPS</button>
+                <button id="gridSizeBtn"     data-en="Size"            data-fr="Taille"><i data-lucide="maximize-2"></i> <span class="grid-size-indicator">32×32</span></button>
+                <button id="saveBtn"         data-en="Save"            data-fr="Sauvegarder"><i data-lucide="save"></i> Save</button>
+                <button id="loadBtn"         data-en="Load"            data-fr="Charger"><i data-lucide="folder-open"></i> Load</button>
+                <button id="loadLocalBtn"    data-en="My projects"     data-fr="Mes projets"><i data-lucide="layout-grid"></i> My projects</button>
+                <button id="exportGifBtn"    data-en="Export GIF"      data-fr="Export GIF"><i data-lucide="film"></i> Export GIF</button>
+                <button id="exportSpriteSheetBtn" data-en="Sprite Sheet" data-fr="Sprite Sheet"><i data-lucide="layers"></i> Sprite Sheet</button>
+                <button id="stampSpriteBtn" data-en="Stamp sprite" data-fr="Tampon sprite"><i data-lucide="stamp"></i> Stamp sprite</button>
+                <button id="shareProjectBtn" data-en="Share"           data-fr="Partager"><i data-lucide="share-2"></i> Share</button>
+                <button id="publishGalleryBtn" style="background: linear-gradient(135deg, #FF6B6B, #E91E8C);" data-en="Publish" data-fr="Galerie +"><i data-lucide="image-plus"></i> Galerie +</button>
+                <button id="galleryBtnMobile" onclick="window.location.href='/gallery.html'" data-en="Gallery" data-fr="Galerie"><i data-lucide="gallery-horizontal"></i> Gallery</button>
+                <button id="loadRefBtnMobile" onclick="loadReferenceImage()" data-en="Reference image" data-fr="Image de référence"><i data-lucide="image"></i> Image de référence</button>
+                <button id="photoToPixelBtn" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);" data-en="Photo → Pixel" data-fr="Photo → Pixel"><i data-lucide="camera"></i> Photo → Pixel</button>
+                <button id="templateBtn"     style="background: linear-gradient(135deg, #4CAF50, #45A049);" data-en="Templates"     data-fr="Modèles à Réaliser"><i data-lucide="puzzle"></i> Templates</button>
+                <button id="publishTemplateBtnMobile" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);" data-en="Publish" data-fr="Publier"><i data-lucide="upload-cloud"></i> Publish</button>
+                <button id="profileBtnMobile" data-en="Profile"        data-fr="Profil"><i data-lucide="user"></i> Profile</button>
+                <button id="onionSkinBtn"     data-en="Onion skin"      data-fr="Onion skin"><i data-lucide="eye"></i> Onion skin</button>
+                <button id="historyBtn"       data-en="History"         data-fr="Historique"><i data-lucide="clock"></i> History</button>
+                <button id="gradientBtn"      data-en="Gradient"        data-fr="Dégradé"><i data-lucide="wand-2"></i> Gradient</button>
+                <button id="textToolBtn"      data-en="Text"             data-fr="Texte"><i data-lucide="type"></i> Text</button>
+                <button id="helpBtn"          data-en="Help"            data-fr="Aide"><i data-lucide="help-circle"></i> Help</button>
+                <button id="creditsBtn"       data-en="Credits"         data-fr="Crédits"><i data-lucide="info"></i> Credits</button>
                 <button id="logoutBtnMobile" class="logout-btn logout-btn-mobile" data-en="Sign out" data-fr="Déconnexion">Sign out</button>
             </div>
         </div>
@@ -427,9 +434,9 @@
 
             <!-- TOUS LES BOUTONS pour desktop -->
             <div class="extra-tools">
-                <button id="previewBtn2"      data-en="▶️ Animation"    data-fr="▶️ Animation">▶️ Animation</button>
-                <button id="fpsBtnSidebar"    data-en="⚙️ Speed"        data-fr="⚙️ Vitesse">⚙️ Speed</button>
-                <button id="gridSizeBtnSidebar" data-en="📐 Size"       data-fr="📐 Taille">📐 <span class="grid-size-indicator">32×32</span></button>
+                <button id="previewBtn2"      data-en="Animation"    data-fr="Animation"><i data-lucide="play"></i> Animation</button>
+                <button id="fpsBtnSidebar"    data-en="Speed"        data-fr="Vitesse"><i data-lucide="settings"></i> Speed</button>
+                <button id="gridSizeBtnSidebar" data-en="Size"       data-fr="Taille"><i data-lucide="maximize-2"></i> <span class="grid-size-indicator">32×32</span></button>
                 <div class="fps-sidebar-panel" id="fpsSidebarPanel">
                     <div class="fps-sidebar-header">
                         <div class="fps-sidebar-value"><span id="fpsSidebarValue">24</span> FPS</div>
@@ -448,28 +455,28 @@
                     </div>
                     <p class="fps-sidebar-hint" data-en="💡 Adjust speed while playing to hear the effect live." data-fr="💡 Ajuste la vitesse pendant la lecture pour voir l'effet en direct.">💡 Adjust speed while playing to hear the effect live.</p>
                 </div>
-                <button id="clearBtn2"        data-en="🗑️ Clear all"    data-fr="🗑️ Effacer tout">🗑️ Clear all</button>
-                <button id="deleteFrameBtn2"  data-en="🗑️ Delete frame" data-fr="🗑️ Supprimer la frame">🗑️ Delete frame</button>
-                <button id="saveBtn2"         data-en="💾 Save"         data-fr="💾 Sauvegarder">💾 Save</button>
-                <button id="loadBtn2"         data-en="📂 Load"         data-fr="📂 Charger">📂 Load</button>
-                <button id="loadLocalBtn2"    data-en="🌐 My projects"  data-fr="🌐 Mes projets">🌐 My projects</button>
-                <button id="exportGifBtn2"    data-en="🎬 Export GIF"   data-fr="🎬 Export GIF">🎬 Export GIF</button>
-                <button id="exportPngBtn"     data-en="📥 PNG frames"   data-fr="📥 PNG frames" title="Exporter chaque frame en PNG">📥 PNG frames</button>
-                <button id="exportSpriteSheetBtn2" data-en="🗂️ Sprite Sheet" data-fr="🗂️ Sprite Sheet">🗂️ Sprite Sheet</button>
-                <button id="stampSpriteBtn2" data-en="🪄 Stamp sprite" data-fr="🪄 Tampon sprite">🪄 Stamp sprite</button>
-                <button id="shareProjectBtn2" data-en="🔗 Share"        data-fr="🔗 Partager">🔗 Share</button>
-                <button id="publishGalleryBtn2" style="background: linear-gradient(135deg, #FF6B6B, #E91E8C);" data-en="🖼️ Publish to gallery" data-fr="🖼️ Publier dans la galerie">🖼️ Publier dans la galerie</button>
-                <button id="galleryBtn2"      data-en="🖼️ Gallery"      data-fr="🖼️ Galerie" onclick="window.location.href='/gallery.html'">🖼️ Gallery</button>
-                <button id="photoToPixelBtn2" data-en="📷 Photo → Pixel" data-fr="📷 Photo → Pixel" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">📷 Photo → Pixel</button>
-                <button id="templateBtn2"     data-en="🧩 Templates"    data-fr="🧩 Modèles à Réaliser" style="background: linear-gradient(135deg, #4CAF50, #45A049);">🧩 Templates</button>
-                <button id="publishTemplateBtn" data-en="✨ Publish template" data-fr="✨ Publier un Modèle" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">✨ Publish template</button>
-                <button id="profileBtn"       data-en="👤 My profile"   data-fr="👤 Mon profil">👤 My profile</button>
-                <button id="onionSkinBtn2"    data-en="👁 Onion skin"    data-fr="👁 Onion skin">👁 Onion skin</button>
-                <button id="historyBtn2"      data-en="🕐 History"       data-fr="🕐 Historique">🕐 History</button>
-                <button id="gradientBtn2"     data-en="🌈 Gradient"      data-fr="🌈 Dégradé">🌈 Gradient</button>
-                <button id="textToolBtn2"     data-en="✏️ Text"           data-fr="✏️ Texte">✏️ Text</button>
-                <button id="helpBtn2"         data-en="❓ Help"          data-fr="❓ Aide">❓ Help</button>
-                <button id="creditsBtn2"      data-en="ℹ️ Credits"       data-fr="ℹ️ Crédits">ℹ️ Credits</button>
+                <button id="clearBtn2"        data-en="Clear all"    data-fr="Effacer tout"><i data-lucide="trash-2"></i> Clear all</button>
+                <button id="deleteFrameBtn2"  data-en="Delete frame" data-fr="Supprimer la frame"><i data-lucide="trash-2"></i> Delete frame</button>
+                <button id="saveBtn2"         data-en="Save"         data-fr="Sauvegarder"><i data-lucide="save"></i> Save</button>
+                <button id="loadBtn2"         data-en="Load"         data-fr="Charger"><i data-lucide="folder-open"></i> Load</button>
+                <button id="loadLocalBtn2"    data-en="My projects"  data-fr="Mes projets"><i data-lucide="layout-grid"></i> My projects</button>
+                <button id="exportGifBtn2"    data-en="Export GIF"   data-fr="Export GIF"><i data-lucide="film"></i> Export GIF</button>
+                <button id="exportPngBtn"     data-en="PNG frames"   data-fr="PNG frames" title="Exporter chaque frame en PNG"><i data-lucide="image-down"></i> PNG frames</button>
+                <button id="exportSpriteSheetBtn2" data-en="Sprite Sheet" data-fr="Sprite Sheet"><i data-lucide="layers"></i> Sprite Sheet</button>
+                <button id="stampSpriteBtn2" data-en="Stamp sprite" data-fr="Tampon sprite"><i data-lucide="stamp"></i> Stamp sprite</button>
+                <button id="shareProjectBtn2" data-en="Share"        data-fr="Partager"><i data-lucide="share-2"></i> Share</button>
+                <button id="publishGalleryBtn2" style="background: linear-gradient(135deg, #FF6B6B, #E91E8C);" data-en="Publish to gallery" data-fr="Publier dans la galerie"><i data-lucide="image-plus"></i> Publier dans la galerie</button>
+                <button id="galleryBtn2"      data-en="Gallery"      data-fr="Galerie" onclick="window.location.href='/gallery.html'"><i data-lucide="gallery-horizontal"></i> Gallery</button>
+                <button id="photoToPixelBtn2" data-en="Photo → Pixel" data-fr="Photo → Pixel" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);"><i data-lucide="camera"></i> Photo → Pixel</button>
+                <button id="templateBtn2"     data-en="Templates"    data-fr="Modèles à Réaliser" style="background: linear-gradient(135deg, #4CAF50, #45A049);"><i data-lucide="puzzle"></i> Templates</button>
+                <button id="publishTemplateBtn" data-en="Publish template" data-fr="Publier un Modèle" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);"><i data-lucide="upload-cloud"></i> Publish template</button>
+                <button id="profileBtn"       data-en="My profile"   data-fr="Mon profil"><i data-lucide="user"></i> My profile</button>
+                <button id="onionSkinBtn2"    data-en="Onion skin"    data-fr="Onion skin"><i data-lucide="eye"></i> Onion skin</button>
+                <button id="historyBtn2"      data-en="History"       data-fr="Historique"><i data-lucide="clock"></i> History</button>
+                <button id="gradientBtn2"     data-en="Gradient"      data-fr="Dégradé"><i data-lucide="wand-2"></i> Gradient</button>
+                <button id="textToolBtn2"     data-en="Text"           data-fr="Texte"><i data-lucide="type"></i> Text</button>
+                <button id="helpBtn2"         data-en="Help"          data-fr="Aide"><i data-lucide="help-circle"></i> Help</button>
+                <button id="creditsBtn2"      data-en="Credits"       data-fr="Crédits"><i data-lucide="info"></i> Credits</button>
             </div>
         </div>
 
