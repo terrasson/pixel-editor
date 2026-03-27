@@ -734,13 +734,23 @@
             document.querySelectorAll('[data-en]').forEach(el => {
                 const text = el.getAttribute('data-' + l);
                 if (!text) return;
-                // Buttons with grid-size-indicator span: skip innerHTML replacement
+                // Buttons with grid-size-indicator span: skip replacement
                 if (el.querySelector && el.querySelector('.grid-size-indicator')) return;
-                el.textContent = text;
+                // Preserve Lucide icon elements when updating text
+                const icon = el.querySelector('i[data-lucide], svg.lucide');
+                if (icon) {
+                    const savedIcon = icon.cloneNode(true);
+                    el.textContent = ' ' + text;
+                    el.prepend(savedIcon);
+                } else {
+                    el.textContent = text;
+                }
             });
             document.querySelectorAll('.lang-btn-editor').forEach(btn => {
                 btn.style.background = btn.dataset.lang === l ? 'rgba(255,255,255,0.15)' : 'none';
             });
+            // Re-render Lucide icons after text update
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         document.querySelectorAll('.lang-btn-editor').forEach(btn => {
