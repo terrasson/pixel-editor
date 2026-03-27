@@ -86,14 +86,13 @@
         }
 
         .logo {
-            font-size: 1.2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--blue), var(--purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             text-decoration: none;
         }
+        .logo img.logo-icon { height: 36px; width: auto; }
+        .logo img.logo-text { height: 22px; width: auto; }
 
         .header-right {
             display: flex;
@@ -397,7 +396,10 @@
 <body>
 
     <header>
-        <a href="/" class="logo">🎨 Pixel Editor</a>
+        <a href="/" class="logo">
+            <img src="images/icon.png" alt="Pixel Editor Icon" class="logo-icon">
+            <img src="images/text.png" alt="Pixel Editor" class="logo-text">
+        </a>
         <div class="header-right">
             <div class="lang-switcher">
                 <button class="lang-btn active" data-lang="en" title="English">🇬🇧</button>
