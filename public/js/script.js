@@ -5412,10 +5412,12 @@ function createFrameThumbnail(frame, frameIndex) {
     return thumbnail;
 }
 
+const _isTouch = 'ontouchstart' in window;
+
 function _buildFrameRow(index, frame) {
     const row = document.createElement('div');
     row.className = `frame-row${index === currentFrame ? ' active' : ''}`;
-    row.draggable = true;
+    row.draggable = !_isTouch;
     row.dataset.frameIndex = index;
 
     const handle = document.createElement('span');
@@ -9742,7 +9744,7 @@ function _buildStampRow(stamp, index) {
     const row = document.createElement('div');
     const isActive = isStampMode && activeStampId === stamp.id;
     row.className = `stamp-row${isActive ? ' active' : ''}`;
-    row.draggable = true;
+    row.draggable = !_isTouch;
     row.dataset.stampIndex = index;
     row.title = 'Cliquer pour activer → puis cliquer sur le canvas pour placer';
 
