@@ -931,7 +931,7 @@ function _renderLayersList(container, layers) {
         const item = document.createElement('div');
         item.className = 'layer-item' + (isActive ? ' active' : '');
         item.dataset.layerIndex = i;
-        item.draggable = true;
+        item.draggable = !_isTouch;
         const eyeSvgVisible = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
         const eyeSvgHidden = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
 
@@ -1023,38 +1023,6 @@ function _renderLayersList(container, layers) {
             if (fromIndex !== toIndex) reorderLayer(fromIndex, toIndex, dropAbove);
         });
 
-        // ── Touch drag mobile ────────────────────────────────────────────────
-        let _touchDragFrom = null;
-        item.querySelector('.layer-drag-handle').addEventListener('touchstart', (e) => {
-            _touchDragFrom = i;
-            item.classList.add('layer-dragging');
-        }, { passive: true });
-        item.querySelector('.layer-drag-handle').addEventListener('touchmove', (e) => {
-            if (_touchDragFrom === null) return;
-            const touch = e.touches[0];
-            const els = container.querySelectorAll('.layer-item');
-            container.querySelectorAll('.layer-drop-above,.layer-drop-below').forEach(el => {
-                el.classList.remove('layer-drop-above', 'layer-drop-below');
-            });
-            els.forEach(el => {
-                const rect = el.getBoundingClientRect();
-                if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
-                    el.classList.add(touch.clientY < rect.top + rect.height / 2 ? 'layer-drop-above' : 'layer-drop-below');
-                }
-            });
-        }, { passive: true });
-        item.querySelector('.layer-drag-handle').addEventListener('touchend', (e) => {
-            if (_touchDragFrom === null) return;
-            item.classList.remove('layer-dragging');
-            const target = container.querySelector('.layer-drop-above, .layer-drop-below');
-            if (target) {
-                const toIndex = parseInt(target.dataset.layerIndex, 10);
-                const dropAbove = target.classList.contains('layer-drop-above');
-                target.classList.remove('layer-drop-above', 'layer-drop-below');
-                if (_touchDragFrom !== toIndex) reorderLayer(_touchDragFrom, toIndex, dropAbove);
-            }
-            _touchDragFrom = null;
-        });
 
         container.appendChild(item);
     }
@@ -1092,9 +1060,15 @@ function updateLayersPanel() {
     const layers = frameLayers[currentFrame] || [];
     _renderLayersList(document.getElementById('layersList'), layers);
     _renderLayersList(document.getElementById('layersListMobile'), layers);
-    _renderLayersList(document.getElementById('layersListMobile2'), layers);
+    const mobile2 = document.getElementById('layersListMobile2');
+    _renderLayersList(mobile2, layers);
     const titleEl = document.getElementById('mobileLayersPanelTitle');
     if (titleEl) titleEl.textContent = `Frame ${currentFrame + 1}`;
+    if (_isTouch) {
+        _makeTouchSortable(mobile2, '.layer-item', 'layerIndex', (from, to) => {
+            reorderLayer(from, to, false);
+        });
+    }
 }
 
 function promptRenameLayer(index) {
@@ -5414,10 +5388,92 @@ function createFrameThumbnail(frame, frameIndex) {
 
 const _isTouch = 'ontouchstart' in window;
 
+/**
+ * Touch drag-to-reorder pour mobile.
+ * @param {HTMLElement} container  - le conteneur de la liste
+ * @param {string}      rowSel     - sélecteur CSS d'une ligne (ex: '.frame-row')
+ * @param {string}      indexAttr  - attribut data portant l'index (ex: 'frameIndex')
+ * @param {Function}    onReorder  - callback(fromIndex, toIndex)
+ */
+function _makeTouchSortable(container, rowSel, indexAttr, onReorder) {
+    if (!container) return;
+    let dragFrom = null;
+    let ghost    = null;
+    let srcEl    = null;
+    let offsetY  = 0;
+
+    container.addEventListener('touchstart', (e) => {
+        const handle = e.target.closest('.frame-drag-handle, .stamp-drag-handle, .layer-drag-handle');
+        if (!handle) return;
+        const row = handle.closest(rowSel);
+        if (!row) return;
+        dragFrom = parseInt(row.dataset[indexAttr], 10);
+        srcEl = row;
+
+        const rect = row.getBoundingClientRect();
+        offsetY = e.touches[0].clientY - rect.top;
+
+        // Ghost visuel
+        ghost = row.cloneNode(true);
+        ghost.style.cssText = `
+            position: fixed;
+            left: ${rect.left}px;
+            top: ${rect.top}px;
+            width: ${rect.width}px;
+            opacity: 0.85;
+            pointer-events: none;
+            z-index: 9999;
+            background: white;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+            border-radius: 8px;
+            border-left: 3px solid #FF7300;
+        `;
+        document.body.appendChild(ghost);
+        row.style.opacity = '0.35';
+        e.preventDefault();
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+        if (dragFrom === null || !ghost) return;
+        const touch = e.touches[0];
+        ghost.style.top = (touch.clientY - offsetY) + 'px';
+
+        // Indicateur de dépôt
+        container.querySelectorAll(rowSel).forEach(el => {
+            el.classList.remove('frame-drop-above', 'frame-drop-below', 'layer-drop-above', 'layer-drop-below', 'stamp-drop-above', 'stamp-drop-below');
+        });
+        const target = [...container.querySelectorAll(rowSel)].find(el => {
+            const r = el.getBoundingClientRect();
+            return touch.clientY >= r.top && touch.clientY <= r.bottom && el !== srcEl;
+        });
+        if (target) {
+            const r = target.getBoundingClientRect();
+            target.classList.add(touch.clientY < r.top + r.height / 2 ? 'frame-drop-above' : 'frame-drop-below');
+        }
+        e.preventDefault();
+    }, { passive: false });
+
+    const _endTouch = () => {
+        if (dragFrom === null) return;
+        if (ghost) { ghost.remove(); ghost = null; }
+        if (srcEl)  { srcEl.style.opacity = ''; srcEl = null; }
+
+        const dropEl = container.querySelector('.frame-drop-above, .frame-drop-below, .layer-drop-above, .layer-drop-below, .stamp-drop-above, .stamp-drop-below');
+        if (dropEl) {
+            const toIndex = parseInt(dropEl.dataset[indexAttr], 10);
+            dropEl.classList.remove('frame-drop-above', 'frame-drop-below', 'layer-drop-above', 'layer-drop-below', 'stamp-drop-above', 'stamp-drop-below');
+            if (!isNaN(toIndex) && dragFrom !== toIndex) onReorder(dragFrom, toIndex);
+        }
+        dragFrom = null;
+    };
+    container.addEventListener('touchend',    _endTouch);
+    container.addEventListener('touchcancel', _endTouch);
+}
+
 function _buildFrameRow(index, frame) {
     const row = document.createElement('div');
     row.className = `frame-row${index === currentFrame ? ' active' : ''}`;
-    row.draggable = !_isTouch;
+    row.draggable = !_isTouch; // HTML5 drag desktop only; touch handled by _makeTouchSortable
     row.dataset.frameIndex = index;
 
     const handle = document.createElement('span');
@@ -5495,6 +5551,10 @@ function updateFramesList() {
         framesList.appendChild(_buildFrameRow(index, frame));
         if (mobileList) mobileList.appendChild(_buildFrameRow(index, frame));
     });
+
+    if (_isTouch) {
+        _makeTouchSortable(mobileList, '.frame-row', 'frameIndex', (from, to) => reorderFrames(from, to));
+    }
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -9838,6 +9898,15 @@ function renderStampsList() {
         list.appendChild(_buildStampRow(stamp, index));
         if (mobileList) mobileList.appendChild(_buildStampRow(stamp, index));
     });
+
+    if (_isTouch) {
+        _makeTouchSortable(mobileList, '.stamp-row', 'stampIndex', (from, to) => {
+            const moved = window.stamps.splice(from, 1)[0];
+            window.stamps.splice(to, 0, moved);
+            _saveStamps();
+            renderStampsList();
+        });
+    }
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
