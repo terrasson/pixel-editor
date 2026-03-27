@@ -5412,89 +5412,87 @@ function createFrameThumbnail(frame, frameIndex) {
     return thumbnail;
 }
 
+function _buildFrameRow(index, frame) {
+    const row = document.createElement('div');
+    row.className = `frame-row${index === currentFrame ? ' active' : ''}`;
+    row.draggable = true;
+    row.dataset.frameIndex = index;
+
+    const handle = document.createElement('span');
+    handle.className = 'frame-drag-handle';
+    handle.textContent = '⠿';
+
+    const thumb = document.createElement('canvas');
+    thumb.className = 'frame-row-thumb';
+    thumb.width = 28;
+    thumb.height = 28;
+    _drawFrameThumb(thumb, frame);
+
+    const name = document.createElement('span');
+    name.className = 'frame-row-name';
+    name.textContent = `Frame ${index + 1}`;
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'frame-row-del';
+    delBtn.title = 'Supprimer';
+    delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+    delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentFrame = index;
+        deleteCurrentFrame();
+    });
+
+    row.append(handle, thumb, name, delBtn);
+
+    row.addEventListener('click', () => {
+        saveCurrentFrame();
+        currentFrame = index;
+        loadFrame(currentFrame);
+        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    row.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', index);
+        row.classList.add('frame-dragging');
+    });
+    row.addEventListener('dragend', () => {
+        row.classList.remove('frame-dragging');
+        document.querySelectorAll('.frame-drop-above,.frame-drop-below').forEach(el => {
+            el.classList.remove('frame-drop-above', 'frame-drop-below');
+        });
+    });
+    row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        document.querySelectorAll('.frame-drop-above,.frame-drop-below').forEach(el => {
+            el.classList.remove('frame-drop-above', 'frame-drop-below');
+        });
+        row.classList.add(index <= from ? 'frame-drop-above' : 'frame-drop-below');
+    });
+    row.addEventListener('dragleave', () => {
+        row.classList.remove('frame-drop-above', 'frame-drop-below');
+    });
+    row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        row.classList.remove('frame-drop-above', 'frame-drop-below');
+        const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (from !== index) reorderFrames(from, index);
+    });
+
+    return row;
+}
+
 function updateFramesList() {
     const framesList = document.getElementById('framesList');
     framesList.innerHTML = '';
 
-    frames.forEach((frame, index) => {
-        const row = document.createElement('div');
-        row.className = `frame-row${index === currentFrame ? ' active' : ''}`;
-        row.draggable = true;
-        row.dataset.frameIndex = index;
-
-        // Drag handle
-        const handle = document.createElement('span');
-        handle.className = 'frame-drag-handle';
-        handle.textContent = '⠿';
-
-        // Miniature canvas
-        const thumb = document.createElement('canvas');
-        thumb.className = 'frame-row-thumb';
-        thumb.width = 28;
-        thumb.height = 28;
-        _drawFrameThumb(thumb, frame);
-
-        // Nom
-        const name = document.createElement('span');
-        name.className = 'frame-row-name';
-        name.textContent = `Frame ${index + 1}`;
-
-        // Bouton supprimer
-        const delBtn = document.createElement('button');
-        delBtn.className = 'frame-row-del';
-        delBtn.title = 'Supprimer';
-        delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
-        delBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            currentFrame = index;
-            deleteCurrentFrame();
-        });
-
-        row.append(handle, thumb, name, delBtn);
-
-        // Sélection frame
-        row.addEventListener('click', () => {
-            saveCurrentFrame();
-            currentFrame = index;
-            loadFrame(currentFrame);
-            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        });
-
-        // Drag & drop
-        row.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', index);
-            row.classList.add('frame-dragging');
-        });
-        row.addEventListener('dragend', () => {
-            row.classList.remove('frame-dragging');
-            document.querySelectorAll('.frame-drop-above,.frame-drop-below').forEach(el => {
-                el.classList.remove('frame-drop-above', 'frame-drop-below');
-            });
-        });
-        row.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
-            document.querySelectorAll('.frame-drop-above,.frame-drop-below').forEach(el => {
-                el.classList.remove('frame-drop-above', 'frame-drop-below');
-            });
-            row.classList.add(index <= from ? 'frame-drop-above' : 'frame-drop-below');
-        });
-        row.addEventListener('dragleave', () => {
-            row.classList.remove('frame-drop-above', 'frame-drop-below');
-        });
-        row.addEventListener('drop', (e) => {
-            e.preventDefault();
-            row.classList.remove('frame-drop-above', 'frame-drop-below');
-            const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
-            if (from !== index) reorderFrames(from, index);
-        });
-
-        framesList.appendChild(row);
-    });
-
-    // Miroir mobile
     const mobileList = document.getElementById('framesListMobile');
-    if (mobileList) mobileList.innerHTML = framesList.innerHTML;
+    if (mobileList) mobileList.innerHTML = '';
+
+    frames.forEach((frame, index) => {
+        framesList.appendChild(_buildFrameRow(index, frame));
+        if (mobileList) mobileList.appendChild(_buildFrameRow(index, frame));
+    });
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -9740,105 +9738,104 @@ function _refreshImportStampList(dialog, allProjects) {
     });
 }
 
+function _buildStampRow(stamp, index) {
+    const row = document.createElement('div');
+    const isActive = isStampMode && activeStampId === stamp.id;
+    row.className = `stamp-row${isActive ? ' active' : ''}`;
+    row.draggable = true;
+    row.dataset.stampIndex = index;
+    row.title = 'Cliquer pour activer → puis cliquer sur le canvas pour placer';
+
+    const handle = document.createElement('span');
+    handle.className = 'stamp-drag-handle';
+    handle.textContent = '⠿';
+
+    const thumb = document.createElement('canvas');
+    thumb.className = 'stamp-row-thumb';
+    thumb.width = 28;
+    thumb.height = 28;
+    _drawFrameThumb(thumb, stamp.pixels);
+
+    const name = document.createElement('span');
+    name.className = 'stamp-row-name';
+    name.textContent = stamp.name;
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'stamp-row-del';
+    delBtn.title = 'Supprimer';
+    delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+    delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        window.stamps.splice(index, 1);
+        _saveStamps();
+        renderStampsList();
+    });
+
+    row.append(handle, thumb, name, delBtn);
+
+    row.addEventListener('click', () => {
+        activeStampId = stamp.id;
+        enterStampMode(stamp.pixels, currentGridSize);
+        renderStampsList();
+    });
+
+    row.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', index);
+        row.classList.add('frame-dragging');
+    });
+    row.addEventListener('dragend', () => {
+        row.classList.remove('frame-dragging');
+        document.querySelectorAll('.stamp-drop-above,.stamp-drop-below').forEach(el => {
+            el.classList.remove('stamp-drop-above', 'stamp-drop-below');
+        });
+    });
+    row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        document.querySelectorAll('.stamp-drop-above,.stamp-drop-below').forEach(el => {
+            el.classList.remove('stamp-drop-above', 'stamp-drop-below');
+        });
+        row.classList.add(index <= from ? 'stamp-drop-above' : 'stamp-drop-below');
+    });
+    row.addEventListener('dragleave', () => {
+        row.classList.remove('stamp-drop-above', 'stamp-drop-below');
+    });
+    row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        row.classList.remove('stamp-drop-above', 'stamp-drop-below');
+        const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (from !== index) {
+            const moved = window.stamps.splice(from, 1)[0];
+            window.stamps.splice(index, 0, moved);
+            _saveStamps();
+            renderStampsList();
+        }
+    });
+
+    return row;
+}
+
 function renderStampsList() {
     const list = document.getElementById('stampsList');
     if (!list) return;
     list.innerHTML = '';
+    const mobileList = document.getElementById('stampsListMobile');
+    if (mobileList) mobileList.innerHTML = '';
 
     if (window.stamps.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'stamps-empty';
         empty.textContent = 'Aucun tampon — dessine quelque chose puis clique +';
         list.appendChild(empty);
+        if (mobileList) mobileList.appendChild(empty.cloneNode(true));
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         return;
     }
 
     window.stamps.forEach((stamp, index) => {
-        const row = document.createElement('div');
-        const isActive = isStampMode && activeStampId === stamp.id;
-        row.className = `stamp-row${isActive ? ' active' : ''}`;
-        row.draggable = true;
-        row.dataset.stampIndex = index;
-
-        // Drag handle
-        const handle = document.createElement('span');
-        handle.className = 'stamp-drag-handle';
-        handle.textContent = '⠿';
-
-        // Miniature
-        const thumb = document.createElement('canvas');
-        thumb.className = 'stamp-row-thumb';
-        thumb.width = 28;
-        thumb.height = 28;
-        _drawFrameThumb(thumb, stamp.pixels);
-
-        // Nom
-        const name = document.createElement('span');
-        name.className = 'stamp-row-name';
-        name.textContent = stamp.name;
-
-        // Bouton supprimer
-        const delBtn = document.createElement('button');
-        delBtn.className = 'stamp-row-del';
-        delBtn.title = 'Supprimer';
-        delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
-        delBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            window.stamps.splice(index, 1);
-            _saveStamps();
-            renderStampsList();
-        });
-
-        row.append(handle, thumb, name, delBtn);
-
-        // Clic pour entrer en mode tampon (preview + placement sur canvas)
-        row.title = 'Cliquer pour activer → puis cliquer sur le canvas pour placer';
-        row.addEventListener('click', () => {
-            activeStampId = stamp.id;
-            enterStampMode(stamp.pixels, currentGridSize);
-            renderStampsList();
-        });
-
-        // Drag & drop pour réordonner
-        row.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', index);
-            row.classList.add('frame-dragging');
-        });
-        row.addEventListener('dragend', () => {
-            row.classList.remove('frame-dragging');
-            document.querySelectorAll('.stamp-drop-above,.stamp-drop-below').forEach(el => {
-                el.classList.remove('stamp-drop-above', 'stamp-drop-below');
-            });
-        });
-        row.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
-            document.querySelectorAll('.stamp-drop-above,.stamp-drop-below').forEach(el => {
-                el.classList.remove('stamp-drop-above', 'stamp-drop-below');
-            });
-            row.classList.add(index <= from ? 'stamp-drop-above' : 'stamp-drop-below');
-        });
-        row.addEventListener('dragleave', () => {
-            row.classList.remove('stamp-drop-above', 'stamp-drop-below');
-        });
-        row.addEventListener('drop', (e) => {
-            e.preventDefault();
-            row.classList.remove('stamp-drop-above', 'stamp-drop-below');
-            const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
-            if (from !== index) {
-                const moved = window.stamps.splice(from, 1)[0];
-                window.stamps.splice(index, 0, moved);
-                _saveStamps();
-                renderStampsList();
-            }
-        });
-
-        list.appendChild(row);
+        list.appendChild(_buildStampRow(stamp, index));
+        if (mobileList) mobileList.appendChild(_buildStampRow(stamp, index));
     });
-
-    // Miroir mobile
-    const mobileList = document.getElementById('stampsListMobile');
-    if (mobileList) mobileList.innerHTML = list.innerHTML;
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
