@@ -5810,16 +5810,18 @@ function startAnimation() {
     
     // Mettre à jour le bouton dans le menu
     if (previewBtn) {
-        previewBtn.innerHTML = '⏹️';
+        previewBtn.innerHTML = '<i data-lucide="square"></i>';
         previewBtn.title = 'Arrêter l\'animation';
         previewBtn.classList.add('playing');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
-    
+
     // Mettre à jour le bouton dans la barre du haut
     if (playToggle) {
-        playToggle.innerHTML = '⏹️';
+        playToggle.innerHTML = '<i data-lucide="square"></i>';
         playToggle.title = 'Arrêter l\'animation';
         playToggle.classList.add('playing');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
     
     let frameIndex = 0;
@@ -5895,16 +5897,18 @@ function stopAnimation() {
     
     // Mettre à jour le bouton dans le menu
     if (previewBtn) {
-        previewBtn.innerHTML = '▶️';
+        previewBtn.innerHTML = '<i data-lucide="play"></i>';
         previewBtn.title = 'Lancer l\'animation';
         previewBtn.classList.remove('playing');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
-    
+
     // Mettre à jour le bouton dans la barre du haut
     if (playToggle) {
-        playToggle.innerHTML = '▶️';
+        playToggle.innerHTML = '<i data-lucide="play"></i>';
         playToggle.title = 'Lancer l\'animation';
         playToggle.classList.remove('playing');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
     
     // Retourner à la frame de travail actuelle
