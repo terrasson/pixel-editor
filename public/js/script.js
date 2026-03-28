@@ -10210,7 +10210,7 @@ function initImportSpriteSheetFeature() {
 
 function showImportSpriteSheetDialog() {
     const fr = localStorage.getItem('lang') === 'fr';
-    const state = { img: null, naturalW: 0, naturalH: 0, frameW: 0, frameH: 0, cols: 1, rows: 1 };
+    const state = { img: null, naturalW: 0, naturalH: 0, frameW: 0, frameH: 0, cols: 1, rows: 1, spriteSize: currentGridSize };
 
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -10285,6 +10285,32 @@ function showImportSpriteSheetDialog() {
     const frameWInput = makeField(tL('isFrameW'), '_ssFrameW', '—');
     const frameHInput = makeField(tL('isFrameH'), '_ssFrameH', '—');
 
+    // Champ séparé : taille du sprite sur le canvas (en pixels canvas)
+    const spriteSizeWrap = document.createElement('div');
+    spriteSizeWrap.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1)';
+    const spriteSizeLbl = document.createElement('label');
+    spriteSizeLbl.style.cssText = 'font-size:0.78rem;font-weight:600;color:rgba(255,115,0,0.9);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px';
+    spriteSizeLbl.textContent = fr ? '🎯 Taille sur le canvas (pixels)' : '🎯 Size on canvas (pixels)';
+    const spriteSizeInput = document.createElement('input');
+    spriteSizeInput.type = 'number';
+    spriteSizeInput.id = '_ssSpriteSize';
+    spriteSizeInput.min = '1';
+    spriteSizeInput.max = String(currentGridSize);
+    spriteSizeInput.value = currentGridSize;
+    spriteSizeInput.disabled = true;
+    spriteSizeInput.style.cssText = 'width:100%;padding:8px 10px;border:1px solid rgba(255,115,0,0.5);border-radius:8px;font-size:0.9rem;box-sizing:border-box;background:rgba(255,115,0,0.08);color:rgba(255,255,255,.95);opacity:0.4';
+    const spriteSizeHint = document.createElement('div');
+    spriteSizeHint.style.cssText = 'font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:4px';
+    spriteSizeHint.textContent = fr
+        ? `Max ${currentGridSize}px (taille du canvas). Ex: 32 = occupe tout le canvas, 16 = occupe 1/4.`
+        : `Max ${currentGridSize}px (canvas size). Ex: 32 = fills canvas, 16 = quarter size.`;
+    spriteSizeInput.addEventListener('input', () => {
+        state.spriteSize = Math.min(currentGridSize, Math.max(1, parseInt(spriteSizeInput.value, 10) || currentGridSize));
+        _ssUpdateCountNote(state, frameCount, resampleNote);
+    });
+    spriteSizeWrap.append(spriteSizeLbl, spriteSizeInput, spriteSizeHint);
+    configGrid.after(spriteSizeWrap);
+
     colsInput.addEventListener('input',   () => _ssSync(state, 'cols',   uiRefs));
     rowsInput.addEventListener('input',   () => _ssSync(state, 'rows',   uiRefs));
     frameWInput.addEventListener('input', () => _ssSync(state, 'frameW', uiRefs));
@@ -10319,7 +10345,7 @@ function showImportSpriteSheetDialog() {
 
     btnRow.append(cancelBtn, importBtn);
 
-    const uiRefs = { dropZone, imgInfo, previewWrap, colsInput, rowsInput, frameWInput, frameHInput, frameCount, resampleNote, importBtn };
+    const uiRefs = { dropZone, imgInfo, previewWrap, colsInput, rowsInput, frameWInput, frameHInput, spriteSizeInput, frameCount, resampleNote, importBtn };
 
     content.append(title, explain, dropZone, imgInfo, previewWrap, configGrid, frameCount, resampleNote, btnRow);
     modal.appendChild(content);
@@ -10338,45 +10364,58 @@ function _ssHandleFile(file, state, uiRefs) {
             state.naturalW = img.naturalWidth;
             state.naturalH = img.naturalHeight;
 
-            // Auto-détection : un sprite sheet horizontal exporté par cette app a toujours
-            // height = cellSize et width = cellSize * N.
-            // Si width > height et width est un multiple exact de height → strip horizontal détecté.
             const W = state.naturalW, H = state.naturalH;
-            let autoCols = 1, autoRows = 1;
-            let autoDetected = false;
+            const fr = localStorage.getItem('lang') === 'fr';
+
+            // ── Auto-détection du découpage ──────────────────────────────────
+            // Le sprite sheet exporté par cette app est un strip horizontal :
+            // height = cellPx, width = cellPx × N  (cellPx = gridSize × zoom)
+            let autoCols = 1, autoRows = 1, autoDetected = false;
             if (W > H && H > 0 && W % H === 0) {
-                autoCols = W / H;
-                autoRows = 1;
-                autoDetected = true;
+                autoCols = W / H; autoRows = 1; autoDetected = true;
             } else if (H > W && W > 0 && H % W === 0) {
-                // Strip vertical (moins courant)
-                autoCols = 1;
-                autoRows = H / W;
-                autoDetected = true;
+                autoCols = 1; autoRows = H / W; autoDetected = true;
             }
             state.cols   = autoCols;
             state.rows   = autoRows;
             state.frameW = Math.floor(W / autoCols);
             state.frameH = Math.floor(H / autoRows);
 
+            // ── Auto-détection de la taille du sprite sur le canvas ──────────
+            // La cellule PNG fait frameH pixels de haut.
+            // Si frameH est un multiple entier de currentGridSize, le zoom est frameH/currentGridSize.
+            // → le sprite original faisait currentGridSize × currentGridSize pixels.
+            // Sinon, on propose currentGridSize par défaut.
+            const cellH = state.frameH;
+            let detectedSpriteSize = currentGridSize;
+            if (cellH > 0 && cellH % currentGridSize === 0) {
+                // Ex: cellH=128, currentGridSize=32 → zoom=4 → sprite=32px
+                detectedSpriteSize = currentGridSize;
+            } else if (cellH > 0) {
+                // Cellule non-multiple : on prend la cellule entière (1:1)
+                detectedSpriteSize = cellH;
+            }
+            state.spriteSize = detectedSpriteSize;
+
             // Activer les champs
-            [uiRefs.colsInput, uiRefs.rowsInput, uiRefs.frameWInput, uiRefs.frameHInput].forEach(inp => {
-                inp.disabled = false;
-                inp.style.opacity = '1';
+            [uiRefs.colsInput, uiRefs.rowsInput, uiRefs.frameWInput, uiRefs.frameHInput, uiRefs.spriteSizeInput].forEach(inp => {
+                if (inp) { inp.disabled = false; inp.style.opacity = '1'; }
             });
 
-            uiRefs.colsInput.value   = state.cols;
-            uiRefs.rowsInput.value   = state.rows;
-            uiRefs.frameWInput.value = state.frameW;
-            uiRefs.frameHInput.value = state.frameH;
+            uiRefs.colsInput.value       = state.cols;
+            uiRefs.rowsInput.value       = state.rows;
+            uiRefs.frameWInput.value     = state.frameW;
+            uiRefs.frameHInput.value     = state.frameH;
+            uiRefs.spriteSizeInput.value = state.spriteSize;
+            uiRefs.spriteSizeInput.style.opacity = '1';
+            uiRefs.spriteSizeInput.disabled = false;
 
             uiRefs.dropZone.textContent = tL('isFileSelected', file.name);
             uiRefs.dropZone.classList.add('has-file');
 
-            const fr = localStorage.getItem('lang') === 'fr';
             const autoMsg = autoDetected
-                ? (fr ? ` — ${autoCols > 1 ? autoCols + ' colonnes' : autoRows + ' lignes'} détectées automatiquement` : ` — ${autoCols > 1 ? autoCols + ' columns' : autoRows + ' rows'} auto-detected`)
-                : (fr ? ' — vérifiez les colonnes/lignes' : ' — check columns/rows');
+                ? (fr ? ` — ${autoCols > 1 ? autoCols + ' colonnes' : autoRows + ' lignes'} détectées` : ` — ${autoCols > 1 ? autoCols + ' cols' : autoRows + ' rows'} detected`)
+                : (fr ? ' — vérifiez les colonnes/lignes' : ' — check cols/rows');
             uiRefs.imgInfo.textContent = `${W}×${H}px${autoMsg}`;
 
             _ssRenderPreview(state, uiRefs);
@@ -10419,10 +10458,11 @@ function _ssSync(state, changed, uiRefs) {
 function _ssUpdateCountNote(state, frameCount, resampleNote) {
     const total = state.cols * state.rows;
     const fr = localStorage.getItem('lang') === 'fr';
+    const sz = state.spriteSize || currentGridSize;
     frameCount.textContent = tL('isWillCreate', total);
     resampleNote.textContent = fr
-        ? `Chaque sprite : ${state.frameW}×${state.frameH}px — taille naturelle sur le canvas`
-        : `Each sprite: ${state.frameW}×${state.frameH}px — natural size on canvas`;
+        ? `Cellule PNG : ${state.frameW}×${state.frameH}px → rééchantillonné à ${sz}×${sz}px sur le canvas`
+        : `PNG cell: ${state.frameW}×${state.frameH}px → resampled to ${sz}×${sz}px on canvas`;
 }
 
 function _ssRenderPreview(state, uiRefs) {
@@ -10471,7 +10511,7 @@ function _ssRenderPreview(state, uiRefs) {
 
 async function _ssDoImport(state) {
     const { img, naturalW, naturalH, frameW, frameH, cols, rows } = state;
-    const targetSize = currentGridSize; // chaque sprite sera targetSize × targetSize pixels canvas
+    const targetSize = state.spriteSize || currentGridSize; // taille du sprite sur le canvas
 
     const offCanvas = document.createElement('canvas');
     offCanvas.width = naturalW; offCanvas.height = naturalH;
