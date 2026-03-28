@@ -10285,31 +10285,29 @@ function showImportSpriteSheetDialog() {
     const frameWInput = makeField(tL('isFrameW'), '_ssFrameW', '—');
     const frameHInput = makeField(tL('isFrameH'), '_ssFrameH', '—');
 
-    // Champ séparé : taille du sprite sur le canvas (en pixels canvas)
+    // Champ : taille du sprite sur le canvas (hauteur, en pixels canvas)
+    // Séparé de frameH qui est la taille physique dans le PNG
     const spriteSizeWrap = document.createElement('div');
     spriteSizeWrap.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1)';
     const spriteSizeLbl = document.createElement('label');
     spriteSizeLbl.style.cssText = 'font-size:0.78rem;font-weight:600;color:rgba(255,115,0,0.9);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px';
-    spriteSizeLbl.textContent = fr ? '🎯 Taille sur le canvas (pixels)' : '🎯 Size on canvas (pixels)';
+    spriteSizeLbl.textContent = fr ? '🎯 Hauteur du sprite sur le canvas (pixels)' : '🎯 Sprite height on canvas (pixels)';
     const spriteSizeInput = document.createElement('input');
     spriteSizeInput.type = 'number';
     spriteSizeInput.id = '_ssSpriteSize';
     spriteSizeInput.min = '1';
-    spriteSizeInput.max = String(currentGridSize);
     spriteSizeInput.value = currentGridSize;
     spriteSizeInput.disabled = true;
     spriteSizeInput.style.cssText = 'width:100%;padding:8px 10px;border:1px solid rgba(255,115,0,0.5);border-radius:8px;font-size:0.9rem;box-sizing:border-box;background:rgba(255,115,0,0.08);color:rgba(255,255,255,.95);opacity:0.4';
     const spriteSizeHint = document.createElement('div');
+    spriteSizeHint.id = '_ssSpriteSizeHint';
     spriteSizeHint.style.cssText = 'font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:4px';
-    spriteSizeHint.textContent = fr
-        ? `Max ${currentGridSize}px (taille du canvas). Ex: 32 = occupe tout le canvas, 16 = occupe 1/4.`
-        : `Max ${currentGridSize}px (canvas size). Ex: 32 = fills canvas, 16 = quarter size.`;
     spriteSizeInput.addEventListener('input', () => {
-        state.spriteSize = Math.min(currentGridSize, Math.max(1, parseInt(spriteSizeInput.value, 10) || currentGridSize));
+        state.spriteH = Math.max(1, parseInt(spriteSizeInput.value, 10) || 1);
+        state.spriteW = Math.max(1, Math.round(state.frameW * state.spriteH / Math.max(1, state.frameH)));
         _ssUpdateCountNote(state, frameCount, resampleNote);
     });
     spriteSizeWrap.append(spriteSizeLbl, spriteSizeInput, spriteSizeHint);
-    configGrid.after(spriteSizeWrap);
 
     colsInput.addEventListener('input',   () => _ssSync(state, 'cols',   uiRefs));
     rowsInput.addEventListener('input',   () => _ssSync(state, 'rows',   uiRefs));
@@ -10347,7 +10345,7 @@ function showImportSpriteSheetDialog() {
 
     const uiRefs = { dropZone, imgInfo, previewWrap, colsInput, rowsInput, frameWInput, frameHInput, spriteSizeInput, frameCount, resampleNote, importBtn };
 
-    content.append(title, explain, dropZone, imgInfo, previewWrap, configGrid, frameCount, resampleNote, btnRow);
+    content.append(title, explain, dropZone, imgInfo, previewWrap, configGrid, spriteSizeWrap, frameCount, resampleNote, btnRow);
     modal.appendChild(content);
     document.body.appendChild(modal);
     modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
@@ -10381,34 +10379,18 @@ function _ssHandleFile(file, state, uiRefs) {
             state.frameW = Math.floor(W / autoCols);
             state.frameH = Math.floor(H / autoRows);
 
-            // ── Auto-détection de la taille du sprite sur le canvas ──────────
-            // La cellule PNG fait frameH pixels de haut.
-            // Si frameH est un multiple entier de currentGridSize, le zoom est frameH/currentGridSize.
-            // → le sprite original faisait currentGridSize × currentGridSize pixels.
-            // Sinon, on propose currentGridSize par défaut.
-            const cellH = state.frameH;
-            let detectedSpriteSize = currentGridSize;
-            if (cellH > 0 && cellH % currentGridSize === 0) {
-                // Ex: cellH=128, currentGridSize=32 → zoom=4 → sprite=32px
-                detectedSpriteSize = currentGridSize;
-            } else if (cellH > 0) {
-                // Cellule non-multiple : on prend la cellule entière (1:1)
-                detectedSpriteSize = cellH;
-            }
-            state.spriteSize = detectedSpriteSize;
-
             // Activer les champs
-            [uiRefs.colsInput, uiRefs.rowsInput, uiRefs.frameWInput, uiRefs.frameHInput, uiRefs.spriteSizeInput].forEach(inp => {
+            [uiRefs.colsInput, uiRefs.rowsInput, uiRefs.frameWInput, uiRefs.frameHInput].forEach(inp => {
                 if (inp) { inp.disabled = false; inp.style.opacity = '1'; }
             });
 
-            uiRefs.colsInput.value       = state.cols;
-            uiRefs.rowsInput.value       = state.rows;
-            uiRefs.frameWInput.value     = state.frameW;
-            uiRefs.frameHInput.value     = state.frameH;
-            uiRefs.spriteSizeInput.value = state.spriteSize;
-            uiRefs.spriteSizeInput.style.opacity = '1';
-            uiRefs.spriteSizeInput.disabled = false;
+            uiRefs.colsInput.value   = state.cols;
+            uiRefs.rowsInput.value   = state.rows;
+            uiRefs.frameWInput.value = state.frameW;
+            uiRefs.frameHInput.value = state.frameH;
+
+            // Calculer la taille du sprite sur le canvas (dézoom automatique)
+            _ssAutoSpriteSize(state, uiRefs);
 
             uiRefs.dropZone.textContent = tL('isFileSelected', file.name);
             uiRefs.dropZone.classList.add('has-file');
@@ -10452,17 +10434,47 @@ function _ssSync(state, changed, uiRefs) {
         uiRefs.rowsInput.value = state.rows;
     }
 
+    // Recalculer la taille du sprite sur le canvas quand la cellule change
+    _ssAutoSpriteSize(state, uiRefs);
     _ssRenderPreview(state, uiRefs);
+}
+
+// Calcule automatiquement la taille du sprite sur le canvas depuis la taille de la cellule PNG.
+// Le PNG est exporté à zoom×N (N=1,4,8,16). On détecte le zoom et on ramène à taille originale.
+// Ex: cellule 128×128 dans un projet 32×32 → zoom=4 → sprite = 32×32 pixels canvas.
+// Ex: cellule 15×5 dans un projet 256×256 sans zoom → sprite = 15×5 pixels canvas.
+function _ssAutoSpriteSize(state, uiRefs) {
+    const cellW = state.frameW, cellH = state.frameH;
+    // Chercher si cellH est diviseur entier de cellH par une puissance de 2 (zoom 1,2,4,8,16)
+    let spriteH = cellH, spriteW = cellW;
+    for (const zoom of [16, 8, 4, 2, 1]) {
+        if (cellH % zoom === 0 && cellW % zoom === 0) {
+            spriteH = cellH / zoom;
+            spriteW = cellW / zoom;
+            break;
+        }
+    }
+    state.spriteW = spriteW;
+    state.spriteH = spriteH;
+    if (uiRefs.spriteSizeInput) uiRefs.spriteSizeInput.value = spriteH;
+    const hint = document.getElementById('_ssSpriteSizeHint');
+    if (hint) {
+        const fr = localStorage.getItem('lang') === 'fr';
+        hint.textContent = fr
+            ? `Cellule PNG ${cellW}×${cellH}px → sprite ${spriteW}×${spriteH}px sur le canvas`
+            : `PNG cell ${cellW}×${cellH}px → sprite ${spriteW}×${spriteH}px on canvas`;
+    }
 }
 
 function _ssUpdateCountNote(state, frameCount, resampleNote) {
     const total = state.cols * state.rows;
     const fr = localStorage.getItem('lang') === 'fr';
-    const sz = state.spriteSize || currentGridSize;
+    const sw = state.spriteW || state.frameW;
+    const sh = state.spriteH || state.frameH;
     frameCount.textContent = tL('isWillCreate', total);
     resampleNote.textContent = fr
-        ? `Cellule PNG : ${state.frameW}×${state.frameH}px → rééchantillonné à ${sz}×${sz}px sur le canvas`
-        : `PNG cell: ${state.frameW}×${state.frameH}px → resampled to ${sz}×${sz}px on canvas`;
+        ? `${total} sprite${total > 1 ? 's' : ''} de ${sw}×${sh}px posés dans le canvas`
+        : `${total} sprite${total > 1 ? 's' : ''} of ${sw}×${sh}px placed on canvas`;
 }
 
 function _ssRenderPreview(state, uiRefs) {
@@ -10511,7 +10523,9 @@ function _ssRenderPreview(state, uiRefs) {
 
 async function _ssDoImport(state) {
     const { img, naturalW, naturalH, frameW, frameH, cols, rows } = state;
-    const targetSize = state.spriteSize || currentGridSize; // taille du sprite sur le canvas
+    // Taille cible du sprite sur le canvas (peut différer de currentGridSize)
+    const tW = Math.max(1, state.spriteW || Math.round(parseInt(document.getElementById('_ssSpriteSize')?.value, 10)) || frameW);
+    const tH = Math.max(1, state.spriteH || tW);
 
     const offCanvas = document.createElement('canvas');
     offCanvas.width = naturalW; offCanvas.height = naturalH;
@@ -10532,12 +10546,11 @@ async function _ssDoImport(state) {
             const raw = cellData.data;
             const pixels = [];
 
-            // Rééchantillonnage nearest-neighbor : sw×sh → targetSize×targetSize
-            // Nécessaire car le PNG exporté peut être scalé (×8, ×16...)
-            for (let py = 0; py < targetSize; py++) {
-                for (let px = 0; px < targetSize; px++) {
-                    const srcX = Math.min(Math.floor(px * sw / targetSize), sw - 1);
-                    const srcY = Math.min(Math.floor(py * sh / targetSize), sh - 1);
+            // Rééchantillonnage nearest-neighbor : cellule PNG sw×sh → tW×tH pixels canvas
+            for (let py = 0; py < tH; py++) {
+                for (let px = 0; px < tW; px++) {
+                    const srcX = Math.min(Math.floor(px * sw / tW), sw - 1);
+                    const srcY = Math.min(Math.floor(py * sh / tH), sh - 1);
                     const idx = (srcY * sw + srcX) * 4;
                     const r = raw[idx], g = raw[idx + 1], b = raw[idx + 2], a = raw[idx + 3];
                     if (a < 128) {
@@ -10549,7 +10562,7 @@ async function _ssDoImport(state) {
                 }
             }
 
-            sprites.push({ pixels, w: targetSize, h: targetSize });
+            sprites.push({ pixels, w: tW, h: tH });
         }
     }
 
