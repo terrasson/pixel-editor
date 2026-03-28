@@ -10311,7 +10311,7 @@ function showImportSpriteSheetDialog() {
         if (!state.img) { showToast(tL('isNoFile'), { type: 'warning' }); return; }
         importBtn.disabled = true;
         importBtn.textContent = '⏳…';
-        const n = await _ssDoImport(state);
+        await _ssDoImport(state);
         modal.remove();
         // Le toast de confirmation est affiché après le placement (dans applySpriteSheet)
     });
@@ -10450,6 +10450,7 @@ function _ssRenderPreview(state, uiRefs) {
 
 async function _ssDoImport(state) {
     const { img, naturalW, naturalH, frameW, frameH, cols, rows } = state;
+    const targetSize = currentGridSize; // chaque sprite sera targetSize × targetSize pixels canvas
 
     const offCanvas = document.createElement('canvas');
     offCanvas.width = naturalW; offCanvas.height = naturalH;
@@ -10470,10 +10471,13 @@ async function _ssDoImport(state) {
             const raw = cellData.data;
             const pixels = [];
 
-            // Taille naturelle : chaque pixel de l'image = 1 pixel du canvas
-            for (let py = 0; py < sh; py++) {
-                for (let px = 0; px < sw; px++) {
-                    const idx = (py * sw + px) * 4;
+            // Rééchantillonnage nearest-neighbor : sw×sh → targetSize×targetSize
+            // Nécessaire car le PNG exporté peut être scalé (×8, ×16...)
+            for (let py = 0; py < targetSize; py++) {
+                for (let px = 0; px < targetSize; px++) {
+                    const srcX = Math.min(Math.floor(px * sw / targetSize), sw - 1);
+                    const srcY = Math.min(Math.floor(py * sh / targetSize), sh - 1);
+                    const idx = (srcY * sw + srcX) * 4;
                     const r = raw[idx], g = raw[idx + 1], b = raw[idx + 2], a = raw[idx + 3];
                     if (a < 128) {
                         pixels.push({ color: '#FFFFFF', isEmpty: true });
@@ -10484,16 +10488,14 @@ async function _ssDoImport(state) {
                 }
             }
 
-            sprites.push({ pixels, w: sw, h: sh });
+            sprites.push({ pixels, w: targetSize, h: targetSize });
         }
     }
 
     if (sprites.length === 0) return 0;
 
-    // Activer le mode de placement sur le canvas :
-    // le premier sprite suit le curseur en ghost,
-    // au clic → N frames sont créées (une par sprite),
-    // chacune = copie de la frame courante + le sprite positionné en nouveau calque.
+    // Le premier sprite suit le curseur en ghost.
+    // Au clic → N frames créées, chacune = copie de la frame courante + sprite en calque.
     enterSpriteSheetMode(sprites);
     return sprites.length;
 }
