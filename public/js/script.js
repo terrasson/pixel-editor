@@ -2859,12 +2859,13 @@ function applySpriteSheet(anchorCol, anchorRow) {
     loadFrame(currentFrame);
     updateFramesList();
 
+    const count = ssSprites.length; // lire AVANT exitSpriteSheetMode() qui vide ssSprites
     exitSpriteSheetMode();
 
     const lang = localStorage.getItem('lang') === 'fr';
     const msg = lang
-        ? `✅ ${ssSprites.length} frame${ssSprites.length > 1 ? 's' : ''} créée${ssSprites.length > 1 ? 's' : ''} depuis le sprite sheet`
-        : `✅ ${ssSprites.length} frame${ssSprites.length > 1 ? 's' : ''} created from sprite sheet`;
+        ? `✅ ${count} frame${count > 1 ? 's' : ''} créée${count > 1 ? 's' : ''} depuis le sprite sheet`
+        : `✅ ${count} frame${count > 1 ? 's' : ''} created from sprite sheet`;
     showToast(msg, { type: 'success' });
 }
 
@@ -10337,11 +10338,26 @@ function _ssHandleFile(file, state, uiRefs) {
             state.naturalW = img.naturalWidth;
             state.naturalH = img.naturalHeight;
 
-            // Défaut : 1 colonne × 1 ligne, taille = image entière
-            state.cols   = 1;
-            state.rows   = 1;
-            state.frameW = state.naturalW;
-            state.frameH = state.naturalH;
+            // Auto-détection : un sprite sheet horizontal exporté par cette app a toujours
+            // height = cellSize et width = cellSize * N.
+            // Si width > height et width est un multiple exact de height → strip horizontal détecté.
+            const W = state.naturalW, H = state.naturalH;
+            let autoCols = 1, autoRows = 1;
+            let autoDetected = false;
+            if (W > H && H > 0 && W % H === 0) {
+                autoCols = W / H;
+                autoRows = 1;
+                autoDetected = true;
+            } else if (H > W && W > 0 && H % W === 0) {
+                // Strip vertical (moins courant)
+                autoCols = 1;
+                autoRows = H / W;
+                autoDetected = true;
+            }
+            state.cols   = autoCols;
+            state.rows   = autoRows;
+            state.frameW = Math.floor(W / autoCols);
+            state.frameH = Math.floor(H / autoRows);
 
             // Activer les champs
             [uiRefs.colsInput, uiRefs.rowsInput, uiRefs.frameWInput, uiRefs.frameHInput].forEach(inp => {
@@ -10349,14 +10365,19 @@ function _ssHandleFile(file, state, uiRefs) {
                 inp.style.opacity = '1';
             });
 
-            uiRefs.colsInput.value   = 1;
-            uiRefs.rowsInput.value   = 1;
-            uiRefs.frameWInput.value = state.naturalW;
-            uiRefs.frameHInput.value = state.naturalH;
+            uiRefs.colsInput.value   = state.cols;
+            uiRefs.rowsInput.value   = state.rows;
+            uiRefs.frameWInput.value = state.frameW;
+            uiRefs.frameHInput.value = state.frameH;
 
             uiRefs.dropZone.textContent = tL('isFileSelected', file.name);
             uiRefs.dropZone.classList.add('has-file');
-            uiRefs.imgInfo.textContent = `${state.naturalW}×${state.naturalH}px — ${localStorage.getItem('lang') === 'fr' ? 'entrez le nombre de colonnes et lignes' : 'set columns and rows below'}`;
+
+            const fr = localStorage.getItem('lang') === 'fr';
+            const autoMsg = autoDetected
+                ? (fr ? ` — ${autoCols > 1 ? autoCols + ' colonnes' : autoRows + ' lignes'} détectées automatiquement` : ` — ${autoCols > 1 ? autoCols + ' columns' : autoRows + ' rows'} auto-detected`)
+                : (fr ? ' — vérifiez les colonnes/lignes' : ' — check columns/rows');
+            uiRefs.imgInfo.textContent = `${W}×${H}px${autoMsg}`;
 
             _ssRenderPreview(state, uiRefs);
             uiRefs.previewWrap.style.display = 'flex';
