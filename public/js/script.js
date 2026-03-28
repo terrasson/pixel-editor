@@ -2437,21 +2437,30 @@ function exportFramesAsPng() {
     const ctx = offscreen.getContext('2d');
 
     const projectName = document.getElementById('projectNameInput')?.value || 'pixel-art';
+    const total = frames.length;
+
+    showToast(`⬇️ Téléchargement de ${total} frame${total > 1 ? 's' : ''} PNG…`, { type: 'info', duration: total * 300 + 1500 });
 
     frames.forEach((frame, i) => {
-        ctx.clearRect(0, 0, canvasSize, canvasSize);
-        frame.forEach((pixel, idx) => {
-            if (!pixel || pixel.isEmpty) return;
-            const col = idx % size;
-            const row = Math.floor(idx / size);
-            ctx.fillStyle = pixel.color;
-            ctx.fillRect(col * scale, row * scale, scale, scale);
-        });
-        const dataUrl = offscreen.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = `${projectName}_frame${String(i + 1).padStart(3, '0')}.png`;
-        a.click();
+        setTimeout(() => {
+            ctx.clearRect(0, 0, canvasSize, canvasSize);
+            frame.forEach((pixel, idx) => {
+                if (!pixel || pixel.isEmpty) return;
+                const col = idx % size;
+                const row = Math.floor(idx / size);
+                ctx.fillStyle = pixel.color;
+                ctx.fillRect(col * scale, row * scale, scale, scale);
+            });
+            const dataUrl = offscreen.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = `${projectName}_frame${String(i + 1).padStart(3, '0')}.png`;
+            a.click();
+
+            if (i === total - 1) {
+                showToast(`✅ ${total} frame${total > 1 ? 's' : ''} PNG téléchargée${total > 1 ? 's' : ''} !`, { type: 'success' });
+            }
+        }, i * 300);
     });
 }
 
