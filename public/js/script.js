@@ -10010,7 +10010,7 @@ function initImportSpriteSheetFeature() {
 }
 
 function showImportSpriteSheetDialog() {
-    const state = { img: null, naturalW: 0, naturalH: 0, frameW: 32, frameH: 32, cols: 1, rows: 1, mode: 'replace' };
+    const state = { img: null, naturalW: 0, naturalH: 0, frameW: 0, frameH: 0, cols: 1, rows: 1, mode: 'replace' };
 
     // ── modal shell ──────────────────────────────────────────────────────────
     const modal = document.createElement('div');
@@ -10084,8 +10084,8 @@ function showImportSpriteSheetDialog() {
         return inp;
     }
 
-    const frameWInput = makeField(tL('isFrameW'), '_ssFrameW', 32);
-    const frameHInput = makeField(tL('isFrameH'), '_ssFrameH', 32);
+    const frameWInput = makeField(tL('isFrameW'), '_ssFrameW', '—');
+    const frameHInput = makeField(tL('isFrameH'), '_ssFrameH', '—');
     const colsInput   = makeField(tL('isCols'),   '_ssCols',   1);
     const rowsInput   = makeField(tL('isRows'),   '_ssRows',   1);
 
@@ -10181,11 +10181,12 @@ function _ssHandleFileSelect(file, state, dropZone, previewWrap, frameWInput, fr
 }
 
 function _ssAutoDetectGrid(state, frameWInput, frameHInput, colsInput, rowsInput) {
-    const g = currentGridSize;
-    state.frameW = g;
-    state.frameH = g;
-    state.cols = Math.max(1, Math.floor(state.naturalW / g));
-    state.rows = Math.max(1, Math.floor(state.naturalH / g));
+    // Default: 1 column × 1 row — user must set the correct grid manually.
+    // This avoids creating hundreds of frames by accident when frame size ≠ currentGridSize.
+    state.cols  = 1;
+    state.rows  = 1;
+    state.frameW = state.naturalW;
+    state.frameH = state.naturalH;
     frameWInput.value = state.frameW;
     frameHInput.value = state.frameH;
     colsInput.value   = state.cols;
