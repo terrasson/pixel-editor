@@ -453,6 +453,22 @@ const TL = {
     textToolScale:          { en: 'Scale (×)', fr: 'Taille (×)' },
     textToolApply:          { en: 'Apply', fr: 'Appliquer' },
     textToolPreview:        { en: 'Preview', fr: 'Aperçu' },
+    // Import Sprite Sheet
+    isTitle:                { en: '🗂️ Import Sprite Sheet', fr: '🗂️ Importer Sprite Sheet' },
+    isDropHint:             { en: 'Drop a PNG / JPG here or click to browse', fr: 'Déposez un PNG / JPG ici ou cliquez pour parcourir' },
+    isFileSelected:         { en: f => `✔ ${f}`, fr: f => `✔ ${f}` },
+    isFrameW:               { en: 'Frame width (px)', fr: 'Largeur frame (px)' },
+    isFrameH:               { en: 'Frame height (px)', fr: 'Hauteur frame (px)' },
+    isCols:                 { en: 'Columns', fr: 'Colonnes' },
+    isRows:                 { en: 'Rows', fr: 'Lignes' },
+    isWillCreate:           { en: n => `Will create ${n} frame${n > 1 ? 's' : ''}`, fr: n => `Créera ${n} frame${n > 1 ? 's' : ''}` },
+    isResampleNote:         { en: g => `Frames will be resampled to ${g}×${g}px`, fr: g => `Frames rééchantillonnées à ${g}×${g}px` },
+    isReplace:              { en: 'Replace all frames', fr: 'Remplacer les frames' },
+    isAppend:               { en: 'Append to frames', fr: 'Ajouter aux frames' },
+    isImportBtn:            { en: '🗂️ Import', fr: '🗂️ Importer' },
+    isImportSuccess:        { en: (n, r) => `✅ ${n} frame${n>1?'s':''} imported (${r})`, fr: (n, r) => `✅ ${n} frame${n>1?'s':''} importée${n>1?'s':''} (${r})` },
+    isNoFile:               { en: 'Please select an image first.', fr: 'Veuillez sélectionner une image.' },
+    isTooManyFrames:        { en: n => `⚠️ This will create ${n} frames. Continue?`, fr: n => `⚠️ Cela créera ${n} frames. Continuer ?` },
 };
 const tL = (key, ...args) => {
     const lang = localStorage.getItem('lang') || 'en';
@@ -7340,6 +7356,7 @@ function initEventListeners() {
     
     // Initialiser les autres fonctionnalités
     initMobileFeatures();
+    initImportSpriteSheetFeature();
 }
 
 // Auto-save function removed - manual save only
@@ -9176,6 +9193,14 @@ async function updateUserProfileDisplay() {
                 });
             }
 
+            const importSpriteSheetBtnDropdown = document.getElementById('importSpriteSheetBtnDropdown');
+            if (importSpriteSheetBtnDropdown) {
+                importSpriteSheetBtnDropdown.addEventListener('click', () => {
+                    userDropdown.classList.remove('open');
+                    showImportSpriteSheetDialog();
+                });
+            }
+
             const stampSpriteBtnDropdown = document.getElementById('stampSpriteBtnDropdown');
             if (stampSpriteBtnDropdown) {
                 stampSpriteBtnDropdown.addEventListener('click', () => {
@@ -9976,4 +10001,344 @@ function switchMobileTab(btn) {
     btn.classList.add('active');
     const target = document.getElementById(btn.dataset.target);
     if (target) target.classList.add('active');
+}
+
+// ── Import Sprite Sheet ────────────────────────────────────────────────────────
+function initImportSpriteSheetFeature() {
+    document.getElementById('importSpriteSheetBtn')?.addEventListener('click', showImportSpriteSheetDialog);
+    document.getElementById('importSpriteSheetBtn2')?.addEventListener('click', showImportSpriteSheetDialog);
+}
+
+function showImportSpriteSheetDialog() {
+    const state = { img: null, naturalW: 0, naturalH: 0, frameW: 32, frameH: 32, cols: 1, rows: 1, mode: 'replace' };
+
+    // ── modal shell ──────────────────────────────────────────────────────────
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+    content.style.cssText = 'max-width:480px;width:92%;background:linear-gradient(155deg,rgba(36,48,94,.98),rgba(28,38,80,.95));border:1px solid rgba(255,255,255,.18);border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,.65);padding:22px;color:rgba(255,255,255,.95);max-height:90vh;overflow-y:auto;box-sizing:border-box';
+
+    // ── title ────────────────────────────────────────────────────────────────
+    const title = document.createElement('h3');
+    title.textContent = tL('isTitle');
+    title.style.cssText = 'margin:0 0 16px;text-align:center;font-weight:700;font-size:1.1rem';
+
+    // ── drop zone ────────────────────────────────────────────────────────────
+    const dropZone = document.createElement('div');
+    dropZone.className = 'ss-import-drop-zone';
+    dropZone.textContent = tL('isDropHint');
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/png,image/jpeg,image/gif,image/webp';
+    fileInput.style.display = 'none';
+
+    dropZone.appendChild(fileInput);
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) _ssHandleFileSelect(file, state, dropZone, previewWrap, frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, importBtn);
+    });
+    fileInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) _ssHandleFileSelect(file, state, dropZone, previewWrap, frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, importBtn);
+    });
+
+    // ── preview ──────────────────────────────────────────────────────────────
+    const previewWrap = document.createElement('div');
+    previewWrap.className = 'ss-import-preview-wrap';
+    previewWrap.style.display = 'none';
+
+    const previewCanvas = document.createElement('canvas');
+    previewCanvas.id = '_ssPreviewCanvas';
+
+    const gridCanvas = document.createElement('canvas');
+    gridCanvas.className = 'ss-import-grid-canvas';
+    gridCanvas.id = '_ssGridCanvas';
+
+    previewWrap.append(previewCanvas, gridCanvas);
+
+    // ── config grid ──────────────────────────────────────────────────────────
+    const configGrid = document.createElement('div');
+    configGrid.className = 'ss-import-config-grid';
+
+    function makeField(labelText, id, val) {
+        const wrap = document.createElement('div');
+        const lbl = document.createElement('label');
+        lbl.textContent = labelText;
+        lbl.htmlFor = id;
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.id = id;
+        inp.min = '1';
+        inp.value = val;
+        wrap.append(lbl, inp);
+        configGrid.appendChild(wrap);
+        return inp;
+    }
+
+    const frameWInput = makeField(tL('isFrameW'), '_ssFrameW', 32);
+    const frameHInput = makeField(tL('isFrameH'), '_ssFrameH', 32);
+    const colsInput   = makeField(tL('isCols'),   '_ssCols',   1);
+    const rowsInput   = makeField(tL('isRows'),   '_ssRows',   1);
+
+    frameWInput.addEventListener('input', () => _ssAutoFillGrid(state, 'frameW', frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, previewWrap));
+    frameHInput.addEventListener('input', () => _ssAutoFillGrid(state, 'frameH', frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, previewWrap));
+    colsInput.addEventListener('input',   () => _ssAutoFillGrid(state, 'cols',   frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, previewWrap));
+    rowsInput.addEventListener('input',   () => _ssAutoFillGrid(state, 'rows',   frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, previewWrap));
+
+    // ── frame count + resample note ──────────────────────────────────────────
+    const frameCount = document.createElement('div');
+    frameCount.className = 'ss-import-frame-count';
+
+    const resampleNote = document.createElement('div');
+    resampleNote.className = 'ss-import-resample-note';
+    resampleNote.textContent = tL('isResampleNote', currentGridSize);
+
+    // ── mode buttons ─────────────────────────────────────────────────────────
+    const modeRow = document.createElement('div');
+    modeRow.className = 'ss-import-mode-row';
+
+    const replaceBtn = document.createElement('button');
+    replaceBtn.className = 'ss-import-mode-btn active';
+    replaceBtn.textContent = tL('isReplace');
+    const appendBtn = document.createElement('button');
+    appendBtn.className = 'ss-import-mode-btn';
+    appendBtn.textContent = tL('isAppend');
+
+    replaceBtn.addEventListener('click', () => { state.mode = 'replace'; replaceBtn.classList.add('active'); appendBtn.classList.remove('active'); });
+    appendBtn.addEventListener('click',  () => { state.mode = 'append';  appendBtn.classList.add('active'); replaceBtn.classList.remove('active'); });
+
+    modeRow.append(replaceBtn, appendBtn);
+
+    // ── action buttons ───────────────────────────────────────────────────────
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:10px;margin-top:4px';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Annuler';
+    cancelBtn.style.cssText = 'flex:1;padding:11px;border:1px solid rgba(255,255,255,.25);border-radius:8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.9);cursor:pointer;font-weight:600;font-size:.9rem';
+
+    const importBtn = document.createElement('button');
+    importBtn.textContent = tL('isImportBtn');
+    importBtn.disabled = true;
+    importBtn.style.cssText = 'flex:2;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#FF7300,#FF9500);color:#fff;cursor:pointer;font-weight:700;font-size:.9rem;opacity:.5';
+
+    cancelBtn.addEventListener('click', () => modal.remove());
+    importBtn.addEventListener('click', async () => {
+        if (!state.img) { showToast(tL('isNoFile'), { type: 'warning' }); return; }
+        const total = state.cols * state.rows;
+        if (total > 64) {
+            if (!confirm(tL('isTooManyFrames', total))) return;
+        }
+        importBtn.disabled = true;
+        importBtn.textContent = '⏳…';
+        const n = await _ssImportFrames(state);
+        modal.remove();
+        const modeLabel = state.mode === 'replace' ? tL('isReplace') : tL('isAppend');
+        showToast(tL('isImportSuccess', n, modeLabel), { type: 'success' });
+    });
+
+    btnRow.append(cancelBtn, importBtn);
+
+    // ── assemble ─────────────────────────────────────────────────────────────
+    content.append(title, dropZone, previewWrap, configGrid, frameCount, resampleNote, modeRow, btnRow);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function _ssHandleFileSelect(file, state, dropZone, previewWrap, frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, importBtn) {
+    if (!file.type.startsWith('image/')) { showToast('❌ Format non supporté', { type: 'error' }); return; }
+    dropZone.textContent = tL('isFileSelected', file.name);
+    dropZone.classList.add('has-file');
+
+    const reader = new FileReader();
+    reader.onload = evt => {
+        const img = new Image();
+        img.onload = () => {
+            state.img = img;
+            state.naturalW = img.naturalWidth;
+            state.naturalH = img.naturalHeight;
+            _ssAutoDetectGrid(state, frameWInput, frameHInput, colsInput, rowsInput);
+            _ssRenderPreview(state, previewWrap, frameCount, resampleNote);
+            previewWrap.style.display = 'flex';
+            importBtn.disabled = false;
+            importBtn.style.opacity = '1';
+        };
+        img.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function _ssAutoDetectGrid(state, frameWInput, frameHInput, colsInput, rowsInput) {
+    const g = currentGridSize;
+    state.frameW = g;
+    state.frameH = g;
+    state.cols = Math.max(1, Math.floor(state.naturalW / g));
+    state.rows = Math.max(1, Math.floor(state.naturalH / g));
+    frameWInput.value = state.frameW;
+    frameHInput.value = state.frameH;
+    colsInput.value   = state.cols;
+    rowsInput.value   = state.rows;
+}
+
+function _ssAutoFillGrid(state, changed, frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, previewWrap) {
+    const fw = parseInt(frameWInput.value, 10) || 1;
+    const fh = parseInt(frameHInput.value, 10) || 1;
+    const c  = parseInt(colsInput.value,   10) || 1;
+    const r  = parseInt(rowsInput.value,   10) || 1;
+
+    if (changed === 'frameW') {
+        state.frameW = fw;
+        state.cols = Math.max(1, Math.floor(state.naturalW / fw));
+        colsInput.value = state.cols;
+    } else if (changed === 'frameH') {
+        state.frameH = fh;
+        state.rows = Math.max(1, Math.floor(state.naturalH / fh));
+        rowsInput.value = state.rows;
+    } else if (changed === 'cols') {
+        state.cols = c;
+        state.frameW = Math.max(1, Math.floor(state.naturalW / c));
+        frameWInput.value = state.frameW;
+    } else if (changed === 'rows') {
+        state.rows = r;
+        state.frameH = Math.max(1, Math.floor(state.naturalH / r));
+        frameHInput.value = state.frameH;
+    }
+
+    if (state.img) _ssRenderPreview(state, previewWrap, frameCount, resampleNote);
+}
+
+function _ssRenderPreview(state, previewWrap, frameCount, resampleNote) {
+    const MAX = 360;
+    const scale = Math.min(MAX / state.naturalW, MAX / state.naturalH, 1);
+    const dw = Math.round(state.naturalW * scale);
+    const dh = Math.round(state.naturalH * scale);
+
+    const previewCanvas = document.getElementById('_ssPreviewCanvas');
+    const gridCanvas    = document.getElementById('_ssGridCanvas');
+    if (!previewCanvas || !gridCanvas) return;
+
+    previewCanvas.width  = dw;
+    previewCanvas.height = dh;
+    previewCanvas.style.width  = dw + 'px';
+    previewCanvas.style.height = dh + 'px';
+
+    const pCtx = previewCanvas.getContext('2d');
+    pCtx.clearRect(0, 0, dw, dh);
+    // checkerboard for transparency
+    const tileSize = 6;
+    for (let ty = 0; ty < dh; ty += tileSize) {
+        for (let tx = 0; tx < dw; tx += tileSize) {
+            pCtx.fillStyle = (Math.floor(tx / tileSize) + Math.floor(ty / tileSize)) % 2 === 0 ? '#888' : '#aaa';
+            pCtx.fillRect(tx, ty, tileSize, tileSize);
+        }
+    }
+    pCtx.drawImage(state.img, 0, 0, dw, dh);
+
+    gridCanvas.width  = dw;
+    gridCanvas.height = dh;
+    gridCanvas.style.width  = dw + 'px';
+    gridCanvas.style.height = dh + 'px';
+
+    const gCtx = gridCanvas.getContext('2d');
+    gCtx.clearRect(0, 0, dw, dh);
+    gCtx.strokeStyle = 'rgba(255,115,0,0.8)';
+    gCtx.lineWidth = 1;
+
+    const cellW = state.frameW * scale;
+    const cellH = state.frameH * scale;
+
+    for (let ci = 0; ci <= state.cols; ci++) {
+        const x = Math.round(ci * cellW) + 0.5;
+        gCtx.beginPath(); gCtx.moveTo(x, 0); gCtx.lineTo(x, dh); gCtx.stroke();
+    }
+    for (let ri = 0; ri <= state.rows; ri++) {
+        const y = Math.round(ri * cellH) + 0.5;
+        gCtx.beginPath(); gCtx.moveTo(0, y); gCtx.lineTo(dw, y); gCtx.stroke();
+    }
+
+    const total = state.cols * state.rows;
+    frameCount.textContent = tL('isWillCreate', total);
+    resampleNote.textContent = tL('isResampleNote', currentGridSize);
+}
+
+async function _ssImportFrames(state) {
+    saveCurrentFrame();
+
+    const { img, naturalW, naturalH, frameW, frameH, cols, rows } = state;
+    const targetSize = currentGridSize;
+
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width  = naturalW;
+    offCanvas.height = naturalH;
+    const offCtx = offCanvas.getContext('2d');
+    offCtx.drawImage(img, 0, 0, naturalW, naturalH);
+
+    const newFrames = [];
+    const newLayers = [];
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const sx = col * frameW;
+            const sy = row * frameH;
+            const sw = Math.min(frameW, naturalW - sx);
+            const sh = Math.min(frameH, naturalH - sy);
+            if (sw <= 0 || sh <= 0) continue;
+
+            const cellData = offCtx.getImageData(sx, sy, sw, sh);
+            const raw = cellData.data;
+
+            const scaleX = sw / targetSize;
+            const scaleY = sh / targetSize;
+            const framePixels = [];
+
+            for (let py = 0; py < targetSize; py++) {
+                for (let px = 0; px < targetSize; px++) {
+                    const srcX = Math.min(Math.floor(px * scaleX), sw - 1);
+                    const srcY = Math.min(Math.floor(py * scaleY), sh - 1);
+                    const idx  = (srcY * sw + srcX) * 4;
+                    const r = raw[idx], g = raw[idx + 1], b = raw[idx + 2], a = raw[idx + 3];
+                    if (a < 128) {
+                        framePixels.push({ color: '#FFFFFF', isEmpty: true });
+                    } else {
+                        const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+                        framePixels.push({ color: hex, isEmpty: false });
+                    }
+                }
+            }
+
+            const layer = { id: _nextLayerId++, name: 'Calque 1', visible: true, opacity: 1.0, pixels: framePixels.map(p => ({ ...p })) };
+            newFrames.push(framePixels);
+            newLayers.push([layer]);
+        }
+    }
+
+    if (state.mode === 'replace') {
+        frames       = newFrames;
+        frameLayers  = newLayers;
+        currentFrame = 0;
+        currentLayer = 0;
+    } else {
+        newFrames.forEach((f, i) => {
+            frames.push(f);
+            frameLayers.push(newLayers[i]);
+        });
+        currentFrame = frames.length - newFrames.length;
+        currentLayer = 0;
+    }
+
+    loadFrame(currentFrame);
+    updateFramesList();
+    return newFrames.length;
 }

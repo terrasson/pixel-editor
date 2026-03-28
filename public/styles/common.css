@@ -1822,3 +1822,121 @@ input[type="color"]::-webkit-color-swatch {
     font-size: 11px;
     line-height: 1.6;
 }
+/* ── Import Sprite Sheet Modal ────────────────────────────────────────────── */
+.ss-import-drop-zone {
+    border: 2px dashed var(--border-color, #E5E5EA);
+    border-radius: var(--radius-sm, 8px);
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.6);
+    font-size: 0.9rem;
+    margin-bottom: 14px;
+}
+.ss-import-drop-zone:hover,
+.ss-import-drop-zone.drag-over {
+    border-color: var(--color-primary, #FF7300);
+    background: rgba(255,115,0,0.1);
+}
+.ss-import-drop-zone.has-file {
+    border-style: solid;
+    border-color: #34C759;
+    color: #34C759;
+}
+
+.ss-import-preview-wrap {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin: 0 auto 14px;
+    max-width: 100%;
+}
+.ss-import-preview-wrap canvas {
+    display: block;
+    max-width: 100%;
+    image-rendering: pixelated;
+    border-radius: 4px;
+}
+.ss-import-grid-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.ss-import-config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.ss-import-config-grid label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.ss-import-config-grid input[type="number"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.95);
+}
+.ss-import-config-grid input[type="number"]:focus {
+    outline: none;
+    border-color: var(--color-primary, #FF7300);
+}
+
+.ss-import-frame-count {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-primary, #FF7300);
+    text-align: center;
+    margin-bottom: 12px;
+    min-height: 1.2em;
+}
+.ss-import-resample-note {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    margin-bottom: 14px;
+}
+
+.ss-import-mode-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.ss-import-mode-btn {
+    flex: 1;
+    padding: 9px 6px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    color: rgba(255,255,255,0.7);
+}
+.ss-import-mode-btn.active {
+    border-color: var(--color-primary, #FF7300);
+    background: rgba(255,115,0,0.15);
+    color: var(--color-primary, #FF7300);
+}
+
+@media (max-width: 480px) {
+    .ss-import-config-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
