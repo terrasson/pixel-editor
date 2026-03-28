@@ -5586,14 +5586,14 @@ function updateFramesList() {
 }
 
 // Dessine la miniature d'une frame dans un canvas 28x28
-function _drawFrameThumb(canvas, frame) {
+function _drawFrameThumb(canvas, frame, gridSize) {
     const ctx = canvas.getContext('2d');
-    const size = currentGridSize;
+    const size = gridSize || currentGridSize;
     const cw = canvas.width, ch = canvas.height;
     ctx.clearRect(0, 0, cw, ch);
     if (!frame || frame.length === 0) return;
     const pw = cw / size, ph = ch / size;
-    for (let i = 0; i < size * size; i++) {
+    for (let i = 0; i < frame.length; i++) {
         const p = frame[i];
         if (!p || p.isEmpty) continue;
         ctx.fillStyle = p.color || '#fff';
@@ -9654,11 +9654,12 @@ function saveCurrentDrawingAsStamp() {
     _addStamp(pixels, `Frame ${currentFrame + 1}`);
 }
 
-function _addStamp(pixels, nameHint) {
+function _addStamp(pixels, nameHint, gridSize) {
     const stamp = {
         id: Date.now(),
         name: nameHint || `Tampon ${window.stamps.length + 1}`,
         pixels,
+        gridSize: gridSize || currentGridSize,
         hidden: false
     };
     window.stamps.unshift(stamp);
@@ -9851,7 +9852,7 @@ function _buildStampRow(stamp, index) {
     thumb.className = 'stamp-row-thumb';
     thumb.width = 28;
     thumb.height = 28;
-    _drawFrameThumb(thumb, stamp.pixels);
+    _drawFrameThumb(thumb, stamp.pixels, stamp.gridSize);
 
     const name = document.createElement('span');
     name.className = 'stamp-row-name';
@@ -9872,7 +9873,7 @@ function _buildStampRow(stamp, index) {
 
     row.addEventListener('click', () => {
         activeStampId = stamp.id;
-        enterStampMode(stamp.pixels, currentGridSize);
+        enterStampMode(stamp.pixels, stamp.gridSize || currentGridSize);
         renderStampsList();
     });
 
@@ -10003,6 +10004,7 @@ function switchMobileTab(btn) {
     if (target) target.classList.add('active');
 }
 
+
 // ── Import Sprite Sheet ────────────────────────────────────────────────────────
 function initImportSpriteSheetFeature() {
     document.getElementById('importSpriteSheetBtn')?.addEventListener('click', showImportSpriteSheetDialog);
@@ -10010,23 +10012,24 @@ function initImportSpriteSheetFeature() {
 }
 
 function showImportSpriteSheetDialog() {
-    const state = { img: null, naturalW: 0, naturalH: 0, frameW: 0, frameH: 0, cols: 1, rows: 1, mode: 'replace' };
+    // importMode: 'stamps' = place sur canvas comme tampons (défaut)
+    //             'frames' = crée des frames d'animation
+    const state = { img: null, naturalW: 0, naturalH: 0, frameW: 0, frameH: 0, cols: 1, rows: 1, importMode: 'stamps' };
 
-    // ── modal shell ──────────────────────────────────────────────────────────
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.display = 'flex';
 
     const content = document.createElement('div');
     content.className = 'modal-content';
-    content.style.cssText = 'max-width:480px;width:92%;background:linear-gradient(155deg,rgba(36,48,94,.98),rgba(28,38,80,.95));border:1px solid rgba(255,255,255,.18);border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,.65);padding:22px;color:rgba(255,255,255,.95);max-height:90vh;overflow-y:auto;box-sizing:border-box';
+    content.style.cssText = 'max-width:500px;width:92%;background:linear-gradient(155deg,rgba(36,48,94,.98),rgba(28,38,80,.95));border:1px solid rgba(255,255,255,.18);border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,.65);padding:22px;color:rgba(255,255,255,.95);max-height:90vh;overflow-y:auto;box-sizing:border-box';
 
-    // ── title ────────────────────────────────────────────────────────────────
+    // Titre
     const title = document.createElement('h3');
     title.textContent = tL('isTitle');
     title.style.cssText = 'margin:0 0 16px;text-align:center;font-weight:700;font-size:1.1rem';
 
-    // ── drop zone ────────────────────────────────────────────────────────────
+    // Zone drop
     const dropZone = document.createElement('div');
     dropZone.className = 'ss-import-drop-zone';
     dropZone.textContent = tL('isDropHint');
@@ -10035,8 +10038,8 @@ function showImportSpriteSheetDialog() {
     fileInput.type = 'file';
     fileInput.accept = 'image/png,image/jpeg,image/gif,image/webp';
     fileInput.style.display = 'none';
-
     dropZone.appendChild(fileInput);
+
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
@@ -10044,28 +10047,29 @@ function showImportSpriteSheetDialog() {
         e.preventDefault();
         dropZone.classList.remove('drag-over');
         const file = e.dataTransfer.files[0];
-        if (file) _ssHandleFileSelect(file, state, dropZone, previewWrap, frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, importBtn);
+        if (file) _ssHandleFile(file, state, uiRefs);
     });
     fileInput.addEventListener('change', e => {
         const file = e.target.files[0];
-        if (file) _ssHandleFileSelect(file, state, dropZone, previewWrap, frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, importBtn);
+        if (file) _ssHandleFile(file, state, uiRefs);
     });
 
-    // ── preview ──────────────────────────────────────────────────────────────
+    // Dimensions de l'image (affichées après chargement)
+    const imgInfo = document.createElement('div');
+    imgInfo.style.cssText = 'font-size:0.8rem;color:rgba(255,255,255,0.45);text-align:center;margin-bottom:10px;min-height:1em';
+
+    // Aperçu
     const previewWrap = document.createElement('div');
     previewWrap.className = 'ss-import-preview-wrap';
     previewWrap.style.display = 'none';
-
     const previewCanvas = document.createElement('canvas');
     previewCanvas.id = '_ssPreviewCanvas';
-
     const gridCanvas = document.createElement('canvas');
     gridCanvas.className = 'ss-import-grid-canvas';
     gridCanvas.id = '_ssGridCanvas';
-
     previewWrap.append(previewCanvas, gridCanvas);
 
-    // ── config grid ──────────────────────────────────────────────────────────
+    // Config colonnes / lignes
     const configGrid = document.createElement('div');
     configGrid.className = 'ss-import-config-grid';
 
@@ -10079,32 +10083,69 @@ function showImportSpriteSheetDialog() {
         inp.id = id;
         inp.min = '1';
         inp.value = val;
+        inp.disabled = true;
+        inp.style.opacity = '0.4';
         wrap.append(lbl, inp);
         configGrid.appendChild(wrap);
         return inp;
     }
 
+    const colsInput = makeField(tL('isCols'), '_ssCols', 1);
+    const rowsInput = makeField(tL('isRows'), '_ssRows', 1);
     const frameWInput = makeField(tL('isFrameW'), '_ssFrameW', '—');
     const frameHInput = makeField(tL('isFrameH'), '_ssFrameH', '—');
-    const colsInput   = makeField(tL('isCols'),   '_ssCols',   1);
-    const rowsInput   = makeField(tL('isRows'),   '_ssRows',   1);
 
-    frameWInput.addEventListener('input', () => _ssAutoFillGrid(state, 'frameW', frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, previewWrap));
-    frameHInput.addEventListener('input', () => _ssAutoFillGrid(state, 'frameH', frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, previewWrap));
-    colsInput.addEventListener('input',   () => _ssAutoFillGrid(state, 'cols',   frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, previewWrap));
-    rowsInput.addEventListener('input',   () => _ssAutoFillGrid(state, 'rows',   frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, previewWrap));
+    colsInput.addEventListener('input',   () => _ssSync(state, 'cols',   uiRefs));
+    rowsInput.addEventListener('input',   () => _ssSync(state, 'rows',   uiRefs));
+    frameWInput.addEventListener('input', () => _ssSync(state, 'frameW', uiRefs));
+    frameHInput.addEventListener('input', () => _ssSync(state, 'frameH', uiRefs));
 
-    // ── frame count + resample note ──────────────────────────────────────────
+    // Compteur + note
     const frameCount = document.createElement('div');
     frameCount.className = 'ss-import-frame-count';
 
     const resampleNote = document.createElement('div');
     resampleNote.className = 'ss-import-resample-note';
-    resampleNote.textContent = tL('isResampleNote', currentGridSize);
 
-    // ── mode buttons ─────────────────────────────────────────────────────────
+    // Mode import : Tampons (défaut) ou Frames
+    const modeSection = document.createElement('div');
+    modeSection.style.cssText = 'margin-bottom:14px';
+
+    const modeLbl = document.createElement('div');
+    modeLbl.style.cssText = 'font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px';
+    modeLbl.textContent = 'Mode';
+
     const modeRow = document.createElement('div');
     modeRow.className = 'ss-import-mode-row';
+
+    const stampsBtn = document.createElement('button');
+    stampsBtn.className = 'ss-import-mode-btn active';
+    stampsBtn.innerHTML = '🖼️ ' + (localStorage.getItem('lang') === 'fr' ? 'Tampons (positionner sur canvas)' : 'Stamps (place on canvas)');
+
+    const framesBtn = document.createElement('button');
+    framesBtn.className = 'ss-import-mode-btn';
+    framesBtn.innerHTML = '🎞️ ' + (localStorage.getItem('lang') === 'fr' ? 'Frames (animation)' : 'Frames (animation)');
+
+    stampsBtn.addEventListener('click', () => {
+        state.importMode = 'stamps';
+        stampsBtn.classList.add('active');
+        framesBtn.classList.remove('active');
+        if (state.img) _ssUpdateCountNote(state, frameCount, resampleNote);
+    });
+    framesBtn.addEventListener('click', () => {
+        state.importMode = 'frames';
+        framesBtn.classList.add('active');
+        stampsBtn.classList.remove('active');
+        if (state.img) _ssUpdateCountNote(state, frameCount, resampleNote);
+    });
+
+    modeRow.append(stampsBtn, framesBtn);
+    modeSection.append(modeLbl, modeRow);
+
+    // Mode Frames : Replace / Append
+    const framesModeRow = document.createElement('div');
+    framesModeRow.className = 'ss-import-mode-row';
+    framesModeRow.style.display = 'none';
 
     const replaceBtn = document.createElement('button');
     replaceBtn.className = 'ss-import-mode-btn active';
@@ -10112,13 +10153,15 @@ function showImportSpriteSheetDialog() {
     const appendBtn = document.createElement('button');
     appendBtn.className = 'ss-import-mode-btn';
     appendBtn.textContent = tL('isAppend');
-
     replaceBtn.addEventListener('click', () => { state.mode = 'replace'; replaceBtn.classList.add('active'); appendBtn.classList.remove('active'); });
     appendBtn.addEventListener('click',  () => { state.mode = 'append';  appendBtn.classList.add('active'); replaceBtn.classList.remove('active'); });
+    state.mode = 'replace';
+    framesModeRow.append(replaceBtn, appendBtn);
 
-    modeRow.append(replaceBtn, appendBtn);
+    framesBtn.addEventListener('click', () => { framesModeRow.style.display = 'flex'; });
+    stampsBtn.addEventListener('click', () => { framesModeRow.style.display = 'none'; });
 
-    // ── action buttons ───────────────────────────────────────────────────────
+    // Boutons action
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:10px;margin-top:4px';
 
@@ -10129,38 +10172,36 @@ function showImportSpriteSheetDialog() {
     const importBtn = document.createElement('button');
     importBtn.textContent = tL('isImportBtn');
     importBtn.disabled = true;
-    importBtn.style.cssText = 'flex:2;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#FF7300,#FF9500);color:#fff;cursor:pointer;font-weight:700;font-size:.9rem;opacity:.5';
+    importBtn.style.cssText = 'flex:2;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#FF7300,#FF9500);color:#fff;cursor:pointer;font-weight:700;font-size:.9rem;opacity:.4';
 
     cancelBtn.addEventListener('click', () => modal.remove());
     importBtn.addEventListener('click', async () => {
         if (!state.img) { showToast(tL('isNoFile'), { type: 'warning' }); return; }
         const total = state.cols * state.rows;
-        if (total > 64) {
-            if (!confirm(tL('isTooManyFrames', total))) return;
-        }
+        if (total > 128 && !confirm(tL('isTooManyFrames', total))) return;
         importBtn.disabled = true;
         importBtn.textContent = '⏳…';
-        const n = await _ssImportFrames(state);
+        const n = await _ssDoImport(state);
         modal.remove();
-        const modeLabel = state.mode === 'replace' ? tL('isReplace') : tL('isAppend');
+        const modeLabel = state.importMode === 'stamps'
+            ? (localStorage.getItem('lang') === 'fr' ? 'tampons' : 'stamps')
+            : (state.mode === 'replace' ? tL('isReplace') : tL('isAppend'));
         showToast(tL('isImportSuccess', n, modeLabel), { type: 'success' });
     });
 
     btnRow.append(cancelBtn, importBtn);
 
-    // ── assemble ─────────────────────────────────────────────────────────────
-    content.append(title, dropZone, previewWrap, configGrid, frameCount, resampleNote, modeRow, btnRow);
+    // uiRefs partagé entre les callbacks
+    const uiRefs = { dropZone, imgInfo, previewWrap, colsInput, rowsInput, frameWInput, frameHInput, frameCount, resampleNote, importBtn };
+
+    content.append(title, dropZone, imgInfo, previewWrap, configGrid, frameCount, resampleNote, modeSection, framesModeRow, btnRow);
     modal.appendChild(content);
     document.body.appendChild(modal);
-
     modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
-    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-function _ssHandleFileSelect(file, state, dropZone, previewWrap, frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, importBtn) {
+function _ssHandleFile(file, state, uiRefs) {
     if (!file.type.startsWith('image/')) { showToast('❌ Format non supporté', { type: 'error' }); return; }
-    dropZone.textContent = tL('isFileSelected', file.name);
-    dropZone.classList.add('has-file');
 
     const reader = new FileReader();
     reader.onload = evt => {
@@ -10169,97 +10210,108 @@ function _ssHandleFileSelect(file, state, dropZone, previewWrap, frameWInput, fr
             state.img = img;
             state.naturalW = img.naturalWidth;
             state.naturalH = img.naturalHeight;
-            _ssAutoDetectGrid(state, frameWInput, frameHInput, colsInput, rowsInput);
-            _ssRenderPreview(state, previewWrap, frameCount, resampleNote);
-            previewWrap.style.display = 'flex';
-            importBtn.disabled = false;
-            importBtn.style.opacity = '1';
+
+            // Défaut : 1 colonne × 1 ligne, taille = image entière
+            state.cols   = 1;
+            state.rows   = 1;
+            state.frameW = state.naturalW;
+            state.frameH = state.naturalH;
+
+            // Activer les champs
+            [uiRefs.colsInput, uiRefs.rowsInput, uiRefs.frameWInput, uiRefs.frameHInput].forEach(inp => {
+                inp.disabled = false;
+                inp.style.opacity = '1';
+            });
+
+            uiRefs.colsInput.value   = 1;
+            uiRefs.rowsInput.value   = 1;
+            uiRefs.frameWInput.value = state.naturalW;
+            uiRefs.frameHInput.value = state.naturalH;
+
+            uiRefs.dropZone.textContent = tL('isFileSelected', file.name);
+            uiRefs.dropZone.classList.add('has-file');
+            uiRefs.imgInfo.textContent = `${state.naturalW}×${state.naturalH}px — ${localStorage.getItem('lang') === 'fr' ? 'entrez le nombre de colonnes et lignes' : 'set columns and rows below'}`;
+
+            _ssRenderPreview(state, uiRefs);
+            uiRefs.previewWrap.style.display = 'flex';
+            uiRefs.importBtn.disabled = false;
+            uiRefs.importBtn.style.opacity = '1';
         };
         img.src = evt.target.result;
     };
     reader.readAsDataURL(file);
 }
 
-function _ssAutoDetectGrid(state, frameWInput, frameHInput, colsInput, rowsInput) {
-    // Default: 1 column × 1 row — user must set the correct grid manually.
-    // This avoids creating hundreds of frames by accident when frame size ≠ currentGridSize.
-    state.cols  = 1;
-    state.rows  = 1;
-    state.frameW = state.naturalW;
-    state.frameH = state.naturalH;
-    frameWInput.value = state.frameW;
-    frameHInput.value = state.frameH;
-    colsInput.value   = state.cols;
-    rowsInput.value   = state.rows;
-}
+function _ssSync(state, changed, uiRefs) {
+    const fw = Math.max(1, parseInt(uiRefs.frameWInput.value, 10) || 1);
+    const fh = Math.max(1, parseInt(uiRefs.frameHInput.value, 10) || 1);
+    const c  = Math.max(1, parseInt(uiRefs.colsInput.value,   10) || 1);
+    const r  = Math.max(1, parseInt(uiRefs.rowsInput.value,   10) || 1);
 
-function _ssAutoFillGrid(state, changed, frameWInput, frameHInput, colsInput, rowsInput, frameCount, resampleNote, previewWrap) {
-    const fw = parseInt(frameWInput.value, 10) || 1;
-    const fh = parseInt(frameHInput.value, 10) || 1;
-    const c  = parseInt(colsInput.value,   10) || 1;
-    const r  = parseInt(rowsInput.value,   10) || 1;
-
-    if (changed === 'frameW') {
+    if (changed === 'cols') {
+        state.cols   = c;
+        state.frameW = Math.max(1, Math.floor(state.naturalW / c));
+        uiRefs.frameWInput.value = state.frameW;
+    } else if (changed === 'rows') {
+        state.rows   = r;
+        state.frameH = Math.max(1, Math.floor(state.naturalH / r));
+        uiRefs.frameHInput.value = state.frameH;
+    } else if (changed === 'frameW') {
         state.frameW = fw;
-        state.cols = Math.max(1, Math.floor(state.naturalW / fw));
-        colsInput.value = state.cols;
+        state.cols   = Math.max(1, Math.floor(state.naturalW / fw));
+        uiRefs.colsInput.value = state.cols;
     } else if (changed === 'frameH') {
         state.frameH = fh;
-        state.rows = Math.max(1, Math.floor(state.naturalH / fh));
-        rowsInput.value = state.rows;
-    } else if (changed === 'cols') {
-        state.cols = c;
-        state.frameW = Math.max(1, Math.floor(state.naturalW / c));
-        frameWInput.value = state.frameW;
-    } else if (changed === 'rows') {
-        state.rows = r;
-        state.frameH = Math.max(1, Math.floor(state.naturalH / r));
-        frameHInput.value = state.frameH;
+        state.rows   = Math.max(1, Math.floor(state.naturalH / fh));
+        uiRefs.rowsInput.value = state.rows;
     }
 
-    if (state.img) _ssRenderPreview(state, previewWrap, frameCount, resampleNote);
+    _ssRenderPreview(state, uiRefs);
 }
 
-function _ssRenderPreview(state, previewWrap, frameCount, resampleNote) {
+function _ssUpdateCountNote(state, frameCount, resampleNote) {
+    const total = state.cols * state.rows;
+    if (state.importMode === 'stamps') {
+        frameCount.textContent = `${total} tampon${total > 1 ? 's' : ''}`;
+        resampleNote.textContent = `${state.frameW}×${state.frameH}px par sprite — taille naturelle conservée`;
+    } else {
+        frameCount.textContent = tL('isWillCreate', total);
+        resampleNote.textContent = tL('isResampleNote', currentGridSize);
+    }
+}
+
+function _ssRenderPreview(state, uiRefs) {
     const MAX = 360;
-    const scale = Math.min(MAX / state.naturalW, MAX / state.naturalH, 1);
-    const dw = Math.round(state.naturalW * scale);
-    const dh = Math.round(state.naturalH * scale);
+    const scaleF = Math.min(MAX / state.naturalW, MAX / state.naturalH, 1);
+    const dw = Math.round(state.naturalW * scaleF);
+    const dh = Math.round(state.naturalH * scaleF);
 
-    const previewCanvas = document.getElementById('_ssPreviewCanvas');
-    const gridCanvas    = document.getElementById('_ssGridCanvas');
-    if (!previewCanvas || !gridCanvas) return;
+    const pc = document.getElementById('_ssPreviewCanvas');
+    const gc = document.getElementById('_ssGridCanvas');
+    if (!pc || !gc) return;
 
-    previewCanvas.width  = dw;
-    previewCanvas.height = dh;
-    previewCanvas.style.width  = dw + 'px';
-    previewCanvas.style.height = dh + 'px';
-
-    const pCtx = previewCanvas.getContext('2d');
-    pCtx.clearRect(0, 0, dw, dh);
-    // checkerboard for transparency
-    const tileSize = 6;
-    for (let ty = 0; ty < dh; ty += tileSize) {
-        for (let tx = 0; tx < dw; tx += tileSize) {
-            pCtx.fillStyle = (Math.floor(tx / tileSize) + Math.floor(ty / tileSize)) % 2 === 0 ? '#888' : '#aaa';
-            pCtx.fillRect(tx, ty, tileSize, tileSize);
+    pc.width = dw; pc.height = dh;
+    pc.style.width = dw + 'px'; pc.style.height = dh + 'px';
+    const pCtx = pc.getContext('2d');
+    // Damier transparence
+    const ts = 6;
+    for (let ty = 0; ty < dh; ty += ts) {
+        for (let tx = 0; tx < dw; tx += ts) {
+            pCtx.fillStyle = (Math.floor(tx / ts) + Math.floor(ty / ts)) % 2 === 0 ? '#888' : '#aaa';
+            pCtx.fillRect(tx, ty, ts, ts);
         }
     }
     pCtx.drawImage(state.img, 0, 0, dw, dh);
 
-    gridCanvas.width  = dw;
-    gridCanvas.height = dh;
-    gridCanvas.style.width  = dw + 'px';
-    gridCanvas.style.height = dh + 'px';
-
-    const gCtx = gridCanvas.getContext('2d');
+    gc.width = dw; gc.height = dh;
+    gc.style.width = dw + 'px'; gc.style.height = dh + 'px';
+    const gCtx = gc.getContext('2d');
     gCtx.clearRect(0, 0, dw, dh);
-    gCtx.strokeStyle = 'rgba(255,115,0,0.8)';
+    gCtx.strokeStyle = 'rgba(255,115,0,0.85)';
     gCtx.lineWidth = 1;
 
-    const cellW = state.frameW * scale;
-    const cellH = state.frameH * scale;
-
+    const cellW = state.frameW * scaleF;
+    const cellH = state.frameH * scaleF;
     for (let ci = 0; ci <= state.cols; ci++) {
         const x = Math.round(ci * cellW) + 0.5;
         gCtx.beginPath(); gCtx.moveTo(x, 0); gCtx.lineTo(x, dh); gCtx.stroke();
@@ -10269,25 +10321,18 @@ function _ssRenderPreview(state, previewWrap, frameCount, resampleNote) {
         gCtx.beginPath(); gCtx.moveTo(0, y); gCtx.lineTo(dw, y); gCtx.stroke();
     }
 
-    const total = state.cols * state.rows;
-    frameCount.textContent = tL('isWillCreate', total);
-    resampleNote.textContent = tL('isResampleNote', currentGridSize);
+    _ssUpdateCountNote(state, uiRefs.frameCount, uiRefs.resampleNote);
 }
 
-async function _ssImportFrames(state) {
-    saveCurrentFrame();
-
+async function _ssDoImport(state) {
     const { img, naturalW, naturalH, frameW, frameH, cols, rows } = state;
-    const targetSize = currentGridSize;
 
     const offCanvas = document.createElement('canvas');
-    offCanvas.width  = naturalW;
-    offCanvas.height = naturalH;
+    offCanvas.width = naturalW; offCanvas.height = naturalH;
     const offCtx = offCanvas.getContext('2d');
     offCtx.drawImage(img, 0, 0, naturalW, naturalH);
 
-    const newFrames = [];
-    const newLayers = [];
+    const sprites = [];
 
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
@@ -10299,47 +10344,79 @@ async function _ssImportFrames(state) {
 
             const cellData = offCtx.getImageData(sx, sy, sw, sh);
             const raw = cellData.data;
+            const pixels = [];
 
-            const scaleX = sw / targetSize;
-            const scaleY = sh / targetSize;
-            const framePixels = [];
+            // Taille naturelle — pas de rééchantillonnage pour les tampons
+            const useW = state.importMode === 'stamps' ? sw : currentGridSize;
+            const useH = state.importMode === 'stamps' ? sh : currentGridSize;
 
-            for (let py = 0; py < targetSize; py++) {
-                for (let px = 0; px < targetSize; px++) {
-                    const srcX = Math.min(Math.floor(px * scaleX), sw - 1);
-                    const srcY = Math.min(Math.floor(py * scaleY), sh - 1);
-                    const idx  = (srcY * sw + srcX) * 4;
-                    const r = raw[idx], g = raw[idx + 1], b = raw[idx + 2], a = raw[idx + 3];
+            for (let py = 0; py < useH; py++) {
+                for (let px = 0; px < useW; px++) {
+                    let r, g, b, a;
+                    if (state.importMode === 'stamps') {
+                        // Lecture directe à taille naturelle
+                        const idx = (py * sw + px) * 4;
+                        r = raw[idx]; g = raw[idx + 1]; b = raw[idx + 2]; a = raw[idx + 3];
+                    } else {
+                        // Rééchantillonnage nearest-neighbor vers currentGridSize
+                        const srcX = Math.min(Math.floor(px * sw / useW), sw - 1);
+                        const srcY = Math.min(Math.floor(py * sh / useH), sh - 1);
+                        const idx  = (srcY * sw + srcX) * 4;
+                        r = raw[idx]; g = raw[idx + 1]; b = raw[idx + 2]; a = raw[idx + 3];
+                    }
                     if (a < 128) {
-                        framePixels.push({ color: '#FFFFFF', isEmpty: true });
+                        pixels.push({ color: '#FFFFFF', isEmpty: true });
                     } else {
                         const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
-                        framePixels.push({ color: hex, isEmpty: false });
+                        pixels.push({ color: hex, isEmpty: false });
                     }
                 }
             }
 
-            const layer = { id: _nextLayerId++, name: 'Calque 1', visible: true, opacity: 1.0, pixels: framePixels.map(p => ({ ...p })) };
-            newFrames.push(framePixels);
-            newLayers.push([layer]);
+            sprites.push({ pixels, w: useW, h: useH });
         }
     }
 
-    if (state.mode === 'replace') {
-        frames       = newFrames;
-        frameLayers  = newLayers;
-        currentFrame = 0;
-        currentLayer = 0;
-    } else {
-        newFrames.forEach((f, i) => {
-            frames.push(f);
-            frameLayers.push(newLayers[i]);
+    if (state.importMode === 'stamps') {
+        // Ajouter chaque sprite comme tampon avec sa taille naturelle
+        // On inverse l'ordre pour que le premier sprite soit en haut de la liste
+        const projectName = document.getElementById('projectNameInput')?.value || 'sprite';
+        sprites.reverse().forEach((sp, i) => {
+            const name = `${projectName} #${sprites.length - i}`;
+            const stamp = {
+                id: Date.now() + i,
+                name,
+                pixels: sp.pixels,
+                gridSize: sp.w,   // largeur = rowWidth pour le mapping de position
+                hidden: false
+            };
+            window.stamps.unshift(stamp);
         });
-        currentFrame = frames.length - newFrames.length;
-        currentLayer = 0;
-    }
+        _saveStamps();
+        renderStampsList();
+        return sprites.length;
 
-    loadFrame(currentFrame);
-    updateFramesList();
-    return newFrames.length;
+    } else {
+        // Mode frames : crée des frames d'animation rééchantillonnées
+        saveCurrentFrame();
+        const newFrames = sprites.map(sp => sp.pixels);
+        const newLayers = sprites.map(sp => [{
+            id: _nextLayerId++, name: 'Calque 1', visible: true, opacity: 1.0,
+            pixels: sp.pixels.map(p => ({ ...p }))
+        }]);
+
+        if (state.mode === 'replace') {
+            frames      = newFrames;
+            frameLayers = newLayers;
+            currentFrame = 0;
+            currentLayer = 0;
+        } else {
+            newFrames.forEach((f, i) => { frames.push(f); frameLayers.push(newLayers[i]); });
+            currentFrame = frames.length - newFrames.length;
+            currentLayer = 0;
+        }
+        loadFrame(currentFrame);
+        updateFramesList();
+        return newFrames.length;
+    }
 }
