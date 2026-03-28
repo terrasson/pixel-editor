@@ -84,6 +84,13 @@ let isStampMode = false;  // Outil tampon
 let stampPixels = null;
 let stampGridSize = 32;
 let activeStampId = null; // id du tampon actuellement en mode stamp
+// ── Mode placement sprite sheet ───────────────────────────────────────────────
+let isSpriteSheetMode = false;
+let ssSprites = [];        // [{pixels, w, h}, ...] extraits du sheet
+let ssHoverCol = 0;        // position top-left du ghost (colonne)
+let ssHoverRow = 0;        // position top-left du ghost (ligne)
+let ssCenterCol = 0;       // ancrage centre bounding-box du premier sprite
+let ssCenterRow = 0;
 let stampHoverCol = 0;
 let stampHoverRow = 0;
 let stampCenterCol = 0;  // centre visuel du bounding box (calculé à l'entrée en mode stamp)
@@ -711,8 +718,8 @@ function initGrid(size = currentGridSize) {
         });
 
         grid.addEventListener('mousemove', (e) => {
-            if (isStampMode) {
-                // Tampon : calculer position du ghost (zoom/pan + bordure)
+            if (isStampMode || isSpriteSheetMode) {
+                // Tampon / sprite sheet : calculer position du ghost (zoom/pan + bordure)
                 const rect = grid.getBoundingClientRect();
                 const borderW = (rect.width  - grid.clientWidth)  / 2;
                 const borderH = (rect.height - grid.clientHeight) / 2;
@@ -721,7 +728,8 @@ function initGrid(size = currentGridSize) {
                     Math.floor((e.clientX - rect.left - borderW - gridPanX) / gridZoom / logicalCell)));
                 const row = Math.max(0, Math.min(currentGridSize - 1,
                     Math.floor((e.clientY - rect.top  - borderH - gridPanY) / gridZoom / logicalCell)));
-                updateStampGhost(col, row);
+                if (isStampMode) updateStampGhost(col, row);
+                else updateSpriteSheetGhost(col, row);
             } else if (isDrawing) {
                 draw(e);
             }
@@ -1962,6 +1970,11 @@ function startDrawing(e) {
         applyStamp(stampHoverCol, stampHoverRow);
         return;
     }
+    // Mode sprite sheet : placer le sheet et créer les frames
+    if (isSpriteSheetMode) {
+        applySpriteSheet(ssHoverCol, ssHoverRow);
+        return;
+    }
 
     if (CANVAS_RENDERING) {
         const index = getPixelIndexFromPoint(e.clientX, e.clientY);
@@ -2670,6 +2683,189 @@ function exitStampMode(silent = false) {
     if (cancelBar) cancelBar.style.display = 'none';
     if (!silent) showNotification(tL('stampCancelled'), 'info');
     renderStampsList();
+}
+
+// ── Mode placement Sprite Sheet ───────────────────────────────────────────────
+function enterSpriteSheetMode(sprites) {
+    // sprites = [{pixels, w, h}, ...] dans l'ordre du sheet
+    if (!sprites || !sprites.length) return;
+    isSpriteSheetMode = true;
+    ssSprites = sprites;
+
+    // Calculer le centre du premier sprite pour l'ancrage du ghost
+    const sp0 = sprites[0];
+    ssCenterCol = Math.floor(sp0.w / 2);
+    ssCenterRow = Math.floor(sp0.h / 2);
+
+    const pixelGrid = document.getElementById('pixelGrid');
+    if (pixelGrid) pixelGrid.classList.add('stamp-mode');
+
+    // Réutiliser le même overlay canvas que les tampons
+    const overlay = getStampOverlay();
+    overlay.width  = pixelGrid ? pixelGrid.clientWidth  : 512;
+    overlay.height = pixelGrid ? pixelGrid.clientHeight : 512;
+    overlay.style.display = 'block';
+
+    // Barre annuler
+    let cancelBar = document.getElementById('stampCancelBar');
+    if (!cancelBar) {
+        cancelBar = document.createElement('div');
+        cancelBar.id = 'stampCancelBar';
+        cancelBar.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(220,38,38,0.92);color:white;border:none;border-radius:24px;padding:10px 22px;font-size:0.95rem;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);backdrop-filter:blur(8px);';
+        cancelBar.addEventListener('click', exitSpriteSheetMode);
+        document.body.appendChild(cancelBar);
+    }
+    const lang = localStorage.getItem('lang') === 'fr';
+    cancelBar.textContent = `✗ ${lang ? 'Annuler le sprite sheet' : 'Cancel sprite sheet'}`;
+    cancelBar.onclick = exitSpriteSheetMode;
+    cancelBar.style.display = 'block';
+
+    const msg = lang
+        ? `🖼️ ${sprites.length} sprite${sprites.length > 1 ? 's' : ''} — cliquez pour poser`
+        : `🖼️ ${sprites.length} sprite${sprites.length > 1 ? 's' : ''} — click to place`;
+    showNotification(msg, 'success');
+}
+
+function exitSpriteSheetMode() {
+    isSpriteSheetMode = false;
+    ssSprites = [];
+    const pixelGrid = document.getElementById('pixelGrid');
+    if (pixelGrid) pixelGrid.classList.remove('stamp-mode');
+    const overlay = document.getElementById('stampOverlay');
+    if (overlay) {
+        overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height);
+        overlay.style.display = 'none';
+    }
+    const cancelBar = document.getElementById('stampCancelBar');
+    if (cancelBar) cancelBar.style.display = 'none';
+}
+
+function updateSpriteSheetGhost(col, row) {
+    if (!ssSprites.length) return;
+    // Top-left du ghost = curseur - centre du premier sprite
+    ssHoverCol = col - ssCenterCol;
+    ssHoverRow = row - ssCenterRow;
+
+    const overlay = document.getElementById('stampOverlay');
+    if (!overlay) return;
+    const ctx = overlay.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+    const grid = document.getElementById('pixelGrid');
+    const pixelSize = grid ? grid.clientWidth / currentGridSize : overlay.width / currentGridSize;
+    ctx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
+    ctx.globalAlpha = 0.6;
+
+    // Afficher uniquement le premier sprite comme ghost de positionnement
+    const sp = ssSprites[0];
+    for (let i = 0; i < sp.pixels.length; i++) {
+        const pixel = sp.pixels[i];
+        if (!pixel || pixel.isEmpty) continue;
+        const srcCol = i % sp.w;
+        const srcRow = Math.floor(i / sp.w);
+        const dstCol = ssHoverCol + srcCol;
+        const dstRow = ssHoverRow + srcRow;
+        if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
+        ctx.fillStyle = pixel.color;
+        ctx.fillRect(dstCol * pixelSize, dstRow * pixelSize, pixelSize, pixelSize);
+    }
+
+    // Cadre orange autour du ghost
+    ctx.globalAlpha = 0.85;
+    ctx.strokeStyle = 'rgba(255,115,0,0.9)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(
+        ssHoverCol * pixelSize, ssHoverRow * pixelSize,
+        sp.w * pixelSize, sp.h * pixelSize
+    );
+
+    ctx.globalAlpha = 1.0;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function applySpriteSheet(anchorCol, anchorRow) {
+    // Pour chaque sprite du sheet :
+    //   - dupliquer la frame courante (avec TOUS ses calques)
+    //   - ajouter un nouveau calque avec le sprite positionné à (anchorCol, anchorRow)
+    // La frame courante elle-même reste inchangée.
+
+    saveCurrentFrame();
+
+    const baseFrameIndex = currentFrame;
+    const baseLayers = frameLayers[baseFrameIndex];
+
+    // Deep-clone d'un ensemble de calques
+    function cloneLayers(layers) {
+        return layers.map(l => ({
+            id: _nextLayerId++,
+            name: l.name,
+            visible: l.visible,
+            opacity: l.opacity,
+            pixels: l.pixels.map(p => ({ ...p }))
+        }));
+    }
+
+    const createdFrameIndices = [];
+
+    ssSprites.forEach((sp, i) => {
+        // 1. Dupliquer les calques de la frame de base
+        const newLayers = cloneLayers(baseLayers);
+
+        // 2. Créer le calque sprite positionné
+        const spriteLayer = {
+            id: _nextLayerId++,
+            name: `Sprite #${i + 1}`,
+            visible: true,
+            opacity: 1.0,
+            pixels: _makeEmptyPixels()
+        };
+
+        for (let pi = 0; pi < sp.pixels.length; pi++) {
+            const pixel = sp.pixels[pi];
+            if (!pixel || pixel.isEmpty) continue;
+            const srcCol = pi % sp.w;
+            const srcRow = Math.floor(pi / sp.w);
+            const dstCol = anchorCol + srcCol;
+            const dstRow = anchorRow + srcRow;
+            if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
+            const dstIdx = dstRow * currentGridSize + dstCol;
+            spriteLayer.pixels[dstIdx] = { color: pixel.color, isEmpty: false };
+        }
+
+        newLayers.push(spriteLayer);
+
+        // 3. Calculer le composite
+        const composite = (() => {
+            const n = currentGridSize * currentGridSize;
+            const result = Array.from({ length: n }, () => ({ color: '#FFFFFF', isEmpty: true }));
+            newLayers.forEach(layer => {
+                if (!layer.visible) return;
+                layer.pixels.forEach((p, idx) => { if (p && !p.isEmpty) result[idx] = { ...p }; });
+            });
+            return result;
+        })();
+
+        // 4. Insérer la nouvelle frame juste après la frame de base
+        const insertAt = baseFrameIndex + 1 + i;
+        frames.splice(insertAt, 0, composite);
+        frameLayers.splice(insertAt, 0, newLayers);
+        createdFrameIndices.push(insertAt);
+    });
+
+    // Aller à la première frame créée
+    currentFrame = baseFrameIndex + 1;
+    currentLayer = frameLayers[currentFrame].length - 1;
+    loadFrame(currentFrame);
+    updateFramesList();
+
+    exitSpriteSheetMode();
+
+    const lang = localStorage.getItem('lang') === 'fr';
+    const msg = lang
+        ? `✅ ${ssSprites.length} frame${ssSprites.length > 1 ? 's' : ''} créée${ssSprites.length > 1 ? 's' : ''} depuis le sprite sheet`
+        : `✅ ${ssSprites.length} frame${ssSprites.length > 1 ? 's' : ''} created from sprite sheet`;
+    showToast(msg, { type: 'success' });
 }
 
 function updateStampGhost(col, row) {
@@ -10012,9 +10208,8 @@ function initImportSpriteSheetFeature() {
 }
 
 function showImportSpriteSheetDialog() {
-    // importMode: 'stamps' = place sur canvas comme tampons (défaut)
-    //             'frames' = crée des frames d'animation
-    const state = { img: null, naturalW: 0, naturalH: 0, frameW: 0, frameH: 0, cols: 1, rows: 1, importMode: 'stamps' };
+    const fr = localStorage.getItem('lang') === 'fr';
+    const state = { img: null, naturalW: 0, naturalH: 0, frameW: 0, frameH: 0, cols: 1, rows: 1 };
 
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -10022,30 +10217,33 @@ function showImportSpriteSheetDialog() {
 
     const content = document.createElement('div');
     content.className = 'modal-content';
-    content.style.cssText = 'max-width:500px;width:92%;background:linear-gradient(155deg,rgba(36,48,94,.98),rgba(28,38,80,.95));border:1px solid rgba(255,255,255,.18);border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,.65);padding:22px;color:rgba(255,255,255,.95);max-height:90vh;overflow-y:auto;box-sizing:border-box';
+    content.style.cssText = 'max-width:480px;width:92%;background:linear-gradient(155deg,rgba(36,48,94,.98),rgba(28,38,80,.95));border:1px solid rgba(255,255,255,.18);border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,.65);padding:22px;color:rgba(255,255,255,.95);max-height:90vh;overflow-y:auto;box-sizing:border-box';
 
-    // Titre
     const title = document.createElement('h3');
     title.textContent = tL('isTitle');
-    title.style.cssText = 'margin:0 0 16px;text-align:center;font-weight:700;font-size:1.1rem';
+    title.style.cssText = 'margin:0 0 6px;text-align:center;font-weight:700;font-size:1.1rem';
+
+    // Explication
+    const explain = document.createElement('p');
+    explain.style.cssText = 'font-size:0.8rem;color:rgba(255,255,255,0.5);text-align:center;margin:0 0 14px;line-height:1.4';
+    explain.textContent = fr
+        ? 'Configurez la grille, puis cliquez "Prêt à poser" — le sprite suit votre curseur et un clic crée toutes les frames d\'animation.'
+        : 'Set the grid, then click "Ready to place" — the sprite follows your cursor and a click creates all animation frames.';
 
     // Zone drop
     const dropZone = document.createElement('div');
     dropZone.className = 'ss-import-drop-zone';
     dropZone.textContent = tL('isDropHint');
-
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/png,image/jpeg,image/gif,image/webp';
     fileInput.style.display = 'none';
     dropZone.appendChild(fileInput);
-
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
     dropZone.addEventListener('drop', e => {
-        e.preventDefault();
-        dropZone.classList.remove('drag-over');
+        e.preventDefault(); dropZone.classList.remove('drag-over');
         const file = e.dataTransfer.files[0];
         if (file) _ssHandleFile(file, state, uiRefs);
     });
@@ -10054,11 +10252,9 @@ function showImportSpriteSheetDialog() {
         if (file) _ssHandleFile(file, state, uiRefs);
     });
 
-    // Dimensions de l'image (affichées après chargement)
     const imgInfo = document.createElement('div');
     imgInfo.style.cssText = 'font-size:0.8rem;color:rgba(255,255,255,0.45);text-align:center;margin-bottom:10px;min-height:1em';
 
-    // Aperçu
     const previewWrap = document.createElement('div');
     previewWrap.className = 'ss-import-preview-wrap';
     previewWrap.style.display = 'none';
@@ -10069,29 +10265,22 @@ function showImportSpriteSheetDialog() {
     gridCanvas.id = '_ssGridCanvas';
     previewWrap.append(previewCanvas, gridCanvas);
 
-    // Config colonnes / lignes
     const configGrid = document.createElement('div');
     configGrid.className = 'ss-import-config-grid';
 
     function makeField(labelText, id, val) {
         const wrap = document.createElement('div');
         const lbl = document.createElement('label');
-        lbl.textContent = labelText;
-        lbl.htmlFor = id;
+        lbl.textContent = labelText; lbl.htmlFor = id;
         const inp = document.createElement('input');
-        inp.type = 'number';
-        inp.id = id;
-        inp.min = '1';
-        inp.value = val;
-        inp.disabled = true;
-        inp.style.opacity = '0.4';
-        wrap.append(lbl, inp);
-        configGrid.appendChild(wrap);
+        inp.type = 'number'; inp.id = id; inp.min = '1'; inp.value = val;
+        inp.disabled = true; inp.style.opacity = '0.4';
+        wrap.append(lbl, inp); configGrid.appendChild(wrap);
         return inp;
     }
 
-    const colsInput = makeField(tL('isCols'), '_ssCols', 1);
-    const rowsInput = makeField(tL('isRows'), '_ssRows', 1);
+    const colsInput   = makeField(tL('isCols'),   '_ssCols',   1);
+    const rowsInput   = makeField(tL('isRows'),   '_ssRows',   1);
     const frameWInput = makeField(tL('isFrameW'), '_ssFrameW', '—');
     const frameHInput = makeField(tL('isFrameH'), '_ssFrameH', '—');
 
@@ -10100,101 +10289,38 @@ function showImportSpriteSheetDialog() {
     frameWInput.addEventListener('input', () => _ssSync(state, 'frameW', uiRefs));
     frameHInput.addEventListener('input', () => _ssSync(state, 'frameH', uiRefs));
 
-    // Compteur + note
     const frameCount = document.createElement('div');
     frameCount.className = 'ss-import-frame-count';
-
     const resampleNote = document.createElement('div');
     resampleNote.className = 'ss-import-resample-note';
 
-    // Mode import : Tampons (défaut) ou Frames
-    const modeSection = document.createElement('div');
-    modeSection.style.cssText = 'margin-bottom:14px';
-
-    const modeLbl = document.createElement('div');
-    modeLbl.style.cssText = 'font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px';
-    modeLbl.textContent = 'Mode';
-
-    const modeRow = document.createElement('div');
-    modeRow.className = 'ss-import-mode-row';
-
-    const stampsBtn = document.createElement('button');
-    stampsBtn.className = 'ss-import-mode-btn active';
-    stampsBtn.innerHTML = '🖼️ ' + (localStorage.getItem('lang') === 'fr' ? 'Tampons (positionner sur canvas)' : 'Stamps (place on canvas)');
-
-    const framesBtn = document.createElement('button');
-    framesBtn.className = 'ss-import-mode-btn';
-    framesBtn.innerHTML = '🎞️ ' + (localStorage.getItem('lang') === 'fr' ? 'Frames (animation)' : 'Frames (animation)');
-
-    stampsBtn.addEventListener('click', () => {
-        state.importMode = 'stamps';
-        stampsBtn.classList.add('active');
-        framesBtn.classList.remove('active');
-        if (state.img) _ssUpdateCountNote(state, frameCount, resampleNote);
-    });
-    framesBtn.addEventListener('click', () => {
-        state.importMode = 'frames';
-        framesBtn.classList.add('active');
-        stampsBtn.classList.remove('active');
-        if (state.img) _ssUpdateCountNote(state, frameCount, resampleNote);
-    });
-
-    modeRow.append(stampsBtn, framesBtn);
-    modeSection.append(modeLbl, modeRow);
-
-    // Mode Frames : Replace / Append
-    const framesModeRow = document.createElement('div');
-    framesModeRow.className = 'ss-import-mode-row';
-    framesModeRow.style.display = 'none';
-
-    const replaceBtn = document.createElement('button');
-    replaceBtn.className = 'ss-import-mode-btn active';
-    replaceBtn.textContent = tL('isReplace');
-    const appendBtn = document.createElement('button');
-    appendBtn.className = 'ss-import-mode-btn';
-    appendBtn.textContent = tL('isAppend');
-    replaceBtn.addEventListener('click', () => { state.mode = 'replace'; replaceBtn.classList.add('active'); appendBtn.classList.remove('active'); });
-    appendBtn.addEventListener('click',  () => { state.mode = 'append';  appendBtn.classList.add('active'); replaceBtn.classList.remove('active'); });
-    state.mode = 'replace';
-    framesModeRow.append(replaceBtn, appendBtn);
-
-    framesBtn.addEventListener('click', () => { framesModeRow.style.display = 'flex'; });
-    stampsBtn.addEventListener('click', () => { framesModeRow.style.display = 'none'; });
-
-    // Boutons action
     const btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:10px;margin-top:4px';
+    btnRow.style.cssText = 'display:flex;gap:10px;margin-top:14px';
 
     const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = 'Annuler';
+    cancelBtn.textContent = fr ? 'Annuler' : 'Cancel';
     cancelBtn.style.cssText = 'flex:1;padding:11px;border:1px solid rgba(255,255,255,.25);border-radius:8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.9);cursor:pointer;font-weight:600;font-size:.9rem';
 
     const importBtn = document.createElement('button');
-    importBtn.textContent = tL('isImportBtn');
+    importBtn.textContent = fr ? '🖱️ Prêt à poser' : '🖱️ Ready to place';
     importBtn.disabled = true;
     importBtn.style.cssText = 'flex:2;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#FF7300,#FF9500);color:#fff;cursor:pointer;font-weight:700;font-size:.9rem;opacity:.4';
 
     cancelBtn.addEventListener('click', () => modal.remove());
     importBtn.addEventListener('click', async () => {
         if (!state.img) { showToast(tL('isNoFile'), { type: 'warning' }); return; }
-        const total = state.cols * state.rows;
-        if (total > 128 && !confirm(tL('isTooManyFrames', total))) return;
         importBtn.disabled = true;
         importBtn.textContent = '⏳…';
         const n = await _ssDoImport(state);
         modal.remove();
-        const modeLabel = state.importMode === 'stamps'
-            ? (localStorage.getItem('lang') === 'fr' ? 'tampons' : 'stamps')
-            : (state.mode === 'replace' ? tL('isReplace') : tL('isAppend'));
-        showToast(tL('isImportSuccess', n, modeLabel), { type: 'success' });
+        // Le toast de confirmation est affiché après le placement (dans applySpriteSheet)
     });
 
     btnRow.append(cancelBtn, importBtn);
 
-    // uiRefs partagé entre les callbacks
     const uiRefs = { dropZone, imgInfo, previewWrap, colsInput, rowsInput, frameWInput, frameHInput, frameCount, resampleNote, importBtn };
 
-    content.append(title, dropZone, imgInfo, previewWrap, configGrid, frameCount, resampleNote, modeSection, framesModeRow, btnRow);
+    content.append(title, explain, dropZone, imgInfo, previewWrap, configGrid, frameCount, resampleNote, btnRow);
     modal.appendChild(content);
     document.body.appendChild(modal);
     modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
@@ -10271,13 +10397,11 @@ function _ssSync(state, changed, uiRefs) {
 
 function _ssUpdateCountNote(state, frameCount, resampleNote) {
     const total = state.cols * state.rows;
-    if (state.importMode === 'stamps') {
-        frameCount.textContent = `${total} tampon${total > 1 ? 's' : ''}`;
-        resampleNote.textContent = `${state.frameW}×${state.frameH}px par sprite — taille naturelle conservée`;
-    } else {
-        frameCount.textContent = tL('isWillCreate', total);
-        resampleNote.textContent = tL('isResampleNote', currentGridSize);
-    }
+    const fr = localStorage.getItem('lang') === 'fr';
+    frameCount.textContent = tL('isWillCreate', total);
+    resampleNote.textContent = fr
+        ? `Chaque sprite : ${state.frameW}×${state.frameH}px — taille naturelle sur le canvas`
+        : `Each sprite: ${state.frameW}×${state.frameH}px — natural size on canvas`;
 }
 
 function _ssRenderPreview(state, uiRefs) {
@@ -10346,24 +10470,11 @@ async function _ssDoImport(state) {
             const raw = cellData.data;
             const pixels = [];
 
-            // Taille naturelle — pas de rééchantillonnage pour les tampons
-            const useW = state.importMode === 'stamps' ? sw : currentGridSize;
-            const useH = state.importMode === 'stamps' ? sh : currentGridSize;
-
-            for (let py = 0; py < useH; py++) {
-                for (let px = 0; px < useW; px++) {
-                    let r, g, b, a;
-                    if (state.importMode === 'stamps') {
-                        // Lecture directe à taille naturelle
-                        const idx = (py * sw + px) * 4;
-                        r = raw[idx]; g = raw[idx + 1]; b = raw[idx + 2]; a = raw[idx + 3];
-                    } else {
-                        // Rééchantillonnage nearest-neighbor vers currentGridSize
-                        const srcX = Math.min(Math.floor(px * sw / useW), sw - 1);
-                        const srcY = Math.min(Math.floor(py * sh / useH), sh - 1);
-                        const idx  = (srcY * sw + srcX) * 4;
-                        r = raw[idx]; g = raw[idx + 1]; b = raw[idx + 2]; a = raw[idx + 3];
-                    }
+            // Taille naturelle : chaque pixel de l'image = 1 pixel du canvas
+            for (let py = 0; py < sh; py++) {
+                for (let px = 0; px < sw; px++) {
+                    const idx = (py * sw + px) * 4;
+                    const r = raw[idx], g = raw[idx + 1], b = raw[idx + 2], a = raw[idx + 3];
                     if (a < 128) {
                         pixels.push({ color: '#FFFFFF', isEmpty: true });
                     } else {
@@ -10373,50 +10484,16 @@ async function _ssDoImport(state) {
                 }
             }
 
-            sprites.push({ pixels, w: useW, h: useH });
+            sprites.push({ pixels, w: sw, h: sh });
         }
     }
 
-    if (state.importMode === 'stamps') {
-        // Ajouter chaque sprite comme tampon avec sa taille naturelle
-        // On inverse l'ordre pour que le premier sprite soit en haut de la liste
-        const projectName = document.getElementById('projectNameInput')?.value || 'sprite';
-        sprites.reverse().forEach((sp, i) => {
-            const name = `${projectName} #${sprites.length - i}`;
-            const stamp = {
-                id: Date.now() + i,
-                name,
-                pixels: sp.pixels,
-                gridSize: sp.w,   // largeur = rowWidth pour le mapping de position
-                hidden: false
-            };
-            window.stamps.unshift(stamp);
-        });
-        _saveStamps();
-        renderStampsList();
-        return sprites.length;
+    if (sprites.length === 0) return 0;
 
-    } else {
-        // Mode frames : crée des frames d'animation rééchantillonnées
-        saveCurrentFrame();
-        const newFrames = sprites.map(sp => sp.pixels);
-        const newLayers = sprites.map(sp => [{
-            id: _nextLayerId++, name: 'Calque 1', visible: true, opacity: 1.0,
-            pixels: sp.pixels.map(p => ({ ...p }))
-        }]);
-
-        if (state.mode === 'replace') {
-            frames      = newFrames;
-            frameLayers = newLayers;
-            currentFrame = 0;
-            currentLayer = 0;
-        } else {
-            newFrames.forEach((f, i) => { frames.push(f); frameLayers.push(newLayers[i]); });
-            currentFrame = frames.length - newFrames.length;
-            currentLayer = 0;
-        }
-        loadFrame(currentFrame);
-        updateFramesList();
-        return newFrames.length;
-    }
+    // Activer le mode de placement sur le canvas :
+    // le premier sprite suit le curseur en ghost,
+    // au clic → N frames sont créées (une par sprite),
+    // chacune = copie de la frame courante + le sprite positionné en nouveau calque.
+    enterSpriteSheetMode(sprites);
+    return sprites.length;
 }
