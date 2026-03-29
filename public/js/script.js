@@ -10440,18 +10440,33 @@ function _ssSync(state, changed, uiRefs) {
 }
 
 // Calcule la taille du sprite sur le canvas.
-// Défaut = currentGridSize (taille du canvas actuel), qui est toujours correcte
-// quand le PNG vient de cette app. L'utilisateur peut modifier manuellement.
-// Si la cellule PNG est plus petite que currentGridSize, on prend la cellule telle quelle.
+// Règle : ne JAMAIS modifier la taille d'origine du sprite.
+// - Si la cellule PNG est un multiple de currentGridSize par un zoom connu (1,2,4,8,16),
+//   c'est que le sprite a été dessiné à currentGridSize → on utilise currentGridSize.
+// - Sinon, on utilise la taille de la cellule telle quelle (pas de min/max/clamp).
 function _ssAutoSpriteSize(state, uiRefs) {
     const cellW = state.frameW, cellH = state.frameH;
-    const spriteH = Math.min(cellH, currentGridSize);
-    const spriteW = Math.min(cellW, currentGridSize);
+    const validZooms = [1, 2, 4, 8, 16];
+
+    let spriteW = cellW;
+    let spriteH = cellH;
+
+    // Détection zoom : cellule = currentGridSize × zoom ?
+    const zW = cellW / currentGridSize;
+    const zH = cellH / currentGridSize;
+    if (Number.isInteger(zW) && validZooms.includes(zW) &&
+        Number.isInteger(zH) && validZooms.includes(zH)) {
+        // La cellule vient de cette app exportée avec zoom → taille logique = currentGridSize
+        spriteW = currentGridSize;
+        spriteH = currentGridSize;
+    }
+    // Sinon : sprite externe → on respecte la taille de la cellule sans modification
+
     state.spriteW = spriteW;
     state.spriteH = spriteH;
     if (uiRefs.spriteSizeInput) {
         uiRefs.spriteSizeInput.value = spriteH;
-        uiRefs.spriteSizeInput.max = String(currentGridSize);
+        uiRefs.spriteSizeInput.max = String(Math.max(cellH, currentGridSize));
     }
     _ssUpdateSpriteHint(cellW, cellH, spriteW, spriteH);
 }
