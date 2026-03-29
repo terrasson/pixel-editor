@@ -10439,31 +10439,30 @@ function _ssSync(state, changed, uiRefs) {
     _ssRenderPreview(state, uiRefs);
 }
 
-// Calcule automatiquement la taille du sprite sur le canvas depuis la taille de la cellule PNG.
-// Le PNG est exporté à zoom×N (N=1,4,8,16). On détecte le zoom et on ramène à taille originale.
-// Ex: cellule 128×128 dans un projet 32×32 → zoom=4 → sprite = 32×32 pixels canvas.
-// Ex: cellule 15×5 dans un projet 256×256 sans zoom → sprite = 15×5 pixels canvas.
+// Calcule la taille du sprite sur le canvas.
+// Défaut = currentGridSize (taille du canvas actuel), qui est toujours correcte
+// quand le PNG vient de cette app. L'utilisateur peut modifier manuellement.
+// Si la cellule PNG est plus petite que currentGridSize, on prend la cellule telle quelle.
 function _ssAutoSpriteSize(state, uiRefs) {
     const cellW = state.frameW, cellH = state.frameH;
-    // Chercher si cellH est diviseur entier de cellH par une puissance de 2 (zoom 1,2,4,8,16)
-    let spriteH = cellH, spriteW = cellW;
-    for (const zoom of [16, 8, 4, 2, 1]) {
-        if (cellH % zoom === 0 && cellW % zoom === 0) {
-            spriteH = cellH / zoom;
-            spriteW = cellW / zoom;
-            break;
-        }
-    }
+    const spriteH = Math.min(cellH, currentGridSize);
+    const spriteW = Math.min(cellW, currentGridSize);
     state.spriteW = spriteW;
     state.spriteH = spriteH;
-    if (uiRefs.spriteSizeInput) uiRefs.spriteSizeInput.value = spriteH;
-    const hint = document.getElementById('_ssSpriteSizeHint');
-    if (hint) {
-        const fr = localStorage.getItem('lang') === 'fr';
-        hint.textContent = fr
-            ? `Cellule PNG ${cellW}×${cellH}px → sprite ${spriteW}×${spriteH}px sur le canvas`
-            : `PNG cell ${cellW}×${cellH}px → sprite ${spriteW}×${spriteH}px on canvas`;
+    if (uiRefs.spriteSizeInput) {
+        uiRefs.spriteSizeInput.value = spriteH;
+        uiRefs.spriteSizeInput.max = String(currentGridSize);
     }
+    _ssUpdateSpriteHint(cellW, cellH, spriteW, spriteH);
+}
+
+function _ssUpdateSpriteHint(cellW, cellH, spriteW, spriteH) {
+    const hint = document.getElementById('_ssSpriteSizeHint');
+    if (!hint) return;
+    const fr = localStorage.getItem('lang') === 'fr';
+    hint.textContent = fr
+        ? `Cellule PNG ${cellW}×${cellH}px → sprite ${spriteW}×${spriteH}px sur le canvas`
+        : `PNG cell ${cellW}×${cellH}px → sprite ${spriteW}×${spriteH}px on canvas`;
 }
 
 function _ssUpdateCountNote(state, frameCount, resampleNote) {
