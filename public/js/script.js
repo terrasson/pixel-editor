@@ -10210,7 +10210,7 @@ function initImportSpriteSheetFeature() {
 
 function showImportSpriteSheetDialog() {
     const fr = localStorage.getItem('lang') === 'fr';
-    const state = { img: null, naturalW: 0, naturalH: 0, frameW: 0, frameH: 0, cols: 1, rows: 1, spriteSize: currentGridSize };
+    const state = { img: null, naturalW: 0, naturalH: 0, frameW: 0, frameH: 0, cols: 1, rows: 1 };
 
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -10296,7 +10296,7 @@ function showImportSpriteSheetDialog() {
     spriteSizeInput.type = 'number';
     spriteSizeInput.id = '_ssSpriteSize';
     spriteSizeInput.min = '1';
-    spriteSizeInput.value = currentGridSize;
+    spriteSizeInput.value = '';
     spriteSizeInput.disabled = true;
     spriteSizeInput.style.cssText = 'width:100%;padding:8px 10px;border:1px solid rgba(255,115,0,0.5);border-radius:8px;font-size:0.9rem;box-sizing:border-box;background:rgba(255,115,0,0.08);color:rgba(255,255,255,.95);opacity:0.4';
     const spriteSizeHint = document.createElement('div');
@@ -10439,45 +10439,23 @@ function _ssSync(state, changed, uiRefs) {
     _ssRenderPreview(state, uiRefs);
 }
 
-// Calcule la taille du sprite sur le canvas.
-// Règle : ne JAMAIS modifier la taille d'origine du sprite.
-// - Si la cellule PNG est un multiple de currentGridSize par un zoom connu (1,2,4,8,16),
-//   c'est que le sprite a été dessiné à currentGridSize → on utilise currentGridSize.
-// - Sinon, on utilise la taille de la cellule telle quelle (pas de min/max/clamp).
+// La taille du sprite = exactement la taille de la cellule PNG, sans aucune modification.
 function _ssAutoSpriteSize(state, uiRefs) {
-    const cellW = state.frameW, cellH = state.frameH;
-    const validZooms = [1, 2, 4, 8, 16];
-
-    let spriteW = cellW;
-    let spriteH = cellH;
-
-    // Détection zoom : cellule = currentGridSize × zoom ?
-    const zW = cellW / currentGridSize;
-    const zH = cellH / currentGridSize;
-    if (Number.isInteger(zW) && validZooms.includes(zW) &&
-        Number.isInteger(zH) && validZooms.includes(zH)) {
-        // La cellule vient de cette app exportée avec zoom → taille logique = currentGridSize
-        spriteW = currentGridSize;
-        spriteH = currentGridSize;
-    }
-    // Sinon : sprite externe → on respecte la taille de la cellule sans modification
-
+    const spriteW = state.frameW;
+    const spriteH = state.frameH;
     state.spriteW = spriteW;
     state.spriteH = spriteH;
     if (uiRefs.spriteSizeInput) {
         uiRefs.spriteSizeInput.value = spriteH;
-        uiRefs.spriteSizeInput.max = String(Math.max(cellH, currentGridSize));
+        uiRefs.spriteSizeInput.max = String(spriteH);
     }
-    _ssUpdateSpriteHint(cellW, cellH, spriteW, spriteH);
-}
-
-function _ssUpdateSpriteHint(cellW, cellH, spriteW, spriteH) {
     const hint = document.getElementById('_ssSpriteSizeHint');
-    if (!hint) return;
-    const fr = localStorage.getItem('lang') === 'fr';
-    hint.textContent = fr
-        ? `Cellule PNG ${cellW}×${cellH}px → sprite ${spriteW}×${spriteH}px sur le canvas`
-        : `PNG cell ${cellW}×${cellH}px → sprite ${spriteW}×${spriteH}px on canvas`;
+    if (hint) {
+        const fr = localStorage.getItem('lang') === 'fr';
+        hint.textContent = fr
+            ? `Sprite : ${spriteW}×${spriteH}px (taille d'origine)`
+            : `Sprite: ${spriteW}×${spriteH}px (original size)`;
+    }
 }
 
 function _ssUpdateCountNote(state, frameCount, resampleNote) {
@@ -10537,9 +10515,9 @@ function _ssRenderPreview(state, uiRefs) {
 
 async function _ssDoImport(state) {
     const { img, naturalW, naturalH, frameW, frameH, cols, rows } = state;
-    // Taille cible du sprite sur le canvas (peut différer de currentGridSize)
-    const tW = Math.max(1, state.spriteW || Math.round(parseInt(document.getElementById('_ssSpriteSize')?.value, 10)) || frameW);
-    const tH = Math.max(1, state.spriteH || tW);
+    // Taille du sprite = exactement la taille de la cellule PNG, jamais modifiée.
+    const tW = frameW;
+    const tH = frameH;
 
     const offCanvas = document.createElement('canvas');
     offCanvas.width = naturalW; offCanvas.height = naturalH;
