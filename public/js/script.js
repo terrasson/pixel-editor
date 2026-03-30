@@ -10291,7 +10291,7 @@ function showImportSpriteSheetDialog() {
     spriteSizeWrap.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1)';
     const spriteSizeLbl = document.createElement('label');
     spriteSizeLbl.style.cssText = 'font-size:0.78rem;font-weight:600;color:rgba(255,115,0,0.9);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px';
-    spriteSizeLbl.textContent = fr ? '🎯 Hauteur du sprite sur le canvas (pixels)' : '🎯 Sprite height on canvas (pixels)';
+    spriteSizeLbl.textContent = fr ? '🎯 Taille du sprite sur le canvas (pixels) — modifiable si exporté avec zoom' : '🎯 Sprite size on canvas (pixels) — edit if exported with zoom';
     const spriteSizeInput = document.createElement('input');
     spriteSizeInput.type = 'number';
     spriteSizeInput.id = '_ssSpriteSize';
@@ -10380,7 +10380,7 @@ function _ssHandleFile(file, state, uiRefs) {
             state.frameH = Math.floor(H / autoRows);
 
             // Activer les champs
-            [uiRefs.colsInput, uiRefs.rowsInput, uiRefs.frameWInput, uiRefs.frameHInput].forEach(inp => {
+            [uiRefs.colsInput, uiRefs.rowsInput, uiRefs.frameWInput, uiRefs.frameHInput, uiRefs.spriteSizeInput].forEach(inp => {
                 if (inp) { inp.disabled = false; inp.style.opacity = '1'; }
             });
 
@@ -10515,9 +10515,11 @@ function _ssRenderPreview(state, uiRefs) {
 
 async function _ssDoImport(state) {
     const { img, naturalW, naturalH, frameW, frameH, cols, rows } = state;
-    // Taille du sprite = exactement la taille de la cellule PNG, jamais modifiée.
-    const tW = frameW;
-    const tH = frameH;
+    // Taille cible du sprite sur le canvas.
+    // Par défaut = taille de la cellule PNG (aucune modification).
+    // L'utilisateur peut changer la valeur dans le champ "sprite size" du dialog.
+    const tW = Math.max(1, state.spriteW || frameW);
+    const tH = Math.max(1, state.spriteH || frameH);
 
     const offCanvas = document.createElement('canvas');
     offCanvas.width = naturalW; offCanvas.height = naturalH;
