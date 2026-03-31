@@ -8555,8 +8555,10 @@ function createAndDownloadSpriteSheet(zoom, bg, watermark = false) {
     if (watermark) drawWatermark(ctx, canvas.width, canvas.height);
 
     // Télécharger en PNG
+    // Le nom encode la taille originale de la frame (cellules canvas) pour faciliter l'import.
+    // Ex: "projet-spritesheet-32px-4x.png" → frame = 32 cellules canvas, zoom = 4
     const projectName = window.currentProjectName || 'sprite-sheet';
-    const fileName = `${projectName}-spritesheet.png`;
+    const fileName = `${projectName}-spritesheet-${g}px${zoom > 1 ? '-' + zoom + 'x' : ''}.png`;
     canvas.toBlob((blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -10354,6 +10356,8 @@ function showImportSpriteSheetDialog() {
 function _ssHandleFile(file, state, uiRefs) {
     if (!file.type.startsWith('image/')) { showToast('❌ Format non supporté', { type: 'error' }); return; }
 
+    state.fileName = file.name; // Mémoriser le nom pour détecter la taille encodée
+
     const reader = new FileReader();
     reader.onload = evt => {
         const img = new Image();
@@ -10439,22 +10443,38 @@ function _ssSync(state, changed, uiRefs) {
     _ssRenderPreview(state, uiRefs);
 }
 
-// La taille du sprite = exactement la taille de la cellule PNG, sans aucune modification.
+// Calcule la taille du sprite en cellules canvas.
+// Priorité :
+//   1. Nom de fichier encode la taille : "xxx-32px-4x.png" → spriteSize = 32
+//   2. Sinon : currentGridSize (le sprite a été fait pour ce canvas)
+// L'utilisateur peut toujours modifier le champ manuellement.
 function _ssAutoSpriteSize(state, uiRefs) {
-    const spriteW = state.frameW;
-    const spriteH = state.frameH;
+    // Essayer de lire la taille depuis le nom de fichier (pattern: "-NNpx")
+    let spriteSize = currentGridSize;
+    if (state.fileName) {
+        const m = state.fileName.match(/-(\d+)px/);
+        if (m) {
+            const parsed = parseInt(m[1], 10);
+            if (parsed > 0) spriteSize = parsed;
+        }
+    }
+
+    const spriteW = spriteSize;
+    const spriteH = spriteSize;
     state.spriteW = spriteW;
     state.spriteH = spriteH;
+
     if (uiRefs.spriteSizeInput) {
         uiRefs.spriteSizeInput.value = spriteH;
-        uiRefs.spriteSizeInput.max = String(spriteH);
+        uiRefs.spriteSizeInput.max = String(Math.max(spriteH, state.frameH || spriteH));
     }
     const hint = document.getElementById('_ssSpriteSizeHint');
     if (hint) {
         const fr = localStorage.getItem('lang') === 'fr';
+        const cellPx = state.frameH || '?';
         hint.textContent = fr
-            ? `Sprite : ${spriteW}×${spriteH}px (taille d'origine)`
-            : `Sprite: ${spriteW}×${spriteH}px (original size)`;
+            ? `Cellule PNG : ${state.frameW || '?'}×${cellPx}px → sprite : ${spriteW}×${spriteH} cellules canvas`
+            : `PNG cell: ${state.frameW || '?'}×${cellPx}px → sprite: ${spriteW}×${spriteH} canvas cells`;
     }
 }
 
