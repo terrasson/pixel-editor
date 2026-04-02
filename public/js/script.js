@@ -3589,8 +3589,19 @@ function updateColorPalette() {
         }
     });
 
+    // Bouton "+" pour ouvrir le nuancier et créer une nouvelle couleur
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'color-btn add-color-btn';
+    addBtn.title = 'Ajouter une couleur personnalisée';
+    addBtn.textContent = '+';
+    addBtn.addEventListener('click', () => {
+        openCustomColorModal(currentColor);
+    });
+    presetColors.appendChild(addBtn);
+
     applyPaletteScrollState(presetColors);
-    
+
     // Mettre à jour aussi la palette compacte mobile avec les couleurs personnalisées
     const currentPalette = customPalette || getDefaultCompactColors();
     applyCompactPaletteColors(currentPalette);
@@ -4075,7 +4086,8 @@ function initCustomColorModal() {
     customColorModalElements.applyBtn?.addEventListener('click', () => {
         const hex = customColorModalState.currentHex;
         if (hex) {
-            setPendingColor(hex);
+            addCustomColor(hex);   // Ajoute à la palette
+            setPendingColor(hex);  // Définit comme couleur active
             closeCustomColorModal();
         }
     });

@@ -695,6 +695,26 @@ body {
     box-shadow: 0 0 0 1px #FF7300;
 }
 
+/* Bouton "+" pour ajouter une couleur personnalisée */
+.color-btn.add-color-btn {
+    background: transparent;
+    border: 1px dashed rgba(255, 115, 0, 0.6);
+    color: rgba(255, 115, 0, 0.9);
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.color-btn.add-color-btn:hover {
+    background: rgba(255, 115, 0, 0.12);
+    border-color: #FF7300;
+    color: #FF7300;
+    opacity: 1;
+}
+
 /* ===================================================================
    STYLES POUR LES COULEURS PERSONNALISÉES
    =================================================================== */

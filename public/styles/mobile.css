@@ -1300,6 +1300,28 @@ body.is-mobile .editor-container {
     transform: scale(1.05);
 }
 
+/* Bouton "+" pour ajouter une couleur personnalisée */
+.color-btn.add-color-btn {
+    background: transparent;
+    border: 1px dashed rgba(255, 115, 0, 0.6);
+    color: rgba(255, 115, 0, 0.9);
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+}
+
+.color-btn.add-color-btn:hover,
+.color-btn.add-color-btn:active {
+    background: rgba(255, 115, 0, 0.12);
+    border-color: #FF7300;
+    color: #FF7300;
+    transform: none;
+}
+
 /* Styles pour les couleurs personnalisées */
 .color-btn.custom-color {
     border: 2px solid #007AFF;
