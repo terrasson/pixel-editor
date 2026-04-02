@@ -84,6 +84,11 @@ let isStampMode = false;  // Outil tampon
 let stampPixels = null;
 let stampGridSize = 32;
 let activeStampId = null; // id du tampon actuellement en mode stamp
+// ── Mode placement texte ──────────────────────────────────────────────────────
+let isTextPlacementMode = false;
+let textPlacementPixels = null;  // pixels du texte à poser
+let textHoverCol = 0;
+let textHoverRow = 0;
 // ── Mode placement sprite sheet ───────────────────────────────────────────────
 let isSpriteSheetMode = false;
 let ssSprites = [];        // [{pixels, w, h}, ...] extraits du sheet
@@ -718,8 +723,8 @@ function initGrid(size = currentGridSize) {
         });
 
         grid.addEventListener('mousemove', (e) => {
-            if (isStampMode || isSpriteSheetMode) {
-                // Tampon / sprite sheet : calculer position du ghost (zoom/pan + bordure)
+            if (isStampMode || isSpriteSheetMode || isTextPlacementMode) {
+                // Tampon / sprite sheet / texte : calculer position du ghost
                 const rect = grid.getBoundingClientRect();
                 const borderW = (rect.width  - grid.clientWidth)  / 2;
                 const borderH = (rect.height - grid.clientHeight) / 2;
@@ -729,7 +734,8 @@ function initGrid(size = currentGridSize) {
                 const row = Math.max(0, Math.min(currentGridSize - 1,
                     Math.floor((e.clientY - rect.top  - borderH - gridPanY) / gridZoom / logicalCell)));
                 if (isStampMode) updateStampGhost(col, row);
-                else updateSpriteSheetGhost(col, row);
+                else if (isSpriteSheetMode) updateSpriteSheetGhost(col, row);
+                else updateTextGhost(col, row);
             } else if (isDrawing) {
                 draw(e);
             }
@@ -1688,18 +1694,18 @@ function showTextTool() {
 
     dialog.querySelector('#textToolApply').addEventListener('click', () => {
         const text = dialog.querySelector('#textToolInput').value || '';
+        if (!text.trim()) return;
         const color = dialog.querySelector('#textToolColor').value.toUpperCase();
         const scale = parseInt(dialog.querySelector('#textToolScale').value, 10);
-        const pixels = textToPixels(text, color, 0, 0, scale);
-        pixels.forEach(({ index, color: c }) => {
-            if (index >= 0 && index < currentFrameBuffer.length) {
-                currentFrameBuffer[index] = { color: c, isEmpty: false };
-            }
+        // Construire le tableau de pixels du texte (taille = currentGridSize²)
+        // on passe startX=0, startY=0 ici — la position réelle sera choisie au clic
+        const rawPixels = textToPixels(text, color, 0, 0, scale);
+        const flat = Array.from({ length: currentGridSize * currentGridSize }, () => ({ color: '#FFFFFF', isEmpty: true }));
+        rawPixels.forEach(({ index, color: c }) => {
+            if (index >= 0 && index < flat.length) flat[index] = { color: c, isEmpty: false };
         });
-        saveCurrentFrame();
-        renderCanvas();
-        pushHistory();
         dialog.remove();
+        enterTextPlacementMode(flat);
     });
 }
 
@@ -1976,6 +1982,12 @@ function startDrawing(e) {
     // Mode sprite sheet : placer le sheet et créer les frames
     if (isSpriteSheetMode) {
         applySpriteSheet(ssHoverCol, ssHoverRow);
+        return;
+    }
+    // Mode placement texte : poser le texte à la position du curseur
+    if (isTextPlacementMode) {
+        applyTextPlacement(textHoverCol + (textPlacementPixels?._centerCol || 0),
+                           textHoverRow + (textPlacementPixels?._centerRow || 0));
         return;
     }
 
@@ -2741,6 +2753,123 @@ function exitSpriteSheetMode() {
     }
     const cancelBar = document.getElementById('stampCancelBar');
     if (cancelBar) cancelBar.style.display = 'none';
+}
+
+// ── Mode placement texte ──────────────────────────────────────────────────────
+function enterTextPlacementMode(flatPixels) {
+    isTextPlacementMode = true;
+    textPlacementPixels = flatPixels;
+
+    // Centre du bounding box du texte
+    let minC = Infinity, maxC = -Infinity, minR = Infinity, maxR = -Infinity;
+    for (let i = 0; i < flatPixels.length; i++) {
+        if (flatPixels[i] && !flatPixels[i].isEmpty) {
+            const c = i % currentGridSize;
+            const r = Math.floor(i / currentGridSize);
+            if (c < minC) minC = c; if (c > maxC) maxC = c;
+            if (r < minR) minR = r; if (r > maxR) maxR = r;
+        }
+    }
+    const centerCol = isFinite(minC) ? Math.round((minC + maxC) / 2) : 0;
+    const centerRow = isFinite(minR) ? Math.round((minR + maxR) / 2) : 0;
+    // Stocker le décalage top-left → centre
+    textPlacementPixels._centerCol = centerCol;
+    textPlacementPixels._centerRow = centerRow;
+
+    const pixelGrid = document.getElementById('pixelGrid');
+    if (pixelGrid) pixelGrid.classList.add('stamp-mode');
+
+    const overlay = getStampOverlay();
+    overlay.width  = pixelGrid ? pixelGrid.clientWidth  : 512;
+    overlay.height = pixelGrid ? pixelGrid.clientHeight : 512;
+    overlay.style.display = 'block';
+
+    let cancelBar = document.getElementById('stampCancelBar');
+    if (!cancelBar) {
+        cancelBar = document.createElement('div');
+        cancelBar.id = 'stampCancelBar';
+        cancelBar.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(220,38,38,0.92);color:white;border:none;border-radius:24px;padding:10px 22px;font-size:0.95rem;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);backdrop-filter:blur(8px);';
+        document.body.appendChild(cancelBar);
+    }
+    const fr = localStorage.getItem('lang') === 'fr';
+    cancelBar.textContent = `✗ ${fr ? 'Annuler le texte' : 'Cancel text'}`;
+    cancelBar.onclick = exitTextPlacementMode;
+    cancelBar.style.display = 'block';
+
+    showNotification(fr ? '✏️ Cliquez sur le canvas pour poser le texte' : '✏️ Click on the canvas to place the text', 'success');
+}
+
+function exitTextPlacementMode(silent = false) {
+    isTextPlacementMode = false;
+    textPlacementPixels = null;
+    const pixelGrid = document.getElementById('pixelGrid');
+    if (pixelGrid) pixelGrid.classList.remove('stamp-mode');
+    const overlay = document.getElementById('stampOverlay');
+    if (overlay) {
+        overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height);
+        overlay.style.display = 'none';
+    }
+    const cancelBar = document.getElementById('stampCancelBar');
+    if (cancelBar) cancelBar.style.display = 'none';
+    if (!silent) showNotification(localStorage.getItem('lang') === 'fr' ? 'Texte annulé' : 'Text cancelled', 'info');
+}
+
+function updateTextGhost(col, row) {
+    if (!textPlacementPixels) return;
+    const centerCol = textPlacementPixels._centerCol || 0;
+    const centerRow = textPlacementPixels._centerRow || 0;
+    textHoverCol = col - centerCol;
+    textHoverRow = row - centerRow;
+
+    const overlay = document.getElementById('stampOverlay');
+    if (!overlay) return;
+    const ctx = overlay.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    const grid = document.getElementById('pixelGrid');
+    const pixelSize = grid ? grid.clientWidth / currentGridSize : overlay.width / currentGridSize;
+    ctx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
+    ctx.globalAlpha = 0.65;
+    for (let i = 0; i < textPlacementPixels.length; i++) {
+        const pixel = textPlacementPixels[i];
+        if (!pixel || pixel.isEmpty) continue;
+        const srcCol = i % currentGridSize;
+        const srcRow = Math.floor(i / currentGridSize);
+        const dstCol = textHoverCol + srcCol;
+        const dstRow = textHoverRow + srcRow;
+        if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
+        ctx.fillStyle = pixel.color;
+        ctx.fillRect(dstCol * pixelSize, dstRow * pixelSize, pixelSize, pixelSize);
+    }
+    ctx.globalAlpha = 1.0;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function applyTextPlacement(anchorCol, anchorRow) {
+    if (!textPlacementPixels) return;
+    const centerCol = textPlacementPixels._centerCol || 0;
+    const centerRow = textPlacementPixels._centerRow || 0;
+    const offsetCol = anchorCol - centerCol;
+    const offsetRow = anchorRow - centerRow;
+
+    pushHistory();
+    for (let i = 0; i < textPlacementPixels.length; i++) {
+        const pixel = textPlacementPixels[i];
+        if (!pixel || pixel.isEmpty) continue;
+        const srcCol = i % currentGridSize;
+        const srcRow = Math.floor(i / currentGridSize);
+        const dstCol = offsetCol + srcCol;
+        const dstRow = offsetRow + srcRow;
+        if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
+        const dstIndex = dstRow * currentGridSize + dstCol;
+        if (dstIndex >= 0 && dstIndex < currentFrameBuffer.length) {
+            currentFrameBuffer[dstIndex] = { color: pixel.color, isEmpty: false };
+        }
+    }
+    saveCurrentFrame();
+    renderCanvas();
+    exitTextPlacementMode(true);
+    showNotification(localStorage.getItem('lang') === 'fr' ? '✅ Texte posé !' : '✅ Text placed!', 'success');
 }
 
 function updateSpriteSheetGhost(col, row) {
@@ -6594,6 +6723,7 @@ function handleKeyboardShortcuts(e) {
                 exitStampMode();
                 return;
             }
+            if (isTextPlacementMode) { exitTextPlacementMode(); return; }
             if (isEyedropperMode) toggleEyedropper();
             if (isErasing) toggleEraser();
             if (isFillMode) toggleFill();
@@ -7061,12 +7191,13 @@ function optimizeTouchInteractions() {
         } else {
             touchStarted = true;
             const touch = e.touches[0];
-            if (isStampMode) {
-                // Mode tampon : calculer position et afficher ghost
+            if (isStampMode || isTextPlacementMode) {
+                // Mode tampon / texte : calculer position et afficher ghost
                 const rect = grid.getBoundingClientRect();
                 const col = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientX - rect.left) / rect.width) * currentGridSize)));
                 const row = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientY - rect.top) / rect.height) * currentGridSize)));
-                updateStampGhost(col, row);
+                if (isStampMode) updateStampGhost(col, row);
+                else updateTextGhost(col, row);
             } else if (CANVAS_RENDERING) {
                 // 1 doigt → dessiner via index canvas
                 startDrawing({ clientX: touch.clientX, clientY: touch.clientY });
@@ -7108,12 +7239,13 @@ function optimizeTouchInteractions() {
 
         } else if (touchStarted) {
             const touch = e.touches[0];
-            if (isStampMode) {
-                // Mode tampon : déplacer le ghost
+            if (isStampMode || isTextPlacementMode) {
+                // Mode tampon / texte : déplacer le ghost
                 const rect = grid.getBoundingClientRect();
                 const col = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientX - rect.left) / rect.width) * currentGridSize)));
                 const row = Math.max(0, Math.min(currentGridSize - 1, Math.floor(((touch.clientY - rect.top) / rect.height) * currentGridSize)));
-                updateStampGhost(col, row);
+                if (isStampMode) updateStampGhost(col, row);
+                else updateTextGhost(col, row);
             } else if (CANVAS_RENDERING) {
                 // 1 doigt → continuer le dessin via index canvas
                 draw({ clientX: touch.clientX, clientY: touch.clientY });
@@ -7134,8 +7266,10 @@ function optimizeTouchInteractions() {
         }
         if (e.touches.length === 0) {
             if (isStampMode && touchStarted) {
-                // Mode tampon : appliquer à la position courante
                 applyStamp(stampHoverCol, stampHoverRow);
+            } else if (isTextPlacementMode && touchStarted) {
+                applyTextPlacement(textHoverCol + (textPlacementPixels?._centerCol || 0),
+                                   textHoverRow + (textPlacementPixels?._centerRow || 0));
             } else {
                 stopDrawing();
             }
