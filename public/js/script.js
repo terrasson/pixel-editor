@@ -3341,8 +3341,15 @@ async function showStampModal() {
         const rawFrame = framesData[selectedFrameIndex] || framesData[0] || [];
         const rawPx = Array.isArray(rawFrame) ? rawFrame : (rawFrame.pixels || []);
         const gs = Math.round(Math.sqrt(rawPx.length)) || 32;
+        // Normaliser chaque pixel : s'assurer que isEmpty est bien false pour les pixels colorés
+        const normPx = rawPx.map(px => {
+            if (!px) return { color: '#FFFFFF', isEmpty: true };
+            const color = px.color || '#FFFFFF';
+            const empty = (px.isEmpty === true) || (color === '#FFFFFF' && px.isEmpty !== false) ? true : false;
+            return { color, isEmpty: empty };
+        });
         dialog.remove();
-        enterStampMode(rawPx, gs);
+        enterStampMode(normPx, gs);
     });
 
     dialog.querySelector('#stampCancelBtn').addEventListener('click', () => dialog.remove());
@@ -10333,7 +10340,14 @@ function _buildStampRow(stamp, index) {
 
     row.addEventListener('click', () => {
         activeStampId = stamp.id;
-        enterStampMode(stamp.pixels, stamp.gridSize || currentGridSize);
+        const gs = stamp.gridSize || currentGridSize;
+        const normPx = (stamp.pixels || []).map(px => {
+            if (!px) return { color: '#FFFFFF', isEmpty: true };
+            const color = px.color || '#FFFFFF';
+            const empty = (px.isEmpty === true) || (color === '#FFFFFF' && px.isEmpty !== false);
+            return { color, isEmpty: empty };
+        });
+        enterStampMode(normPx, gs);
         renderStampsList();
     });
 
