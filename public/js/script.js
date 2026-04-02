@@ -1986,8 +1986,7 @@ function startDrawing(e) {
     }
     // Mode placement texte : poser le texte à la position du curseur
     if (isTextPlacementMode) {
-        applyTextPlacement(textHoverCol + (textPlacementPixels?._centerCol || 0),
-                           textHoverRow + (textPlacementPixels?._centerRow || 0));
+        applyTextPlacement(textHoverCol, textHoverRow);
         return;
     }
 
@@ -2845,21 +2844,17 @@ function updateTextGhost(col, row) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
+// anchorCol/anchorRow = position top-left du texte sur le canvas (déjà calculée par updateTextGhost)
 function applyTextPlacement(anchorCol, anchorRow) {
     if (!textPlacementPixels) return;
-    const centerCol = textPlacementPixels._centerCol || 0;
-    const centerRow = textPlacementPixels._centerRow || 0;
-    const offsetCol = anchorCol - centerCol;
-    const offsetRow = anchorRow - centerRow;
-
     pushHistory();
     for (let i = 0; i < textPlacementPixels.length; i++) {
         const pixel = textPlacementPixels[i];
         if (!pixel || pixel.isEmpty) continue;
         const srcCol = i % currentGridSize;
         const srcRow = Math.floor(i / currentGridSize);
-        const dstCol = offsetCol + srcCol;
-        const dstRow = offsetRow + srcRow;
+        const dstCol = anchorCol + srcCol;
+        const dstRow = anchorRow + srcRow;
         if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
         const dstIndex = dstRow * currentGridSize + dstCol;
         if (dstIndex >= 0 && dstIndex < currentFrameBuffer.length) {
@@ -7268,8 +7263,7 @@ function optimizeTouchInteractions() {
             if (isStampMode && touchStarted) {
                 applyStamp(stampHoverCol, stampHoverRow);
             } else if (isTextPlacementMode && touchStarted) {
-                applyTextPlacement(textHoverCol + (textPlacementPixels?._centerCol || 0),
-                                   textHoverRow + (textPlacementPixels?._centerRow || 0));
+                applyTextPlacement(textHoverCol, textHoverRow);
             } else {
                 stopDrawing();
             }
