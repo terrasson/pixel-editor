@@ -1692,10 +1692,13 @@ function showTextTool() {
         const scale = parseInt(dialog.querySelector('#textToolScale').value, 10);
         const pixels = textToPixels(text, color, 0, 0, scale);
         pixels.forEach(({ index, color: c }) => {
-            currentFrameBuffer[index] = { color: c, isEmpty: false };
+            if (index >= 0 && index < currentFrameBuffer.length) {
+                currentFrameBuffer[index] = { color: c, isEmpty: false };
+            }
         });
         saveCurrentFrame();
-        scheduleRender();
+        renderCanvas();
+        pushHistory();
         dialog.remove();
     });
 }
