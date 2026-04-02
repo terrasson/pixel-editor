@@ -2775,9 +2775,16 @@ function enterStampMode(pixels, gridSize) {
     if (pixelGrid) pixelGrid.classList.add('stamp-mode');
 
     const overlay = getStampOverlay();
-    overlay.width  = pixelGrid ? pixelGrid.clientWidth  : 512;
-    overlay.height = pixelGrid ? pixelGrid.clientHeight : 512;
+    const gw = pixelGrid ? (pixelGrid.clientWidth  || 512) : 512;
+    const gh = pixelGrid ? (pixelGrid.clientHeight || gw)  : 512;
+    overlay.width  = gw;
+    overlay.height = gh;
     overlay.style.display = 'block';
+
+    // Afficher le ghost immédiatement au centre du canvas
+    const midCol = Math.floor(currentGridSize / 2);
+    const midRow = Math.floor(currentGridSize / 2);
+    updateStampGhost(midCol, midRow);
 
     // Bouton flottant "Annuler" visible pendant le mode tampon
     let cancelBar = document.getElementById('stampCancelBar');
@@ -3124,12 +3131,12 @@ function updateStampGhost(col, row) {
     const ctx = overlay.getContext('2d');
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, overlay.width, overlay.height);
-    // clientWidth (sans bordure) → 1 unité canvas = 1 CSS px de contenu
-    const grid = document.getElementById('pixelGrid');
-    const pixelSize = grid ? grid.clientWidth / currentGridSize : overlay.width / currentGridSize;
-    // Appliquer le même zoom/pan que la grille pour que le ghost colle aux divs
+    // cellSize (taille d'une cellule dans l'espace canvas) = même base que renderCanvas
+    const pixelSize = cellSize || (overlay.width / currentGridSize);
+    // Appliquer le même zoom/pan que la grille pour que le ghost colle aux pixels
     ctx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
     ctx.globalAlpha = 0.65;
+    let drawn = 0;
     for (let i = 0; i < stampPixels.length; i++) {
         const pixel = stampPixels[i];
         if (!pixel || pixel.isEmpty) continue;
@@ -3140,9 +3147,18 @@ function updateStampGhost(col, row) {
         if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
         ctx.fillStyle = pixel.color || '#000000';
         ctx.fillRect(dstCol * pixelSize, dstRow * pixelSize, pixelSize, pixelSize);
+        drawn++;
     }
     ctx.globalAlpha = 1.0;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // DEBUG — à retirer après validation
+    if (drawn === 0) {
+        const nonEmpty = stampPixels.filter(p => p && !p.isEmpty).length;
+        console.warn('[Tampon] Ghost vide — pixels non-vides:', nonEmpty,
+            '/ total:', stampPixels.length,
+            '/ stampGridSize:', stampGridSize, '/ currentGridSize:', currentGridSize,
+            '/ ancre:', stampHoverCol, stampHoverRow);
+    }
 }
 
 function applyStamp(col, row) {
