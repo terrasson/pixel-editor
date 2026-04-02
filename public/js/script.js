@@ -44,6 +44,108 @@ const BITMAP_FONT_5x7 = {
   '-':['00000','00000','00000','11111','00000','00000','00000'],
   ':':['00000','00100','00000','00000','00000','00100','00000'],
 };
+// ── Police bitmap 3×5 (ultra-compacte) ───────────────────────────────────────
+const BITMAP_FONT_3x5 = {
+  ' ':['000','000','000','000','000'],
+  'A':['010','101','111','101','101'],
+  'B':['110','101','110','101','110'],
+  'C':['011','100','100','100','011'],
+  'D':['110','101','101','101','110'],
+  'E':['111','100','110','100','111'],
+  'F':['111','100','110','100','100'],
+  'G':['011','100','101','101','011'],
+  'H':['101','101','111','101','101'],
+  'I':['111','010','010','010','111'],
+  'J':['011','001','001','101','010'],
+  'K':['101','110','100','110','101'],
+  'L':['100','100','100','100','111'],
+  'M':['101','111','111','101','101'],
+  'N':['101','111','101','101','101'],
+  'O':['010','101','101','101','010'],
+  'P':['110','101','110','100','100'],
+  'Q':['010','101','101','110','011'],
+  'R':['110','101','110','100','101'],
+  'S':['011','100','010','001','110'],
+  'T':['111','010','010','010','010'],
+  'U':['101','101','101','101','011'],
+  'V':['101','101','101','010','010'],
+  'W':['101','101','111','111','101'],
+  'X':['101','101','010','101','101'],
+  'Y':['101','101','011','001','110'],
+  'Z':['111','001','010','100','111'],
+  '0':['010','101','101','101','010'],
+  '1':['110','010','010','010','111'],
+  '2':['110','001','010','100','111'],
+  '3':['110','001','010','001','110'],
+  '4':['101','101','111','001','001'],
+  '5':['111','100','110','001','110'],
+  '6':['011','100','110','101','010'],
+  '7':['111','001','010','010','010'],
+  '8':['010','101','010','101','010'],
+  '9':['010','101','011','001','110'],
+  '!':['010','010','010','000','010'],
+  '?':['110','001','010','000','010'],
+  '.':['000','000','000','000','010'],
+  ',':['000','000','000','010','100'],
+  '-':['000','000','111','000','000'],
+  ':':['000','010','000','010','000'],
+  '+':['000','010','111','010','000'],
+};
+
+// ── Police bitmap 8×8 (style NES / arcade) ───────────────────────────────────
+const BITMAP_FONT_8x8 = {
+  ' ':['0000000','0000000','0000000','0000000','0000000','0000000','0000000','0000000'],
+  'A':['0011100','0100010','1000001','1000001','1111111','1000001','1000001','0000000'],
+  'B':['1111110','1000001','1000001','1111110','1000001','1000001','1111110','0000000'],
+  'C':['0111110','1000001','1000000','1000000','1000000','1000001','0111110','0000000'],
+  'D':['1111100','1000010','1000001','1000001','1000001','1000010','1111100','0000000'],
+  'E':['1111111','1000000','1000000','1111110','1000000','1000000','1111111','0000000'],
+  'F':['1111111','1000000','1000000','1111110','1000000','1000000','1000000','0000000'],
+  'G':['0111110','1000001','1000000','1001111','1000001','1000001','0111110','0000000'],
+  'H':['1000001','1000001','1000001','1111111','1000001','1000001','1000001','0000000'],
+  'I':['0111110','0001000','0001000','0001000','0001000','0001000','0111110','0000000'],
+  'J':['0111111','0000001','0000001','0000001','1000001','1000001','0111110','0000000'],
+  'K':['1000001','1000010','1000100','1111000','1000100','1000010','1000001','0000000'],
+  'L':['1000000','1000000','1000000','1000000','1000000','1000000','1111111','0000000'],
+  'M':['1000001','1100011','1010101','1001001','1000001','1000001','1000001','0000000'],
+  'N':['1000001','1100001','1010001','1001001','1000101','1000011','1000001','0000000'],
+  'O':['0111110','1000001','1000001','1000001','1000001','1000001','0111110','0000000'],
+  'P':['1111110','1000001','1000001','1111110','1000000','1000000','1000000','0000000'],
+  'Q':['0111110','1000001','1000001','1000001','1001001','1000110','0111111','0000000'],
+  'R':['1111110','1000001','1000001','1111110','1001000','1000100','1000011','0000000'],
+  'S':['0111110','1000001','1000000','0111110','0000001','1000001','0111110','0000000'],
+  'T':['1111111','0001000','0001000','0001000','0001000','0001000','0001000','0000000'],
+  'U':['1000001','1000001','1000001','1000001','1000001','1000001','0111110','0000000'],
+  'V':['1000001','1000001','0100010','0100010','0010100','0010100','0001000','0000000'],
+  'W':['1000001','1000001','1001001','1001001','1010101','1100011','1000001','0000000'],
+  'X':['1000001','0100010','0010100','0001000','0010100','0100010','1000001','0000000'],
+  'Y':['1000001','0100010','0010100','0001000','0001000','0001000','0001000','0000000'],
+  'Z':['1111111','0000010','0000100','0001000','0010000','0100000','1111111','0000000'],
+  '0':['0111110','1000001','1000011','1000101','1001001','1010001','0111110','0000000'],
+  '1':['0001000','0011000','0001000','0001000','0001000','0001000','0111110','0000000'],
+  '2':['0111110','1000001','0000001','0000110','0011000','0100000','1111111','0000000'],
+  '3':['1111110','0000001','0000001','0111110','0000001','0000001','1111110','0000000'],
+  '4':['0000110','0001010','0010010','0100010','1111111','0000010','0000010','0000000'],
+  '5':['1111111','1000000','1000000','1111110','0000001','1000001','0111110','0000000'],
+  '6':['0111110','1000000','1000000','1111110','1000001','1000001','0111110','0000000'],
+  '7':['1111111','0000001','0000010','0000100','0001000','0010000','0010000','0000000'],
+  '8':['0111110','1000001','1000001','0111110','1000001','1000001','0111110','0000000'],
+  '9':['0111110','1000001','1000001','0111111','0000001','1000001','0111110','0000000'],
+  '!':['0001000','0001000','0001000','0001000','0001000','0000000','0001000','0000000'],
+  '?':['0111110','1000001','0000001','0000110','0001000','0000000','0001000','0000000'],
+  '.':['0000000','0000000','0000000','0000000','0000000','0000000','0001000','0000000'],
+  ',':['0000000','0000000','0000000','0000000','0001000','0001000','0010000','0000000'],
+  '-':['0000000','0000000','0000000','1111111','0000000','0000000','0000000','0000000'],
+  ':':['0000000','0001000','0000000','0000000','0001000','0000000','0000000','0000000'],
+  '+':['0000000','0001000','0001000','1111111','0001000','0001000','0000000','0000000'],
+};
+
+// ── Registre des polices disponibles ─────────────────────────────────────────
+const BITMAP_FONTS = {
+  '3x5': { label: { en: 'Tiny 3×5',   fr: 'Minuscule 3×5' }, charWidth: 4, charHeight: 5, cols: 3, chars: BITMAP_FONT_3x5 },
+  '5x7': { label: { en: 'Retro 5×7',  fr: 'Rétro 5×7'     }, charWidth: 6, charHeight: 7, cols: 5, chars: BITMAP_FONT_5x7 },
+  '8x8': { label: { en: 'Large 8×8',  fr: 'Grand 8×8'      }, charWidth: 8, charHeight: 8, cols: 7, chars: BITMAP_FONT_8x8 },
+};
 // ─────────────────────────────────────────────────────────────────────────────
 
 let currentColor = '#000000';
@@ -1584,18 +1686,21 @@ function showHistoryPanel() {
 }
 
 // ── Feature : Texte pixel art ─────────────────────────────────────────────────
-function textToPixels(text, color, startX, startY, scale) {
+function textToPixels(text, color, startX, startY, scale, fontKey = '5x7') {
+    const font = BITMAP_FONTS[fontKey] || BITMAP_FONTS['5x7'];
+    const charWidth  = font.charWidth;
+    const charHeight = font.charHeight;
+    const cols       = font.cols;
+    const chars      = font.chars;
     const result = [];
-    const charWidth = 6; // 5 colonnes + 1 espace
-    const charHeight = 7;
     const upperText = text.toUpperCase();
     for (let ci = 0; ci < upperText.length; ci++) {
         const ch = upperText[ci];
-        const bitmap = BITMAP_FONT_5x7[ch];
+        const bitmap = chars[ch];
         if (!bitmap) continue;
         for (let row = 0; row < charHeight; row++) {
-            const rowStr = bitmap[row] || '00000';
-            for (let col = 0; col < 5; col++) {
+            const rowStr = bitmap[row] || '0'.repeat(cols);
+            for (let col = 0; col < cols; col++) {
                 if (rowStr[col] === '1') {
                     for (let sy = 0; sy < scale; sy++) {
                         for (let sx = 0; sx < scale; sx++) {
@@ -1614,34 +1719,41 @@ function textToPixels(text, color, startX, startY, scale) {
 }
 
 function showTextTool() {
-    const lang = localStorage.getItem('lang') || 'en';
-    const title = lang === 'fr' ? '✏️ Texte Pixel Art' : '✏️ Pixel Art Text';
-    const labelText = lang === 'fr' ? 'Texte' : 'Text';
-    const labelColor = lang === 'fr' ? 'Couleur' : 'Color';
-    const labelScale = lang === 'fr' ? 'Taille (×)' : 'Scale (×)';
-    const labelApply = lang === 'fr' ? 'Appliquer' : 'Apply';
-    const labelPreview = lang === 'fr' ? 'Aperçu' : 'Preview';
+    const fr = localStorage.getItem('lang') === 'fr';
+    const title    = fr ? '✏️ Texte Pixel Art' : '✏️ Pixel Art Text';
+    const initColor = currentColor.startsWith('#') && currentColor.length === 7 ? currentColor : '#000000';
+
+    // Construire les options du sélecteur de police
+    const fontOptions = Object.entries(BITMAP_FONTS).map(([key, f]) =>
+        `<option value="${key}"${key === '5x7' ? ' selected' : ''}>${f.label[fr ? 'fr' : 'en']}</option>`
+    ).join('');
 
     const content = `
         <div style="display:flex;flex-direction:column;gap:12px;">
             <div>
-                <label style="font-size:13px;display:block;margin-bottom:4px;">${labelText}</label>
-                <input type="text" id="textToolInput" value="HELLO" maxlength="20" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
+                <label style="font-size:13px;display:block;margin-bottom:4px;">${fr ? 'Texte' : 'Text'}</label>
+                <input type="text" id="textToolInput" value="HELLO" maxlength="30" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
             </div>
-            <div style="display:flex;gap:12px;align-items:center;">
-                <label style="font-size:13px;">${labelColor}</label>
-                <input type="color" id="textToolColor" value="${currentColor.startsWith('#') && currentColor.length === 7 ? currentColor : '#000000'}" style="width:40px;height:32px;border:none;cursor:pointer;">
-                <label style="font-size:13px;">${labelScale}</label>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <label style="font-size:13px;">${fr ? 'Police' : 'Font'}</label>
+                <select id="textToolFont" style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;flex:1;">${fontOptions}</select>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+                <label style="font-size:13px;">${fr ? 'Couleur' : 'Color'}</label>
+                <input type="color" id="textToolColor" value="${initColor}" style="width:40px;height:32px;border:none;cursor:pointer;">
+                <label style="font-size:13px;">${fr ? 'Taille (×)' : 'Scale (×)'}</label>
                 <select id="textToolScale" style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;">
                     <option value="1">×1</option>
                     <option value="2">×2</option>
+                    <option value="3">×3</option>
+                    <option value="4">×4</option>
                 </select>
             </div>
             <div>
-                <div style="font-size:13px;margin-bottom:4px;">${labelPreview}</div>
-                <canvas id="textPreviewCanvas" width="300" height="60" style="width:100%;height:60px;border:1px solid #eee;border-radius:6px;background:#fff;display:block;image-rendering:pixelated;"></canvas>
+                <div style="font-size:13px;margin-bottom:4px;">${fr ? 'Aperçu' : 'Preview'}</div>
+                <canvas id="textPreviewCanvas" width="300" height="80" style="width:100%;height:80px;border:1px solid #eee;border-radius:6px;background:#fff;display:block;image-rendering:pixelated;"></canvas>
             </div>
-            <button id="textToolApply" style="padding:10px;background:#007AFF;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;">${labelApply}</button>
+            <button id="textToolApply" style="padding:10px;background:#007AFF;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;">${fr ? 'Appliquer' : 'Apply'}</button>
         </div>
     `;
 
@@ -1654,28 +1766,30 @@ function showTextTool() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = '#f8f8f8';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        const text = dialog.querySelector('#textToolInput').value || '';
-        const color = dialog.querySelector('#textToolColor').value;
-        const scale = parseInt(dialog.querySelector('#textToolScale').value, 10);
-        const charWidth = 6;
-        const charHeight = 7;
-        const totalW = text.length * charWidth * scale;
-        const totalH = charHeight * scale;
-        const offsetX = Math.max(0, Math.floor((300 - totalW * (300 / Math.max(totalW, 1))) / 2));
-        // Draw on the preview canvas at a reasonable pixel size
-        const pixSize = Math.max(1, Math.min(6, Math.floor(280 / Math.max(text.length * charWidth, 1))));
-        for (let ci = 0; ci < text.toUpperCase().length; ci++) {
-            const ch = text.toUpperCase()[ci];
-            const bitmap = BITMAP_FONT_5x7[ch];
+
+        const text     = dialog.querySelector('#textToolInput').value || '';
+        const color    = dialog.querySelector('#textToolColor').value;
+        const scale    = parseInt(dialog.querySelector('#textToolScale').value, 10);
+        const fontKey  = dialog.querySelector('#textToolFont').value;
+        const font     = BITMAP_FONTS[fontKey] || BITMAP_FONTS['5x7'];
+        const { charWidth, charHeight, cols, chars } = font;
+
+        // Calculer la taille d'un pixel dans la preview pour que le texte rentre
+        const totalTextW = text.length * charWidth * scale;
+        const pixSize = totalTextW > 0 ? Math.max(1, Math.min(6, Math.floor(280 / totalTextW))) : 2;
+
+        const upperText = text.toUpperCase();
+        for (let ci = 0; ci < upperText.length; ci++) {
+            const bitmap = chars[upperText[ci]];
             if (!bitmap) continue;
             for (let row = 0; row < charHeight; row++) {
-                const rowStr = bitmap[row] || '00000';
-                for (let col = 0; col < 5; col++) {
+                const rowStr = bitmap[row] || '0'.repeat(cols);
+                for (let col = 0; col < cols; col++) {
                     if (rowStr[col] === '1') {
                         ctx.fillStyle = color;
                         ctx.fillRect(
-                            10 + ci * 6 * scale * pixSize + col * scale * pixSize,
-                            10 + row * scale * pixSize,
+                            6 + ci * charWidth * scale * pixSize + col * scale * pixSize,
+                            8 + row * scale * pixSize,
                             scale * pixSize,
                             scale * pixSize
                         );
@@ -1683,7 +1797,6 @@ function showTextTool() {
                 }
             }
         }
-        void totalW; void totalH; void offsetX;
     }
 
     updateTextPreview();
@@ -1691,15 +1804,15 @@ function showTextTool() {
     dialog.querySelector('#textToolInput').addEventListener('input', updateTextPreview);
     dialog.querySelector('#textToolColor').addEventListener('input', updateTextPreview);
     dialog.querySelector('#textToolScale').addEventListener('change', updateTextPreview);
+    dialog.querySelector('#textToolFont').addEventListener('change', updateTextPreview);
 
     dialog.querySelector('#textToolApply').addEventListener('click', () => {
-        const text = dialog.querySelector('#textToolInput').value || '';
+        const text    = dialog.querySelector('#textToolInput').value || '';
         if (!text.trim()) return;
-        const color = dialog.querySelector('#textToolColor').value.toUpperCase();
-        const scale = parseInt(dialog.querySelector('#textToolScale').value, 10);
-        // Construire le tableau de pixels du texte (taille = currentGridSize²)
-        // on passe startX=0, startY=0 ici — la position réelle sera choisie au clic
-        const rawPixels = textToPixels(text, color, 0, 0, scale);
+        const color   = dialog.querySelector('#textToolColor').value.toUpperCase();
+        const scale   = parseInt(dialog.querySelector('#textToolScale').value, 10);
+        const fontKey = dialog.querySelector('#textToolFont').value;
+        const rawPixels = textToPixels(text, color, 0, 0, scale, fontKey);
         const flat = Array.from({ length: currentGridSize * currentGridSize }, () => ({ color: '#FFFFFF', isEmpty: true }));
         rawPixels.forEach(({ index, color: c }) => {
             if (index >= 0 && index < flat.length) flat[index] = { color: c, isEmpty: false };
