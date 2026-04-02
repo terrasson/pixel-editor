@@ -646,10 +646,10 @@ body {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
     justify-items: center;
-    padding: 8px;
+    padding: 10px;
     background: #FFFFFF;
     border: 1px solid #E5E5EA;
-    border-radius: 0;
+    border-radius: 8px;
     width: 100%;
     box-sizing: border-box;
     max-height: 220px;
