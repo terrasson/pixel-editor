@@ -2795,7 +2795,12 @@ function enterTextPlacementMode(flatPixels) {
     cancelBar.onclick = exitTextPlacementMode;
     cancelBar.style.display = 'block';
 
-    showNotification(fr ? '✏️ Cliquez sur le canvas pour poser le texte' : '✏️ Click on the canvas to place the text', 'success');
+    showNotification(fr ? '✏️ Déplacez la souris sur le canvas pour positionner le texte, puis cliquez' : '✏️ Move your mouse over the canvas to position the text, then click', 'success');
+
+    // Afficher le ghost au centre du canvas dès l'entrée en mode
+    const midCol = Math.floor(currentGridSize / 2);
+    const midRow = Math.floor(currentGridSize / 2);
+    updateTextGhost(midCol, midRow);
 }
 
 function exitTextPlacementMode(silent = false) {
@@ -2847,7 +2852,7 @@ function updateTextGhost(col, row) {
 // anchorCol/anchorRow = position top-left du texte sur le canvas (déjà calculée par updateTextGhost)
 function applyTextPlacement(anchorCol, anchorRow) {
     if (!textPlacementPixels) return;
-    pushHistory();
+    saveToHistory();
     for (let i = 0; i < textPlacementPixels.length; i++) {
         const pixel = textPlacementPixels[i];
         if (!pixel || pixel.isEmpty) continue;
