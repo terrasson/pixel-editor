@@ -10332,10 +10332,11 @@ async function _saveStampAsProject(stamp) {
     const projectData = {
         name: fileName,
         frames: [normPx],
+        _stampGridSize: gs,
         currentFrame: 0,
         fps: 24,
         customPalette: [],
-        customColors: [],
+        customColors: { _stampGridSize: gs },
         thumbnail: _stampThumbnailDataURL(normPx, gs),
         created: new Date().toISOString(),
         updated: new Date().toISOString(),
@@ -10467,7 +10468,11 @@ function _buildImportStampDialog(allProjects) {
             return { color, isEmpty: empty };
         });
         const name = (project.name || 'Sans titre') + (framesData.length > 1 ? ` F${dialog._selectedFrame + 1}` : '');
-        const stamp = _addStamp(normalised, name);
+        const cc = project.custom_colors;
+        const gridSize = (cc && typeof cc === 'object' && !Array.isArray(cc) ? cc._stampGridSize : null)
+            || project._stampGridSize
+            || undefined;
+        const stamp = _addStamp(normalised, name, gridSize);
         dialog.remove();
         // Entrer immédiatement en mode stamp (le tampon suit le curseur)
         activeStampId = stamp.id;

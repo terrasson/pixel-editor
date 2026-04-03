@@ -129,7 +129,7 @@ class DatabaseService {
 
             const { data, error } = await this.supabase
                 .from('pixel_projects')
-                .select('id, name, thumbnail, created_at, updated_at, fps, current_frame, frames')
+                .select('id, name, thumbnail, created_at, updated_at, fps, current_frame, frames, custom_colors')
                 .eq('user_id', userId)
                 .order('updated_at', { ascending: false });
 
