@@ -3357,11 +3357,11 @@ async function showStampModal() {
         const rawFrame = framesData[selectedFrameIndex] || framesData[0] || [];
         const rawPx = Array.isArray(rawFrame) ? rawFrame : (rawFrame.pixels || []);
         const gs = Math.round(Math.sqrt(rawPx.length)) || 32;
-        // Normaliser chaque pixel : s'assurer que isEmpty est bien false pour les pixels colorés
+        // Un pixel non-blanc est toujours non-vide (corrige données isEmpty corrompues)
         const normPx = rawPx.map(px => {
             if (!px) return { color: '#FFFFFF', isEmpty: true };
             const color = px.color || '#FFFFFF';
-            const empty = (px.isEmpty === true) || (color === '#FFFFFF' && px.isEmpty !== false) ? true : false;
+            const empty = color === '#FFFFFF' ? (px.isEmpty !== false) : false;
             return { color, isEmpty: empty };
         });
         dialog.remove();
@@ -10229,7 +10229,13 @@ function _buildImportStampDialog(allProjects) {
         const framesData = Array.isArray(project.frames) ? project.frames : [];
         const rawFrame = framesData[dialog._selectedFrame] || framesData[0] || [];
         const rawPx = Array.isArray(rawFrame) ? rawFrame : (rawFrame.pixels || []);
-        const normalised = normaliseFrames([rawPx])[0];
+        // Ne PAS utiliser normaliseFrames (marque tout isEmpty:true) — normaliser par couleur
+        const normalised = rawPx.map(px => {
+            if (!px) return { color: '#FFFFFF', isEmpty: true };
+            const color = px.color || '#FFFFFF';
+            const empty = color === '#FFFFFF' ? (px.isEmpty !== false) : false;
+            return { color, isEmpty: empty };
+        });
         const name = (project.name || 'Sans titre') + (framesData.length > 1 ? ` F${dialog._selectedFrame + 1}` : '');
         _addStamp(normalised, name);
         dialog.remove();
@@ -10360,7 +10366,8 @@ function _buildStampRow(stamp, index) {
         const normPx = (stamp.pixels || []).map(px => {
             if (!px) return { color: '#FFFFFF', isEmpty: true };
             const color = px.color || '#FFFFFF';
-            const empty = (px.isEmpty === true) || (color === '#FFFFFF' && px.isEmpty !== false);
+            // Un pixel non-blanc est toujours non-vide (corrige données isEmpty corrompues)
+            const empty = color === '#FFFFFF' ? (px.isEmpty !== false) : false;
             return { color, isEmpty: empty };
         });
         enterStampMode(normPx, gs);
