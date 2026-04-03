@@ -447,6 +447,12 @@ body.is-mobile .editor-container {
     border-color: #007AFF !important;
 }
 
+.crop-stamp-btn.active {
+    background: #00C853 !important;
+    color: white !important;
+    border-color: #00C853 !important;
+}
+
 /* Panneau référence flottant (mobile) */
 #mobileReferencePanel {
     position: fixed;

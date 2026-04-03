@@ -177,6 +177,10 @@ let selectionRect = null;        // { minCol, minRow, maxCol, maxRow } final bou
 let selectionCut = null;         // Array of {offset, pixel} - pixels cut from original position
 let isMovingSelection = false;
 let selectionMoveStart = null;   // {col, row} where move drag started
+// ── Mode Découper en tampon (ciseau) ──────────────────────────────────────────
+let isCropStampMode = false;
+let cropSelection = null;        // { startCol, startRow, endCol, endRow } en cours
+let cropRect = null;             // { minCol, minRow, maxCol, maxRow } final
 // ── Multi-couches ─────────────────────────────────────────────────────────────
 let frameLayers = [];      // frameLayers[frameIndex] = [{id,name,visible,opacity,pixels}]
 let currentLayer = 0;      // index du calque actif
@@ -1345,6 +1349,29 @@ function renderCanvas() {
         );
         pixelCtx.setLineDash([]);
     }
+    // Overlay découpe tampon (ciseau)
+    const _cropRect = cropRect || (cropSelection ? normalizeSelectionRect(cropSelection) : null);
+    if (_cropRect) {
+        pixelCtx.strokeStyle = '#00C853';
+        pixelCtx.lineWidth = 2 / gridZoom;
+        pixelCtx.setLineDash([4 / gridZoom, 3 / gridZoom]);
+        pixelCtx.strokeRect(
+            _cropRect.minCol * cellSize,
+            _cropRect.minRow * cellSize,
+            (_cropRect.maxCol - _cropRect.minCol + 1) * cellSize,
+            (_cropRect.maxRow - _cropRect.minRow + 1) * cellSize
+        );
+        pixelCtx.setLineDash([]);
+        // Dimensions dans un badge
+        const w = _cropRect.maxCol - _cropRect.minCol + 1;
+        const h = _cropRect.maxRow - _cropRect.minRow + 1;
+        const label = `${w}×${h}`;
+        const lx = (_cropRect.minCol + w) * cellSize + 4 / gridZoom;
+        const ly = _cropRect.minRow * cellSize;
+        pixelCtx.font = `bold ${Math.max(8, 11 / gridZoom)}px sans-serif`;
+        pixelCtx.fillStyle = '#00C853';
+        pixelCtx.fillText(label, lx, ly + 10 / gridZoom);
+    }
 
     pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
 }
@@ -2092,6 +2119,15 @@ function startDrawing(e) {
         applyStamp(stampHoverCol, stampHoverRow);
         return;
     }
+    // Mode ciseau : démarrer la sélection de découpe
+    if (isCropStampMode) {
+        const { col, row } = _cropGetColRow(e.clientX, e.clientY);
+        cropSelection = { startCol: col, startRow: row, endCol: col, endRow: row };
+        cropRect = null;
+        isDrawing = true;
+        scheduleRender();
+        return;
+    }
     // Mode sprite sheet : placer le sheet et créer les frames
     if (isSpriteSheetMode) {
         applySpriteSheet(ssHoverCol, ssHoverRow);
@@ -2185,6 +2221,15 @@ function startDrawing(e) {
 function draw(e) {
     if (!isDrawing) return;
 
+    // Mode ciseau : mettre à jour la sélection de découpe
+    if (isCropStampMode && cropSelection) {
+        const { col, row } = _cropGetColRow(e.clientX, e.clientY);
+        cropSelection.endCol = col;
+        cropSelection.endRow = row;
+        scheduleRender();
+        return;
+    }
+
     if (CANVAS_RENDERING) {
         const index = getPixelIndexFromPoint(e.clientX, e.clientY);
         if (index < 0) return;
@@ -2273,6 +2318,18 @@ function draw(e) {
 
 function stopDrawing() {
     isDrawing = false;
+
+    // Mode ciseau : finaliser la sélection et ouvrir la dialog de confirmation
+    if (isCropStampMode && cropSelection) {
+        cropRect = normalizeSelectionRect(cropSelection);
+        cropSelection = null;
+        scheduleRender();
+        const r = cropRect;
+        cropRect = null;
+        scheduleRender();
+        _cropExtractAndConfirm(r);
+        return;
+    }
 
     // Phase 2 : gestion sélection
     if (CANVAS_RENDERING && isSelectionMode) {
@@ -2436,6 +2493,108 @@ function setSymmetryVState(active) {
 }
 
 // ── Sélection rectangulaire ───────────────────────────────────────────────────
+// ── Outil Découper en tampon ──────────────────────────────────────────────────
+function toggleCropStamp() { setCropStampState(!isCropStampMode); }
+
+function setCropStampState(active) {
+    isCropStampMode = active;
+    cropSelection = null;
+    cropRect = null;
+    document.querySelectorAll('#cropStampBtn').forEach(b => b.classList.toggle('active', active));
+    if (active) {
+        setSelectionState(false);
+        setEraserState(false);
+        setEyedropperState(false);
+        setFillState(false);
+    }
+    scheduleRender();
+}
+
+function _cropGetColRow(clientX, clientY) {
+    const grid = document.getElementById('pixelGrid');
+    if (!grid) return { col: 0, row: 0 };
+    const rect = grid.getBoundingClientRect();
+    const borderW = (rect.width  - grid.clientWidth)  / 2;
+    const borderH = (rect.height - grid.clientHeight) / 2;
+    const logicalCell = grid.clientWidth / currentGridSize;
+    const col = Math.max(0, Math.min(currentGridSize - 1,
+        Math.floor((clientX - rect.left - borderW - gridPanX) / gridZoom / logicalCell)));
+    const row = Math.max(0, Math.min(currentGridSize - 1,
+        Math.floor((clientY - rect.top - borderH - gridPanY) / gridZoom / logicalCell)));
+    return { col, row };
+}
+
+function _cropExtractAndConfirm(rect) {
+    const w = rect.maxCol - rect.minCol + 1;
+    const h = rect.maxRow - rect.minRow + 1;
+    if (w < 1 || h < 1) return;
+
+    // Extraire les pixels de la zone sélectionnée dans un tableau w×h
+    const pixels = [];
+    for (let r = rect.minRow; r <= rect.maxRow; r++) {
+        for (let c = rect.minCol; c <= rect.maxCol; c++) {
+            const src = currentFrameBuffer[r * currentGridSize + c];
+            if (src && !src.isEmpty) {
+                pixels.push({ color: src.color, isEmpty: false });
+            } else {
+                pixels.push({ color: '#FFFFFF', isEmpty: true });
+            }
+        }
+    }
+
+    const hasContent = pixels.some(p => !p.isEmpty);
+    if (!hasContent) {
+        showToast('La zone sélectionnée est vide', { type: 'warning' });
+        return;
+    }
+
+    // Aperçu dans un canvas 80×80
+    const previewSize = 80;
+    const ps = Math.max(1, Math.floor(previewSize / Math.max(w, h)));
+
+    const dialog = createMobileDialog('Découper en tampon', `
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+            <canvas id="cropPreviewCanvas" width="${w * ps}" height="${h * ps}"
+                style="image-rendering:pixelated;border:1px solid rgba(255,255,255,0.2);border-radius:6px;background:#1a1a2e;"></canvas>
+            <div style="color:rgba(255,255,255,0.7);font-size:0.85rem;">
+                <div><strong>${w} × ${h}</strong> pixels</div>
+            </div>
+        </div>
+        <label style="font-size:0.85rem;color:rgba(255,255,255,0.7);display:block;margin-bottom:6px;">Nom du tampon</label>
+        <input id="cropStampName" type="text" value="Découpe ${w}×${h}"
+            style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:white;font-size:0.9rem;box-sizing:border-box;margin-bottom:16px;">
+        <div style="display:flex;gap:8px;">
+            <button id="cropConfirmBtn" class="dialog-button">Ajouter comme tampon</button>
+            <button id="cropCancelBtn" class="dialog-button secondary">Annuler</button>
+        </div>
+    `);
+
+    // Dessiner l'aperçu
+    const previewCanvas = dialog.querySelector('#cropPreviewCanvas');
+    const ctx = previewCanvas.getContext('2d');
+    for (let i = 0; i < pixels.length; i++) {
+        if (pixels[i].isEmpty) continue;
+        const c = i % w;
+        const r = Math.floor(i / w);
+        ctx.fillStyle = pixels[i].color;
+        ctx.fillRect(c * ps, r * ps, ps, ps);
+    }
+
+    dialog.querySelector('#cropConfirmBtn').addEventListener('click', () => {
+        const name = dialog.querySelector('#cropStampName').value.trim() || `Découpe ${w}×${h}`;
+        const stamp = _addStamp(pixels, name, w);
+        dialog.remove();
+        setCropStampState(false);
+        activeStampId = stamp.id;
+        enterStampMode(stamp.pixels, stamp.gridSize);
+    });
+
+    dialog.querySelector('#cropCancelBtn').addEventListener('click', () => {
+        dialog.remove();
+        setCropStampState(false);
+    });
+}
+
 function toggleSelection() { setSelectionState(!isSelectionMode); }
 
 function setSelectionState(active) {
@@ -6859,6 +7018,7 @@ function handleKeyboardShortcuts(e) {
                 exitStampMode();
                 return;
             }
+            if (isCropStampMode) { setCropStampState(false); return; }
             if (isTextPlacementMode) { exitTextPlacementMode(); return; }
             if (isEyedropperMode) toggleEyedropper();
             if (isErasing) toggleEraser();
@@ -7756,6 +7916,10 @@ function initEventListeners() {
     // Boutons sélection (desktop + mobile)
     document.querySelectorAll('#selectionBtn').forEach(btn => {
         btn.addEventListener('click', toggleSelection);
+    });
+
+    document.querySelectorAll('#cropStampBtn').forEach(btn => {
+        btn.addEventListener('click', toggleCropStamp);
     });
 
     // Bouton export PNG frames

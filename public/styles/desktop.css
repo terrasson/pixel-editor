@@ -1081,6 +1081,12 @@ body {
     border-color: var(--color-secondary, #00B4A6) !important;
 }
 
+.crop-stamp-btn.active {
+    background: #00C853 !important;
+    color: white !important;
+    border-color: #00C853 !important;
+}
+
 /* Bouton référence */
 #loadRefBtn {
     width: 100%;
