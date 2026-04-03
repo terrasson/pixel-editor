@@ -692,7 +692,7 @@ function toSparseFrame(frame) {
     const data = [];
     for (let i = 0; i < frame.length; i++) {
         const px = frame[i];
-        if (px && !px.isEmpty && px.color && px.color !== '#FFFFFF') {
+        if (px && !px.isEmpty && px.color) {
             data.push({ i, c: px.color });
         }
     }
