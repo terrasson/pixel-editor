@@ -10138,17 +10138,20 @@ function saveCurrentDrawingAsStamp() {
 }
 
 function _addStamp(pixels, nameHint, gridSize) {
+    // Détecter la vraie taille depuis le tableau si non fournie (évite currentGridSize incorrect)
+    const detectedSize = Math.round(Math.sqrt((pixels || []).length));
     const stamp = {
         id: Date.now(),
         name: nameHint || `Tampon ${window.stamps.length + 1}`,
         pixels,
-        gridSize: gridSize || currentGridSize,
+        gridSize: gridSize || (detectedSize > 0 ? detectedSize : currentGridSize),
         hidden: false
     };
     window.stamps.unshift(stamp);
     _saveStamps();
     renderStampsList();
     showToast(`Tampon "${stamp.name}" sauvegardé`, { type: 'success' });
+    return stamp;
 }
 
 function showImportStampModal() {
@@ -10237,8 +10240,11 @@ function _buildImportStampDialog(allProjects) {
             return { color, isEmpty: empty };
         });
         const name = (project.name || 'Sans titre') + (framesData.length > 1 ? ` F${dialog._selectedFrame + 1}` : '');
-        _addStamp(normalised, name);
+        const stamp = _addStamp(normalised, name);
         dialog.remove();
+        // Entrer immédiatement en mode stamp (le tampon suit le curseur)
+        activeStampId = stamp.id;
+        enterStampMode(stamp.pixels, stamp.gridSize);
     });
 
     dialog.querySelector('#importStampCancelBtn').addEventListener('click', () => dialog.remove());
@@ -10362,8 +10368,11 @@ function _buildStampRow(stamp, index) {
 
     row.addEventListener('click', () => {
         activeStampId = stamp.id;
-        const gs = stamp.gridSize || currentGridSize;
-        const normPx = (stamp.pixels || []).map(px => {
+        const pixels = stamp.pixels || [];
+        // Détecter la vraie gridSize depuis la longueur (corrige anciens tampons mal enregistrés)
+        const detectedSize = Math.round(Math.sqrt(pixels.length));
+        const gs = (detectedSize > 0) ? detectedSize : (stamp.gridSize || currentGridSize);
+        const normPx = pixels.map(px => {
             if (!px) return { color: '#FFFFFF', isEmpty: true };
             const color = px.color || '#FFFFFF';
             // Un pixel non-blanc est toujours non-vide (corrige données isEmpty corrompues)
