@@ -835,15 +835,17 @@ body {
 
 .fps-sidebar-panel {
     display: none;
+    position: fixed;
+    z-index: 1000;
     flex-direction: column;
     gap: 12px;
     padding: 14px;
-    margin-top: -4px;
+    width: 220px;
     background: #FFFFFF;
     border: 1px solid #E5E5EA;
-    border-radius: 0;
-    box-shadow: none;
-    animation: fadeIn 0.2s ease;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    animation: fadeIn 0.15s ease;
 }
 
 .fps-sidebar-panel.open {

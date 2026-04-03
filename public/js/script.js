@@ -4946,10 +4946,23 @@ function initFPSSidebarPanel() {
     
     if (!toggleBtn || !panel || !slider) return;
     
-    toggleBtn.addEventListener('click', () => {
+    toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = panel.classList.contains('open');
         panel.classList.toggle('open');
-        if (panel.classList.contains('open')) {
+        if (!isOpen) {
+            // Positionner à droite du bouton
+            const rect = toggleBtn.getBoundingClientRect();
+            panel.style.top = rect.top + 'px';
+            panel.style.left = (rect.right + 8) + 'px';
             updateFPSSidebarUI(animationFPS);
+        }
+    });
+
+    // Fermer en cliquant ailleurs
+    document.addEventListener('click', (e) => {
+        if (!panel.contains(e.target) && e.target !== toggleBtn) {
+            panel.classList.remove('open');
         }
     });
     
