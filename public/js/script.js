@@ -1287,14 +1287,6 @@ function renderCanvas() {
     pixelCtx.clearRect(0, 0, w, w);
     pixelCtx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
 
-    // Damier de transparence — aligné cellule par cellule sur la grille
-    for (let row = 0; row < currentGridSize; row++) {
-        for (let col = 0; col < currentGridSize; col++) {
-            pixelCtx.fillStyle = (col + row) % 2 === 0 ? '#FFFFFF' : '#C8C8C8';
-            pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-        }
-    }
-
     // Onion skin configurable
     if (onionSkinEnabled) {
         for (let d = onionSkinPrevCount; d >= 1; d--) {
