@@ -10318,6 +10318,83 @@ function _addStamp(pixels, nameHint, gridSize) {
     return stamp;
 }
 
+async function _saveStampAsProject(stamp) {
+    const pixels = stamp.pixels || [];
+    const sqrtSize = Math.round(Math.sqrt(pixels.length));
+    const stored = stamp.gridSize;
+    const gs = (stored && pixels.length % stored === 0 && stored <= sqrtSize * 2)
+        ? stored : (sqrtSize || currentGridSize);
+
+    // Demander le nom — pré-remplir avec le nom du tampon
+    const defaultName = stamp.name || `Tampon ${gs}x${Math.ceil(pixels.length / gs)}`;
+    const fileNamePromise = showSaveDialog();
+    // Pré-remplir le champ après que le dialog est injecté dans le DOM
+    requestAnimationFrame(() => {
+        const input = document.getElementById('saveFileName');
+        if (input) input.value = defaultName;
+    });
+    const fileName = await fileNamePromise;
+    if (!fileName) return;
+
+    // Construire un projet single-frame à la taille exacte du tampon
+    const normPx = pixels.map(px => {
+        if (!px) return { color: '#FFFFFF', isEmpty: true };
+        const color = px.color || '#FFFFFF';
+        return { color, isEmpty: color === '#FFFFFF' ? (px.isEmpty !== false) : false };
+    });
+
+    const projectData = {
+        name: fileName,
+        frames: [normPx],
+        currentFrame: 0,
+        fps: 24,
+        customPalette: [],
+        customColors: [],
+        thumbnail: _stampThumbnailDataURL(normPx, gs),
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        version: '2.0',
+        signature: 'pixel-art-editor-v2'
+    };
+
+    // Sauvegarder Supabase → fallback localStorage
+    let saved = false;
+    if (window.dbService) {
+        try {
+            const result = await window.dbService.saveProject(projectData);
+            if (result.success) {
+                saved = true;
+                showToast(`"${fileName}" sauvegardé dans le cloud ☁️`, { type: 'success' });
+            }
+        } catch (e) { /* fallback ci-dessous */ }
+    }
+    if (!saved) {
+        try {
+            localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
+            showToast(`"${fileName}" sauvegardé en local`, { type: 'success' });
+        } catch (e) {
+            showToast('Erreur lors de la sauvegarde', { type: 'error' });
+        }
+    }
+}
+
+function _stampThumbnailDataURL(pixels, gs) {
+    try {
+        const size = 64;
+        const c = document.createElement('canvas');
+        c.width = size; c.height = size;
+        const ctx = c.getContext('2d');
+        const h = Math.ceil(pixels.length / gs);
+        const ps = size / Math.max(gs, h);
+        pixels.forEach((px, i) => {
+            if (!px || px.isEmpty) return;
+            ctx.fillStyle = px.color;
+            ctx.fillRect((i % gs) * ps, Math.floor(i / gs) * ps, ps, ps);
+        });
+        return c.toDataURL('image/png');
+    } catch (e) { return ''; }
+}
+
 function showImportStampModal() {
     // Lire les projets locaux immédiatement (synchrone)
     const localProjects = _getLocalProjects();
@@ -10517,6 +10594,15 @@ function _buildStampRow(stamp, index) {
     name.className = 'stamp-row-name';
     name.textContent = stamp.name;
 
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'stamp-row-del';
+    saveBtn.title = 'Sauvegarder comme projet';
+    saveBtn.innerHTML = '<i data-lucide="cloud-upload"></i>';
+    saveBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        _saveStampAsProject(stamp);
+    });
+
     const delBtn = document.createElement('button');
     delBtn.className = 'stamp-row-del';
     delBtn.title = 'Supprimer';
@@ -10528,7 +10614,7 @@ function _buildStampRow(stamp, index) {
         renderStampsList();
     });
 
-    row.append(handle, thumb, name, delBtn);
+    row.append(handle, thumb, name, saveBtn, delBtn);
 
     row.addEventListener('click', () => {
         activeStampId = stamp.id;
