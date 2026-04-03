@@ -7786,9 +7786,12 @@ async function loadFromServerMobile() {
 // Fonction intelligente de sauvegarde : essaie Supabase en premier, puis fallback vers localStorage
 async function saveProjectSmart() {
     try {
-        // Demander le nom du projet
-        const fileName = await showSaveDialog();
-        if (!fileName) return;
+        // Si un projet est déjà ouvert, sauvegarder directement sans dialog
+        let fileName = window.currentProjectName || null;
+        if (!fileName) {
+            fileName = await showSaveDialog();
+            if (!fileName) return;
+        }
 
         // Sauvegarder la frame courante avant la sauvegarde
         saveCurrentFrame();
