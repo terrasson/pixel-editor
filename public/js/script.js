@@ -610,12 +610,10 @@ function normalisePixel(pixel) {
     if (!pixel || typeof pixel !== 'object') {
         return { color: '#FFFFFF', isEmpty: true };
     }
-    const color = pixel.color || '#FFFFFF';
-    // If isEmpty is explicitly set, trust it. Otherwise infer: only pure white without content = empty.
-    const isEmpty = pixel.isEmpty !== undefined
-        ? Boolean(pixel.isEmpty)
-        : (color === '#FFFFFF');
-    return { color, isEmpty };
+    return {
+        color: pixel.color || '#FFFFFF',
+        isEmpty: pixel.isEmpty !== false ? true : false
+    };
 }
 
 // Détecte la taille de grille depuis les données brutes et redimensionne si nécessaire
