@@ -657,6 +657,10 @@ function normaliseFrames(rawFrames) {
     }
 
     return framesArray.map(frame => {
+        // Décompresser le format sparse si nécessaire
+        if (frame && frame._sparse === true) {
+            frame = fromSparseFrame(frame);
+        }
         if (frame && typeof frame === 'object' && !Array.isArray(frame) && Array.isArray(frame.pixels)) {
             frame = frame.pixels;
         }
@@ -679,6 +683,52 @@ function normaliseFrames(rawFrames) {
         }
         return frame.map(normalisePixel);
     });
+}
+
+// Sparse pixel encoding: store only non-empty (colored) pixels with their index.
+// Reduces 512×512 frame from ~8MB to a few KB when mostly empty.
+function toSparseFrame(frame) {
+    if (!Array.isArray(frame)) return frame;
+    const data = [];
+    for (let i = 0; i < frame.length; i++) {
+        const px = frame[i];
+        if (px && !px.isEmpty && px.color && px.color !== '#FFFFFF') {
+            data.push({ i, c: px.color });
+        }
+    }
+    return { _sparse: true, size: frame.length, data };
+}
+
+function fromSparseFrame(sparse) {
+    const size = sparse.size || (currentGridSize * currentGridSize);
+    const frame = [];
+    for (let i = 0; i < size; i++) frame.push({ color: '#FFFFFF', isEmpty: true });
+    for (const entry of (sparse.data || [])) {
+        if (entry.i >= 0 && entry.i < size) {
+            frame[entry.i] = { color: entry.c, isEmpty: false };
+        }
+    }
+    return frame;
+}
+
+function compressFrameLayers(layersData) {
+    if (!Array.isArray(layersData)) return layersData;
+    return layersData.map(layersInFrame =>
+        (Array.isArray(layersInFrame) ? layersInFrame : []).map(layer => ({
+            ...layer,
+            pixels: layer.pixels ? toSparseFrame(layer.pixels) : layer.pixels
+        }))
+    );
+}
+
+function decompressFrameLayers(layersData) {
+    if (!Array.isArray(layersData)) return layersData;
+    return layersData.map(layersInFrame =>
+        (Array.isArray(layersInFrame) ? layersInFrame : []).map(layer => ({
+            ...layer,
+            pixels: (layer.pixels && layer.pixels._sparse) ? fromSparseFrame(layer.pixels) : layer.pixels
+        }))
+    );
 }
 
 function sleep(ms) {
@@ -3598,7 +3648,8 @@ function applyProjectData(data, projectName) {
     // Restaurer les calques
     const rawLayers = data.frame_layers || data.frameLayers;
     if (rawLayers && Array.isArray(rawLayers)) {
-        frameLayers = typeof rawLayers === 'string' ? JSON.parse(rawLayers) : rawLayers;
+        const parsed = typeof rawLayers === 'string' ? JSON.parse(rawLayers) : rawLayers;
+        frameLayers = decompressFrameLayers(parsed);
         _nextLayerId = data.next_layer_id || data._nextLayerId ||
             frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
     } else {
@@ -7725,8 +7776,8 @@ async function saveProjectSmart() {
         const projectTitleText = document.getElementById('projectTitle')?.textContent || fileName;
         const projectData = {
             name: fileName,
-            frames: frames,
-            frameLayers: frameLayers,
+            frames: frames.map(toSparseFrame),
+            frameLayers: compressFrameLayers(frameLayers),
             _nextLayerId: _nextLayerId,
             currentFrame: currentFrame,
             fps: animationFPS || 24,
