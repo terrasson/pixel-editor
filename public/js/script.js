@@ -610,10 +610,12 @@ function normalisePixel(pixel) {
     if (!pixel || typeof pixel !== 'object') {
         return { color: '#FFFFFF', isEmpty: true };
     }
-    return {
-        color: pixel.color || '#FFFFFF',
-        isEmpty: pixel.isEmpty !== false ? true : false
-    };
+    const color = pixel.color || '#FFFFFF';
+    // If isEmpty is explicitly set, trust it. Otherwise infer: only pure white without content = empty.
+    const isEmpty = pixel.isEmpty !== undefined
+        ? Boolean(pixel.isEmpty)
+        : (color === '#FFFFFF');
+    return { color, isEmpty };
 }
 
 // Détecte la taille de grille depuis les données brutes et redimensionne si nécessaire
@@ -683,6 +685,28 @@ function normaliseFrames(rawFrames) {
         }
         return frame.map(normalisePixel);
     });
+}
+
+// Checkerboard background pattern cache (transparency indicator)
+let _checkerPattern = null;
+let _checkerCellSize = -1;
+
+function getCheckerPattern(ctx, cs) {
+    if (cs === _checkerCellSize && _checkerPattern) return _checkerPattern;
+    _checkerCellSize = cs;
+    const half = Math.max(1, cs);
+    const sz = half * 2;
+    const pc = document.createElement('canvas');
+    pc.width = sz;
+    pc.height = sz;
+    const pctx = pc.getContext('2d');
+    pctx.fillStyle = '#FFFFFF';
+    pctx.fillRect(0, 0, sz, sz);
+    pctx.fillStyle = '#C8C8C8';
+    pctx.fillRect(0, 0, half, half);
+    pctx.fillRect(half, half, half, half);
+    _checkerPattern = ctx.createPattern(pc, 'repeat');
+    return _checkerPattern;
 }
 
 // Sparse pixel encoding: store only non-empty (colored) pixels with their index.
@@ -1286,6 +1310,13 @@ function renderCanvas() {
     pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
     pixelCtx.clearRect(0, 0, w, w);
     pixelCtx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
+
+    // Checkerboard background (empty = transparent, like Photoshop)
+    const _pattern = getCheckerPattern(pixelCtx, cellSize);
+    if (_pattern) {
+        pixelCtx.fillStyle = _pattern;
+        pixelCtx.fillRect(0, 0, currentGridSize * cellSize, currentGridSize * cellSize);
+    }
 
     // Onion skin configurable
     if (onionSkinEnabled) {
