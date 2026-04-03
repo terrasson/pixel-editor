@@ -3322,22 +3322,8 @@ function updateStampGhost(col, row) {
 
 function applyStamp(col, row) {
     if (CANVAS_RENDERING) {
-        // 1. Sauvegarder le calque courant avant de créer le nouveau
-        if (frameLayers[currentFrame]?.[currentLayer]) {
-            frameLayers[currentFrame][currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
-        }
-
-        // 2. Créer le nouveau calque tampon
-        const stampName = (activeStampId !== null)
-            ? (window.stamps.find(s => s.id === activeStampId)?.name || 'Tampon')
-            : 'Tampon';
-        const stampLayer = createLayer(stampName);
-        frameLayers[currentFrame].push(stampLayer);
-        currentLayer = frameLayers[currentFrame].length - 1;
-
-        // 3. Construire le buffer du nouveau calque avec les pixels positionnés
-        const n = currentGridSize * currentGridSize;
-        const newBuffer = Array.from({ length: n }, () => ({ color: '#FFFFFF', isEmpty: true }));
+        // Peindre directement sur le calque actif (pas de nouveau calque)
+        saveToHistory();
         for (let i = 0; i < stampPixels.length; i++) {
             const pixel = stampPixels[i];
             if (!pixel || pixel.isEmpty) continue;
@@ -3347,15 +3333,15 @@ function applyStamp(col, row) {
             const dstRow = row + srcRow;
             if (dstCol < 0 || dstRow < 0 || dstCol >= currentGridSize || dstRow >= currentGridSize) continue;
             const dstIndex = dstRow * currentGridSize + dstCol;
-            newBuffer[dstIndex] = { color: pixel.color || '#000000', isEmpty: false };
+            currentFrameBuffer[dstIndex] = { color: pixel.color || '#000000', isEmpty: false };
         }
 
-        // 4. Synchroniser buffer ET layer.pixels pour que renderCanvas et computeComposite soient cohérents
-        currentFrameBuffer = newBuffer;
-        stampLayer.pixels = newBuffer.map(p => ({ ...p }));
+        // Synchroniser le calque actif
+        if (frameLayers[currentFrame]?.[currentLayer]) {
+            frameLayers[currentFrame][currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+        }
 
         frames[currentFrame] = computeComposite(currentFrame);
-        updateLayersPanel();
         renderCanvas();
         updateFramesList();
 
