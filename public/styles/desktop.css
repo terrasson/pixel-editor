@@ -249,7 +249,7 @@ body {
     border-radius: 0;
     box-shadow: none;
     overflow-y: auto;
-    gap: 8px;
+    gap: 4px;
     height: 100%;
     box-sizing: border-box;
 }
@@ -263,7 +263,7 @@ body {
 .color-palette {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 2px;
     overflow: visible;
     /* Pas de scroll sur le conteneur principal */
     position: relative;
@@ -291,8 +291,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 6px;
-    padding: 6px 8px;
+    gap: 4px;
+    padding: 4px 6px;
     background: #FFFFFF;
     border: 1px solid #E5E5EA;
     border-radius: 0;
@@ -1028,11 +1028,11 @@ body {
 .tools-grid-2x2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 4px;
+    gap: 2px;
 }
 
 .tool-chip {
-    padding: 5px 8px;
+    padding: 4px 6px;
     border: 1px solid #E5E5EA;
     border-radius: 8px;
     background: #FFFFFF;
