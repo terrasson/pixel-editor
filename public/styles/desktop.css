@@ -643,13 +643,13 @@ body {
 
 .preset-colors {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0;
     justify-items: center;
-    padding: 10px;
+    padding: 0;
     background: #FFFFFF;
     border: 1px solid #E5E5EA;
-    border-radius: 8px;
+    border-radius: 0;
     width: 100%;
     box-sizing: border-box;
     max-height: 220px;
@@ -672,12 +672,12 @@ body {
 }
 
 .color-btn {
-    width: 32px;
-    height: 32px;
+    width: 100%;
+    aspect-ratio: 1;
     min-width: 0;
     max-width: 100%;
     border: 1px solid #E5E5EA;
-    border-radius: 6px;
+    border-radius: 0;
     cursor: pointer;
     transition: opacity 0.15s ease;
     box-shadow: none;
@@ -779,31 +779,32 @@ body {
    BOUTONS SIDEBAR GAUCHE
    ======================================== */
 .extra-tools {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
     overflow-y: auto;
 }
 
 .extra-tools button {
-    padding: 10px 16px;
-    font-size: 0.9rem;
-    font-weight: 500;
+    padding: 0;
+    height: 30px;
+    font-size: 0;
     background: #FFFFFF;
-    border: none;
-    border-bottom: 1px solid #E5E5EA;
+    border: 1px solid #E5E5EA;
     border-radius: 0;
     color: #1D1D1F;
     cursor: pointer;
     transition: background 0.15s ease;
-    text-align: left;
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
+}
+
+.extra-tools button i, .extra-tools button svg {
+    width: 15px;
+    height: 15px;
     flex-shrink: 0;
-    width: 100%;
 }
 
 .extra-tools button:hover {
@@ -1027,24 +1028,30 @@ body {
 /* Grille 2×2 outils (Gomme / Pipette / Fill / Symétrie) */
 .tools-grid-2x2 {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
 }
 
 .tool-chip {
-    padding: 4px 6px;
+    padding: 0;
+    height: 30px;
     border: 1px solid #E5E5EA;
-    border-radius: 8px;
+    border-radius: 0;
     background: #FFFFFF;
     color: #1D1D1F;
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 0;
     cursor: pointer;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: background 0.15s ease, border-color 0.15s ease;
-    white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+.tool-chip i, .tool-chip svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
 }
 
 .tool-chip:hover {
