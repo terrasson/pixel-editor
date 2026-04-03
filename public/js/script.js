@@ -7906,6 +7906,43 @@ async function saveProjectSmart() {
     }
 }
 
+// Tooltip custom — apparaît à droite du bouton survolé
+function initButtonTooltips() {
+    // Injecter title depuis data-fr/data-en si absent
+    document.querySelectorAll('.extra-tools button, .tool-chip, .tools-secondary button').forEach(btn => {
+        if (!btn.title) {
+            const label = btn.getAttribute('data-fr') || btn.getAttribute('data-en') || '';
+            if (label) btn.title = label;
+        }
+    });
+    const eraserBtn = document.getElementById('eraserBtn');
+    if (eraserBtn && !eraserBtn.title) eraserBtn.title = 'Gomme';
+
+    const tooltip = document.getElementById('custom-tooltip');
+    if (!tooltip) return;
+
+    let showTimer = null;
+
+    document.querySelectorAll('.extra-tools button, .tool-chip').forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+            const label = btn.title;
+            if (!label) return;
+            clearTimeout(showTimer);
+            showTimer = setTimeout(() => {
+                tooltip.textContent = label;
+                const rect = btn.getBoundingClientRect();
+                tooltip.style.display = 'block';
+                tooltip.style.top = (rect.top + rect.height / 2 - tooltip.offsetHeight / 2) + 'px';
+                tooltip.style.left = (rect.right + 8) + 'px';
+            }, 400);
+        });
+        btn.addEventListener('mouseleave', () => {
+            clearTimeout(showTimer);
+            tooltip.style.display = 'none';
+        });
+    });
+}
+
 // Initialisation de tous les event listeners
 function initEventListeners() {
     // Boutons principaux
@@ -8092,6 +8129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Contrôles FPS (sidebar + modal)
     initFPSSidebarPanel();
+    initButtonTooltips();
     // Initialiser le modal FPS
     initFPSModal();
 
