@@ -10533,9 +10533,15 @@ function _buildStampRow(stamp, index) {
     row.addEventListener('click', () => {
         activeStampId = stamp.id;
         const pixels = stamp.pixels || [];
-        // Détecter la vraie gridSize depuis la longueur (corrige anciens tampons mal enregistrés)
-        const detectedSize = Math.round(Math.sqrt(pixels.length));
-        const gs = (detectedSize > 0) ? detectedSize : (stamp.gridSize || currentGridSize);
+        // Choisir la gridSize :
+        // - stamp.gridSize est fiable si : elle divise pixels.length ET est ≤ 2×sqrt(pixels)
+        //   (les anciens tampons corrompus ont gridSize >> sqrt, ex: 512 pour un 32×32 → rejeté)
+        // - sinon on recalcule via sqrt (fonctionne pour les sprites carrés)
+        const sqrtSize = Math.round(Math.sqrt(pixels.length));
+        const stored = stamp.gridSize;
+        const gs = (stored && pixels.length % stored === 0 && stored <= sqrtSize * 2)
+            ? stored
+            : (sqrtSize || currentGridSize);
         const normPx = pixels.map(px => {
             if (!px) return { color: '#FFFFFF', isEmpty: true };
             const color = px.color || '#FFFFFF';
