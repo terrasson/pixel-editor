@@ -1287,6 +1287,16 @@ function renderCanvas() {
     pixelCtx.clearRect(0, 0, w, w);
     pixelCtx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
 
+    // Damier subtil — une cellule sur deux légèrement grisée, aligné avec la grille
+    for (let row = 0; row < currentGridSize; row++) {
+        for (let col = 0; col < currentGridSize; col++) {
+            if ((col + row) % 2 === 1) {
+                pixelCtx.fillStyle = 'rgba(0,0,0,0.04)';
+                pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+            }
+        }
+    }
+
     // Onion skin configurable
     if (onionSkinEnabled) {
         for (let d = onionSkinPrevCount; d >= 1; d--) {
