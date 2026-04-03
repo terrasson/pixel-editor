@@ -243,13 +243,13 @@ body {
     grid-area: left-sidebar;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 10px;
     background: #FAFAFA;
     border-right: 1px solid #E5E5EA;
     border-radius: 0;
     box-shadow: none;
     overflow-y: auto;
-    gap: 16px;
+    gap: 8px;
     height: 100%;
     box-sizing: border-box;
 }
@@ -263,7 +263,7 @@ body {
 .color-palette {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 6px;
     overflow: visible;
     /* Pas de scroll sur le conteneur principal */
     position: relative;
@@ -278,12 +278,12 @@ body {
 .color-picker-row {
     display: flex;
     flex-direction: row;
-    gap: 8px;
+    gap: 6px;
     justify-content: flex-start;
     align-items: center;
     position: relative;
     width: 100%;
-    margin-bottom: 8px;
+    margin-bottom: 0;
 }
 
 /* Container pour afficher la couleur actuelle */
@@ -291,8 +291,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 8px;
-    padding: 10px 12px;
+    gap: 6px;
+    padding: 6px 8px;
     background: #FFFFFF;
     border: 1px solid #E5E5EA;
     border-radius: 0;
@@ -1028,11 +1028,11 @@ body {
 .tools-grid-2x2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
+    gap: 4px;
 }
 
 .tool-chip {
-    padding: 7px 10px;
+    padding: 5px 8px;
     border: 1px solid #E5E5EA;
     border-radius: 8px;
     background: #FFFFFF;
