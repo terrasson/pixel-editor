@@ -7797,7 +7797,7 @@ async function saveProjectSmart() {
         saveCurrentFrame();
 
         // Générer la miniature
-        const thumbnail = window.dbService.generateThumbnail();
+        const thumbnail = window.dbService?.generateThumbnail?.() || null;
 
         const projectTitleText = document.getElementById('projectTitle')?.textContent || fileName;
         const projectData = {
@@ -7832,9 +7832,10 @@ async function saveProjectSmart() {
                     fps: animationFPS
                 });
                 
-                // Aussi sauvegarder en local pour backup
+                // Aussi sauvegarder en local pour backup (sans frameLayers)
                 try {
-                    localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
+                    const localData = { ...projectData, frameLayers: undefined };
+                    localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(localData));
                 } catch (localError) {
                     console.warn('⚠️ Impossible de créer le backup local:', localError);
                 }
@@ -7853,10 +7854,11 @@ async function saveProjectSmart() {
         } catch (supabaseError) {
             console.warn('⚠️ Erreur Supabase:', supabaseError);
             
-            // 2️⃣ FALLBACK VERS LOCALSTORAGE
-            
+            // 2️⃣ FALLBACK VERS LOCALSTORAGE (sans frameLayers pour rester sous la limite 5MB)
+
             try {
-                localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
+                const localData = { ...projectData, frameLayers: undefined };
+                localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(localData));
                 logUsageEvent('project_saved_local', {
                     name: fileName,
                     frames: frames.length,
