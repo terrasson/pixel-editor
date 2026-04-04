@@ -2764,6 +2764,36 @@ function _initReferenceMovHandlers() {
 
     document.addEventListener('mouseup', () => { _refDragStart = null; });
 
+    // Wheel / trackpad pinch → zoom reference image around cursor
+    grid.addEventListener('wheel', (e) => {
+        if (!referenceMoveMode || !referenceImage) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+        const prevScale = referenceScale;
+        referenceScale = Math.max(0.05, Math.min(20, referenceScale * factor));
+
+        // Zoom centré sur la position du curseur dans le canvas
+        const rect = grid.getBoundingClientRect();
+        const mouseXCanvas = (e.clientX - rect.left) / gridZoom;
+        const mouseYCanvas = (e.clientY - rect.top) / gridZoom;
+
+        const gridPx = currentGridSize * (pixelCanvas.width / currentGridSize);
+        const imgAspect = referenceImage.width / referenceImage.height;
+        let baseW, baseH;
+        if (imgAspect >= 1) { baseW = gridPx; baseH = gridPx / imgAspect; }
+        else                { baseH = gridPx; baseW = gridPx * imgAspect; }
+        const originX = (gridPx - baseW) / 2 + referenceX + (baseW - baseW * prevScale) / 2;
+        const originY = (gridPx - baseH) / 2 + referenceY + (baseH - baseH * prevScale) / 2;
+
+        // Maintenir le point sous le curseur fixe
+        referenceX += (mouseXCanvas - originX) * (1 - factor);
+        referenceY += (mouseYCanvas - originY) * (1 - factor);
+
+        scheduleRender();
+    }, { passive: false });
+
     // Touch drag + pinch
     grid.addEventListener('touchstart', (e) => {
         if (!referenceMoveMode || !referenceImage) return;
