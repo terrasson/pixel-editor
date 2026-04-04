@@ -32,15 +32,11 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
-            const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
+            const { name, frames, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
 
-            // Limit payload: skip frame_layers if total JSON > 800KB
-            const framesSize = new Blob([JSON.stringify(frames)]).size;
-            const layersSize = frameLayers ? new Blob([JSON.stringify(frameLayers)]).size : 0;
-            const layersToSend = (framesSize + layersSize) < 800_000 ? (frameLayers ?? null) : null;
-            if (layersToSend === null && layersSize > 0) {
-                console.warn(`⚠️ frameLayers exclus (payload: ${Math.round((framesSize + layersSize) / 1024)}KB)`);
-            }
+            // Never send frameLayers to cloud — too heavy for Nano plan (causes OOM/Unhealthy)
+            // frameLayers are always saved locally in localStorage as backup
+            const layersToSend = null;
 
             const payload = {
                 frames,
