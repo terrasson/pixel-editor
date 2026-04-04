@@ -299,53 +299,141 @@
             line-height: 1.5;
         }
 
-        /* ── Gallery preview ── */
-        .gallery-preview {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 0 24px 80px;
-        }
+        /* ── Coverflow ── */
+        .coverflow-section { padding: 0 0 80px; }
 
-        .gallery-grid-preview {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 12px;
-            margin-bottom: 28px;
-        }
-
-        .preview-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
+        .coverflow-outer {
+            position: relative;
+            height: 320px;
+            perspective: 1200px;
             overflow: hidden;
+        }
+
+        .coverflow-track {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cf-card {
+            position: absolute;
+            left: 50%;
+            width: 220px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.52s cubic-bezier(0.25,0.46,0.45,0.94),
+                        opacity 0.52s, box-shadow 0.52s, border-color 0.52s;
+            cursor: pointer;
             text-decoration: none;
-            transition: transform 0.2s, border-color 0.2s;
-            display: block;
+            color: inherit;
+            will-change: transform, opacity;
+            user-select: none;
         }
 
-        .preview-card:hover {
-            transform: translateY(-3px);
-            border-color: rgba(0,122,255,0.4);
+        .cf-card.is-center {
+            box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+            border-color: rgba(0,122,255,0.5);
         }
 
-        .preview-card canvas {
+        .cf-card canvas {
             width: 100%;
             aspect-ratio: 1;
             display: block;
             image-rendering: pixelated;
         }
 
-        .preview-card-name {
-            padding: 8px 10px;
-            font-size: 0.78rem;
-            color: var(--muted);
+        .cf-card-body { padding: 10px 12px; }
+
+        .cf-card-name {
+            font-weight: 600;
+            font-size: 0.88rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .cf-card-stats {
+            display: flex;
+            gap: 10px;
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        .cf-badge {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: rgba(0,0,0,0.65);
+            border-radius: 6px;
+            padding: 3px 7px;
+            font-size: 0.68rem;
+            color: rgba(255,255,255,0.9);
+            backdrop-filter: blur(4px);
+        }
+
+        .coverflow-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 20;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: white;
+            border-radius: 50%;
+            width: 44px; height: 44px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, transform 0.2s;
+            backdrop-filter: blur(8px);
+            line-height: 1;
+        }
+
+        .coverflow-nav:hover {
+            background: rgba(255,255,255,0.18);
+            transform: translateY(-50%) scale(1.08);
+        }
+
+        .coverflow-nav.prev { left: 20px; }
+        .coverflow-nav.next { right: 20px; }
+
+        .coverflow-dots {
+            display: flex;
+            gap: 7px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .cf-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .cf-dot.active {
+            background: var(--blue);
+            transform: scale(1.5);
         }
 
         .gallery-cta {
             text-align: center;
+            margin-top: 28px;
+        }
+
+        @media (max-width: 600px) {
+            .coverflow-outer { height: 240px; }
+            .cf-card { width: 160px; }
+            .coverflow-nav { width: 36px; height: 36px; font-size: 1.2rem; }
+            .coverflow-nav.prev { left: 8px; }
+            .coverflow-nav.next { right: 8px; }
         }
 
         /* ── Final CTA ── */
@@ -469,12 +557,15 @@
         </div>
     </section>
 
-    <!-- Gallery preview -->
-    <section class="gallery-preview">
+    <!-- Coverflow gallery preview -->
+    <section class="coverflow-section">
         <h2 class="section-title" data-en="Made by the community" data-fr="Créé par la communauté">Made by the community</h2>
-        <div class="gallery-grid-preview" id="galleryPreview">
-            <!-- Loaded dynamically -->
+        <div class="coverflow-outer" id="coverflowOuter">
+            <button class="coverflow-nav prev" id="cfPrev" aria-label="Previous">&#8249;</button>
+            <div class="coverflow-track" id="coverflowTrack"></div>
+            <button class="coverflow-nav next" id="cfNext" aria-label="Next">&#8250;</button>
         </div>
+        <div class="coverflow-dots" id="coverflowDots"></div>
         <div class="gallery-cta">
             <a href="/gallery.html" class="btn-secondary" data-en="🖼️ See all creations" data-fr="🖼️ Voir toutes les créations">🖼️ See all creations</a>
         </div>
@@ -654,8 +745,16 @@
             drawFrame(frames[frameIdx]);
         }, 600);
 
-        // ── Gallery preview ──
+        // ── Coverflow gallery ──
+        function fromSparse(sparse) {
+            const arr = Array.from({ length: sparse.size }, () => ({ color: '#FFFFFF', isEmpty: true }));
+            (sparse.data || []).forEach(({ i, c }) => { arr[i] = { color: c, isEmpty: false }; });
+            return arr;
+        }
+
         function normaliseFrame(frame) {
+            if (!frame) return null;
+            if (frame._sparse) return fromSparse(frame);
             if (Array.isArray(frame)) return frame;
             if (frame && Array.isArray(frame.pixels)) return frame.pixels;
             return null;
@@ -663,15 +762,29 @@
 
         function drawPixelFrame(ctx, frame, size) {
             if (!Array.isArray(frame) || frame.length === 0) return;
-            const gridSize = Math.sqrt(frame.length);
-            const pixelSize = size / gridSize;
-            ctx.clearRect(0, 0, size, size);
+            // Subtle checkerboard background
+            const tile = Math.max(2, Math.floor(size / 32));
+            for (let ty = 0; ty < size; ty += tile) {
+                for (let tx = 0; tx < size; tx += tile) {
+                    ctx.fillStyle = ((Math.floor(tx/tile) + Math.floor(ty/tile)) % 2 === 0) ? '#1a1a2e' : '#131325';
+                    ctx.fillRect(tx, ty, tile, tile);
+                }
+            }
+            const gridSize = Math.round(Math.sqrt(frame.length));
+            const px = size / gridSize;
             frame.forEach((pixel, i) => {
                 if (!pixel || pixel.isEmpty) return;
                 ctx.fillStyle = pixel.color || '#FFF';
-                ctx.fillRect((i % gridSize) * pixelSize, Math.floor(i / gridSize) * pixelSize, pixelSize, pixelSize);
+                ctx.fillRect((i % gridSize) * px, Math.floor(i / gridSize) * px, px, px);
             });
         }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        const cfIntervals = [];
 
         async function loadGalleryPreview() {
             try {
@@ -679,44 +792,143 @@
                 const result = await window.dbService.getPublicGallery({ sortBy: 'popular' });
                 if (!result.success || result.data.length === 0) return;
 
-                const container = document.getElementById('galleryPreview');
-                container.innerHTML = '';
+                const track = document.getElementById('coverflowTrack');
+                const dotsEl = document.getElementById('coverflowDots');
+                if (!track || !dotsEl) return;
 
-                result.data.slice(0, 6).forEach(share => {
+                cfIntervals.forEach(clearInterval);
+                cfIntervals.length = 0;
+
+                const shares = result.data.slice(0, 10);
+                const cards = [];
+                let currentIdx = 0;
+                let autoTimer = null;
+
+                shares.forEach((share, i) => {
                     const snapshot = share.project_snapshot || {};
                     const rawFrames = (snapshot.frames || []).map(normaliseFrame).filter(Boolean);
+                    const fps = Math.max(1, snapshot.fps || 4);
+                    const isAnimated = rawFrames.length > 1;
 
                     const card = document.createElement('a');
-                    card.className = 'preview-card';
+                    card.className = 'cf-card';
                     card.href = `/shared.html?token=${share.share_token}`;
                     card.innerHTML = `
-                        <canvas width="64" height="64"></canvas>
-                        <div class="preview-card-name">${escapeHtml(share.project_name)}</div>
+                        <div style="position:relative">
+                            <canvas width="200" height="200"></canvas>
+                            ${isAnimated ? `<span class="cf-badge">&#9654; ${rawFrames.length} frames</span>` : ''}
+                        </div>
+                        <div class="cf-card-body">
+                            <div class="cf-card-name">${escapeHtml(share.project_name)}</div>
+                            <div class="cf-card-stats">
+                                <span>&#128065; ${share.view_count || 0}</span>
+                                <span>&#128203; ${share.duplicate_count || 0}</span>
+                            </div>
+                        </div>
                     `;
 
-                    const c = card.querySelector('canvas');
-                    const cx = c.getContext('2d');
-                    cx.fillStyle = '#1e1e2e';
-                    cx.fillRect(0, 0, 64, 64);
+                    const canvas = card.querySelector('canvas');
+                    const ctx = canvas.getContext('2d');
 
                     if (rawFrames.length > 0) {
-                        drawPixelFrame(cx, rawFrames[0], 64);
+                        drawPixelFrame(ctx, rawFrames[0], 200);
+                        if (isAnimated) {
+                            let idx = 0;
+                            const interval = setInterval(() => {
+                                idx = (idx + 1) % rawFrames.length;
+                                drawPixelFrame(ctx, rawFrames[idx], 200);
+                            }, 1000 / fps);
+                            cfIntervals.push(interval);
+                        }
                     } else if (share.project_thumbnail) {
                         const img = new Image();
-                        img.onload = () => cx.drawImage(img, 0, 0, 64, 64);
+                        img.onload = () => ctx.drawImage(img, 0, 0, 200, 200);
                         img.src = share.project_thumbnail;
                     }
 
-                    container.appendChild(card);
-                });
-            } catch (e) {
-                // Gallery preview is optional — fail silently
-            }
-        }
+                    // Click on side card → focus it (don't navigate)
+                    card.addEventListener('click', (e) => {
+                        if (i !== currentIdx) {
+                            e.preventDefault();
+                            go(i - currentIdx);
+                        }
+                    });
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                    track.appendChild(card);
+                    cards.push(card);
+
+                    // Dot
+                    const dot = document.createElement('div');
+                    dot.className = 'cf-dot';
+                    dot.addEventListener('click', () => go(i - currentIdx));
+                    dotsEl.appendChild(dot);
+                });
+
+                const isMobile = () => window.innerWidth < 600;
+
+                function positionCards() {
+                    const spacing = isMobile() ? 150 : 210;
+                    cards.forEach((card, i) => {
+                        const d = i - currentIdx;
+                        const absd = Math.abs(d);
+                        if (absd > 3) {
+                            card.style.opacity = '0';
+                            card.style.pointerEvents = 'none';
+                            card.style.zIndex = '0';
+                            return;
+                        }
+                        const x = d * spacing;
+                        const ry = d * -38;
+                        const scale = Math.max(0.45, 1 - absd * 0.18);
+                        const opacity = absd === 0 ? 1 : Math.max(0.15, 1 - absd * 0.28);
+                        card.style.transform = `translateX(calc(-50% + ${x}px)) rotateY(${ry}deg) scale(${scale})`;
+                        card.style.opacity = String(opacity);
+                        card.style.pointerEvents = 'auto';
+                        card.style.zIndex = String(10 - absd);
+                        card.classList.toggle('is-center', d === 0);
+                    });
+                    dotsEl.querySelectorAll('.cf-dot').forEach((dot, i) => {
+                        dot.classList.toggle('active', i === currentIdx);
+                    });
+                }
+
+                function go(delta) {
+                    currentIdx = Math.max(0, Math.min(cards.length - 1, currentIdx + delta));
+                    positionCards();
+                    resetAuto();
+                }
+
+                function resetAuto() {
+                    clearTimeout(autoTimer);
+                    autoTimer = setTimeout(() => {
+                        currentIdx = (currentIdx + 1) % cards.length;
+                        positionCards();
+                        resetAuto();
+                    }, 4500);
+                }
+
+                document.getElementById('cfPrev').addEventListener('click', () => go(-1));
+                document.getElementById('cfNext').addEventListener('click', () => go(1));
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft') go(-1);
+                    else if (e.key === 'ArrowRight') go(1);
+                });
+
+                const outer = document.getElementById('coverflowOuter');
+                let touchStartX = 0;
+                outer.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+                outer.addEventListener('touchend', e => {
+                    const dx = e.changedTouches[0].clientX - touchStartX;
+                    if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+                });
+
+                positionCards();
+                resetAuto();
+
+            } catch (e) {
+                console.warn('Gallery preview error:', e);
+            }
         }
 
         loadGalleryPreview();
