@@ -7935,8 +7935,23 @@ function initButtonTooltips() {
                 tooltip.textContent = label;
                 const rect = el.getBoundingClientRect();
                 tooltip.style.display = 'block';
-                tooltip.style.top = (rect.top + rect.height / 2 - tooltip.offsetHeight / 2) + 'px';
-                tooltip.style.left = (rect.right + 8) + 'px';
+
+                const tw = tooltip.offsetWidth;
+                const th = tooltip.offsetHeight;
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const gap = 8;
+
+                // Droite par défaut, gauche si ça déborde
+                let left = rect.right + gap;
+                if (left + tw > vw) left = rect.left - tw - gap;
+                // Clamp vertical
+                let top = rect.top + rect.height / 2 - th / 2;
+                if (top < gap) top = gap;
+                if (top + th > vh - gap) top = vh - th - gap;
+
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = top + 'px';
             }, 400);
         });
         el.addEventListener('mouseleave', () => {
