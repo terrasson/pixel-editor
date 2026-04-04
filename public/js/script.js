@@ -4364,7 +4364,7 @@ function updateCustomColorModal(color) {
 
     customColorModalElements.preview.style.backgroundColor = targetHex;
     if (customColorModalElements.hexValue) {
-        customColorModalElements.hexValue.textContent = targetHex;
+        customColorModalElements.hexValue.value = targetHex;
     }
 
     if (customColorModalElements.swatches?.length) {
@@ -4593,6 +4593,44 @@ function initCustomColorModal() {
 
     customColorModalElements.closeBtn?.addEventListener('click', closeCustomColorModal);
     customColorModalElements.cancelBtn?.addEventListener('click', closeCustomColorModal);
+
+    // Saisie manuelle du code hex
+    const hexInput = customColorModalElements.hexValue;
+    if (hexInput) {
+        // Ajouter '#' automatiquement si absent
+        hexInput.addEventListener('focus', () => hexInput.select());
+        hexInput.addEventListener('input', () => {
+            let val = hexInput.value.trim();
+            if (!val.startsWith('#')) val = '#' + val;
+            if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                setPendingColor(val.toUpperCase(), { retainPointer: false });
+            }
+        });
+        hexInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                let val = hexInput.value.trim();
+                if (!val.startsWith('#')) val = '#' + val;
+                if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                    setPendingColor(val.toUpperCase(), { retainPointer: false });
+                } else {
+                    // Valeur invalide → remettre la couleur courante
+                    hexInput.value = customColorModalState.currentHex || '#000000';
+                }
+                hexInput.blur();
+            } else if (e.key === 'Escape') {
+                hexInput.value = customColorModalState.currentHex || '#000000';
+                hexInput.blur();
+            }
+        });
+        hexInput.addEventListener('blur', () => {
+            // Remettre la valeur correcte si saisie invalide
+            let val = hexInput.value.trim();
+            if (!val.startsWith('#')) val = '#' + val;
+            if (!/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                hexInput.value = customColorModalState.currentHex || '#000000';
+            }
+        });
+    }
 
     customColorModalElements.applyBtn?.addEventListener('click', () => {
         const hex = customColorModalState.currentHex;

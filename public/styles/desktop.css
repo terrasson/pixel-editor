@@ -470,6 +470,19 @@ body {
     font-weight: 600;
     letter-spacing: 0.05em;
     color: rgba(255, 255, 255, 0.95);
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    outline: none;
+    width: 80px;
+    cursor: text;
+    padding: 2px 0;
+    font-family: monospace;
+    transition: border-color 0.2s;
+}
+
+.custom-color-hex-value:focus {
+    border-bottom-color: rgba(255, 255, 255, 0.7);
 }
 
 .custom-color-spectrum {
