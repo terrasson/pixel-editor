@@ -757,7 +757,7 @@ function sanitize(str) {
     return el.innerHTML;
 }
 
-function showToast(message, { type = 'info', duration = 3500 } = {}) {
+function showToast(message, { type = 'info', duration = 3500, id = null } = {}) {
     const style = getComputedStyle(document.documentElement);
     const colors = {
         error:   style.getPropertyValue('--color-error').trim()   || '#e74c3c',
@@ -765,7 +765,13 @@ function showToast(message, { type = 'info', duration = 3500 } = {}) {
         warning: style.getPropertyValue('--color-warning').trim() || '#f39c12',
         info:    style.getPropertyValue('--color-info').trim()    || '#555',
     };
+    // Si un toast avec le même id existe déjà, ne pas en créer un second
+    if (id) {
+        const existing = document.querySelector(`[data-toast-id="${id}"]`);
+        if (existing) return;
+    }
     const toast = document.createElement('div');
+    if (id) toast.dataset.toastId = id;
     toast.style.cssText = `
         position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);
         background:${colors[type] || colors.info};color:#fff;
@@ -784,6 +790,14 @@ function showToast(message, { type = 'info', duration = 3500 } = {}) {
         toast.style.transform = 'translateX(-50%) translateY(8px)';
         setTimeout(() => toast.remove(), 220);
     }, duration);
+}
+
+function dismissToast(id) {
+    const toast = document.querySelector(`[data-toast-id="${id}"]`);
+    if (!toast) return;
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(8px)';
+    setTimeout(() => toast.remove(), 220);
 }
 
 async function ensureAuthenticatedUser(retries = 10, delay = 200) {
@@ -7895,9 +7909,14 @@ async function saveProjectSmart() {
         };
 
         // 1️⃣ ESSAYER SUPABASE EN PREMIER
-        
+        showToast(tL('saving') || '💾 Sauvegarde en cours…', { type: 'info', duration: 10000, id: 'save-progress' });
+
         try {
-            const result = await window.dbService.saveProject(projectData);
+            const saveTimeout = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('timeout')), 8000)
+            );
+            const result = await Promise.race([window.dbService.saveProject(projectData), saveTimeout]);
+            dismissToast('save-progress');
 
             if (result.success) {
                 const action = tL(result.isUpdate ? 'updated' : 'created2');
@@ -7928,6 +7947,7 @@ async function saveProjectSmart() {
                 throw new Error(result.error);
             }
         } catch (supabaseError) {
+            dismissToast('save-progress');
             console.warn('⚠️ Erreur Supabase:', supabaseError);
             
             // 2️⃣ FALLBACK VERS LOCALSTORAGE (sans frameLayers pour rester sous la limite 5MB)
