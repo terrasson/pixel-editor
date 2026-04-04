@@ -32,11 +32,15 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
-            const { name, frames, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
+            const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
 
-            // Never send frameLayers to cloud — too heavy for Nano plan (causes OOM/Unhealthy)
-            // frameLayers are always saved locally in localStorage as backup
-            const layersToSend = null;
+            // Send frameLayers only if payload stays under 200KB (Nano plan limit)
+            // Above that: frames (flattened) are saved to cloud, layers stay in localStorage only
+            const layersJson = frameLayers ? JSON.stringify(frameLayers) : null;
+            const framesJson = JSON.stringify(frames);
+            const totalKB = Math.round((new Blob([framesJson]).size + (layersJson ? new Blob([layersJson]).size : 0)) / 1024);
+            const layersToSend = layersJson && totalKB < 200 ? frameLayers : null;
+            const layersDropped = frameLayers && layersToSend === null;
 
             const payload = {
                 frames,
@@ -66,7 +70,7 @@ class DatabaseService {
                     .select('id')
                     .single();
                 if (error) throw error;
-                return { success: true, data, isUpdate: true };
+                return { success: true, data, isUpdate: true, layersDropped };
             } else {
                 const { data, error } = await this.supabase
                     .from('pixel_projects')
@@ -74,7 +78,7 @@ class DatabaseService {
                     .select('id')
                     .single();
                 if (error) throw error;
-                return { success: true, data, isUpdate: false };
+                return { success: true, data, isUpdate: false, layersDropped };
             }
         } catch (error) {
             console.error('Save project error:', error);

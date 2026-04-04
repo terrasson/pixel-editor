@@ -7927,14 +7927,22 @@ async function saveProjectSmart() {
                     fps: animationFPS
                 });
                 
-                // Aussi sauvegarder en local pour backup (sans frameLayers)
+                // Sauvegarder en local avec les calques (backup complet)
                 try {
-                    const localData = { ...projectData, frameLayers: undefined };
-                    localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(localData));
+                    localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
                 } catch (localError) {
                     console.warn('⚠️ Impossible de créer le backup local:', localError);
                 }
-                
+
+                // Avertir si les calques n'ont pas pu être envoyés au cloud
+                if (result.layersDropped) {
+                    const lang = localStorage.getItem('lang') || 'fr';
+                    const msg = lang === 'fr'
+                        ? '⚠️ Projet trop lourd — calques sauvegardés localement uniquement (non synchronisés sur le cloud)'
+                        : '⚠️ Project too large — layers saved locally only (not synced to cloud)';
+                    showToast(msg, { type: 'warning', duration: 6000 });
+                }
+
                 // Afficher le message de succès dans une vraie fenêtre modale
                 await showSaveResultDialog({
                     title: tL('saveSuccessTitle'),
