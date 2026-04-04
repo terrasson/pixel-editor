@@ -7907,26 +7907,40 @@ async function saveProjectSmart() {
     }
 }
 
-// Tooltip custom — apparaît à droite du bouton survolé
+// Tooltip custom — apparaît à droite du bouton survolé, respecte la langue
 function initButtonTooltips() {
-    // Injecter title depuis data-fr/data-en si absent
-    document.querySelectorAll('.extra-tools button, .tool-chip, .tools-secondary button').forEach(btn => {
-        if (!btn.title) {
-            const label = btn.getAttribute('data-fr') || btn.getAttribute('data-en') || '';
-            if (label) btn.title = label;
-        }
-    });
-    const eraserBtn = document.getElementById('eraserBtn');
-    if (eraserBtn && !eraserBtn.title) eraserBtn.title = 'Gomme';
-
     const tooltip = document.getElementById('custom-tooltip');
     if (!tooltip) return;
 
+    const lang = localStorage.getItem('lang') || 'fr';
+
+    // Stocker les labels dans data-tooltip, supprimer title pour éviter le doublon natif
+    document.querySelectorAll('.extra-tools button, .tool-chip').forEach(btn => {
+        const labelFr = btn.getAttribute('data-fr') || btn.title || '';
+        const labelEn = btn.getAttribute('data-en') || btn.title || '';
+        if (labelFr || labelEn) {
+            btn.setAttribute('data-tooltip-fr', labelFr);
+            btn.setAttribute('data-tooltip-en', labelEn);
+        }
+        // Supprimer le title natif pour éviter le doublon
+        btn.removeAttribute('title');
+    });
+
+    // Cas spécial : gomme sans data-fr/en
+    const eraserBtn = document.getElementById('eraserBtn');
+    if (eraserBtn) {
+        eraserBtn.setAttribute('data-tooltip-fr', 'Gomme');
+        eraserBtn.setAttribute('data-tooltip-en', 'Eraser');
+        eraserBtn.removeAttribute('title');
+    }
+
     let showTimer = null;
+    const currentLang = () => localStorage.getItem('lang') || 'fr';
 
     document.querySelectorAll('.extra-tools button, .tool-chip').forEach(btn => {
         btn.addEventListener('mouseenter', () => {
-            const label = btn.title;
+            const l = currentLang();
+            const label = btn.getAttribute(`data-tooltip-${l}`) || btn.getAttribute('data-tooltip-fr') || btn.getAttribute('data-tooltip-en') || '';
             if (!label) return;
             clearTimeout(showTimer);
             showTimer = setTimeout(() => {
