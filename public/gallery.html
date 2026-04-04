@@ -392,23 +392,43 @@
 
             const canvas = card.querySelector('.card-canvas');
             const ctx = canvas.getContext('2d');
+            let cardInterval = null;
 
-            if (frames.length === 0 && share.project_thumbnail) {
-                const img = new Image();
-                img.onload = () => ctx.drawImage(img, 0, 0, 128, 128);
-                img.src = share.project_thumbnail;
-            } else if (frames.length > 0) {
-                drawFrame(ctx, frames[0], 128);
-
-                if (isAnimated) {
-                    let idx = 0;
-                    const interval = setInterval(() => {
-                        idx = (idx + 1) % frames.length;
-                        drawFrame(ctx, frames[idx], 128);
-                    }, 1000 / fps);
-                    activeIntervals.push(interval);
+            const startRender = () => {
+                if (frames.length === 0 && share.project_thumbnail) {
+                    const img = new Image();
+                    img.onload = () => ctx.drawImage(img, 0, 0, 128, 128);
+                    img.src = share.project_thumbnail;
+                } else if (frames.length > 0) {
+                    drawFrame(ctx, frames[0], 128);
+                    if (isAnimated && !cardInterval) {
+                        let idx = 0;
+                        cardInterval = setInterval(() => {
+                            idx = (idx + 1) % frames.length;
+                            drawFrame(ctx, frames[idx], 128);
+                        }, 1000 / fps);
+                        activeIntervals.push(cardInterval);
+                    }
                 }
-            }
+            };
+
+            const stopRender = () => {
+                if (cardInterval) {
+                    clearInterval(cardInterval);
+                    const i = activeIntervals.indexOf(cardInterval);
+                    if (i !== -1) activeIntervals.splice(i, 1);
+                    cardInterval = null;
+                }
+            };
+
+            // Lazy render : dessiner uniquement quand visible
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) startRender();
+                    else stopRender();
+                });
+            }, { rootMargin: '100px' });
+            observer.observe(card);
 
             if (isOwner) {
                 const deleteBtn = card.querySelector('.card-delete-btn');

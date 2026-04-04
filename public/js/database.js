@@ -122,11 +122,14 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
+            // Ne charger que les métadonnées — pas les frames (trop lourd)
+            // Les frames sont chargées à la demande dans loadProject()
             const { data, error } = await this.supabase
                 .from('pixel_projects')
-                .select('id, name, thumbnail, created_at, updated_at, fps, current_frame, frames, custom_colors')
+                .select('id, name, thumbnail, created_at, updated_at, fps, current_frame, custom_colors')
                 .eq('user_id', userId)
-                .order('updated_at', { ascending: false });
+                .order('updated_at', { ascending: false })
+                .limit(50);
 
             if (error) throw error;
 
