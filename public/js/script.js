@@ -7912,6 +7912,8 @@ function initButtonTooltips() {
     const tooltip = document.getElementById('custom-tooltip');
     if (!tooltip) return;
 
+    const currentLang = () => localStorage.getItem('lang') || 'fr';
+
     // Convertir TOUS les title de la page en data-tooltip-fr/en, puis supprimer title natif
     document.querySelectorAll('[title]').forEach(el => {
         const t = el.getAttribute('title');
