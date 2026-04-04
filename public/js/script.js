@@ -7923,6 +7923,14 @@ function initButtonTooltips() {
         el.removeAttribute('title');
     });
 
+    // Convertir aussi les éléments avec data-fr/data-en (sans title)
+    document.querySelectorAll('[data-fr], [data-en]').forEach(el => {
+        if (!el.getAttribute('data-tooltip-fr') && el.getAttribute('data-fr'))
+            el.setAttribute('data-tooltip-fr', el.getAttribute('data-fr'));
+        if (!el.getAttribute('data-tooltip-en') && el.getAttribute('data-en'))
+            el.setAttribute('data-tooltip-en', el.getAttribute('data-en'));
+    });
+
     let showTimer = null;
 
     const attach = (el) => {
