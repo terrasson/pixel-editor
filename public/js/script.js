@@ -800,7 +800,17 @@ function dismissToast(id) {
     setTimeout(() => toast.remove(), 220);
 }
 
+let _authCacheTime = 0;
+const _AUTH_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 async function ensureAuthenticatedUser(retries = 10, delay = 200) {
+    // Utiliser le cache si l'auth a été vérifiée il y a moins de 5 min
+    const now = Date.now();
+    if (now - _authCacheTime < _AUTH_CACHE_TTL &&
+        window.authService.isAuthenticated && window.authService.isAuthenticated()) {
+        return true;
+    }
+
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
             await window.authService.init();
@@ -809,6 +819,7 @@ async function ensureAuthenticatedUser(retries = 10, delay = 200) {
         }
 
         if (window.authService.isAuthenticated && window.authService.isAuthenticated()) {
+            _authCacheTime = Date.now();
             return true;
         }
 
@@ -7872,8 +7883,11 @@ async function loadFromServerMobile() {
     }
 }
 
-// Fonction intelligente de sauvegarde : essaie Supabase en premier, puis fallback vers localStorage
+/// Fonction intelligente de sauvegarde : essaie Supabase en premier, puis fallback vers localStorage
+let _saveInProgress = false;
 async function saveProjectSmart() {
+    if (_saveInProgress) return; // évite double-sauvegarde si clic rapide
+    _saveInProgress = true;
     try {
         // Si un projet est déjà ouvert, sauvegarder directement sans dialog
         let fileName = window.currentProjectName || null;
@@ -7885,8 +7899,12 @@ async function saveProjectSmart() {
         // Sauvegarder la frame courante avant la sauvegarde
         saveCurrentFrame();
 
-        // Générer la miniature
-        const thumbnail = window.dbService?.generateThumbnail?.() || null;
+        // Générer la miniature uniquement si des pixels ont été modifiés depuis la dernière sauvegarde
+        const hasChanges = modifiedPixels.some(s => s.size > 0);
+        if (hasChanges || !window._lastSavedThumbnail) {
+            window._lastSavedThumbnail = window.dbService?.generateThumbnail?.() || null;
+        }
+        const thumbnail = window._lastSavedThumbnail || null;
 
         const projectTitleText = document.getElementById('projectTitle')?.textContent || fileName;
         const projectData = {
@@ -7900,12 +7918,7 @@ async function saveProjectSmart() {
             thumbnail: thumbnail,
             customColors: customColors,
             gridSize: { width: currentGridSize, height: currentGridSize },
-            projectTitle: projectTitleText,
-            created: new Date().toISOString(),
-            updated: new Date().toISOString(),
-            version: '2.0',
-            device_info: navigator.userAgent,
-            signature: 'pixel-art-editor-v2'
+            projectTitle: projectTitleText
         };
 
         // 1️⃣ ESSAYER SUPABASE EN PREMIER
@@ -7921,6 +7934,8 @@ async function saveProjectSmart() {
             if (result.success) {
                 const action = tL(result.isUpdate ? 'updated' : 'created2');
                 window.currentProjectName = fileName;
+                // Réinitialiser les pixels modifiés — thumbnail à jour
+                modifiedPixels = modifiedPixels.map(() => new Set());
                 logUsageEvent('project_saved', {
                     name: fileName,
                     frames: frames.length,
@@ -8012,6 +8027,8 @@ async function saveProjectSmart() {
             message: tL('saveErrorUnexpected', err.message),
             type: 'error'
         });
+    } finally {
+        _saveInProgress = false;
     }
 }
 
