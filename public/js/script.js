@@ -7907,55 +7907,43 @@ async function saveProjectSmart() {
     }
 }
 
-// Tooltip custom — apparaît à droite du bouton survolé, respecte la langue
+// Tooltip custom — couvre tous les éléments avec title dans la page
 function initButtonTooltips() {
     const tooltip = document.getElementById('custom-tooltip');
     if (!tooltip) return;
 
-    const lang = localStorage.getItem('lang') || 'fr';
-
-    // Stocker les labels dans data-tooltip, supprimer title pour éviter le doublon natif
-    document.querySelectorAll('.extra-tools button, .tool-chip').forEach(btn => {
-        const labelFr = btn.getAttribute('data-fr') || btn.title || '';
-        const labelEn = btn.getAttribute('data-en') || btn.title || '';
-        if (labelFr || labelEn) {
-            btn.setAttribute('data-tooltip-fr', labelFr);
-            btn.setAttribute('data-tooltip-en', labelEn);
-        }
-        // Supprimer le title natif pour éviter le doublon
-        btn.removeAttribute('title');
+    // Convertir TOUS les title de la page en data-tooltip-fr/en, puis supprimer title natif
+    document.querySelectorAll('[title]').forEach(el => {
+        const t = el.getAttribute('title');
+        if (!t) return;
+        if (!el.getAttribute('data-tooltip-fr')) el.setAttribute('data-tooltip-fr', el.getAttribute('data-fr') || t);
+        if (!el.getAttribute('data-tooltip-en')) el.setAttribute('data-tooltip-en', el.getAttribute('data-en') || t);
+        el.removeAttribute('title');
     });
 
-    // Cas spécial : gomme sans data-fr/en
-    const eraserBtn = document.getElementById('eraserBtn');
-    if (eraserBtn) {
-        eraserBtn.setAttribute('data-tooltip-fr', 'Gomme');
-        eraserBtn.setAttribute('data-tooltip-en', 'Eraser');
-        eraserBtn.removeAttribute('title');
-    }
-
     let showTimer = null;
-    const currentLang = () => localStorage.getItem('lang') || 'fr';
 
-    document.querySelectorAll('.extra-tools button, .tool-chip').forEach(btn => {
-        btn.addEventListener('mouseenter', () => {
+    const attach = (el) => {
+        el.addEventListener('mouseenter', () => {
             const l = currentLang();
-            const label = btn.getAttribute(`data-tooltip-${l}`) || btn.getAttribute('data-tooltip-fr') || btn.getAttribute('data-tooltip-en') || '';
+            const label = el.getAttribute(`data-tooltip-${l}`) || el.getAttribute('data-tooltip-fr') || el.getAttribute('data-tooltip-en') || '';
             if (!label) return;
             clearTimeout(showTimer);
             showTimer = setTimeout(() => {
                 tooltip.textContent = label;
-                const rect = btn.getBoundingClientRect();
+                const rect = el.getBoundingClientRect();
                 tooltip.style.display = 'block';
                 tooltip.style.top = (rect.top + rect.height / 2 - tooltip.offsetHeight / 2) + 'px';
                 tooltip.style.left = (rect.right + 8) + 'px';
             }, 400);
         });
-        btn.addEventListener('mouseleave', () => {
+        el.addEventListener('mouseleave', () => {
             clearTimeout(showTimer);
             tooltip.style.display = 'none';
         });
-    });
+    };
+
+    document.querySelectorAll('[data-tooltip-fr], [data-tooltip-en]').forEach(attach);
 }
 
 // Initialisation de tous les event listeners
