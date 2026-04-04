@@ -620,10 +620,21 @@ function normalisePixel(pixel) {
 function autoDetectAndResizeGrid(rawFramesData) {
     const arr = typeof rawFramesData === 'string' ? JSON.parse(rawFramesData) : rawFramesData;
     if (!Array.isArray(arr) || arr.length === 0) return;
-    const firstFrame = Array.isArray(arr[0]) ? arr[0] : (arr[0]?.pixels || null);
-    if (!Array.isArray(firstFrame) || firstFrame.length === 0) return;
-    const detectedSize = Math.round(Math.sqrt(firstFrame.length));
-    if (VALID_GRID_SIZES.includes(detectedSize) && detectedSize !== currentGridSize) {
+
+    let detectedSize = null;
+    const first = arr[0];
+
+    if (first && first._sparse === true && first.size) {
+        // Format sparse — size = nombre total de pixels
+        detectedSize = Math.round(Math.sqrt(first.size));
+    } else {
+        const firstFrame = Array.isArray(first) ? first : (first?.pixels || null);
+        if (Array.isArray(firstFrame) && firstFrame.length > 0) {
+            detectedSize = Math.round(Math.sqrt(firstFrame.length));
+        }
+    }
+
+    if (detectedSize && VALID_GRID_SIZES.includes(detectedSize) && detectedSize !== currentGridSize) {
         currentGridSize = detectedSize;
         initGrid(detectedSize);
         updateGridSizeIndicator(detectedSize);
@@ -7806,6 +7817,7 @@ async function saveProjectSmart() {
             customPalette: customPalette,
             thumbnail: thumbnail,
             customColors: customColors,
+            gridSize: { width: currentGridSize, height: currentGridSize },
             projectTitle: projectTitleText,
             created: new Date().toISOString(),
             updated: new Date().toISOString(),
