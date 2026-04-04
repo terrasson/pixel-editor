@@ -370,7 +370,8 @@ class DatabaseService {
         return sessionId;
     }
 
-    async logUsageEvent(eventName, payload = {}) {
+    async logUsageEvent(_eventName, _payload = {}) {
+        return; // Désactivé — réduit les appels Supabase (compute Nano)
         if (!this.supabase) this.init();
 
         try {

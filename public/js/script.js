@@ -793,14 +793,10 @@ async function ensureAuthenticatedUser(retries = 10, delay = 200) {
     throw new Error('User not authenticated');
 }
 
-async function logUsageEvent(eventName, payload = {}) {
-    if (!window.dbService?.logUsageEvent) return;
-
-    try {
-        await window.dbService.logUsageEvent(eventName, payload);
-    } catch (error) {
-        console.warn('Usage event log failed:', error.message);
-    }
+async function logUsageEvent(_eventName, _payload = {}) {
+    // Désactivé — réduit les appels Supabase (compute Nano plan gratuit)
+    return;
+    // eslint-disable-next-line no-unreachable
 }
 
 // Variables pour l'animation
