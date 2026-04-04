@@ -34,37 +34,52 @@ class DatabaseService {
 
             const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
 
-            // Limit payload: skip frame_layers if total JSON exceeds 800KB
-            const framesJson = JSON.stringify(frames);
-            const layersJson = frameLayers ? JSON.stringify(frameLayers) : null;
-            const framesSize = new Blob([framesJson]).size;
-            const layersSize = layersJson ? new Blob([layersJson]).size : 0;
+            // Limit payload: skip frame_layers if total JSON > 800KB
+            const framesSize = new Blob([JSON.stringify(frames)]).size;
+            const layersSize = frameLayers ? new Blob([JSON.stringify(frameLayers)]).size : 0;
             const layersToSend = (framesSize + layersSize) < 800_000 ? (frameLayers ?? null) : null;
             if (layersToSend === null && layersSize > 0) {
-                console.warn(`⚠️ frameLayers exclus du cloud (payload trop lourd: ${Math.round((framesSize + layersSize) / 1024)}KB)`);
+                console.warn(`⚠️ frameLayers exclus (payload: ${Math.round((framesSize + layersSize) / 1024)}KB)`);
             }
 
-            // Single upsert — avoids SELECT + INSERT/UPDATE roundtrip
-            const { data, error } = await this.supabase
-                .from('pixel_projects')
-                .upsert({
-                    user_id: userId,
-                    name,
-                    frames,
-                    frame_layers: layersToSend,
-                    next_layer_id: _nextLayerId ?? 0,
-                    current_frame: currentFrame,
-                    fps: fps || 24,
-                    custom_palette: customPalette,
-                    custom_colors: customColors ?? null,
-                    thumbnail,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'user_id,name' })
-                .select('id')
-                .single();
+            const payload = {
+                frames,
+                frame_layers: layersToSend,
+                next_layer_id: _nextLayerId ?? 0,
+                current_frame: currentFrame,
+                fps: fps || 24,
+                custom_palette: customPalette,
+                custom_colors: customColors ?? null,
+                thumbnail,
+                updated_at: new Date().toISOString()
+            };
 
-            if (error) throw error;
-            return { success: true, data, isUpdate: true };
+            // Check if project exists
+            const { data: existing } = await this.supabase
+                .from('pixel_projects')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('name', name)
+                .maybeSingle();
+
+            if (existing) {
+                const { data, error } = await this.supabase
+                    .from('pixel_projects')
+                    .update(payload)
+                    .eq('id', existing.id)
+                    .select('id')
+                    .single();
+                if (error) throw error;
+                return { success: true, data, isUpdate: true };
+            } else {
+                const { data, error } = await this.supabase
+                    .from('pixel_projects')
+                    .insert({ user_id: userId, name, ...payload })
+                    .select('id')
+                    .single();
+                if (error) throw error;
+                return { success: true, data, isUpdate: false };
+            }
         } catch (error) {
             console.error('Save project error:', error);
             return { success: false, error: error.message };
