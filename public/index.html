@@ -797,12 +797,26 @@
                 });
 
                 const outer = document.getElementById('coverflowOuter');
+
+                // Touch (mobile swipe)
                 let touchStartX = 0;
                 outer.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
                 outer.addEventListener('touchend', e => {
                     const dx = e.changedTouches[0].clientX - touchStartX;
                     if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
                 });
+
+                // Trackpad / mouse wheel — horizontal or vertical scroll → navigate
+                let wheelCooldown = false;
+                outer.addEventListener('wheel', e => {
+                    e.preventDefault();
+                    if (wheelCooldown) return;
+                    const delta = Math.abs(e.deltaX) >= Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+                    if (Math.abs(delta) < 5) return;
+                    go(delta > 0 ? 1 : -1);
+                    wheelCooldown = true;
+                    setTimeout(() => { wheelCooldown = false; }, 500);
+                }, { passive: false });
 
                 positionCards();
                 resetAuto();
