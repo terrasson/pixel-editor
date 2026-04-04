@@ -218,37 +218,6 @@
             font-size: 1.05rem;
         }
 
-        /* ── Demo canvas ── */
-        .demo-wrapper {
-            display: flex;
-            justify-content: center;
-            padding: 0 24px 80px;
-        }
-
-        .demo-frame {
-            position: relative;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
-        }
-
-        #demoCanvas {
-            display: block;
-            image-rendering: pixelated;
-            border-radius: 8px;
-            width: 256px;
-            height: 256px;
-        }
-
-        .demo-label {
-            text-align: center;
-            margin-top: 12px;
-            font-size: 0.78rem;
-            color: var(--muted);
-        }
-
         /* ── Features ── */
         .features {
             max-width: 960px;
@@ -477,7 +446,6 @@
         @media (max-width: 480px) {
             header { padding: 14px 16px; }
             .hero { padding: 50px 16px 40px; }
-            #demoCanvas { width: 200px; height: 200px; }
         }
     </style>
 </head>
@@ -512,13 +480,19 @@
         </div>
     </section>
 
-    <!-- Demo -->
-    <div class="demo-wrapper">
-        <div class="demo-frame">
-            <canvas id="demoCanvas" width="128" height="128"></canvas>
-            <div class="demo-label" data-en="Live preview — made with Pixel Editor" data-fr="Aperçu en direct — fait avec Pixel Editor">Live preview — made with Pixel Editor</div>
+    <!-- Coverflow gallery preview -->
+    <section class="coverflow-section" style="padding-top:8px;">
+        <h2 class="section-title" data-en="Made by the community" data-fr="Créé par la communauté">Made by the community</h2>
+        <div class="coverflow-outer" id="coverflowOuter">
+            <button class="coverflow-nav prev" id="cfPrev" aria-label="Previous">&#8249;</button>
+            <div class="coverflow-track" id="coverflowTrack"></div>
+            <button class="coverflow-nav next" id="cfNext" aria-label="Next">&#8250;</button>
         </div>
-    </div>
+        <div class="coverflow-dots" id="coverflowDots"></div>
+        <div class="gallery-cta">
+            <a href="/gallery.html" class="btn-secondary" data-en="🖼️ See all creations" data-fr="🖼️ Voir toutes les créations">🖼️ See all creations</a>
+        </div>
+    </section>
 
     <!-- Features -->
     <section class="features">
@@ -554,20 +528,6 @@
                 <h3 data-en="For everyone" data-fr="Pour tout le monde">For everyone</h3>
                 <p data-en="Whether you're 7 or 70, a beginner or a hobbyist — pixel art is for everyone." data-fr="Que tu aies 7 ou 70 ans, débutant ou amateur — le pixel art est fait pour tout le monde.">Whether you're 7 or 70, a beginner or a hobbyist — pixel art is for everyone.</p>
             </div>
-        </div>
-    </section>
-
-    <!-- Coverflow gallery preview -->
-    <section class="coverflow-section">
-        <h2 class="section-title" data-en="Made by the community" data-fr="Créé par la communauté">Made by the community</h2>
-        <div class="coverflow-outer" id="coverflowOuter">
-            <button class="coverflow-nav prev" id="cfPrev" aria-label="Previous">&#8249;</button>
-            <div class="coverflow-track" id="coverflowTrack"></div>
-            <button class="coverflow-nav next" id="cfNext" aria-label="Next">&#8250;</button>
-        </div>
-        <div class="coverflow-dots" id="coverflowDots"></div>
-        <div class="gallery-cta">
-            <a href="/gallery.html" class="btn-secondary" data-en="🖼️ See all creations" data-fr="🖼️ Voir toutes les créations">🖼️ See all creations</a>
         </div>
     </section>
 
@@ -625,6 +585,7 @@
         </p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config/supabase-config.js"></script>
     <script src="js/config/app-config.js"></script>
     <script src="js/auth.js"></script>
@@ -664,86 +625,6 @@
         });
 
         applyLang(currentLang);
-
-        // ── Demo canvas animation ──
-        const canvas = document.getElementById('demoCanvas');
-        const ctx = canvas.getContext('2d');
-        const SIZE = 16;
-        const PIXEL = 128 / SIZE;
-
-        // A small pixel art character (16x16 smiley face)
-        const frames = [
-            // Frame 1 — neutral
-            `
-                ................
-                ................
-                .....XXXXX......
-                ....X.....X.....
-                ...X.......X....
-                ...X.O...O.X....
-                ...X.......X....
-                ...X..._...X....
-                ...X.......X....
-                ....X.....X.....
-                .....XXXXX......
-                ................
-                ................
-                ................
-                ................
-                ................
-            `,
-            // Frame 2 — smile
-            `
-                ................
-                ................
-                .....XXXXX......
-                ....X.....X.....
-                ...X.......X....
-                ...X.O...O.X....
-                ...X.......X....
-                ...X..VVV..X....
-                ...X.......X....
-                ....X.....X.....
-                .....XXXXX......
-                ................
-                ................
-                ................
-                ................
-                ................
-            `
-        ];
-
-        const palette = {
-            'X': '#f59e0b',
-            'O': '#1e293b',
-            'V': '#ef4444',
-            '_': '#94a3b8',
-            '.': null
-        };
-
-        function drawFrame(frameStr) {
-            ctx.clearRect(0, 0, 128, 128);
-            ctx.fillStyle = '#1e1e2e';
-            ctx.fillRect(0, 0, 128, 128);
-
-            const rows = frameStr.trim().split('\n').map(r => r.trim()).filter(r => r.length);
-            rows.forEach((row, y) => {
-                [...row].forEach((ch, x) => {
-                    const color = palette[ch];
-                    if (color) {
-                        ctx.fillStyle = color;
-                        ctx.fillRect(x * PIXEL, y * PIXEL, PIXEL, PIXEL);
-                    }
-                });
-            });
-        }
-
-        let frameIdx = 0;
-        drawFrame(frames[0]);
-        setInterval(() => {
-            frameIdx = (frameIdx + 1) % frames.length;
-            drawFrame(frames[frameIdx]);
-        }, 600);
 
         // ── Coverflow gallery ──
         function fromSparse(sparse) {
