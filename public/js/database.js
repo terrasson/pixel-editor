@@ -35,12 +35,34 @@ class DatabaseService {
             const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
 
             // Send frameLayers only if payload stays under 200KB (Nano plan limit)
-            // Above that: frames (flattened) are saved to cloud, layers stay in localStorage only
             const layersJson = frameLayers ? JSON.stringify(frameLayers) : null;
             const framesJson = JSON.stringify(frames);
             const totalKB = Math.round((new Blob([framesJson]).size + (layersJson ? new Blob([layersJson]).size : 0)) / 1024);
             const layersToSend = layersJson && totalKB < 200 ? frameLayers : null;
             const layersDropped = frameLayers && layersToSend === null;
+
+            // Upload thumbnail to Storage instead of storing base64 in DB
+            let thumbnailUrl = null;
+            if (thumbnail && thumbnail.startsWith('data:')) {
+                try {
+                    const blob = await fetch(thumbnail).then(r => r.blob());
+                    const filePath = `${userId}/${name.replace(/[^a-z0-9]/gi, '_')}.png`;
+                    const { error: uploadError } = await this.supabase.storage
+                        .from('thumbnails')
+                        .upload(filePath, blob, { upsert: true, contentType: 'image/png' });
+                    if (!uploadError) {
+                        const { data: urlData } = this.supabase.storage
+                            .from('thumbnails')
+                            .getPublicUrl(filePath);
+                        thumbnailUrl = urlData?.publicUrl || null;
+                    }
+                } catch (e) {
+                    console.warn('Thumbnail upload failed, falling back to base64:', e);
+                    thumbnailUrl = thumbnail; // fallback base64
+                }
+            } else {
+                thumbnailUrl = thumbnail; // already a URL or null
+            }
 
             const payload = {
                 frames,
@@ -50,35 +72,47 @@ class DatabaseService {
                 fps: fps || 24,
                 custom_palette: customPalette,
                 custom_colors: customColors ?? null,
-                thumbnail,
+                thumbnail: thumbnailUrl,
                 updated_at: new Date().toISOString()
             };
 
-            // Check if project exists
-            const { data: existing } = await this.supabase
-                .from('pixel_projects')
-                .select('id')
-                .eq('user_id', userId)
-                .eq('name', name)
-                .maybeSingle();
-
-            if (existing) {
+            // Try upsert first (requires unique constraint on user_id+name)
+            // Falls back to SELECT+INSERT/UPDATE if constraint doesn't exist yet
+            try {
                 const { data, error } = await this.supabase
                     .from('pixel_projects')
-                    .update(payload)
-                    .eq('id', existing.id)
+                    .upsert({ user_id: userId, name, ...payload }, { onConflict: 'user_id,name' })
                     .select('id')
                     .single();
                 if (error) throw error;
                 return { success: true, data, isUpdate: true, layersDropped };
-            } else {
-                const { data, error } = await this.supabase
+            } catch (upsertError) {
+                // Fallback: unique constraint not yet added → SELECT + INSERT/UPDATE
+                const { data: existing } = await this.supabase
                     .from('pixel_projects')
-                    .insert({ user_id: userId, name, ...payload })
                     .select('id')
-                    .single();
-                if (error) throw error;
-                return { success: true, data, isUpdate: false, layersDropped };
+                    .eq('user_id', userId)
+                    .eq('name', name)
+                    .maybeSingle();
+
+                if (existing) {
+                    const { data, error } = await this.supabase
+                        .from('pixel_projects')
+                        .update(payload)
+                        .eq('id', existing.id)
+                        .select('id')
+                        .single();
+                    if (error) throw error;
+                    return { success: true, data, isUpdate: true, layersDropped };
+                } else {
+                    const { data, error } = await this.supabase
+                        .from('pixel_projects')
+                        .insert({ user_id: userId, name, ...payload })
+                        .select('id')
+                        .single();
+                    if (error) throw error;
+                    return { success: true, data, isUpdate: false, layersDropped };
+                }
             }
         } catch (error) {
             console.error('Save project error:', error);
