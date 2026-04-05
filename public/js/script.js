@@ -8421,6 +8421,15 @@ document.addEventListener('DOMContentLoaded', () => {
         initHistory();
     }, 100);
     
+    // Nettoyage unique du localStorage au démarrage pour libérer l'espace occupé par les anciennes données lourdes
+    try {
+        if (!localStorage.getItem('_lsCleanedV2')) {
+            localStorage.removeItem('pixelEditor_autoSaveProjects');
+            localStorage.setItem('_lsCleanedV2', '1');
+            console.log('🧹 localStorage nettoyé (migration V2)');
+        }
+    } catch (_) {}
+
     // Charger les données (Supabase + localStorage en fallback)
     loadSupabaseProjects().catch(() => loadAutoSaveProjects());
     
