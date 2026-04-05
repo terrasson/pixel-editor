@@ -8075,8 +8075,9 @@ async function saveProjectSmart() {
                 });
             } catch (localError) {
                 // 3️⃣ DERNIER RECOURS : TÉLÉCHARGEMENT
-                console.error('❌ Impossible de sauvegarder en local:', localError);
-                
+                console.error('❌ Erreur Supabase:', supabaseError?.message);
+                console.error('❌ Erreur localStorage:', localError?.message);
+
                 const blob = new Blob([JSON.stringify(projectData, null, 2)], {type: 'application/json'});
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -8086,17 +8087,16 @@ async function saveProjectSmart() {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                
+
                 logUsageEvent('project_saved_download', {
                     name: fileName,
                     frames: frames.length,
                     fps: animationFPS
                 });
-                
-                // Afficher le message d'avertissement dans une vraie fenêtre modale
+
                 await showSaveResultDialog({
                     title: tL('saveDownloadTitle'),
-                    message: tL('saveDownloadMsg', fileName),
+                    message: `Cloud: ${supabaseError?.message || '?'}\nLocal: ${localError?.message || '?'}\n\n${tL('saveDownloadMsg', fileName)}`,
                     type: 'warning'
                 });
             }
