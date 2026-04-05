@@ -51,7 +51,29 @@ class DatabaseService {
             const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
             const safeName = name.replace(/[^a-z0-9]/gi, '_');
 
-            // Upload frameLayers en premier (données critiques)
+            // Upload frames vers Storage (évite le payload JSONB lourd dans la DB)
+            let framesForDb = frames;
+            if (frames && Array.isArray(frames) && frames.length > 0) {
+                try {
+                    onProgress?.('frames');
+                    const framesJson = JSON.stringify(frames);
+                    const framesBlob = new Blob([framesJson], { type: 'application/json' });
+                    const framesPath = `${userId}/${safeName}_frames.json`;
+                    const { success: framesOk } = await this._uploadWithTimeout('thumbnails', framesPath, framesBlob, 'application/json', 10000);
+                    if (framesOk) {
+                        const { data: framesUrlData } = this.supabase.storage
+                            .from('thumbnails')
+                            .getPublicUrl(framesPath);
+                        framesForDb = { _url: framesUrlData?.publicUrl };
+                    } else {
+                        console.warn('Frames upload failed, storing inline');
+                    }
+                } catch (e) {
+                    console.warn('Frames upload failed:', e);
+                }
+            }
+
+            // Upload frameLayers vers Storage
             let frameLayersForDb = null;
             if (frameLayers && Array.isArray(frameLayers) && frameLayers.length > 0) {
                 try {
@@ -96,7 +118,7 @@ class DatabaseService {
             onProgress?.('database');
 
             const payload = {
-                frames,
+                frames: framesForDb,
                 frame_layers: frameLayersForDb,
                 next_layer_id: _nextLayerId ?? 0,
                 current_frame: currentFrame,
@@ -170,6 +192,19 @@ class DatabaseService {
                 .single();
 
             if (error) throw error;
+
+            // Si les frames sont dans Storage (pointer { _url }), les récupérer
+            if (data?.frames?._url) {
+                try {
+                    const resp = await fetch(data.frames._url);
+                    if (resp.ok) {
+                        data.frames = await resp.json();
+                    }
+                } catch (e) {
+                    console.warn('Failed to fetch frames from Storage:', e);
+                    data.frames = null;
+                }
+            }
 
             // Si les calques sont stockés dans Storage (pointer { _url }), les récupérer
             if (data?.frame_layers?._url) {

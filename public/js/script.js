@@ -7991,8 +7991,9 @@ async function saveProjectSmart() {
 
         const onSaveProgress = (step) => {
             const messages = {
-                thumbnail: '🖼️ Upload miniature…',
+                frames:    '🎞️ Upload frames…',
                 layers:    '📦 Upload calques…',
+                thumbnail: '🖼️ Upload miniature…',
                 database:  '☁️ Enregistrement cloud…',
             };
             if (messages[step]) updateToast('save-progress', messages[step]);
