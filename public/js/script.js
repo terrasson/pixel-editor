@@ -3977,6 +3977,7 @@ async function showLocalProjects() {
                 const result = await window.dbService.deleteProjectById(project.id);
 
                 if (result.success) {
+                    window.dbService?.invalidateProjectsCache?.();
                     showToast(tL('deleteSuccess'), { type: 'success' });
                     dialog.remove();
                     showLocalProjects(); // Refresh the list
@@ -7932,6 +7933,7 @@ async function saveProjectSmart() {
             dismissToast('save-progress');
 
             if (result.success) {
+                window.dbService?.invalidateProjectsCache?.();
                 const action = tL(result.isUpdate ? 'updated' : 'created2');
                 window.currentProjectName = fileName;
                 // Réinitialiser les pixels modifiés — thumbnail à jour
@@ -7947,15 +7949,6 @@ async function saveProjectSmart() {
                     localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
                 } catch (localError) {
                     console.warn('⚠️ Impossible de créer le backup local:', localError);
-                }
-
-                // Avertir si les calques n'ont pas pu être envoyés au cloud
-                if (result.layersDropped) {
-                    const lang = localStorage.getItem('lang') || 'fr';
-                    const msg = lang === 'fr'
-                        ? '⚠️ Projet trop lourd — calques sauvegardés localement uniquement (non synchronisés sur le cloud)'
-                        : '⚠️ Project too large — layers saved locally only (not synced to cloud)';
-                    showToast(msg, { type: 'warning', duration: 6000 });
                 }
 
                 // Afficher le message de succès dans une vraie fenêtre modale
@@ -10573,7 +10566,9 @@ async function _saveStampAsProject(stamp) {
     const pixels = stamp.pixels || [];
     const sqrtSize = Math.round(Math.sqrt(pixels.length));
     const stored = stamp.gridSize;
-    const gs = (stored && pixels.length % stored === 0 && stored <= sqrtSize * 2)
+    // Accepter la gridSize stockée si elle divise exactement pixels.length (tampon rectangulaire valide)
+    // L'ancienne condition `stored <= sqrtSize * 2` rejetait les tampons larges et plats (ex: 32×6)
+    const gs = (stored && pixels.length % stored === 0 && stored <= pixels.length)
         ? stored : (sqrtSize || currentGridSize);
 
     // Demander le nom — pré-remplir avec le nom du tampon
@@ -10719,10 +10714,23 @@ function _buildImportStampDialog(allProjects) {
 
     _refreshImportStampList(dialog, allProjects);
 
-    dialog.querySelector('#importStampConfirmBtn').addEventListener('click', () => {
+    dialog.querySelector('#importStampConfirmBtn').addEventListener('click', async () => {
         const project = dialog._selectedProject;
         if (!project) return;
-        const framesData = Array.isArray(project.frames) ? project.frames : [];
+
+        // getAllProjects() ne retourne plus les frames (optimisation Supabase)
+        // → charger le projet complet via loadProject() pour avoir les pixels
+        let fullProject = project;
+        if (!Array.isArray(project.frames) && project.name && window.dbService) {
+            const confirmBtn = dialog.querySelector('#importStampConfirmBtn');
+            if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Chargement…'; }
+            try {
+                const result = await window.dbService.loadProject(project.name);
+                if (result.success && result.data) fullProject = result.data;
+            } catch (e) { /* utiliser les données partielles */ }
+        }
+
+        const framesData = Array.isArray(fullProject.frames) ? fullProject.frames : [];
         const rawFrame = framesData[dialog._selectedFrame] || framesData[0] || [];
         const rawPx = Array.isArray(rawFrame) ? rawFrame : (rawFrame.pixels || []);
         // Ne PAS utiliser normaliseFrames (marque tout isEmpty:true) — normaliser par couleur
@@ -10732,10 +10740,10 @@ function _buildImportStampDialog(allProjects) {
             const empty = color === '#FFFFFF' ? (px.isEmpty !== false) : false;
             return { color, isEmpty: empty };
         });
-        const name = (project.name || 'Sans titre') + (framesData.length > 1 ? ` F${dialog._selectedFrame + 1}` : '');
-        const cc = project.custom_colors;
+        const name = (fullProject.name || project.name || 'Sans titre') + (framesData.length > 1 ? ` F${dialog._selectedFrame + 1}` : '');
+        const cc = fullProject.custom_colors;
         const gridSize = (cc && typeof cc === 'object' && !Array.isArray(cc) ? cc._stampGridSize : null)
-            || project._stampGridSize
+            || fullProject._stampGridSize
             || undefined;
         const stamp = _addStamp(normalised, name, gridSize);
         dialog.remove();
@@ -10881,7 +10889,7 @@ function _buildStampRow(stamp, index) {
         // - sinon on recalcule via sqrt (fonctionne pour les sprites carrés)
         const sqrtSize = Math.round(Math.sqrt(pixels.length));
         const stored = stamp.gridSize;
-        const gs = (stored && pixels.length % stored === 0 && stored <= sqrtSize * 2)
+        const gs = (stored && pixels.length % stored === 0 && stored <= pixels.length)
             ? stored
             : (sqrtSize || currentGridSize);
         const normPx = pixels.map(px => {

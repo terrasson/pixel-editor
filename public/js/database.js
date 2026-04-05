@@ -33,20 +33,14 @@ class DatabaseService {
             }
 
             const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
-
-            // Send frameLayers only if payload stays under 200KB (Nano plan limit)
-            const layersJson = frameLayers ? JSON.stringify(frameLayers) : null;
-            const framesJson = JSON.stringify(frames);
-            const totalKB = Math.round((new Blob([framesJson]).size + (layersJson ? new Blob([layersJson]).size : 0)) / 1024);
-            const layersToSend = layersJson && totalKB < 200 ? frameLayers : null;
-            const layersDropped = frameLayers && layersToSend === null;
+            const safeName = name.replace(/[^a-z0-9]/gi, '_');
 
             // Upload thumbnail to Storage instead of storing base64 in DB
             let thumbnailUrl = null;
             if (thumbnail && thumbnail.startsWith('data:')) {
                 try {
                     const blob = await fetch(thumbnail).then(r => r.blob());
-                    const filePath = `${userId}/${name.replace(/[^a-z0-9]/gi, '_')}.png`;
+                    const filePath = `${userId}/${safeName}.png`;
                     const { error: uploadError } = await this.supabase.storage
                         .from('thumbnails')
                         .upload(filePath, blob, { upsert: true, contentType: 'image/png' });
@@ -64,9 +58,37 @@ class DatabaseService {
                 thumbnailUrl = thumbnail; // already a URL or null
             }
 
+            // Upload frameLayers to Storage as JSON (évite le Disk IO JSONB sur Nano)
+            // Stocke { _url: "..." } dans frame_layers pour que loadProject() récupère le fichier
+            let frameLayersForDb = null;
+            if (frameLayers && Array.isArray(frameLayers) && frameLayers.length > 0) {
+                try {
+                    const layersJson = JSON.stringify(frameLayers);
+                    const layersBlob = new Blob([layersJson], { type: 'application/json' });
+                    const layersPath = `${userId}/${safeName}_layers.json`;
+                    const { error: layersUploadError } = await this.supabase.storage
+                        .from('thumbnails')
+                        .upload(layersPath, layersBlob, { upsert: true, contentType: 'application/json' });
+                    if (!layersUploadError) {
+                        const { data: layersUrlData } = this.supabase.storage
+                            .from('thumbnails')
+                            .getPublicUrl(layersPath);
+                        frameLayersForDb = { _url: layersUrlData?.publicUrl };
+                    } else {
+                        console.warn('Layers upload to Storage failed:', layersUploadError);
+                        // Fallback : stocker inline si < 200KB
+                        const kb = Math.round(new Blob([layersJson]).size / 1024);
+                        frameLayersForDb = kb < 200 ? frameLayers : null;
+                    }
+                } catch (e) {
+                    console.warn('Layers upload failed:', e);
+                    frameLayersForDb = null;
+                }
+            }
+
             const payload = {
                 frames,
-                frame_layers: layersToSend,
+                frame_layers: frameLayersForDb,
                 next_layer_id: _nextLayerId ?? 0,
                 current_frame: currentFrame,
                 fps: fps || 24,
@@ -85,7 +107,7 @@ class DatabaseService {
                     .select('id')
                     .single();
                 if (error) throw error;
-                return { success: true, data, isUpdate: true, layersDropped };
+                return { success: true, data, isUpdate: true, layersDropped: false };
             } catch (upsertError) {
                 // Fallback: unique constraint not yet added → SELECT + INSERT/UPDATE
                 const { data: existing } = await this.supabase
@@ -103,7 +125,7 @@ class DatabaseService {
                         .select('id')
                         .single();
                     if (error) throw error;
-                    return { success: true, data, isUpdate: true, layersDropped };
+                    return { success: true, data, isUpdate: true, layersDropped: false };
                 } else {
                     const { data, error } = await this.supabase
                         .from('pixel_projects')
@@ -111,7 +133,7 @@ class DatabaseService {
                         .select('id')
                         .single();
                     if (error) throw error;
-                    return { success: true, data, isUpdate: false, layersDropped };
+                    return { success: true, data, isUpdate: false, layersDropped: false };
                 }
             }
         } catch (error) {
@@ -139,6 +161,19 @@ class DatabaseService {
 
             if (error) throw error;
 
+            // Si les calques sont stockés dans Storage (pointer { _url }), les récupérer
+            if (data?.frame_layers?._url) {
+                try {
+                    const resp = await fetch(data.frame_layers._url);
+                    if (resp.ok) {
+                        data.frame_layers = await resp.json();
+                    }
+                } catch (e) {
+                    console.warn('Failed to fetch layers from Storage:', e);
+                    data.frame_layers = null;
+                }
+            }
+
             return { success: true, data };
         } catch (error) {
             console.error('Load project error:', error);
@@ -146,16 +181,19 @@ class DatabaseService {
         }
     }
 
-    // Get all projects for current user
-    async getAllProjects() {
+    // Get all projects for current user (avec cache TTL 30s)
+    async getAllProjects({ forceRefresh = false } = {}) {
         if (!this.supabase) this.init();
 
-        try {
-            const userId = this.getUserId();
-            if (!userId) {
-                throw new Error('User not authenticated');
-            }
+        const userId = this.getUserId();
+        if (!userId) return { success: false, error: 'User not authenticated' };
 
+        const now = Date.now();
+        if (!forceRefresh && this._projectsCache && this._projectsCacheUser === userId && (now - this._projectsCacheTime) < 30000) {
+            return { success: true, data: this._projectsCache };
+        }
+
+        try {
             // Ne charger que les métadonnées — pas les frames (trop lourd)
             // Les frames sont chargées à la demande dans loadProject()
             const { data, error } = await this.supabase
@@ -167,11 +205,21 @@ class DatabaseService {
 
             if (error) throw error;
 
+            this._projectsCache = data;
+            this._projectsCacheUser = userId;
+            this._projectsCacheTime = now;
+
             return { success: true, data };
         } catch (error) {
             console.error('Get all projects error:', error);
             return { success: false, error: error.message };
         }
+    }
+
+    // Invalider le cache projets (à appeler après save/delete)
+    invalidateProjectsCache() {
+        this._projectsCache = null;
+        this._projectsCacheTime = 0;
     }
 
     // Delete a project
@@ -1208,32 +1256,45 @@ class DatabaseService {
     // =====================================================
     
     /**
-     * Récupère le profil utilisateur (pseudo)
+     * Récupère le profil utilisateur (pseudo) — avec cache TTL 60s
      */
-    async getUserProfile() {
+    async getUserProfile({ forceRefresh = false } = {}) {
         if (!this.supabase) this.init();
-        
+
+        const userId = this.getUserId();
+        if (!userId) return { success: false, error: 'User not authenticated', data: null };
+
+        const now = Date.now();
+        if (!forceRefresh && this._profileCache && this._profileCacheUser === userId && (now - this._profileCacheTime) < 60000) {
+            return { success: true, data: this._profileCache };
+        }
+
         try {
-            const userId = this.getUserId();
-            if (!userId) {
-                throw new Error('User not authenticated');
-            }
-            
             const { data, error } = await this.supabase
                 .from('user_profiles')
                 .select('*')
                 .eq('user_id', userId)
                 .single();
-            
+
             if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
                 throw error;
             }
-            
+
+            this._profileCache = data || null;
+            this._profileCacheUser = userId;
+            this._profileCacheTime = now;
+
             return { success: true, data: data || null };
         } catch (error) {
             console.error('Get user profile error:', error);
             return { success: false, error: error.message, data: null };
         }
+    }
+
+    // Invalider le cache profil (à appeler après setUserProfile)
+    invalidateProfileCache() {
+        this._profileCache = undefined;
+        this._profileCacheTime = 0;
     }
     
     /**
@@ -1302,13 +1363,14 @@ class DatabaseService {
                 .update({ author_username: username.trim() })
                 .eq('author_id', userId);
 
+            this.invalidateProfileCache();
             return { success: true, data };
         } catch (error) {
             console.error('Set user profile error:', error);
             return { success: false, error: error.message };
         }
     }
-    
+
     /**
      * Récupère le pseudo d'un utilisateur par son ID
      */

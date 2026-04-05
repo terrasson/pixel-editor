@@ -722,26 +722,17 @@
 
                 window.addEventListener('userProfileConfigured', onProfileConfigured);
 
-                // Vérifier périodiquement si le profil a été configuré (au cas où l'événement ne se déclenche pas)
-                const checkInterval = setInterval(async () => {
+                // Vérification unique après 4s (fallback si l'événement userProfileConfigured ne se déclenche pas)
+                const fallbackCheck = setTimeout(async () => {
                     try {
                         const profileResult = await window.dbService.getUserProfile();
                         if (profileResult.success) {
                             const profile = profileResult.data;
                             const username = profile && profile.username ? profile.username.trim() : '';
-                            const hasCustomUsername = username && username.length >= 2;
-
-                            if (hasCustomUsername) {
-                                clearInterval(checkInterval);
+                            if (username && username.length >= 2) {
                                 window.removeEventListener('userProfileConfigured', onProfileConfigured);
-
-                                // Fermer la modal si elle existe encore
                                 const existingModal = document.querySelector('.modal[style*="z-index: 10000"]');
-                                if (existingModal) {
-                                    existingModal.remove();
-                                }
-
-                                // Mettre à jour l'affichage
+                                if (existingModal) existingModal.remove();
                                 if (typeof window.updateUserProfileDisplay === 'function') {
                                     window.updateUserProfileDisplay();
                                 }
@@ -750,12 +741,12 @@
                     } catch (error) {
                         console.error('Erreur lors de la vérification:', error);
                     }
-                }, 2000);
+                }, 4000);
 
-                // Nettoyer l'intervalle si la modal est supprimée manuellement
+                // Nettoyer si la modal est supprimée manuellement
                 const observer = new MutationObserver(() => {
                     if (!document.body.contains(modal)) {
-                        clearInterval(checkInterval);
+                        clearTimeout(fallbackCheck);
                         window.removeEventListener('userProfileConfigured', onProfileConfigured);
                         observer.disconnect();
                     }
