@@ -1161,9 +1161,32 @@ function _renderLayersList(container, layers) {
 
         const nameSpan = document.createElement('span');
         nameSpan.className = `layer-name ${layer.visible ? '' : 'layer-name-hidden'}`;
-        nameSpan.title = 'Double-cliquer pour renommer';
+        nameSpan.title = 'Cliquer pour renommer';
         nameSpan.textContent = layer.name;
-        nameSpan.addEventListener('dblclick', () => promptRenameLayer(i));
+        nameSpan.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (nameSpan.querySelector('input')) return; // déjà en édition
+            const currentName = frameLayers[currentFrame]?.[i]?.name || '';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentName;
+            input.className = 'layer-name-input';
+            input.style.cssText = 'background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.5);outline:none;color:inherit;font:inherit;width:100%;padding:0;';
+            nameSpan.textContent = '';
+            nameSpan.appendChild(input);
+            input.focus();
+            input.select();
+            const commit = () => {
+                const val = input.value.trim();
+                if (val) renameLayer(i, val);
+                // updateLayersPanel() sera appelé par renameLayer et rechargera le span
+            };
+            input.addEventListener('blur', commit);
+            input.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+                if (ev.key === 'Escape') { input.removeEventListener('blur', commit); nameSpan.textContent = currentName; }
+            });
+        });
 
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'layer-actions';
@@ -1290,12 +1313,6 @@ function updateLayersPanel() {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-function promptRenameLayer(index) {
-    const layer = frameLayers[currentFrame]?.[index];
-    if (!layer) return;
-    const newName = prompt('Nom du calque :', layer.name);
-    if (newName) renameLayer(index, newName);
-}
 
 function toggleMobileLayersPanel() {
     const panel = document.getElementById('mobileLayersPanel');
@@ -3461,11 +3478,19 @@ function applyStamp(col, row) {
         // Synchroniser le calque actif
         if (frameLayers[currentFrame]?.[currentLayer]) {
             frameLayers[currentFrame][currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+
+            // Renommer le calque avec le nom du tampon (si le calque a encore son nom générique)
+            const activeLayer = frameLayers[currentFrame][currentLayer];
+            const activeStamp = activeStampId != null ? (window.stamps || []).find(s => s.id === activeStampId) : null;
+            if (activeStamp && activeStamp.name && /^(Fond|Calque\s*\d*)$/i.test(activeLayer.name)) {
+                activeLayer.name = activeStamp.name;
+            }
         }
 
         frames[currentFrame] = computeComposite(currentFrame);
         renderCanvas();
         updateFramesList();
+        updateLayersPanel();
 
         const overlay = document.getElementById('stampOverlay');
         if (overlay) overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height);
