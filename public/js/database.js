@@ -51,27 +51,8 @@ class DatabaseService {
             const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
             const safeName = name.replace(/[^a-z0-9]/gi, '_');
 
-            // Upload frames vers Storage (évite le payload JSONB lourd dans la DB)
-            let framesForDb = frames;
-            if (frames && Array.isArray(frames) && frames.length > 0) {
-                try {
-                    onProgress?.('frames');
-                    const framesJson = JSON.stringify(frames);
-                    const framesBlob = new Blob([framesJson], { type: 'application/json' });
-                    const framesPath = `${userId}/${safeName}_frames.json`;
-                    const { success: framesOk } = await this._uploadWithTimeout('thumbnails', framesPath, framesBlob, 'application/json', 10000);
-                    if (framesOk) {
-                        const { data: framesUrlData } = this.supabase.storage
-                            .from('thumbnails')
-                            .getPublicUrl(framesPath);
-                        framesForDb = { _url: framesUrlData?.publicUrl };
-                    } else {
-                        console.warn('Frames upload failed, storing inline');
-                    }
-                } catch (e) {
-                    console.warn('Frames upload failed:', e);
-                }
-            }
+            // frames déjà en format sparse (légères) → directement en DB, pas de Storage
+            const framesForDb = frames;
 
             // Upload frameLayers vers Storage
             let frameLayersForDb = null;
