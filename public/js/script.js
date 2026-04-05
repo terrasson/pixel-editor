@@ -1411,7 +1411,9 @@ function renderCanvas() {
                 const col = i % currentGridSize;
                 const row = Math.floor(i / currentGridSize);
                 pixelCtx.fillStyle = pixel.color;
-                pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                const x = Math.round(col * cellSize);
+                const y = Math.round(row * cellSize);
+                pixelCtx.fillRect(x, y, Math.round((col + 1) * cellSize) - x, Math.round((row + 1) * cellSize) - y);
             });
             if (_layer.opacity < 1.0) pixelCtx.globalAlpha = 1.0;
         }
@@ -1422,7 +1424,9 @@ function renderCanvas() {
             const col = i % currentGridSize;
             const row = Math.floor(i / currentGridSize);
             pixelCtx.fillStyle = pixel.color;
-            pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+            const x = Math.round(col * cellSize);
+            const y = Math.round(row * cellSize);
+            pixelCtx.fillRect(x, y, Math.round((col + 1) * cellSize) - x, Math.round((row + 1) * cellSize) - y);
         });
     }
 
