@@ -8003,9 +8003,10 @@ async function saveProjectSmart() {
                     fps: animationFPS
                 });
                 
-                // Sauvegarder en local avec les calques (backup complet)
+                // Sauvegarder en local (backup léger sans frameLayers ni thumbnail)
                 try {
-                    localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
+                    const backupData = { ...projectData, frameLayers: undefined, thumbnail: undefined };
+                    localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(backupData));
                 } catch (localError) {
                     console.warn('⚠️ Impossible de créer le backup local:', localError);
                 }
@@ -8028,6 +8029,18 @@ async function saveProjectSmart() {
             // 2️⃣ FALLBACK VERS LOCALSTORAGE (sans frameLayers pour rester sous la limite 5MB)
 
             try {
+                // Libérer de l'espace : supprimer les anciennes entrées pixelart_* sauf le projet courant
+                try {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k && k.startsWith('pixelart_') && k !== `pixelart_${fileName}`) {
+                            keysToRemove.push(k);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+                } catch (_) { /* ignore */ }
+
                 // Exclure frameLayers (trop lourd) et thumbnail base64 pour rester sous 5MB
                 const localData = { ...projectData, frameLayers: undefined, thumbnail: undefined };
                 localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(localData));
