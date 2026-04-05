@@ -94,9 +94,10 @@ class DatabaseService {
                 fps: fps || 24,
                 custom_palette: customPalette,
                 custom_colors: customColors ?? null,
-                thumbnail: thumbnailUrl,
                 updated_at: new Date().toISOString()
             };
+            // Ne mettre à jour thumbnail que si on en a une — évite d'écraser l'existante avec null
+            if (thumbnailUrl) payload.thumbnail = thumbnailUrl;
 
             // Try upsert first (requires unique constraint on user_id+name)
             // Falls back to SELECT+INSERT/UPDATE if constraint doesn't exist yet
