@@ -792,6 +792,11 @@ function showToast(message, { type = 'info', duration = 3500, id = null } = {}) 
     }, duration);
 }
 
+function updateToast(id, message) {
+    const toast = document.querySelector(`[data-toast-id="${id}"]`);
+    if (toast) toast.textContent = message;
+}
+
 function dismissToast(id) {
     const toast = document.querySelector(`[data-toast-id="${id}"]`);
     if (!toast) return;
@@ -7982,13 +7987,22 @@ async function saveProjectSmart() {
         };
 
         // 1️⃣ ESSAYER SUPABASE EN PREMIER
-        showToast(tL('saving') || '💾 Sauvegarde en cours…', { type: 'info', duration: 10000, id: 'save-progress' });
+        showToast('💾 Sauvegarde en cours…', { type: 'info', duration: 30000, id: 'save-progress' });
+
+        const onSaveProgress = (step) => {
+            const messages = {
+                thumbnail: '🖼️ Upload miniature…',
+                layers:    '📦 Upload calques…',
+                database:  '☁️ Enregistrement cloud…',
+            };
+            if (messages[step]) updateToast('save-progress', messages[step]);
+        };
 
         try {
             const saveTimeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('timeout')), 8000)
+                setTimeout(() => reject(new Error('timeout')), 25000)
             );
-            const result = await Promise.race([window.dbService.saveProject(projectData), saveTimeout]);
+            const result = await Promise.race([window.dbService.saveProject(projectData, onSaveProgress), saveTimeout]);
             dismissToast('save-progress');
 
             if (result.success) {

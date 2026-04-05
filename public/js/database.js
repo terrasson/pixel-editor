@@ -22,8 +22,26 @@ class DatabaseService {
         return window.authService?.getUserId();
     }
 
+    // Retry helper pour les uploads Storage
+    async _uploadWithRetry(bucket, path, blob, contentType, maxRetries = 2) {
+        let lastError;
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                const { error } = await this.supabase.storage
+                    .from(bucket)
+                    .upload(path, blob, { upsert: true, contentType });
+                if (!error) return { success: true };
+                lastError = error;
+            } catch (e) {
+                lastError = e;
+            }
+            if (attempt < maxRetries) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        }
+        return { success: false, error: lastError };
+    }
+
     // Save a project (create or update)
-    async saveProject(projectData) {
+    async saveProject(projectData, onProgress = null) {
         if (!this.supabase) this.init();
 
         try {
@@ -39,12 +57,11 @@ class DatabaseService {
             let thumbnailUrl = null;
             if (thumbnail && thumbnail.startsWith('data:')) {
                 try {
+                    onProgress?.('thumbnail');
                     const blob = await fetch(thumbnail).then(r => r.blob());
                     const filePath = `${userId}/${safeName}.png`;
-                    const { error: uploadError } = await this.supabase.storage
-                        .from('thumbnails')
-                        .upload(filePath, blob, { upsert: true, contentType: 'image/png' });
-                    if (!uploadError) {
+                    const { success: thumbOk } = await this._uploadWithRetry('thumbnails', filePath, blob, 'image/png');
+                    if (thumbOk) {
                         const { data: urlData } = this.supabase.storage
                             .from('thumbnails')
                             .getPublicUrl(filePath);
@@ -59,24 +76,21 @@ class DatabaseService {
             }
 
             // Upload frameLayers to Storage as JSON (évite le Disk IO JSONB sur Nano)
-            // Stocke { _url: "..." } dans frame_layers pour que loadProject() récupère le fichier
             let frameLayersForDb = null;
             if (frameLayers && Array.isArray(frameLayers) && frameLayers.length > 0) {
                 try {
+                    onProgress?.('layers');
                     const layersJson = JSON.stringify(frameLayers);
                     const layersBlob = new Blob([layersJson], { type: 'application/json' });
                     const layersPath = `${userId}/${safeName}_layers.json`;
-                    const { error: layersUploadError } = await this.supabase.storage
-                        .from('thumbnails')
-                        .upload(layersPath, layersBlob, { upsert: true, contentType: 'application/json' });
-                    if (!layersUploadError) {
+                    const { success: layersOk } = await this._uploadWithRetry('thumbnails', layersPath, layersBlob, 'application/json');
+                    if (layersOk) {
                         const { data: layersUrlData } = this.supabase.storage
                             .from('thumbnails')
                             .getPublicUrl(layersPath);
                         frameLayersForDb = { _url: layersUrlData?.publicUrl };
                     } else {
-                        console.warn('Layers upload to Storage failed:', layersUploadError);
-                        // Fallback : stocker inline si < 200KB
+                        console.warn('Layers upload to Storage failed after retries');
                         const kb = Math.round(new Blob([layersJson]).size / 1024);
                         frameLayersForDb = kb < 200 ? frameLayers : null;
                     }
@@ -85,6 +99,8 @@ class DatabaseService {
                     frameLayersForDb = null;
                 }
             }
+
+            onProgress?.('database');
 
             const payload = {
                 frames,
