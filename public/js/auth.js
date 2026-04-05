@@ -6,11 +6,20 @@ class AuthService {
         this.supabase = null;
         this.currentUser = null;
         this.initialized = false;
+        this._initPromise = null;
     }
 
     // Initialize Supabase client
     async init() {
         if (this.initialized) return true;
+        // Si une initialisation est déjà en cours, attendre qu'elle se termine
+        if (this._initPromise) return this._initPromise;
+        this._initPromise = this._doInit();
+        const result = await this._initPromise;
+        return result;
+    }
+
+    async _doInit() {
 
         try {
             // Load Supabase from CDN
