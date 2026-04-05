@@ -8001,7 +8001,7 @@ async function saveProjectSmart() {
 
         try {
             const saveTimeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('timeout')), 25000)
+                setTimeout(() => reject(new Error('timeout')), 60000)
             );
             const result = await Promise.race([window.dbService.saveProject(projectData, onSaveProgress), saveTimeout]);
             dismissToast('save-progress');
@@ -8058,8 +8058,13 @@ async function saveProjectSmart() {
                     localStorage.removeItem('pixelEditor_autoSaveProjects');
                 } catch (_) { /* ignore */ }
 
-                // Exclure frameLayers (trop lourd) et thumbnail base64 pour rester sous 5MB
-                const localData = { ...projectData, frameLayers: undefined, thumbnail: undefined };
+                // Garder seulement les métadonnées légères — frames en sparse, sans calques ni thumbnail
+                const localData = {
+                    ...projectData,
+                    frames: frames.map(toSparseFrame),
+                    frameLayers: undefined,
+                    thumbnail: undefined
+                };
                 localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(localData));
                 logUsageEvent('project_saved_local', {
                     name: fileName,
