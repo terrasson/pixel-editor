@@ -22,22 +22,20 @@ class DatabaseService {
         return window.authService?.getUserId();
     }
 
-    // Retry helper pour les uploads Storage
-    async _uploadWithRetry(bucket, path, blob, contentType, maxRetries = 2) {
-        let lastError;
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            try {
-                const { error } = await this.supabase.storage
-                    .from(bucket)
-                    .upload(path, blob, { upsert: true, contentType });
-                if (!error) return { success: true };
-                lastError = error;
-            } catch (e) {
-                lastError = e;
-            }
-            if (attempt < maxRetries) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    // Upload Storage avec un timeout strict (évite de bloquer trop longtemps sur NANO)
+    async _uploadWithTimeout(bucket, path, blob, contentType, timeoutMs = 8000) {
+        const upload = this.supabase.storage
+            .from(bucket)
+            .upload(path, blob, { upsert: true, contentType });
+        const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('upload timeout')), timeoutMs)
+        );
+        try {
+            const { error } = await Promise.race([upload, timeout]);
+            return { success: !error };
+        } catch (e) {
+            return { success: false, error: e };
         }
-        return { success: false, error: lastError };
     }
 
     // Save a project (create or update)
@@ -53,29 +51,7 @@ class DatabaseService {
             const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
             const safeName = name.replace(/[^a-z0-9]/gi, '_');
 
-            // Upload thumbnail to Storage instead of storing base64 in DB
-            let thumbnailUrl = null;
-            if (thumbnail && thumbnail.startsWith('data:')) {
-                try {
-                    onProgress?.('thumbnail');
-                    const blob = await fetch(thumbnail).then(r => r.blob());
-                    const filePath = `${userId}/${safeName}.png`;
-                    const { success: thumbOk } = await this._uploadWithRetry('thumbnails', filePath, blob, 'image/png');
-                    if (thumbOk) {
-                        const { data: urlData } = this.supabase.storage
-                            .from('thumbnails')
-                            .getPublicUrl(filePath);
-                        thumbnailUrl = urlData?.publicUrl || null;
-                    }
-                } catch (e) {
-                    console.warn('Thumbnail upload failed, falling back to base64:', e);
-                    thumbnailUrl = thumbnail; // fallback base64
-                }
-            } else {
-                thumbnailUrl = thumbnail; // already a URL or null
-            }
-
-            // Upload frameLayers to Storage as JSON (évite le Disk IO JSONB sur Nano)
+            // Upload frameLayers en premier (données critiques)
             let frameLayersForDb = null;
             if (frameLayers && Array.isArray(frameLayers) && frameLayers.length > 0) {
                 try {
@@ -83,14 +59,14 @@ class DatabaseService {
                     const layersJson = JSON.stringify(frameLayers);
                     const layersBlob = new Blob([layersJson], { type: 'application/json' });
                     const layersPath = `${userId}/${safeName}_layers.json`;
-                    const { success: layersOk } = await this._uploadWithRetry('thumbnails', layersPath, layersBlob, 'application/json');
+                    const { success: layersOk } = await this._uploadWithTimeout('thumbnails', layersPath, layersBlob, 'application/json', 10000);
                     if (layersOk) {
                         const { data: layersUrlData } = this.supabase.storage
                             .from('thumbnails')
                             .getPublicUrl(layersPath);
                         frameLayersForDb = { _url: layersUrlData?.publicUrl };
                     } else {
-                        console.warn('Layers upload to Storage failed after retries');
+                        console.warn('Layers upload failed, fallback inline');
                         const kb = Math.round(new Blob([layersJson]).size / 1024);
                         frameLayersForDb = kb < 200 ? frameLayers : null;
                     }
@@ -98,6 +74,23 @@ class DatabaseService {
                     console.warn('Layers upload failed:', e);
                     frameLayersForDb = null;
                 }
+            }
+
+            // Upload thumbnail en parallèle (non-bloquant pour la DB)
+            let thumbnailUrl = (thumbnail && !thumbnail.startsWith('data:')) ? thumbnail : null;
+            onProgress?.('thumbnail');
+            if (thumbnail && thumbnail.startsWith('data:')) {
+                // Lancer sans attendre — si ça prend trop de temps, on sauvegarde sans thumbnail
+                this._uploadWithTimeout('thumbnails', `${userId}/${safeName}.png`,
+                    await fetch(thumbnail).then(r => r.blob()), 'image/png', 7000
+                ).then(({ success }) => {
+                    if (success) {
+                        const { data: urlData } = this.supabase.storage
+                            .from('thumbnails').getPublicUrl(`${userId}/${safeName}.png`);
+                        // URL disponible pour la prochaine sauvegarde
+                        if (urlData?.publicUrl) thumbnailUrl = urlData.publicUrl;
+                    }
+                }).catch(() => {});
             }
 
             onProgress?.('database');

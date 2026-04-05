@@ -8043,7 +8043,7 @@ async function saveProjectSmart() {
             // 2️⃣ FALLBACK VERS LOCALSTORAGE (sans frameLayers pour rester sous la limite 5MB)
 
             try {
-                // Libérer de l'espace : supprimer les anciennes entrées pixelart_* sauf le projet courant
+                // Libérer le maximum d'espace localStorage avant d'écrire
                 try {
                     const keysToRemove = [];
                     for (let i = 0; i < localStorage.length; i++) {
@@ -8053,6 +8053,8 @@ async function saveProjectSmart() {
                         }
                     }
                     keysToRemove.forEach(k => localStorage.removeItem(k));
+                    // Supprimer aussi l'historique autoSave (peut être très lourd avec frames non-sparse)
+                    localStorage.removeItem('pixelEditor_autoSaveProjects');
                 } catch (_) { /* ignore */ }
 
                 // Exclure frameLayers (trop lourd) et thumbnail base64 pour rester sous 5MB
