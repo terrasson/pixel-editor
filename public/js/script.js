@@ -6992,6 +6992,32 @@ function copyCurrentFrame() {
     if (pasteBtn) pasteBtn.disabled = false;
 }
 
+// Dupliquer la frame courante N fois (avec tous ses calques)
+function duplicateCurrentFrameN(n) {
+    if (!n || n < 1) return;
+    // Sauvegarder le buffer actif dans le calque courant avant de dupliquer
+    if (frameLayers[currentFrame]?.[currentLayer]) {
+        frameLayers[currentFrame][currentLayer].pixels = currentFrameBuffer.map(p => p ? { ...p } : { color: '#FFFFFF', isEmpty: true });
+    }
+    const srcFrame = JSON.parse(JSON.stringify(frames[currentFrame]));
+    const srcLayers = JSON.parse(JSON.stringify(frameLayers[currentFrame] || []));
+    const insertAt = currentFrame + 1;
+    for (let k = 0; k < n; k++) {
+        const newFrame = srcFrame.map(p => ({ ...p }));
+        const newLayers = srcLayers.map(l => ({
+            ...l,
+            id: _nextLayerId++,
+            pixels: l.pixels.map(p => ({ ...p }))
+        }));
+        frames.splice(insertAt + k, 0, newFrame);
+        frameLayers.splice(insertAt + k, 0, newLayers);
+        modifiedPixels.splice(insertAt + k, 0, new Set());
+    }
+    updateFramesList();
+    updateLayersPanel();
+    showNotification(`${n} frame${n > 1 ? 's' : ''} dupliquée${n > 1 ? 's' : ''}`, 'success');
+}
+
 // Fonction pour coller une frame
 function pasteFrame() {
     if (!copiedFrame) return;
@@ -8266,6 +8292,26 @@ function initEventListeners() {
     // Event listeners pour les nouveaux boutons copier/coller dans le bandeau des frames
     document.getElementById('copyFrameBtnMain')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtnMain')?.addEventListener('click', pasteFrame);
+
+    // Dupliquer N fois
+    const _toggleDupPanel = (show) => {
+        const panel = document.getElementById('duplicateFrameNPanel');
+        if (!panel) return;
+        panel.style.display = show ? 'flex' : 'none';
+        if (show) document.getElementById('duplicateFrameNInput')?.focus();
+    };
+    document.getElementById('duplicateFrameNBtn')?.addEventListener('click', () => _toggleDupPanel(true));
+    document.getElementById('duplicateFrameNBtnMobile')?.addEventListener('click', () => _toggleDupPanel(true));
+    document.getElementById('duplicateFrameNCancel')?.addEventListener('click', () => _toggleDupPanel(false));
+    document.getElementById('duplicateFrameNConfirm')?.addEventListener('click', () => {
+        const n = parseInt(document.getElementById('duplicateFrameNInput')?.value, 10);
+        if (n > 0 && n <= 99) duplicateCurrentFrameN(n);
+        _toggleDupPanel(false);
+    });
+    document.getElementById('duplicateFrameNInput')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('duplicateFrameNConfirm')?.click();
+        if (e.key === 'Escape') _toggleDupPanel(false);
+    });
     
     // Initialiser les autres fonctionnalités
     initMobileFeatures();

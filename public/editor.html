@@ -476,6 +476,7 @@
                     <div class="mobile-panel-actions">
                         <button id="copyFrameBtnMobile" class="frames-hdr-btn" title="Copier"><i data-lucide="copy"></i></button>
                         <button id="pasteFrameBtnMobile" class="frames-hdr-btn" title="Coller"><i data-lucide="clipboard"></i></button>
+                        <button id="duplicateFrameNBtnMobile" class="frames-hdr-btn" title="Dupliquer N fois"><i data-lucide="copy-plus"></i></button>
                         <button id="addFrameBtnMobile" class="frames-hdr-btn primary" title="Nouvelle frame"><i data-lucide="plus"></i></button>
                     </div>
                 </div>
@@ -519,8 +520,18 @@
                 <div class="frames-panel-actions">
                     <button id="copyFrameBtnMain" class="frames-hdr-btn" title="Copier la frame"><i data-lucide="copy"></i></button>
                     <button id="pasteFrameBtnMain" class="frames-hdr-btn" title="Coller la frame"><i data-lucide="clipboard"></i></button>
+                    <button id="duplicateFrameNBtn" class="frames-hdr-btn" title="Dupliquer N fois"><i data-lucide="copy-plus"></i></button>
                     <button id="addFrameBtn" class="frames-hdr-btn primary" title="Nouvelle frame"><i data-lucide="plus"></i></button>
                 </div>
+            </div>
+            <!-- Saisie duplication inline -->
+            <div id="duplicateFrameNPanel" style="display:none;align-items:center;gap:6px;padding:4px 8px;background:rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.08);">
+                <span style="font-size:0.75rem;color:rgba(255,255,255,0.6);white-space:nowrap;">Dupliquer</span>
+                <input id="duplicateFrameNInput" type="number" min="1" max="99" value="3"
+                    style="width:46px;padding:2px 4px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;color:#fff;font-size:0.8rem;text-align:center;">
+                <span style="font-size:0.75rem;color:rgba(255,255,255,0.6);white-space:nowrap;">fois</span>
+                <button id="duplicateFrameNConfirm" style="padding:2px 8px;background:#667eea;border:none;border-radius:4px;color:#fff;font-size:0.8rem;cursor:pointer;font-weight:600;">✓</button>
+                <button id="duplicateFrameNCancel" style="padding:2px 6px;background:rgba(255,255,255,0.1);border:none;border-radius:4px;color:rgba(255,255,255,0.6);font-size:0.8rem;cursor:pointer;">✕</button>
             </div>
             <!-- Liste frames compacte -->
             <div id="framesList"></div>
