@@ -8307,7 +8307,14 @@ function initEventListeners() {
         const input = document.getElementById('duplicateFrameNInput');
         const n = parseInt(input?.value, 10);
         if (!n || n < 1 || n > 99) {
-            if (input) { input.style.borderColor = '#e74c3c'; setTimeout(() => input.style.borderColor = '', 800); }
+            if (input) {
+                input.style.borderColor = '#e74c3c';
+                setTimeout(() => {
+                    input.style.borderColor = '';
+                    input.value = '';
+                    _toggleDupPanel(false);
+                }, 800);
+            }
             return;
         }
         duplicateCurrentFrameN(n);
