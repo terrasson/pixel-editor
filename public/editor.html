@@ -601,19 +601,22 @@
                 });
             }
 
-            // Mettre à jour l'affichage du profil après chargement de tous les scripts
-            // Utiliser un délai pour s'assurer que script-templates.js est chargé
-            setTimeout(() => {
-                if (typeof updateUserProfileDisplay === 'function') {
-                    updateUserProfileDisplay();
-                } else if (typeof window.updateUserProfileDisplay === 'function') {
+            // Attendre que script.js et script-templates.js soient chargés avant d'appeler updateUserProfileDisplay
+            (function waitForProfileDisplay() {
+                if (typeof window.updateUserProfileDisplay === 'function') {
                     window.updateUserProfileDisplay();
+                } else {
+                    setTimeout(waitForProfileDisplay, 100);
                 }
-            }, 500);
+            })();
 
-            if (typeof window.initUserProfileFlow === 'function') {
-                window.initUserProfileFlow();
-            }
+            (function waitForProfileFlow() {
+                if (typeof window.initUserProfileFlow === 'function') {
+                    window.initUserProfileFlow();
+                } else {
+                    setTimeout(waitForProfileFlow, 100);
+                }
+            })();
 
             /**
              * Vérifie si le profil utilisateur est configuré et affiche une modal obligatoire si nécessaire
