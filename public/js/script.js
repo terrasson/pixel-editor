@@ -1398,6 +1398,25 @@ function renderCanvas() {
         pixelCtx.globalAlpha = 1.0;
     }
 
+    // Lignes de grille dessinées AVANT les pixels — les pixels colorés les recouvrent naturellement
+    const screenCellPx = cellSize * gridZoom;
+    if (screenCellPx >= 6) {
+        pixelCtx.strokeStyle = 'rgba(0,0,0,0.12)';
+        pixelCtx.lineWidth = 0.5 / gridZoom;
+        for (let c = 0; c <= currentGridSize; c++) {
+            pixelCtx.beginPath();
+            pixelCtx.moveTo(c * cellSize, 0);
+            pixelCtx.lineTo(c * cellSize, currentGridSize * cellSize);
+            pixelCtx.stroke();
+        }
+        for (let r = 0; r <= currentGridSize; r++) {
+            pixelCtx.beginPath();
+            pixelCtx.moveTo(0, r * cellSize);
+            pixelCtx.lineTo(currentGridSize * cellSize, r * cellSize);
+            pixelCtx.stroke();
+        }
+    }
+
     // Calques (composite de bas en haut, calque actif depuis le buffer live)
     const _layers = frameLayers[currentFrame] || [];
     if (_layers.length > 0) {
@@ -1426,24 +1445,6 @@ function renderCanvas() {
         });
     }
 
-    // Lignes de grille : visibles si chaque cellule fait au moins 6px écran
-    const screenCellPx = cellSize * gridZoom;
-    if (screenCellPx >= 6) {
-        pixelCtx.strokeStyle = 'rgba(0,0,0,0.08)';
-        pixelCtx.lineWidth = 0.5 / gridZoom;
-        for (let c = 0; c <= currentGridSize; c++) {
-            pixelCtx.beginPath();
-            pixelCtx.moveTo(c * cellSize, 0);
-            pixelCtx.lineTo(c * cellSize, currentGridSize * cellSize);
-            pixelCtx.stroke();
-        }
-        for (let r = 0; r <= currentGridSize; r++) {
-            pixelCtx.beginPath();
-            pixelCtx.moveTo(0, r * cellSize);
-            pixelCtx.lineTo(currentGridSize * cellSize, r * cellSize);
-            pixelCtx.stroke();
-        }
-    }
     // Overlay sélection rectangulaire
     const _selRect = selectionRect || (selection ? normalizeSelectionRect(selection) : null);
     if (_selRect) {
