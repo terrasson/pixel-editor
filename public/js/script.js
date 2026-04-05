@@ -8304,8 +8304,14 @@ function initEventListeners() {
     document.getElementById('duplicateFrameNBtnMobile')?.addEventListener('click', () => _toggleDupPanel(true));
     document.getElementById('duplicateFrameNCancel')?.addEventListener('click', () => _toggleDupPanel(false));
     document.getElementById('duplicateFrameNConfirm')?.addEventListener('click', () => {
-        const n = parseInt(document.getElementById('duplicateFrameNInput')?.value, 10);
-        if (n > 0 && n <= 99) duplicateCurrentFrameN(n);
+        const input = document.getElementById('duplicateFrameNInput');
+        const n = parseInt(input?.value, 10);
+        if (!n || n < 1 || n > 99) {
+            if (input) { input.style.borderColor = '#e74c3c'; setTimeout(() => input.style.borderColor = '', 800); }
+            return;
+        }
+        duplicateCurrentFrameN(n);
+        if (input) input.value = '';
         _toggleDupPanel(false);
     });
     document.getElementById('duplicateFrameNInput')?.addEventListener('keydown', (e) => {
