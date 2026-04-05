@@ -8028,7 +8028,8 @@ async function saveProjectSmart() {
             // 2️⃣ FALLBACK VERS LOCALSTORAGE (sans frameLayers pour rester sous la limite 5MB)
 
             try {
-                const localData = { ...projectData, frameLayers: undefined };
+                // Exclure frameLayers (trop lourd) et thumbnail base64 pour rester sous 5MB
+                const localData = { ...projectData, frameLayers: undefined, thumbnail: undefined };
                 localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(localData));
                 logUsageEvent('project_saved_local', {
                     name: fileName,
