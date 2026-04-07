@@ -8655,12 +8655,16 @@ async function importProjectData(projectData) {
             animationFPS = projectData.fps;
         }
         
+        // Reconstruire les calques depuis les frames (pas de frameLayers dans les JSON exportés)
+        initLayersFromFrames();
+        currentLayer = 0;
+
         // Mettre à jour l'interface
         const title = document.getElementById('projectTitle');
         if (title) {
             title.textContent = projectData.name || projectData.projectName || 'Projet partagé';
         }
-        
+
         updateFramesList();
         loadFrame(currentFrame);
         
