@@ -51,48 +51,57 @@ class DatabaseService {
             const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
             const safeName = name.replace(/[^a-z0-9]/gi, '_');
 
-            // frames déjà en format sparse (légères) → directement en DB, pas de Storage
-            const framesForDb = frames;
+            onProgress?.('storage');
 
-            // Upload frameLayers vers Storage
+            // Upload frames + frameLayers en parallèle vers Storage (évite le Disk IO JSONB sur PostgreSQL)
+            const framesJson = JSON.stringify(frames);
+            const framesBlob = new Blob([framesJson], { type: 'application/json' });
+            const framesPath = `${userId}/${safeName}_frames.json`;
+
+            const layersJson = frameLayers && Array.isArray(frameLayers) && frameLayers.length > 0
+                ? JSON.stringify(frameLayers) : null;
+            const layersBlob = layersJson ? new Blob([layersJson], { type: 'application/json' }) : null;
+            const layersPath = `${userId}/${safeName}_layers.json`;
+
+            const [framesResult, layersResult] = await Promise.all([
+                this._uploadWithTimeout('thumbnails', framesPath, framesBlob, 'application/json', 15000),
+                layersBlob
+                    ? this._uploadWithTimeout('thumbnails', layersPath, layersBlob, 'application/json', 15000)
+                    : Promise.resolve({ success: true })
+            ]);
+
+            let framesForDb = frames; // fallback inline si upload échoue
+            if (framesResult.success) {
+                const { data: framesUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(framesPath);
+                if (framesUrlData?.publicUrl) framesForDb = { _url: framesUrlData.publicUrl };
+            } else {
+                console.warn('Frames upload failed, storing inline');
+            }
+
             let frameLayersForDb = null;
-            if (frameLayers && Array.isArray(frameLayers) && frameLayers.length > 0) {
-                try {
-                    onProgress?.('layers');
-                    const layersJson = JSON.stringify(frameLayers);
-                    const layersBlob = new Blob([layersJson], { type: 'application/json' });
-                    const layersPath = `${userId}/${safeName}_layers.json`;
-                    const { success: layersOk } = await this._uploadWithTimeout('thumbnails', layersPath, layersBlob, 'application/json', 10000);
-                    if (layersOk) {
-                        const { data: layersUrlData } = this.supabase.storage
-                            .from('thumbnails')
-                            .getPublicUrl(layersPath);
-                        frameLayersForDb = { _url: layersUrlData?.publicUrl };
-                    } else {
-                        console.warn('Layers upload failed, fallback inline');
-                        const kb = Math.round(new Blob([layersJson]).size / 1024);
-                        frameLayersForDb = kb < 200 ? frameLayers : null;
-                    }
-                } catch (e) {
-                    console.warn('Layers upload failed:', e);
-                    frameLayersForDb = null;
+            if (layersBlob) {
+                if (layersResult.success) {
+                    const { data: layersUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(layersPath);
+                    if (layersUrlData?.publicUrl) frameLayersForDb = { _url: layersUrlData.publicUrl };
+                } else {
+                    console.warn('Layers upload failed, fallback inline');
+                    const kb = Math.round(new Blob([layersJson]).size / 1024);
+                    frameLayersForDb = kb < 200 ? frameLayers : null;
                 }
             }
 
-            // Upload thumbnail en parallèle (non-bloquant pour la DB)
+            // Upload thumbnail en arrière-plan (non-bloquant)
             let thumbnailUrl = (thumbnail && !thumbnail.startsWith('data:')) ? thumbnail : null;
-            onProgress?.('thumbnail');
             if (thumbnail && thumbnail.startsWith('data:')) {
-                // Lancer sans attendre — si ça prend trop de temps, on sauvegarde sans thumbnail
-                this._uploadWithTimeout('thumbnails', `${userId}/${safeName}.png`,
-                    await fetch(thumbnail).then(r => r.blob()), 'image/png', 7000
-                ).then(({ success }) => {
-                    if (success) {
-                        const { data: urlData } = this.supabase.storage
-                            .from('thumbnails').getPublicUrl(`${userId}/${safeName}.png`);
-                        // URL disponible pour la prochaine sauvegarde
-                        if (urlData?.publicUrl) thumbnailUrl = urlData.publicUrl;
-                    }
+                fetch(thumbnail).then(r => r.blob()).then(blob => {
+                    this._uploadWithTimeout('thumbnails', `${userId}/${safeName}.png`, blob, 'image/png', 7000)
+                        .then(({ success }) => {
+                            if (success) {
+                                const { data: urlData } = this.supabase.storage
+                                    .from('thumbnails').getPublicUrl(`${userId}/${safeName}.png`);
+                                if (urlData?.publicUrl) thumbnailUrl = urlData.publicUrl;
+                            }
+                        }).catch(() => {});
                 }).catch(() => {});
             }
 
