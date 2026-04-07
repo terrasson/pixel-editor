@@ -8591,8 +8591,18 @@ function handleFileHandlingAPI() {
 }
 
 // Importer les données d'un projet (depuis URL ou fichier)
-function importProjectData(projectData) {
+async function importProjectData(projectData) {
     try {
+        // Si frames est un pointer Storage { _url }, le récupérer d'abord
+        if (projectData.frames && projectData.frames._url) {
+            try {
+                const resp = await fetch(projectData.frames._url);
+                if (resp.ok) projectData.frames = await resp.json();
+            } catch (e) {
+                console.warn('Failed to fetch frames from URL:', e);
+            }
+        }
+
         // Valider les données
         if (!projectData.frames || !Array.isArray(projectData.frames)) {
             throw new Error('Données de projet invalides');
