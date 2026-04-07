@@ -3915,8 +3915,9 @@ async function showLocalProjects() {
         <div class="projects-list">
             ${projectsList}
         </div>
-        <div style="margin-top: 16px; display: flex; gap: 8px;">
+        <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
             <button id="loadLocalProject" class="dialog-button" disabled>${tL('loadBtn')}</button>
+            <button id="downloadLocalProject" class="dialog-button secondary" disabled>⬇️ ${tL('lang') === 'fr' ? 'Télécharger' : 'Download'}</button>
             <button id="deleteLocalProject" class="dialog-button secondary" disabled>${tL('deleteBtn')}</button>
             <button id="cancelLocalLoad" class="dialog-button secondary">${tL('closeBtn')}</button>
         </div>
@@ -3963,6 +3964,7 @@ async function showLocalProjects() {
 
     let selectedProject = null;
     const loadBtn = dialog.querySelector('#loadLocalProject');
+    const downloadBtn = dialog.querySelector('#downloadLocalProject');
     const deleteBtn = dialog.querySelector('#deleteLocalProject');
 
     // Gérer la sélection
@@ -3979,6 +3981,7 @@ async function showLocalProjects() {
             };
             
             loadBtn.disabled = false;
+            downloadBtn.disabled = false;
             deleteBtn.disabled = false;
         });
     });
@@ -4002,6 +4005,34 @@ async function showLocalProjects() {
         } catch (error) {
             console.error('Erreur chargement projet Supabase:', error);
             showToast(tL('projectLoadErrorDetail'), { type: 'error', duration: 5000 });
+        }
+    });
+
+    // Télécharger le projet complet (frames + calques) en JSON
+    downloadBtn.addEventListener('click', async () => {
+        if (!selectedProject) return;
+        const projectMeta = autoSaveProjects[selectedProject.index];
+        showToast('⬇️ Téléchargement en cours…', { type: 'info', duration: 10000, id: 'download-progress' });
+        try {
+            const result = await window.dbService.loadProject(projectMeta.name);
+            dismissToast('download-progress');
+            if (!result.success) {
+                showToast('❌ Erreur : ' + result.error, { type: 'error', duration: 5000 });
+                return;
+            }
+            const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${projectMeta.name}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`✅ "${projectMeta.name}.json" téléchargé`, { type: 'success' });
+        } catch (e) {
+            dismissToast('download-progress');
+            showToast('❌ Erreur lors du téléchargement', { type: 'error', duration: 5000 });
         }
     });
 
