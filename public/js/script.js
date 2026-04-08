@@ -6629,7 +6629,7 @@ function showSaveDialog() {
                 color: rgba(255, 255, 255, 0.95) !important;
             ">
                 <h3>${tL('saveTitle')}</h3>
-                <input type="text" id="saveFileName" placeholder="${tL('projectNamePlaceholder')}" value="mon-pixel-art">
+                <input type="text" id="saveFileName" placeholder="${tL('projectNamePlaceholder')}" value="">
                 <div class="dialog-buttons">
                     <button id="dialogSave">${tL('saveBtn')}</button>
                     <button id="dialogCancel">${tL('cancelBtn')}</button>
@@ -6642,6 +6642,9 @@ function showSaveDialog() {
         const input = dialog.querySelector('#saveFileName');
         const saveBtn = dialog.querySelector('#dialogSave');
         const cancelBtn = dialog.querySelector('#dialogCancel');
+
+        // Pré-remplir avec le titre actuel du projet
+        input.value = document.getElementById('projectTitle')?.textContent?.trim() || 'mon-pixel-art';
 
         saveBtn.onclick = () => {
             const value = input.value.trim();
@@ -6657,6 +6660,7 @@ function showSaveDialog() {
         };
 
         input.focus();
+        input.select(); // Sélectionner tout le texte pour remplacement rapide
     });
 }
 
@@ -7513,18 +7517,21 @@ function saveProject() {
             color: rgba(255, 255, 255, 0.95) !important;
         ">
             <h3>${tL('saveTitle')}</h3>
-            <input type="text" id="projectName" placeholder="${tL('projectNamePlaceholder')}" value="pixel_animation">
+            <input type="text" id="projectName" placeholder="${tL('projectNamePlaceholder')}" value="">
             <div class="dialog-buttons">
                 <button id="dialogSave">${tL('saveBtn')}</button>
                 <button id="dialogCancel">${tL('cancelBtn')}</button>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(saveDialog);
-    
+
     const projectNameInput = saveDialog.querySelector('#projectName');
+    // Pré-remplir avec le titre actuel du projet
+    projectNameInput.value = document.getElementById('projectTitle')?.textContent?.trim() || 'pixel_animation';
     projectNameInput.focus();
+    projectNameInput.select(); // Sélectionner tout le texte pour remplacement rapide
     
     saveDialog.querySelector('#dialogSave').addEventListener('click', () => {
         const projectName = (projectNameInput.value || 'pixel_animation').trim();
