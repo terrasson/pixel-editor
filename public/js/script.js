@@ -3808,19 +3808,27 @@ async function loadSupabaseProjects() {
         autoSaveProjects = result.data;
     } catch (error) {
         console.error('Erreur chargement projets:', error);
-        loadAutoSaveProjects();
+        await loadAutoSaveProjects();
         showToast(tL('cloudSyncOffline') || '⚠️ Cloud indisponible — projets locaux chargés', { type: 'warning', duration: 5000 });
     }
 }
 
 // Auto-save function removed - now using manual save only
 
-// Fallback localStorage (au cas où Supabase ne fonctionne pas)
-function loadAutoSaveProjects() {
-    const saved = localStorage.getItem('pixelEditor_autoSaveProjects');
-    if (saved) {
-        autoSaveProjects = JSON.parse(saved);
-    }
+// Fallback IndexedDB (au cas où Supabase ne fonctionne pas)
+async function loadAutoSaveProjects() {
+    try {
+        const result = await window.localDB.getAllProjects();
+        if (result.success && result.data.length > 0) {
+            autoSaveProjects = result.data;
+            return;
+        }
+    } catch (_) {}
+    // Dernier recours : anciens projets localStorage
+    try {
+        const saved = localStorage.getItem('pixelEditor_autoSaveProjects');
+        if (saved) autoSaveProjects = JSON.parse(saved);
+    } catch (_) {}
 }
 
 function autoSaveProjectLocal(name) {
@@ -3854,26 +3862,33 @@ function autoSaveProjectLocal(name) {
 async function showLocalProjects() {
 
     // Load projects from Supabase (cloud storage)
+    let projectSource = 'cloud'; // 'cloud' | 'local'
     try {
         const result = await window.dbService.getAllProjects();
-
-        if (!result.success) {
-            showToast(tL('loadProjectsError', result.error), { type: 'error', duration: 5000 });
-            return;
+        if (result.success && result.data.length > 0) {
+            autoSaveProjects = result.data;
+        } else {
+            throw new Error(result.error || 'no projects');
         }
-
-        const projects = result.data;
-
-        if (projects.length === 0) {
+    } catch (_cloudError) {
+        // Supabase indisponible → fallback IndexedDB
+        try {
+            const localResult = await window.localDB.getAllProjects();
+            if (localResult.success && localResult.data.length > 0) {
+                autoSaveProjects = localResult.data;
+                projectSource = 'local';
+            } else {
+                showToast(tL('noProjectsFound'), { type: 'warning' });
+                return;
+            }
+        } catch (_localError) {
             showToast(tL('noProjectsFound'), { type: 'warning' });
             return;
         }
+    }
 
-        // Use the loaded projects instead of localStorage
-        autoSaveProjects = projects;
-    } catch (error) {
-        console.error('Error loading projects:', error);
-        showToast(tL('loadProjectsErrorShort'), { type: 'error', duration: 5000 });
+    if (!autoSaveProjects || autoSaveProjects.length === 0) {
+        showToast(tL('noProjectsFound'), { type: 'warning' });
         return;
     }
     
@@ -3988,39 +4003,46 @@ async function showLocalProjects() {
 
     // Charger le projet sélectionné
     loadBtn.addEventListener('click', async () => {
-        if (!selectedProject) {
-            return;
-        }
-
+        if (!selectedProject) return;
         const projectMeta = autoSaveProjects[selectedProject.index];
         try {
-            const result = await window.dbService.loadProject(projectMeta.name);
-            if (!result.success) {
-                showToast(tL('loadProjectError', result.error), { type: 'error', duration: 5000 });
-                return;
+            let data;
+            if (projectSource === 'local') {
+                const result = await window.localDB.loadProject(projectMeta.name);
+                if (!result.success || !result.data) throw new Error(result.error || 'not found');
+                data = result.data;
+            } else {
+                const result = await window.dbService.loadProject(projectMeta.name);
+                if (!result.success) throw new Error(result.error);
+                data = result.data;
             }
-            applyProjectData(result.data, projectMeta.name);
+            applyProjectData(data, projectMeta.name);
             dialog.remove();
             showToast(tL('projectLoaded', projectMeta.name), { type: 'success' });
         } catch (error) {
-            console.error('Erreur chargement projet Supabase:', error);
+            console.error('Erreur chargement projet:', error);
             showToast(tL('projectLoadErrorDetail'), { type: 'error', duration: 5000 });
         }
     });
 
-    // Télécharger le projet complet (frames + calques) en JSON
+    // Télécharger le projet complet en JSON
     downloadBtn.addEventListener('click', async () => {
         if (!selectedProject) return;
         const projectMeta = autoSaveProjects[selectedProject.index];
         showToast('⬇️ Téléchargement en cours…', { type: 'info', duration: 10000, id: 'download-progress' });
         try {
-            const result = await window.dbService.loadProject(projectMeta.name);
-            dismissToast('download-progress');
-            if (!result.success) {
-                showToast('❌ Erreur : ' + result.error, { type: 'error', duration: 5000 });
-                return;
+            let data;
+            if (projectSource === 'local') {
+                const result = await window.localDB.loadProject(projectMeta.name);
+                if (!result.success || !result.data) throw new Error(result.error || 'not found');
+                data = result.data;
+            } else {
+                const result = await window.dbService.loadProject(projectMeta.name);
+                if (!result.success) throw new Error(result.error);
+                data = result.data;
             }
-            const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+            dismissToast('download-progress');
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -4040,16 +4062,19 @@ async function showLocalProjects() {
     deleteBtn.addEventListener('click', async () => {
         if (selectedProject && confirm(tL('confirmDelete'))) {
             const project = autoSaveProjects[selectedProject.index];
-
             try {
-                // Delete from Supabase using the database service
-                const result = await window.dbService.deleteProjectById(project.id);
+                let result;
+                if (projectSource === 'local') {
+                    result = await window.localDB.deleteProject(project.name);
+                } else {
+                    result = await window.dbService.deleteProjectById(project.id);
+                    if (result.success) window.dbService?.invalidateProjectsCache?.();
+                }
 
                 if (result.success) {
-                    window.dbService?.invalidateProjectsCache?.();
                     showToast(tL('deleteSuccess'), { type: 'success' });
                     dialog.remove();
-                    showLocalProjects(); // Refresh the list
+                    showLocalProjects();
                 } else {
                     showToast(tL('deleteError', result.error), { type: 'error', duration: 5000 });
                 }
@@ -8077,39 +8102,24 @@ async function saveProjectSmart() {
             dismissToast('save-progress');
             console.warn('⚠️ Erreur Supabase:', supabaseError);
             
-            // 2️⃣ FALLBACK VERS LOCALSTORAGE (sans frameLayers pour rester sous la limite 5MB)
-
+            // 2️⃣ FALLBACK VERS INDEXEDDB (pas de limite de taille)
             try {
-                // Libérer le maximum d'espace localStorage avant d'écrire
-                try {
-                    const keysToRemove = [];
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const k = localStorage.key(i);
-                        if (k && k.startsWith('pixelart_') && k !== `pixelart_${fileName}`) {
-                            keysToRemove.push(k);
-                        }
-                    }
-                    keysToRemove.forEach(k => localStorage.removeItem(k));
-                    // Supprimer aussi l'historique autoSave (peut être très lourd avec frames non-sparse)
-                    localStorage.removeItem('pixelEditor_autoSaveProjects');
-                } catch (_) { /* ignore */ }
-
-                // Garder seulement les métadonnées légères — frames en sparse, sans calques ni thumbnail
                 const localData = {
-                    ...projectData,
-                    frames: frames.map(toSparseFrame),
-                    frameLayers: undefined,
-                    thumbnail: undefined
-                };
-                localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(localData));
-                logUsageEvent('project_saved_local', {
                     name: fileName,
-                    frames: frames.length,
-                    fps: animationFPS,
-                    reason: supabaseError.message
-                });
-                
-                // Afficher le message d'avertissement dans une vraie fenêtre modale
+                    frames: frames.map(toSparseFrame),
+                    currentFrame,
+                    fps: animationFPS || 24,
+                    customPalette,
+                    customColors,
+                    gridSize: { width: currentGridSize, height: currentGridSize },
+                    signature: 'pixel-art-editor-v2'
+                };
+                const localResult = await window.localDB.saveProject(localData);
+                if (!localResult.success) throw new Error(localResult.error);
+
+                window.currentProjectName = fileName;
+                logUsageEvent('project_saved_local', { name: fileName, frames: frames.length });
+
                 await showSaveResultDialog({
                     title: tL('saveLocalTitle'),
                     message: tL('saveLocalMsg', fileName, supabaseError.message),
