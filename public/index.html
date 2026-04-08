@@ -643,19 +643,13 @@
 
         function drawPixelFrame(ctx, frame, size) {
             if (!Array.isArray(frame) || frame.length === 0) return;
-            // Subtle checkerboard background
-            const tile = Math.max(2, Math.floor(size / 32));
-            for (let ty = 0; ty < size; ty += tile) {
-                for (let tx = 0; tx < size; tx += tile) {
-                    ctx.fillStyle = ((Math.floor(tx/tile) + Math.floor(ty/tile)) % 2 === 0) ? '#1a1a2e' : '#131325';
-                    ctx.fillRect(tx, ty, tile, tile);
-                }
-            }
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, size, size);
             const gridSize = Math.round(Math.sqrt(frame.length));
             const px = size / gridSize;
             frame.forEach((pixel, i) => {
                 if (!pixel || pixel.isEmpty) return;
-                ctx.fillStyle = pixel.color || '#FFF';
+                ctx.fillStyle = pixel.color;
                 ctx.fillRect((i % gridSize) * px, Math.floor(i / gridSize) * px, px, px);
             });
         }
