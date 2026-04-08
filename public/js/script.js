@@ -8803,57 +8803,71 @@ async function importSharedProject(file) {
             }
         }
         
-        // Valider les données essentielles
-        if (!Array.isArray(projectData.frames) || projectData.frames.length === 0) {
+        // Valider les données essentielles (accepte array ou objet { frames: [...] })
+        const framesArray = Array.isArray(projectData.frames) ? projectData.frames
+            : Array.isArray(projectData.frames?.frames) ? projectData.frames.frames : null;
+        if (!framesArray || framesArray.length === 0) {
             throw new Error('Le projet ne contient pas de frames valides.');
         }
-        
+
         // Confirmation avant import
         const projectName = projectData.name || 'Projet partagé';
-        const frameCount = projectData.frames.length;
-        const hasCustomColors = projectData.customColors && projectData.customColors.length > 0;
+        const frameCount = framesArray.length;
+        const rawCustomColors = projectData.customColors || projectData.custom_colors;
+        const hasCustomColors = rawCustomColors && (Array.isArray(rawCustomColors) ? rawCustomColors : []).length > 0;
         
-        const confirmMessage = `${tL('importConfirmTitle', projectName)}\n\n${tL('importConfirmDetails')}\n• ${frameCount} frame${frameCount > 1 ? 's' : ''}\n• ${hasCustomColors ? tL('customColors', projectData.customColors.length) : tL('baseColorsOnly')}\n• ${tL('createdOn')} ${projectData.created ? new Date(projectData.created).toLocaleDateString(tL('dateLocale')) : tL('unknownDate')}\n\n${tL('importWillReplace')}`;
+        const customColorsCount = Array.isArray(rawCustomColors) ? rawCustomColors.length : 0;
+        const confirmMessage = `${tL('importConfirmTitle', projectName)}\n\n${tL('importConfirmDetails')}\n• ${frameCount} frame${frameCount > 1 ? 's' : ''}\n• ${hasCustomColors ? tL('customColors', customColorsCount) : tL('baseColorsOnly')}\n• ${tL('createdOn')} ${projectData.created ? new Date(projectData.created).toLocaleDateString(tL('dateLocale')) : tL('unknownDate')}\n\n${tL('importWillReplace')}`;
         
         if (!confirm(confirmMessage)) {
             return;
         }
         
-        // Importer le projet
-        frames = Array.isArray(projectData.frames) ? projectData.frames : [];
-        currentFrame = Number.isInteger(projectData.currentFrame) ? projectData.currentFrame : 0;
-        
+        // Importer le projet (normaliseFrames gère le sparse + divers formats)
+        frames = normaliseFrames(projectData.frames);
+        // Support snake_case (fichiers exportés depuis Supabase) et camelCase
+        const rawCurrentFrame = projectData.currentFrame ?? projectData.current_frame ?? 0;
+        currentFrame = Number.isInteger(rawCurrentFrame) ? rawCurrentFrame : 0;
+
         // Limiter currentFrame au nombre de frames disponibles
         if (currentFrame >= frames.length) {
             currentFrame = frames.length - 1;
         }
-        
-        // Importer les couleurs personnalisées
-        if (projectData.customColors && Array.isArray(projectData.customColors)) {
+
+        // Importer les couleurs personnalisées (snake_case ou camelCase)
+        const rawColors = projectData.customColors || projectData.custom_colors;
+        if (rawColors) {
             customColors = [];
-            projectData.customColors.forEach(color => {
-                addCustomColor(color);
-            });
+            const colorsArray = typeof rawColors === 'string' ? JSON.parse(rawColors) : rawColors;
+            if (Array.isArray(colorsArray)) colorsArray.forEach(color => addCustomColor(color));
         }
-        
-        if (projectData.customPalette && Array.isArray(projectData.customPalette)) {
-            customPalette = projectData.customPalette;
-            updateCompactPalette();
+
+        const rawPalette = projectData.customPalette || projectData.custom_palette;
+        if (rawPalette) {
+            const paletteArray = typeof rawPalette === 'string' ? JSON.parse(rawPalette) : rawPalette;
+            if (Array.isArray(paletteArray)) {
+                customPalette = paletteArray;
+                updateCompactPalette();
+            }
         }
-        
+
         // Mettre à jour l'affichage des couleurs personnalisées
         updateColorPalette();
-        
+
         if (projectData.fps) {
             animationFPS = projectData.fps;
         }
-        
+
+        // Reconstruire les calques (obligatoire avant loadFrame en mode canvas)
+        initLayersFromFrames();
+        currentLayer = 0;
+
         // Mettre à jour l'interface
         const title = document.getElementById('projectTitle');
         if (title) {
             title.textContent = projectName;
         }
-        
+
         updateFramesList();
         loadFrame(currentFrame);
         
