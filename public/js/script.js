@@ -8133,6 +8133,9 @@ function initEventListeners() {
     document.getElementById('publishGalleryBtn')?.addEventListener('click', publishToGallery);
     document.getElementById('publishGalleryBtn2')?.addEventListener('click', publishToGallery);
     document.getElementById('exportGifBtn')?.addEventListener('click', exportToGif);
+    document.getElementById('exportVideoBtn')?.addEventListener('click', exportToVideo);
+    document.getElementById('exportVideoBtn2')?.addEventListener('click', exportToVideo);
+    document.getElementById('exportVideoBtnDropdown')?.addEventListener('click', exportToVideo);
     document.getElementById('exportSpriteSheetBtn')?.addEventListener('click', exportToSpriteSheet);
     document.getElementById('stampSpriteBtn')?.addEventListener('click', showImportStampModal);
     document.getElementById('stampSpriteBtn2')?.addEventListener('click', showImportStampModal);
@@ -9514,35 +9517,194 @@ async function createAnimatedGif(size, frameDelay, repeat, quality, watermark = 
     });
 
     try {
-        // 🚀 TENTATIVE 1 : UTILISER SUPABASE EDGE FUNCTION
-        progressText.textContent = tL('gifSendingSupabase');
-        progressBar.style.width = '20%';
-        
-        const gifBlob = await createGifWithSupabase(frames, { size, frameDelay, repeat, quality });
-        
-        if (gifBlob && !cancelled) {
-            progressDiv.remove();
-            downloadGif(gifBlob, size, frameDelay);
-            return;
+        await createGifWithGifJS(frames, { size, frameDelay, repeat, quality }, progressText, progressBar, cancelled, watermark);
+        if (!cancelled) progressDiv.remove();
+    } catch (gifJsError) {
+        console.error('❌ Échec gif.js:', gifJsError);
+        progressDiv.remove();
+        showToast('❌ Erreur GIF : ' + gifJsError.message, { type: 'error', duration: 7000 });
+    }
+}
+
+// ========================================
+// ========================================
+// EXPORT VIDÉO (WebM / MP4 selon navigateur)
+// ========================================
+
+async function exportToVideo() {
+    if (frames.length === 0) {
+        showToast(tL('noFrames'), { type: 'warning' });
+        return;
+    }
+    saveCurrentFrame();
+    showVideoExportDialog();
+}
+
+function showVideoExportDialog() {
+    const supported = typeof MediaRecorder !== 'undefined';
+    if (!supported) {
+        showToast('❌ Export vidéo non supporté par ce navigateur.', { type: 'error', duration: 5000 });
+        return;
+    }
+
+    const mimeType = ['video/webm;codecs=vp9', 'video/webm', 'video/mp4']
+        .find(m => MediaRecorder.isTypeSupported(m)) || null;
+    if (!mimeType) {
+        showToast('❌ Aucun format vidéo supporté par ce navigateur.', { type: 'error', duration: 5000 });
+        return;
+    }
+    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    const lang = localStorage.getItem('lang') || 'fr';
+
+    const dialog = createMobileDialog('🎥 Export Vidéo', `
+        <div class="gif-export-content">
+            <h3>🎥 Export Animation Vidéo</h3>
+            <p>${frames.length} frame${frames.length > 1 ? 's' : ''} · format : <strong>.${ext}</strong></p>
+
+            <div class="gif-options">
+                <div class="gif-option">
+                    <label for="videoSize">${lang === 'fr' ? 'Taille' : 'Size'}</label>
+                    <select id="videoSize">
+                        <option value="256">256 × 256</option>
+                        <option value="512" selected>512 × 512</option>
+                        <option value="1024">1024 × 1024</option>
+                    </select>
+                </div>
+                <div class="gif-option">
+                    <label for="videoFps">${lang === 'fr' ? 'Vitesse' : 'Speed'}</label>
+                    <select id="videoFps">
+                        <option value="4">${lang === 'fr' ? 'Lent (4 fps)' : 'Slow (4 fps)'}</option>
+                        <option value="8">${lang === 'fr' ? 'Normal (8 fps)' : 'Normal (8 fps)'}</option>
+                        <option value="12" selected>${lang === 'fr' ? 'Rapide (12 fps)' : 'Fast (12 fps)'}</option>
+                        <option value="24">${lang === 'fr' ? 'Très rapide (24 fps)' : 'Very fast (24 fps)'}</option>
+                    </select>
+                </div>
+                <div class="gif-option">
+                    <label for="videoLoops">${lang === 'fr' ? 'Répétitions' : 'Loops'}</label>
+                    <select id="videoLoops">
+                        <option value="1">1×</option>
+                        <option value="3" selected>3×</option>
+                        <option value="5">5×</option>
+                        <option value="10">10×</option>
+                    </select>
+                </div>
+            </div>
+
+            <p style="font-size:0.8rem;opacity:0.65;margin-top:8px;">
+                ${lang === 'fr'
+                    ? '⚠️ La vidéo est enregistrée en temps réel — elle prend autant de temps que l\'animation.'
+                    : '⚠️ Video is recorded in real time — it takes as long as the animation.'}
+            </p>
+
+            <div class="dialog-buttons">
+                <button id="createVideoBtn" class="dialog-button">🎥 ${lang === 'fr' ? 'Créer la vidéo' : 'Create video'}</button>
+                <button id="cancelVideoBtn" class="dialog-button secondary">${tL('cancelBtn')}</button>
+            </div>
+        </div>
+    `);
+
+    dialog.querySelector('#createVideoBtn').addEventListener('click', async () => {
+        const size = parseInt(dialog.querySelector('#videoSize').value, 10);
+        const fps  = parseInt(dialog.querySelector('#videoFps').value, 10);
+        const loops = parseInt(dialog.querySelector('#videoLoops').value, 10);
+        dialog.remove();
+        await createVideo(size, fps, loops, mimeType, ext);
+    });
+    dialog.querySelector('#cancelVideoBtn').addEventListener('click', () => dialog.remove());
+}
+
+async function createVideo(size, fps, loops, mimeType, ext) {
+    const projectName = document.getElementById('projectTitle')?.textContent || 'animation';
+    const frameDuration = Math.round(1000 / fps);
+    const totalFrames = frames.length * loops;
+
+    // Canvas offscreen
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Progress overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+        background:rgba(0,122,255,0.95);color:white;padding:20px 28px;border-radius:12px;
+        text-align:center;z-index:10000;min-width:260px;font-family:-apple-system,sans-serif;`;
+    overlay.innerHTML = `
+        <div style="font-size:2rem;margin-bottom:8px;">🎥</div>
+        <div id="vidProgressText" style="margin-bottom:12px;">Initialisation…</div>
+        <div style="background:rgba(255,255,255,0.3);border-radius:10px;height:8px;margin-bottom:12px;">
+            <div id="vidProgressBar" style="background:white;height:100%;border-radius:10px;width:0%;transition:width 0.2s;"></div>
+        </div>
+        <button id="cancelVidBtn" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:white;padding:6px 16px;border-radius:6px;cursor:pointer;">Annuler</button>
+    `;
+    document.body.appendChild(overlay);
+
+    const progressText = overlay.querySelector('#vidProgressText');
+    const progressBar  = overlay.querySelector('#vidProgressBar');
+    let cancelled = false;
+    overlay.querySelector('#cancelVidBtn').addEventListener('click', () => {
+        cancelled = true;
+        overlay.remove();
+    });
+
+    // Dessiner une frame pixel art sur le canvas
+    function drawFrame(frameData) {
+        const gs = currentGridSize;
+        const px = size / gs;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < frameData.length; i++) {
+            const p = frameData[i];
+            if (!p || p.isEmpty) continue;
+            ctx.fillStyle = p.color;
+            ctx.fillRect((i % gs) * px, Math.floor(i / gs) * px, px, px);
         }
-        
-    } catch (supabaseError) {
-        console.warn('🔄 Supabase Edge Function échouée, fallback vers gif.js:', supabaseError);
-        
-        // Si Supabase échoue, on essaie gif.js en fallback
-        progressText.textContent = tL('gifServerUnavailable');
-        progressBar.style.width = '10%';
-        
-        try {
-            await createGifWithGifJS(frames, { size, frameDelay, repeat, quality }, progressText, progressBar, cancelled, watermark);
-            if (!cancelled) {
-                progressDiv.remove();
+    }
+
+    try {
+        const stream = canvas.captureStream(fps);
+        const recorder = new MediaRecorder(stream, { mimeType });
+        const chunks = [];
+        recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+        recorder.start(100); // collecte toutes les 100ms
+
+        for (let loop = 0; loop < loops && !cancelled; loop++) {
+            for (let f = 0; f < frames.length && !cancelled; f++) {
+                drawFrame(frames[f]);
+                const done = loop * frames.length + f + 1;
+                const pct = Math.round((done / totalFrames) * 100);
+                progressText.textContent = `Frame ${done} / ${totalFrames}`;
+                progressBar.style.width = pct + '%';
+                await new Promise(r => setTimeout(r, frameDuration));
             }
-        } catch (gifJsError) {
-            console.error('❌ Échec complet gif.js et Supabase:', gifJsError);
-            progressDiv.remove();
-            showToast(tL('gifError', supabaseError.message, gifJsError.message), { type: 'error', duration: 7000 });
         }
+
+        if (cancelled) return;
+
+        progressText.textContent = 'Finalisation…';
+        progressBar.style.width = '100%';
+
+        recorder.stop();
+        await new Promise(r => { recorder.onstop = r; });
+
+        overlay.remove();
+
+        const blob = new Blob(chunks, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast(`✅ Vidéo .${ext} téléchargée !`, { type: 'success', duration: 4000 });
+
+    } catch (err) {
+        overlay.remove();
+        console.error('❌ Erreur export vidéo:', err);
+        showToast('❌ Erreur vidéo : ' + err.message, { type: 'error', duration: 5000 });
     }
 }
 
