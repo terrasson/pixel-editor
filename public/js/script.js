@@ -8037,7 +8037,7 @@ async function saveProjectSmart() {
 
         try {
             const saveTimeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('timeout')), 60000)
+                setTimeout(() => reject(new Error('timeout')), 30000)
             );
             const result = await Promise.race([window.dbService.saveProject(projectData, onSaveProgress), saveTimeout]);
             dismissToast('save-progress');

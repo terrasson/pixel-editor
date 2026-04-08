@@ -121,40 +121,55 @@ class DatabaseService {
             // Ne mettre à jour thumbnail que si on en a une — évite d'écraser l'existante avec null
             if (thumbnailUrl) payload.thumbnail = thumbnailUrl;
 
+            // Helper : exécute une requête Supabase avec timeout strict
+            const withDbTimeout = (query, ms = 10000) => Promise.race([
+                query,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), ms))
+            ]);
+
             // Try upsert first (requires unique constraint on user_id+name)
             // Falls back to SELECT+INSERT/UPDATE if constraint doesn't exist yet
             try {
-                const { data, error } = await this.supabase
-                    .from('pixel_projects')
-                    .upsert({ user_id: userId, name, ...payload }, { onConflict: 'user_id,name' })
-                    .select('id')
-                    .single();
+                const { data, error } = await withDbTimeout(
+                    this.supabase
+                        .from('pixel_projects')
+                        .upsert({ user_id: userId, name, ...payload }, { onConflict: 'user_id,name' })
+                        .select('id')
+                        .single()
+                );
                 if (error) throw error;
                 return { success: true, data, isUpdate: true, layersDropped: false };
             } catch (upsertError) {
+                if (upsertError.message === 'DB timeout') throw upsertError;
                 // Fallback: unique constraint not yet added → SELECT + INSERT/UPDATE
-                const { data: existing } = await this.supabase
-                    .from('pixel_projects')
-                    .select('id')
-                    .eq('user_id', userId)
-                    .eq('name', name)
-                    .maybeSingle();
+                const { data: existing } = await withDbTimeout(
+                    this.supabase
+                        .from('pixel_projects')
+                        .select('id')
+                        .eq('user_id', userId)
+                        .eq('name', name)
+                        .maybeSingle()
+                );
 
                 if (existing) {
-                    const { data, error } = await this.supabase
-                        .from('pixel_projects')
-                        .update(payload)
-                        .eq('id', existing.id)
-                        .select('id')
-                        .single();
+                    const { data, error } = await withDbTimeout(
+                        this.supabase
+                            .from('pixel_projects')
+                            .update(payload)
+                            .eq('id', existing.id)
+                            .select('id')
+                            .single()
+                    );
                     if (error) throw error;
                     return { success: true, data, isUpdate: true, layersDropped: false };
                 } else {
-                    const { data, error } = await this.supabase
-                        .from('pixel_projects')
-                        .insert({ user_id: userId, name, ...payload })
-                        .select('id')
-                        .single();
+                    const { data, error } = await withDbTimeout(
+                        this.supabase
+                            .from('pixel_projects')
+                            .insert({ user_id: userId, name, ...payload })
+                            .select('id')
+                            .single()
+                    );
                     if (error) throw error;
                     return { success: true, data, isUpdate: false, layersDropped: false };
                 }
