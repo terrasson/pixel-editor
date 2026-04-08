@@ -70,18 +70,15 @@ class DatabaseService {
                     : Promise.resolve({ success: true })
             ]);
 
-            // Si l'upload des frames échoue, on arrête immédiatement — évite d'insérer
-            // des frames brutes en JSONB (→ timeout + Disk IO budget épuisé)
-            if (!framesResult.success) {
-                throw new Error('Storage upload failed — bucket "thumbnails" manquant ou permissions incorrectes. Vérifier Supabase Storage.');
-            }
-
-            let framesForDb = { _url: '' };
-            const { data: framesUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(framesPath);
-            if (framesUrlData?.publicUrl) {
-                framesForDb = { _url: framesUrlData.publicUrl };
+            // Les frames reçues sont déjà en format sparse (encodées par saveProjectSmart).
+            // Si Storage fonctionne → on stocke un pointeur { _url }.
+            // Si Storage échoue → on stocke les frames sparse directement en JSONB (léger, qq KB).
+            let framesForDb = frames; // fallback: sparse frames inline
+            if (framesResult.success) {
+                const { data: framesUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(framesPath);
+                if (framesUrlData?.publicUrl) framesForDb = { _url: framesUrlData.publicUrl };
             } else {
-                throw new Error('Impossible d\'obtenir l\'URL publique des frames depuis Storage.');
+                console.warn('⚠️ Storage upload échoué — frames sparse stockées inline en DB');
             }
 
             let frameLayersForDb = null;
@@ -90,7 +87,6 @@ class DatabaseService {
                     const { data: layersUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(layersPath);
                     if (layersUrlData?.publicUrl) frameLayersForDb = { _url: layersUrlData.publicUrl };
                 } else {
-                    // Calques non-critiques : on continue sans eux si upload échoue
                     console.warn('Layers upload failed — calques non sauvegardés');
                 }
             }

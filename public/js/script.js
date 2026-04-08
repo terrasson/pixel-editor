@@ -8459,10 +8459,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Nettoyage unique du localStorage au démarrage pour libérer l'espace occupé par les anciennes données lourdes
     try {
-        if (!localStorage.getItem('_lsCleanedV2')) {
+        if (!localStorage.getItem('_lsCleanedV3')) {
             localStorage.removeItem('pixelEditor_autoSaveProjects');
-            localStorage.setItem('_lsCleanedV2', '1');
-            console.log('🧹 localStorage nettoyé (migration V2)');
+            // Supprimer toutes les sauvegardes pixelart_* (peuvent être non-sparse et très lourdes)
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('pixelart_')) keysToRemove.push(k);
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+            localStorage.removeItem('_lsCleanedV2');
+            localStorage.setItem('_lsCleanedV3', '1');
+            console.log('🧹 localStorage nettoyé (migration V3)');
         }
     } catch (_) {}
 
