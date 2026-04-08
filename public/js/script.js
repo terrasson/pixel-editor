@@ -10633,11 +10633,30 @@ function _photoAddColorsToPalette(colors) {
 window.stamps = window.stamps || [];
 
 function _loadStamps() {
-    window.stamps = [];
+    try {
+        const saved = localStorage.getItem('pixelEditor_stamps');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            window.stamps = parsed.map(s => ({
+                ...s,
+                pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
+            }));
+        } else {
+            window.stamps = [];
+        }
+    } catch (_) {
+        window.stamps = [];
+    }
 }
 
 function _saveStamps() {
-    // Tampons non persistés — remis à zéro au rechargement
+    try {
+        const toSave = window.stamps.map(s => ({
+            ...s,
+            pixels: toSparseFrame(s.pixels || [])
+        }));
+        localStorage.setItem('pixelEditor_stamps', JSON.stringify(toSave));
+    } catch (_) {}
 }
 
 function saveCurrentDrawingAsStamp() {
