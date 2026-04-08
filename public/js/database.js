@@ -635,27 +635,32 @@ class DatabaseService {
 
     // Generate thumbnail from current canvas
     generateThumbnail() {
+        const SIZE = 128;
         const canvas = document.createElement('canvas');
+        canvas.width = SIZE;
+        canvas.height = SIZE;
         const ctx = canvas.getContext('2d');
-        canvas.width = 32;
-        canvas.height = 32;
 
-        // White background so empty pixels don't appear black on dark gallery backgrounds
         ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, 32, 32);
+        ctx.fillRect(0, 0, SIZE, SIZE);
 
-        // Get pixel grid
-        const pixels = document.querySelectorAll('.pixel');
-        const pixelSize = 1; // 1px per pixel in thumbnail
+        // Utiliser les données frames directement (compatible canvas rendering)
+        const frameData = (typeof currentFrameBuffer !== 'undefined' && Array.isArray(currentFrameBuffer))
+            ? currentFrameBuffer
+            : (typeof frames !== 'undefined' && frames.length > 0 ? frames[0] : null);
 
-        pixels.forEach((pixel, index) => {
-            const x = (index % 32) * pixelSize;
-            const y = Math.floor(index / 32) * pixelSize;
-            const color = pixel.style.backgroundColor || '#FFFFFF';
+        if (!frameData || frameData.length === 0) return canvas.toDataURL('image/png');
 
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, pixelSize, pixelSize);
-        });
+        const gs = Math.round(Math.sqrt(frameData.length));
+        if (gs === 0) return canvas.toDataURL('image/png');
+        const px = SIZE / gs;
+
+        for (let i = 0; i < frameData.length; i++) {
+            const p = frameData[i];
+            if (!p || p.isEmpty) continue;
+            ctx.fillStyle = p.color;
+            ctx.fillRect((i % gs) * px, Math.floor(i / gs) * px, px, px);
+        }
 
         return canvas.toDataURL('image/png');
     }
