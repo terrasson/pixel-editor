@@ -8011,30 +8011,25 @@ async function loadFromServerMobile() {
     }
 }
 
-/// Fonction intelligente de sauvegarde : essaie Supabase en premier, puis fallback vers localStorage
+// Sauvegarde locale directe en IndexedDB (calques + frames + couleurs + tout)
 let _saveInProgress = false;
 async function saveProjectSmart() {
-    if (_saveInProgress) return; // évite double-sauvegarde si clic rapide
+    if (_saveInProgress) return;
     _saveInProgress = true;
     try {
-        // Si un projet est déjà ouvert, sauvegarder directement sans dialog
+        // Si projet déjà nommé, sauvegarder sans dialog
         let fileName = window.currentProjectName || null;
         if (!fileName) {
             fileName = await showSaveDialog();
             if (!fileName) return;
         }
 
-        // Sauvegarder la frame courante avant la sauvegarde
+        // Sauvegarder la frame courante dans le buffer
         saveCurrentFrame();
 
-        // Générer la miniature uniquement si des pixels ont été modifiés depuis la dernière sauvegarde
-        const hasChanges = modifiedPixels.some(s => s.size > 0);
-        if (hasChanges || !window._lastSavedThumbnail) {
-            window._lastSavedThumbnail = window.dbService?.generateThumbnail?.() || null;
-        }
-        const thumbnail = window._lastSavedThumbnail || null;
+        showToast('💾 Sauvegarde en cours…', { type: 'info', duration: 5000, id: 'save-progress' });
 
-        const projectTitleText = document.getElementById('projectTitle')?.textContent || fileName;
+        // Construire les données complètes du projet
         const projectData = {
             name: fileName,
             frames: frames.map(toSparseFrame),
@@ -8043,116 +8038,24 @@ async function saveProjectSmart() {
             currentFrame: currentFrame,
             fps: animationFPS || 24,
             customPalette: customPalette,
-            thumbnail: thumbnail,
             customColors: customColors,
             gridSize: { width: currentGridSize, height: currentGridSize },
-            projectTitle: projectTitleText
+            signature: 'pixel-art-editor-v2'
         };
 
-        // 1️⃣ ESSAYER SUPABASE EN PREMIER
-        showToast('💾 Sauvegarde en cours…', { type: 'info', duration: 30000, id: 'save-progress' });
+        const result = await window.localDB.saveProject(projectData);
+        dismissToast('save-progress');
 
-        const onSaveProgress = (step) => {
-            const messages = {
-                storage:  '📦 Upload frames & calques…',
-                database: '☁️ Enregistrement cloud…',
-            };
-            if (messages[step]) updateToast('save-progress', messages[step]);
-        };
+        if (!result.success) throw new Error(result.error);
 
-        try {
-            const saveTimeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('timeout')), 30000)
-            );
-            const result = await Promise.race([window.dbService.saveProject(projectData, onSaveProgress), saveTimeout]);
-            dismissToast('save-progress');
+        window.currentProjectName = fileName;
+        modifiedPixels = modifiedPixels.map(() => new Set());
 
-            if (result.success) {
-                window.dbService?.invalidateProjectsCache?.();
-                const action = tL(result.isUpdate ? 'updated' : 'created2');
-                window.currentProjectName = fileName;
-                // Réinitialiser les pixels modifiés — thumbnail à jour
-                modifiedPixels = modifiedPixels.map(() => new Set());
-                logUsageEvent('project_saved', {
-                    name: fileName,
-                    frames: frames.length,
-                    fps: animationFPS
-                });
-                
-                // Sauvegarder en local (backup léger sans frameLayers ni thumbnail)
-                try {
-                    const backupData = { ...projectData, frameLayers: undefined, thumbnail: undefined };
-                    localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(backupData));
-                } catch (localError) {
-                    console.warn('⚠️ Impossible de créer le backup local:', localError);
-                }
+        // Mettre à jour le titre affiché
+        const titleEl = document.getElementById('projectTitle');
+        if (titleEl) titleEl.textContent = fileName;
 
-                // Afficher le message de succès dans une vraie fenêtre modale
-                await showSaveResultDialog({
-                    title: tL('saveSuccessTitle'),
-                    message: tL('saveSuccessMsg', fileName, action),
-                    type: 'success'
-                });
-                
-                return;
-            } else {
-                throw new Error(result.error);
-            }
-        } catch (supabaseError) {
-            dismissToast('save-progress');
-            console.warn('⚠️ Erreur Supabase:', supabaseError);
-            
-            // 2️⃣ FALLBACK VERS INDEXEDDB (pas de limite de taille)
-            try {
-                const localData = {
-                    name: fileName,
-                    frames: frames.map(toSparseFrame),
-                    currentFrame,
-                    fps: animationFPS || 24,
-                    customPalette,
-                    customColors,
-                    gridSize: { width: currentGridSize, height: currentGridSize },
-                    signature: 'pixel-art-editor-v2'
-                };
-                const localResult = await window.localDB.saveProject(localData);
-                if (!localResult.success) throw new Error(localResult.error);
-
-                window.currentProjectName = fileName;
-                logUsageEvent('project_saved_local', { name: fileName, frames: frames.length });
-
-                await showSaveResultDialog({
-                    title: tL('saveLocalTitle'),
-                    message: tL('saveLocalMsg', fileName, supabaseError.message),
-                    type: 'warning'
-                });
-            } catch (localError) {
-                // 3️⃣ DERNIER RECOURS : TÉLÉCHARGEMENT
-                console.error('❌ Erreur Supabase:', supabaseError?.message);
-                console.error('❌ Erreur localStorage:', localError?.message);
-
-                const blob = new Blob([JSON.stringify(projectData, null, 2)], {type: 'application/json'});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${fileName}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                logUsageEvent('project_saved_download', {
-                    name: fileName,
-                    frames: frames.length,
-                    fps: animationFPS
-                });
-
-                await showSaveResultDialog({
-                    title: tL('saveDownloadTitle'),
-                    message: `Cloud: ${supabaseError?.message || '?'}\nLocal: ${localError?.message || '?'}\n\n${tL('saveDownloadMsg', fileName)}`,
-                    type: 'warning'
-                });
-            }
-        }
+        showToast(`✅ "${fileName}" sauvegardé`, { type: 'success' });
         
     } catch (err) {
         console.error('❌ Erreur lors de la sauvegarde:', err);
