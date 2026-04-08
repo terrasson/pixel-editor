@@ -70,12 +70,18 @@ class DatabaseService {
                     : Promise.resolve({ success: true })
             ]);
 
-            let framesForDb = frames; // fallback inline si upload échoue
-            if (framesResult.success) {
-                const { data: framesUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(framesPath);
-                if (framesUrlData?.publicUrl) framesForDb = { _url: framesUrlData.publicUrl };
+            // Si l'upload des frames échoue, on arrête immédiatement — évite d'insérer
+            // des frames brutes en JSONB (→ timeout + Disk IO budget épuisé)
+            if (!framesResult.success) {
+                throw new Error('Storage upload failed — bucket "thumbnails" manquant ou permissions incorrectes. Vérifier Supabase Storage.');
+            }
+
+            let framesForDb = { _url: '' };
+            const { data: framesUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(framesPath);
+            if (framesUrlData?.publicUrl) {
+                framesForDb = { _url: framesUrlData.publicUrl };
             } else {
-                console.warn('Frames upload failed, storing inline');
+                throw new Error('Impossible d\'obtenir l\'URL publique des frames depuis Storage.');
             }
 
             let frameLayersForDb = null;
@@ -84,9 +90,8 @@ class DatabaseService {
                     const { data: layersUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(layersPath);
                     if (layersUrlData?.publicUrl) frameLayersForDb = { _url: layersUrlData.publicUrl };
                 } else {
-                    console.warn('Layers upload failed, fallback inline');
-                    const kb = Math.round(new Blob([layersJson]).size / 1024);
-                    frameLayersForDb = kb < 200 ? frameLayers : null;
+                    // Calques non-critiques : on continue sans eux si upload échoue
+                    console.warn('Layers upload failed — calques non sauvegardés');
                 }
             }
 
