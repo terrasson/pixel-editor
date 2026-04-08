@@ -479,9 +479,21 @@
             else startAnimation();
         }
 
+        function fromSparseFrame(sparse) {
+            const size = sparse.size || 1024;
+            const frame = [];
+            for (let i = 0; i < size; i++) frame.push({ color: '#FFFFFF', isEmpty: true });
+            for (const entry of (sparse.data || [])) {
+                if (entry.i >= 0 && entry.i < size) frame[entry.i] = { color: entry.c, isEmpty: false };
+            }
+            return frame;
+        }
+
         function normaliseFrame(frame) {
+            if (!frame) return null;
+            if (frame._sparse === true) return fromSparseFrame(frame);
             if (Array.isArray(frame)) return frame;
-            if (frame && Array.isArray(frame.pixels)) return frame.pixels;
+            if (Array.isArray(frame.pixels)) return frame.pixels;
             return null;
         }
 
