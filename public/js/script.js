@@ -3861,33 +3861,17 @@ function autoSaveProjectLocal(name) {
 
 async function showLocalProjects() {
 
-    // Load projects from Supabase (cloud storage)
-    let projectSource = 'cloud'; // 'cloud' | 'local'
+    // Charger depuis IndexedDB (stockage local, pas de Supabase)
+    const projectSource = 'local';
     try {
-        const result = await window.dbService.getAllProjects();
+        const result = await window.localDB.getAllProjects();
         if (result.success && result.data.length > 0) {
             autoSaveProjects = result.data;
         } else {
-            throw new Error(result.error || 'no projects');
-        }
-    } catch (_cloudError) {
-        // Supabase indisponible → fallback IndexedDB
-        try {
-            const localResult = await window.localDB.getAllProjects();
-            if (localResult.success && localResult.data.length > 0) {
-                autoSaveProjects = localResult.data;
-                projectSource = 'local';
-            } else {
-                showToast(tL('noProjectsFound'), { type: 'warning' });
-                return;
-            }
-        } catch (_localError) {
             showToast(tL('noProjectsFound'), { type: 'warning' });
             return;
         }
-    }
-
-    if (!autoSaveProjects || autoSaveProjects.length === 0) {
+    } catch (_) {
         showToast(tL('noProjectsFound'), { type: 'warning' });
         return;
     }
