@@ -1629,12 +1629,17 @@ function showGradientPanel() {
     const labelDir = lang === 'fr' ? 'Direction' : 'Direction';
     const labelPreview = lang === 'fr' ? 'Aperçu' : 'Preview';
 
+    const labelFill = lang === 'fr'
+        ? '💡 Dégradé actif : dessiner pixel par pixel <strong>ou</strong> utiliser le pot de peinture sur une forme fermée pour la remplir en dégradé.'
+        : '💡 Gradient active: draw pixel by pixel <strong>or</strong> use the paint bucket on a closed shape to fill it with the gradient.';
+
     const content = `
         <div style="display:flex;flex-direction:column;gap:12px;">
             <label style="display:flex;align-items:center;gap:8px;font-size:14px;">
                 <input type="checkbox" id="gradientModeToggle" ${gradientMode ? 'checked' : ''}>
                 ${labelMode}
             </label>
+            <div style="font-size:12px;opacity:0.75;line-height:1.4;">${labelFill}</div>
             <div style="display:flex;gap:12px;align-items:center;">
                 <label style="font-size:13px;">${labelA}</label>
                 <input type="color" id="gradientColorAInput" value="${gradientColorA}" style="width:40px;height:32px;border:none;cursor:pointer;">
@@ -2556,22 +2561,22 @@ function floodFill(startIndex) {
     const srcColor = src ? src.color : '#FFFFFF';
     const srcEmpty = src ? src.isEmpty : true;
 
-    // Même couleur que la cible → rien à faire
-    if (!isErasing && !srcEmpty && srcColor === currentColor) return;
+    // En mode dégradé, on ne vérifie pas si la couleur cible == currentColor
+    // (la couleur varie par pixel donc la comparaison n'a pas de sens)
+    if (!gradientMode) {
+        if (!isErasing && !srcEmpty && srcColor === currentColor) return;
+    }
     if (isErasing && srcEmpty) return;
 
+    // Collecter d'abord tous les pixels à remplir (BFS)
     const visited = new Uint8Array(total);
+    const toFill = [];
     const queue = [startIndex];
     visited[startIndex] = 1;
 
     while (queue.length > 0) {
         const idx = queue.shift();
-        currentActionPixels.add(idx);
-        if (isErasing) {
-            currentFrameBuffer[idx] = { color: '#FFFFFF', isEmpty: true };
-        } else {
-            currentFrameBuffer[idx] = { color: currentColor, isEmpty: false };
-        }
+        toFill.push(idx);
         const col = idx % currentGridSize;
         const row = Math.floor(idx / currentGridSize);
         const neighbors = [
@@ -2591,7 +2596,55 @@ function floodFill(startIndex) {
             }
         }
     }
+
+    // Appliquer les couleurs
+    if (gradientMode) {
+        // Calculer le bounding box de la zone remplie pour normaliser le dégradé
+        let minCol = currentGridSize, maxCol = 0, minRow = currentGridSize, maxRow = 0;
+        for (const idx of toFill) {
+            const col = idx % currentGridSize;
+            const row = Math.floor(idx / currentGridSize);
+            if (col < minCol) minCol = col;
+            if (col > maxCol) maxCol = col;
+            if (row < minRow) minRow = row;
+            if (row > maxRow) maxRow = row;
+        }
+        const colRange = maxCol - minCol || 1;
+        const rowRange = maxRow - minRow || 1;
+
+        for (const idx of toFill) {
+            currentActionPixels.add(idx);
+            const col = idx % currentGridSize;
+            const row = Math.floor(idx / currentGridSize);
+            let t;
+            if (gradientDirection === 'horizontal')  t = (col - minCol) / colRange;
+            else if (gradientDirection === 'vertical') t = (row - minRow) / rowRange;
+            else t = ((col - minCol) + (row - minRow)) / (colRange + rowRange);
+            t = Math.max(0, Math.min(1, t));
+            currentFrameBuffer[idx] = { color: _lerpColor(gradientColorA, gradientColorB, t), isEmpty: false };
+        }
+    } else {
+        for (const idx of toFill) {
+            currentActionPixels.add(idx);
+            if (isErasing) {
+                currentFrameBuffer[idx] = { color: '#FFFFFF', isEmpty: true };
+            } else {
+                currentFrameBuffer[idx] = { color: currentColor, isEmpty: false };
+            }
+        }
+    }
+
     renderCanvas();
+}
+
+function _lerpColor(hexA, hexB, t) {
+    const parse = h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+    const [r1,g1,b1] = parse(hexA);
+    const [r2,g2,b2] = parse(hexB);
+    const r = Math.round(r1 + (r2-r1)*t);
+    const g = Math.round(g1 + (g2-g1)*t);
+    const b = Math.round(b1 + (b2-b1)*t);
+    return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('').toUpperCase();
 }
 
 // ── Symétrie horizontale ────────────────────────────────────────────────────
