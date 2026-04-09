@@ -873,7 +873,7 @@ function applyGridCSSVariables(size) {
         : 'min(calc(100vw - 4px), calc(100vh - 120px), 560px)';
 
     grid.style.width  = `calc(${viewportExpr})`;
-    grid.style.height = '';  // Let CSS aspect-ratio:1 handle height — avoids sub-pixel mismatch
+    grid.style.height = `calc(${viewportExpr})`;
     grid.style.setProperty('--grid-cols', size);
     grid.style.setProperty('--cell-size', `calc(${viewportExpr} / ${size})`);
 }
@@ -897,14 +897,19 @@ function initGrid(size = currentGridSize) {
     pixelCanvas.id = 'pixelCanvas';
     pixelCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;';
     grid.appendChild(pixelCanvas);
+    // Read clientWidth (forces reflow), then pin height to SAME integer value
+    // so the container is a guaranteed exact square (CSS calc can produce sub-pixel
+    // width≠height differences that stretch pixels non-uniformly)
     const rawGw = grid.clientWidth || 512;
-    // Force gw to be an exact multiple of grid size so cellSize is always an integer
-    // (non-integer cellSize causes col/row rounding mismatch → non-square pixels)
+    grid.style.height = rawGw + 'px';
+    // Canvas dimensions: multiple of grid size so cellSize is always an integer
+    // (non-integer cellSize → col/row rounding mismatch → non-square pixels)
     const gw = Math.max(size, Math.round(rawGw / size) * size);
     pixelCanvas.width  = gw;
     pixelCanvas.height = gw;
     pixelCtx = pixelCanvas.getContext('2d');
     cellSize = gw / size; // guaranteed integer
+    canvasCssScale = gw / rawGw; // ratio canvas-px / CSS-px (pan values are CSS, transform needs canvas)
     // ─────────────────────────────────────────────────────────────────────────────────
 
     if (!grid._mousedownListenerAdded) {
@@ -965,10 +970,12 @@ window.addEventListener('resize', debounce(() => {
     if (pixelCanvas) {
         const grid = document.getElementById('pixelGrid');
         const rawGw = grid ? grid.clientWidth : 512;
+        grid.style.height = rawGw + 'px'; // keep container square after resize
         const gw = Math.max(currentGridSize, Math.round(rawGw / currentGridSize) * currentGridSize);
         pixelCanvas.width  = gw;
         pixelCanvas.height = gw;
         cellSize = gw / currentGridSize;
+        canvasCssScale = gw / rawGw;
         renderCanvas();
     }
 }, 150));
@@ -980,6 +987,7 @@ window.addEventListener('resize', debounce(() => {
 let gridZoom = 1;
 let gridPanX = 0;
 let gridPanY = 0;
+let canvasCssScale = 1; // gw / rawGw — converts CSS-pixel pan values to canvas-pixel units
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 16;
 
@@ -1343,7 +1351,8 @@ function renderCanvas() {
     const w = pixelCanvas.width;
     pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
     pixelCtx.clearRect(0, 0, w, w);
-    pixelCtx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
+    // gridPanX/Y are in CSS-pixel units; canvas transform needs canvas-pixel units
+    pixelCtx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX * canvasCssScale, gridPanY * canvasCssScale);
 
     // Damier subtil — une cellule sur deux légèrement grisée, aligné avec la grille
     for (let row = 0; row < currentGridSize; row++) {
@@ -3144,10 +3153,9 @@ function enterStampMode(pixels, gridSize) {
     if (pixelGrid) pixelGrid.classList.add('stamp-mode');
 
     const overlay = getStampOverlay();
-    const gw = pixelGrid ? (pixelGrid.clientWidth  || 512) : 512;
-    const gh = pixelGrid ? (pixelGrid.clientHeight || gw)  : 512;
-    overlay.width  = gw;
-    overlay.height = gh;
+    const _cvsW = pixelCanvas ? pixelCanvas.width : (pixelGrid ? pixelGrid.clientWidth : 512);
+    overlay.width  = _cvsW;
+    overlay.height = _cvsW;
     overlay.style.display = 'block';
 
     // Afficher le ghost immédiatement au centre du canvas
@@ -3205,8 +3213,9 @@ function enterSpriteSheetMode(sprites) {
 
     // Réutiliser le même overlay canvas que les tampons
     const overlay = getStampOverlay();
-    overlay.width  = pixelGrid ? pixelGrid.clientWidth  : 512;
-    overlay.height = pixelGrid ? pixelGrid.clientHeight : 512;
+    const _cvsWss = pixelCanvas ? pixelCanvas.width : (pixelGrid ? pixelGrid.clientWidth : 512);
+    overlay.width  = _cvsWss;
+    overlay.height = _cvsWss;
     overlay.style.display = 'block';
 
     // Barre annuler
@@ -3268,8 +3277,9 @@ function enterTextPlacementMode(flatPixels) {
     if (pixelGrid) pixelGrid.classList.add('stamp-mode');
 
     const overlay = getStampOverlay();
-    overlay.width  = pixelGrid ? pixelGrid.clientWidth  : 512;
-    overlay.height = pixelGrid ? pixelGrid.clientHeight : 512;
+    const _cvsWt = pixelCanvas ? pixelCanvas.width : (pixelGrid ? pixelGrid.clientWidth : 512);
+    overlay.width  = _cvsWt;
+    overlay.height = _cvsWt;
     overlay.style.display = 'block';
 
     let cancelBar = document.getElementById('stampCancelBar');
@@ -3320,8 +3330,8 @@ function updateTextGhost(col, row) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, overlay.width, overlay.height);
     const grid = document.getElementById('pixelGrid');
-    const pixelSize = grid ? grid.clientWidth / currentGridSize : overlay.width / currentGridSize;
-    ctx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
+    const pixelSize = cellSize || overlay.width / currentGridSize;
+    ctx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX * canvasCssScale, gridPanY * canvasCssScale);
     ctx.globalAlpha = 0.65;
     for (let i = 0; i < textPlacementPixels.length; i++) {
         const pixel = textPlacementPixels[i];
@@ -3373,9 +3383,8 @@ function updateSpriteSheetGhost(col, row) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, overlay.width, overlay.height);
 
-    const grid = document.getElementById('pixelGrid');
-    const pixelSize = grid ? grid.clientWidth / currentGridSize : overlay.width / currentGridSize;
-    ctx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
+    const pixelSize = cellSize || overlay.width / currentGridSize;
+    ctx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX * canvasCssScale, gridPanY * canvasCssScale);
     ctx.globalAlpha = 0.6;
 
     // Afficher uniquement le premier sprite comme ghost de positionnement
@@ -3503,7 +3512,7 @@ function updateStampGhost(col, row) {
     // cellSize (taille d'une cellule dans l'espace canvas) = même base que renderCanvas
     const pixelSize = cellSize || (overlay.width / currentGridSize);
     // Appliquer le même zoom/pan que la grille pour que le ghost colle aux pixels
-    ctx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX, gridPanY);
+    ctx.setTransform(gridZoom, 0, 0, gridZoom, gridPanX * canvasCssScale, gridPanY * canvasCssScale);
     ctx.globalAlpha = 0.65;
     let drawn = 0;
     for (let i = 0; i < stampPixels.length; i++) {
