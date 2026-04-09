@@ -873,7 +873,7 @@ function applyGridCSSVariables(size) {
         : 'min(calc(100vw - 4px), calc(100vh - 120px), 560px)';
 
     grid.style.width  = `calc(${viewportExpr})`;
-    grid.style.height = `calc(${viewportExpr})`;
+    grid.style.height = '';  // Let CSS aspect-ratio:1 handle height — avoids sub-pixel mismatch
     grid.style.setProperty('--grid-cols', size);
     grid.style.setProperty('--cell-size', `calc(${viewportExpr} / ${size})`);
 }
@@ -897,11 +897,14 @@ function initGrid(size = currentGridSize) {
     pixelCanvas.id = 'pixelCanvas';
     pixelCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;';
     grid.appendChild(pixelCanvas);
-    const gw = grid.clientWidth || 512;
+    const rawGw = grid.clientWidth || 512;
+    // Force gw to be an exact multiple of grid size so cellSize is always an integer
+    // (non-integer cellSize causes col/row rounding mismatch → non-square pixels)
+    const gw = Math.max(size, Math.round(rawGw / size) * size);
     pixelCanvas.width  = gw;
     pixelCanvas.height = gw;
     pixelCtx = pixelCanvas.getContext('2d');
-    cellSize = gw / size;
+    cellSize = gw / size; // guaranteed integer
     // ─────────────────────────────────────────────────────────────────────────────────
 
     if (!grid._mousedownListenerAdded) {
@@ -961,7 +964,8 @@ window.addEventListener('resize', debounce(() => {
     // Phase 1 : redimensionner le canvas et recalculer cellSize
     if (pixelCanvas) {
         const grid = document.getElementById('pixelGrid');
-        const gw = grid ? grid.clientWidth : 512;
+        const rawGw = grid ? grid.clientWidth : 512;
+        const gw = Math.max(currentGridSize, Math.round(rawGw / currentGridSize) * currentGridSize);
         pixelCanvas.width  = gw;
         pixelCanvas.height = gw;
         cellSize = gw / currentGridSize;
@@ -1346,7 +1350,8 @@ function renderCanvas() {
         for (let col = 0; col < currentGridSize; col++) {
             if ((col + row) % 2 === 1) {
                 pixelCtx.fillStyle = 'rgba(0,0,0,0.04)';
-                pixelCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                const _cx = col * cellSize, _cy = row * cellSize;
+                pixelCtx.fillRect(_cx, _cy, (col + 1) * cellSize - _cx, (row + 1) * cellSize - _cy);
             }
         }
     }
