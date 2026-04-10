@@ -1428,11 +1428,10 @@ body {
     visibility: hidden;
 }
 
-/* Responsive pour très grands écrans */
-@media (min-width: 1600px) {
+/* Responsive pour très grands écrans (1600–2199px) */
+@media (min-width: 1600px) and (max-width: 2199px) {
     .editor-container {
         grid-template-columns: 280px 1fr 240px;
-        max-width: 2000px;
     }
 
     #pixelGrid {
@@ -1442,9 +1441,32 @@ body {
         aspect-ratio: 1;
     }
 
-    /* Plus d'espace pour le user-profile sur grands écrans */
     .project-info .user-email {
         max-width: 250px;
+    }
+}
+
+/* iMac 27" et très grands écrans (≥2200px — ex: 2560px, 5120px) */
+@media (min-width: 2200px) {
+    .editor-container {
+        grid-template-columns: 360px 1fr 320px;
+    }
+
+    #pixelGrid {
+        /* Canvas limité à 896px — les sidebars absorbent le reste */
+        max-width: 896px;
+        max-height: 896px;
+        aspect-ratio: 1;
+    }
+
+    .project-info .user-email {
+        max-width: 320px;
+    }
+
+    /* Sidebars plus larges → meilleure lisibilité */
+    .left-sidebar,
+    .tools-panel {
+        font-size: 1.05rem;
     }
 }
 

@@ -866,10 +866,14 @@ function applyGridCSSVariables(size) {
     if (!grid) return;
 
     const isDesktop = window.innerWidth >= 1024;
+    const isXLarge  = window.innerWidth >= 2200; // iMac 27" et plus
 
     // Taille viewport fixe — même espace visuel peu importe 8×8 ou 256×256
+    // Sur très grands écrans les sidebars absorbent le surplus, canvas reste 896px max
     const viewportExpr = isDesktop
-        ? 'min(calc(100vw - 480px), calc(100vh - 200px), 896px)'
+        ? isXLarge
+            ? 'min(calc(100vw - 720px), calc(100vh - 200px), 896px)'
+            : 'min(calc(100vw - 480px), calc(100vh - 200px), 896px)'
         : 'min(calc(100vw - 4px), calc(100vh - 120px), 560px)';
 
     grid.style.width  = `calc(${viewportExpr})`;
