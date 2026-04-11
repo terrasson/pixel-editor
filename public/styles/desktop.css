@@ -1739,7 +1739,7 @@ body {
 }
 .layer-item:last-child { border-bottom: none; }
 .layer-item:hover { background: #F5F5F7; }
-.layer-item.active { background: #FFF3E8; border-left: 3px solid #FF7300; }
+.layer-item.active { background: #FFF3E8; border-left: 4px solid #FF7300; box-shadow: inset 0 0 0 1px rgba(255,115,0,0.15); }
 
 .layer-eye {
     background: none;

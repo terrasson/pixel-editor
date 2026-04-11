@@ -1185,6 +1185,8 @@ function _renderLayersList(container, layers) {
         nameSpan.textContent = layer.name;
         nameSpan.addEventListener('click', (e) => {
             e.stopPropagation();
+            // Sélectionner le calque au 1er clic, renommer au 2e clic (double-clic simulé)
+            if (i !== currentLayer) { setActiveLayer(i); return; }
             if (nameSpan.querySelector('input')) return; // déjà en édition
             const currentName = frameLayers[currentFrame]?.[i]?.name || '';
             const input = document.createElement('input');
