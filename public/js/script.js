@@ -8215,32 +8215,8 @@ async function openProjectFromFile() {
 }
 
 async function _applyProjectFile(file) {
-    try {
-        const text = await file.text();
-        const data = JSON.parse(text);
-
-        if (!data.frames) throw new Error('Fichier invalide — frames manquantes');
-
-        // Restaurer les tampons s'ils sont inclus dans le fichier
-        if (Array.isArray(data.stamps) && data.stamps.length > 0) {
-            const restoredStamps = data.stamps.map(s => ({
-                ...s,
-                pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
-            }));
-            // Fusionner avec les tampons existants (éviter doublons par id)
-            const existingIds = new Set((window.stamps || []).map(s => s.id));
-            const newStamps = restoredStamps.filter(s => !existingIds.has(s.id));
-            window.stamps = [...newStamps, ...(window.stamps || [])];
-            _saveStamps();
-            renderStampsList();
-        }
-
-        const projectName = data.name || file.name.replace(/\.pixelart$/, '');
-        applyProjectData(data, projectName);
-        showToast(`✅ "${projectName}" chargé depuis le fichier`, { type: 'success' });
-    } catch (err) {
-        showToast(`❌ Erreur : ${err.message}`, { type: 'error', duration: 5000 });
-    }
+    // Réutilise importSharedProject qui gère tout (frames, calques, tampons, palette)
+    await importSharedProject(file);
 }
 
 // Tooltip custom — couvre tous les éléments avec title dans la page
@@ -9010,18 +8986,39 @@ async function importSharedProject(file) {
         }
 
         // Reconstruire les calques (obligatoire avant loadFrame en mode canvas)
-        initLayersFromFrames();
+        const rawLayers = projectData.frameLayers || projectData.frame_layers;
+        if (rawLayers && Array.isArray(rawLayers)) {
+            frameLayers = decompressFrameLayers(rawLayers);
+            _nextLayerId = projectData._nextLayerId || projectData.next_layer_id ||
+                frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
+        } else {
+            initLayersFromFrames();
+        }
         currentLayer = 0;
+
+        // Restaurer les tampons s'ils sont inclus dans le fichier
+        if (Array.isArray(projectData.stamps) && projectData.stamps.length > 0) {
+            const restoredStamps = projectData.stamps.map(s => ({
+                ...s,
+                pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
+            }));
+            const existingIds = new Set((window.stamps || []).map(s => s.id));
+            const newStamps = restoredStamps.filter(s => !existingIds.has(s.id));
+            window.stamps = [...newStamps, ...(window.stamps || [])];
+            _saveStamps();
+            renderStampsList();
+        }
 
         // Mettre à jour l'interface
         const title = document.getElementById('projectTitle');
         if (title) {
             title.textContent = projectName;
         }
+        window.currentProjectName = projectName;
 
         updateFramesList();
         loadFrame(currentFrame);
-        
+
         showToast(tL('importSuccess', projectName), { type: 'success' });
         
     } catch (error) {
