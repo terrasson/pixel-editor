@@ -8124,6 +8124,125 @@ async function saveProjectSmart() {
     }
 }
 
+// ========================================
+// SAUVEGARDE / OUVERTURE FICHIER DISQUE
+// ========================================
+
+// Construit l'objet projet complet (frames + calques + tampons + palette)
+function buildProjectFileData(projectName) {
+    saveCurrentFrame();
+    return {
+        signature: 'pixel-art-editor-v2',
+        version: 1,
+        name: projectName || window.currentProjectName || 'sans-titre',
+        gridSize: { width: currentGridSize, height: currentGridSize },
+        frames: frames.map(toSparseFrame),
+        frameLayers: compressFrameLayers(frameLayers),
+        _nextLayerId: _nextLayerId,
+        currentFrame: currentFrame,
+        fps: animationFPS || 24,
+        customPalette: customPalette || [],
+        customColors: customColors || [],
+        stamps: (window.stamps || []).map(s => ({
+            ...s,
+            pixels: toSparseFrame(s.pixels || [])
+        }))
+    };
+}
+
+// Sauvegarde le projet comme fichier .pixelart sur le disque dur
+async function saveProjectToFile() {
+    const name = window.currentProjectName || 'sans-titre';
+    const data = buildProjectFileData(name);
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+
+    // File System Access API (Chrome, Edge, Safari 15.2+)
+    if (window.showSaveFilePicker) {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: name.replace(/[^a-z0-9_\-]/gi, '_') + '.pixelart',
+                types: [{ description: 'Pixel Art Project', accept: { 'application/json': ['.pixelart'] } }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            showToast(`✅ "${name}.pixelart" sauvegardé sur le disque`, { type: 'success' });
+            return;
+        } catch (e) {
+            if (e.name === 'AbortError') return; // utilisateur a annulé
+            console.warn('showSaveFilePicker échoué, fallback download:', e);
+        }
+    }
+
+    // Fallback : téléchargement classique (Firefox, anciens navigateurs)
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name.replace(/[^a-z0-9_\-]/gi, '_') + '.pixelart';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`✅ "${name}.pixelart" téléchargé`, { type: 'success' });
+}
+
+// Ouvre un fichier .pixelart depuis le disque dur
+async function openProjectFromFile() {
+    // File System Access API
+    if (window.showOpenFilePicker) {
+        try {
+            const [handle] = await window.showOpenFilePicker({
+                types: [{ description: 'Pixel Art Project', accept: { 'application/json': ['.pixelart', '.json'] } }],
+                multiple: false
+            });
+            const file = await handle.getFile();
+            await _applyProjectFile(file);
+            return;
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+            console.warn('showOpenFilePicker échoué, fallback input:', e);
+        }
+    }
+
+    // Fallback : input file classique
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pixelart,.json';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) await _applyProjectFile(file);
+    };
+    input.click();
+}
+
+async function _applyProjectFile(file) {
+    try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        if (!data.frames) throw new Error('Fichier invalide — frames manquantes');
+
+        // Restaurer les tampons s'ils sont inclus dans le fichier
+        if (Array.isArray(data.stamps) && data.stamps.length > 0) {
+            const restoredStamps = data.stamps.map(s => ({
+                ...s,
+                pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
+            }));
+            // Fusionner avec les tampons existants (éviter doublons par id)
+            const existingIds = new Set((window.stamps || []).map(s => s.id));
+            const newStamps = restoredStamps.filter(s => !existingIds.has(s.id));
+            window.stamps = [...newStamps, ...(window.stamps || [])];
+            _saveStamps();
+            renderStampsList();
+        }
+
+        const projectName = data.name || file.name.replace(/\.pixelart$/, '');
+        applyProjectData(data, projectName);
+        showToast(`✅ "${projectName}" chargé depuis le fichier`, { type: 'success' });
+    } catch (err) {
+        showToast(`❌ Erreur : ${err.message}`, { type: 'error', duration: 5000 });
+    }
+}
+
 // Tooltip custom — couvre tous les éléments avec title dans la page
 function initButtonTooltips() {
     const tooltip = document.getElementById('custom-tooltip');
@@ -8197,6 +8316,13 @@ function initEventListeners() {
     document.getElementById('saveBtn')?.addEventListener('click', saveProjectSmart);
     document.getElementById('loadBtn')?.addEventListener('click', loadFromFile);
     document.getElementById('loadLocalBtn')?.addEventListener('click', showLocalProjects);
+    // Sauvegarde / ouverture fichier disque
+    document.getElementById('saveFileBtn')?.addEventListener('click', saveProjectToFile);
+    document.getElementById('saveFileBtn2')?.addEventListener('click', saveProjectToFile);
+    document.getElementById('saveFileBtnDropdown')?.addEventListener('click', saveProjectToFile);
+    document.getElementById('openFileBtn')?.addEventListener('click', openProjectFromFile);
+    document.getElementById('openFileBtn2')?.addEventListener('click', openProjectFromFile);
+    document.getElementById('openFileBtnDropdown')?.addEventListener('click', openProjectFromFile);
     document.getElementById('shareProjectBtn')?.addEventListener('click', () => {
         if (typeof handleShareButtonClick === 'function') handleShareButtonClick();
         else shareProject();
