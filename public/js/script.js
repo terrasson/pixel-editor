@@ -932,13 +932,11 @@ function initGrid(size = currentGridSize) {
             if (isStampMode || isSpriteSheetMode || isTextPlacementMode) {
                 // Tampon / sprite sheet / texte : calculer position du ghost
                 const rect = grid.getBoundingClientRect();
-                const borderW = (rect.width  - grid.clientWidth)  / 2;
-                const borderH = (rect.height - grid.clientHeight) / 2;
-                const logicalCell = grid.clientWidth / currentGridSize;
+                const cssCell = cellSize / canvasCssScale;
                 const col = Math.max(0, Math.min(currentGridSize - 1,
-                    Math.floor((e.clientX - rect.left - borderW - gridPanX) / gridZoom / logicalCell)));
+                    Math.floor((e.clientX - rect.left - gridPanX) / gridZoom / cssCell)));
                 const row = Math.max(0, Math.min(currentGridSize - 1,
-                    Math.floor((e.clientY - rect.top  - borderH - gridPanY) / gridZoom / logicalCell)));
+                    Math.floor((e.clientY - rect.top  - gridPanY) / gridZoom / cssCell)));
                 if (isStampMode) updateStampGhost(col, row);
                 else if (isSpriteSheetMode) updateSpriteSheetGhost(col, row);
                 else updateTextGhost(col, row);
@@ -1531,11 +1529,11 @@ function getPixelIndexFromPoint(clientX, clientY) {
     const grid = document.getElementById('pixelGrid');
     if (!grid) return -1;
     const rect = grid.getBoundingClientRect();
-    const borderW = (rect.width  - grid.clientWidth)  / 2;
-    const borderH = (rect.height - grid.clientHeight) / 2;
-    const logicalCell = grid.clientWidth / currentGridSize;
-    const col = Math.floor((clientX - rect.left - borderW - gridPanX) / gridZoom / logicalCell);
-    const row = Math.floor((clientY - rect.top  - borderH - gridPanY) / gridZoom / logicalCell);
+    // cellSize est en pixels canvas ; le container CSS peut être plus petit (canvasCssScale != 1)
+    // → taille d'une cellule en pixels CSS = cellSize / canvasCssScale
+    const cssCell = cellSize / canvasCssScale;
+    const col = Math.floor((clientX - rect.left - gridPanX) / gridZoom / cssCell);
+    const row = Math.floor((clientY - rect.top  - gridPanY) / gridZoom / cssCell);
     if (col < 0 || col >= currentGridSize || row < 0 || row >= currentGridSize) return -1;
     return row * currentGridSize + col;
 }
@@ -2708,13 +2706,11 @@ function _cropGetColRow(clientX, clientY) {
     const grid = document.getElementById('pixelGrid');
     if (!grid) return { col: 0, row: 0 };
     const rect = grid.getBoundingClientRect();
-    const borderW = (rect.width  - grid.clientWidth)  / 2;
-    const borderH = (rect.height - grid.clientHeight) / 2;
-    const logicalCell = grid.clientWidth / currentGridSize;
+    const cssCell = cellSize / canvasCssScale;
     const col = Math.max(0, Math.min(currentGridSize - 1,
-        Math.floor((clientX - rect.left - borderW - gridPanX) / gridZoom / logicalCell)));
+        Math.floor((clientX - rect.left - gridPanX) / gridZoom / cssCell)));
     const row = Math.max(0, Math.min(currentGridSize - 1,
-        Math.floor((clientY - rect.top - borderH - gridPanY) / gridZoom / logicalCell)));
+        Math.floor((clientY - rect.top - gridPanY) / gridZoom / cssCell)));
     return { col, row };
 }
 
