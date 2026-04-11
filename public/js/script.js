@@ -11145,63 +11145,27 @@ function _stampThumbnailDataURL(pixels, gs) {
     } catch (e) { return ''; }
 }
 
-function showImportStampModal() {
-    // Lire les projets locaux immédiatement (synchrone)
-    const localProjects = _getLocalProjects();
-
-    // Ouvrir la modal tout de suite avec les projets locaux
-    const allProjects = localProjects.map(p => ({ ...p, _source: 'local' }));
+async function showImportStampModal() {
+    const allProjects = [];
     const dialog = _buildImportStampDialog(allProjects);
 
-    // Charger les projets cloud en arrière-plan et mettre à jour la liste
-    if (window.dbService) {
-        const list = dialog.querySelector('#importStampProjectList');
-        if (list && allProjects.length === 0) {
-            list.innerHTML = '<div style="padding:12px;color:rgba(255,255,255,0.4);font-size:0.85rem;">Chargement des projets cloud…</div>';
-        }
-        window.dbService.getAllProjects().then(result => {
-            if (!result?.success || !dialog.isConnected) return;
-            const cloud = (result.data || []).map(p => ({ ...p, _source: 'cloud' }));
-            if (cloud.length === 0) return;
-            // Ajouter en tête sans dupliquer
-            const merged = [...cloud, ...allProjects];
-            allProjects.length = 0;
-            merged.forEach(p => allProjects.push(p));
+    // Charger depuis IndexedDB
+    try {
+        const result = await window.localDB.getAllProjects();
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+            result.data.forEach(p => allProjects.push({ ...p, _source: 'local' }));
             _refreshImportStampList(dialog, allProjects);
-        }).catch(() => {});
-    }
-}
-
-function _getLocalProjects() {
-    const projects = [];
-    // Clés pixelart_* (sauvegardes manuelles)
-    try {
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('pixelart_')) {
-                const raw = localStorage.getItem(key);
-                if (raw) {
-                    const p = JSON.parse(raw);
-                    if (p && p.frames) projects.push({ ...p, name: p.name || key.replace('pixelart_', '') });
-                }
-            }
         }
-    } catch (e) {}
-    // Auto-save array
-    try {
-        const saved = localStorage.getItem('pixelEditor_autoSaveProjects');
-        if (saved) {
-            const arr = JSON.parse(saved);
-            arr.forEach(p => { if (p && p.frames) projects.push(p); });
-        }
-    } catch (e) {}
-    return projects;
+    } catch (_) {}
 }
 
 function _buildImportStampDialog(allProjects) {
     const dialog = createMobileDialog('Importer un tampon', `
-        <p style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:12px;">Choisissez un projet puis une frame à ajouter comme tampon.</p>
-        <div id="importStampProjectList" class="projects-list" style="max-height:280px;overflow-y:auto;"></div>
+        <p style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:12px;">Choisissez un projet sauvegardé ou un fichier .pixelart.</p>
+        <button id="importStampFromFileBtn" class="dialog-button secondary" style="width:100%;margin-bottom:12px;display:flex;align-items:center;gap:8px;justify-content:center;">
+            📂 Depuis un fichier .pixelart
+        </button>
+        <div id="importStampProjectList" class="projects-list" style="max-height:240px;overflow-y:auto;"></div>
         <div id="importStampFramePicker" style="display:none;margin-top:12px;">
             <p id="importStampFrameLabel" style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:8px;"></p>
             <div id="importStampFrameList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
@@ -11221,14 +11185,13 @@ function _buildImportStampDialog(allProjects) {
         const project = dialog._selectedProject;
         if (!project) return;
 
-        // getAllProjects() ne retourne plus les frames (optimisation Supabase)
-        // → charger le projet complet via loadProject() pour avoir les pixels
+        // Charger le projet complet depuis IndexedDB pour avoir les pixels
         let fullProject = project;
-        if (!Array.isArray(project.frames) && project.name && window.dbService) {
+        if (!Array.isArray(project.frames) && project.name) {
             const confirmBtn = dialog.querySelector('#importStampConfirmBtn');
             if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Chargement…'; }
             try {
-                const result = await window.dbService.loadProject(project.name);
+                const result = await window.localDB.loadProject(project.name);
                 if (result.success && result.data) fullProject = result.data;
             } catch (e) { /* utiliser les données partielles */ }
         }
@@ -11256,6 +11219,30 @@ function _buildImportStampDialog(allProjects) {
     });
 
     dialog.querySelector('#importStampCancelBtn').addEventListener('click', () => dialog.remove());
+
+    // Importer depuis un fichier .pixelart sur le disque
+    dialog.querySelector('#importStampFromFileBtn').addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.pixelart,.json';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                if (!data.frames) throw new Error('Fichier invalide');
+                // Ajouter le projet à la liste
+                const p = { ...data, _source: 'file' };
+                allProjects.unshift(p);
+                _refreshImportStampList(dialog, allProjects);
+            } catch (err) {
+                showToast(`❌ Fichier invalide : ${err.message}`, { type: 'error' });
+            }
+        };
+        input.click();
+    });
+
     return dialog;
 }
 
