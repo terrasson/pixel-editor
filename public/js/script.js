@@ -11022,16 +11022,157 @@ function _photoAddColorsToPalette(colors) {
 // ─── Stamps / Tampons ────────────────────────────────────────────────────────
 
 window.stamps = window.stamps || [];
+let _stampsFileHandle = null; // FileSystemFileHandle vers stamps.pixelstamps
 
-function _loadStamps() {
-    // Tampons session uniquement — sidebar vide au démarrage
-    localStorage.removeItem('pixelEditor_stamps');
-    window.stamps = [];
+// Récupère le FileHandle du fichier tampons depuis IndexedDB
+async function _loadStampsFileHandle() {
+    try {
+        const db = await new Promise((resolve, reject) => {
+            const req = indexedDB.open('pixelEditorFileHandles', 1);
+            req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
+            req.onsuccess = e => resolve(e.target.result);
+            req.onerror = reject;
+        });
+        return await new Promise((resolve, reject) => {
+            const tx = db.transaction('handles', 'readonly');
+            const req = tx.objectStore('handles').get('__stamps__');
+            req.onsuccess = e => resolve(e.target.result || null);
+            req.onerror = reject;
+        });
+    } catch (_) { return null; }
 }
 
-function _saveStamps() {
-    // Pas de persistance localStorage — les tampons vivent le temps de la session
-    // (ils sont inclus dans le fichier .pixelart lors d'une sauvegarde)
+async function _storeStampsFileHandle(handle) {
+    try {
+        const db = await new Promise((resolve, reject) => {
+            const req = indexedDB.open('pixelEditorFileHandles', 1);
+            req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
+            req.onsuccess = e => resolve(e.target.result);
+            req.onerror = reject;
+        });
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction('handles', 'readwrite');
+            tx.objectStore('handles').put(handle, '__stamps__');
+            tx.oncomplete = resolve;
+            tx.onerror = reject;
+        });
+    } catch (_) {}
+}
+
+// Sérialise et écrit les tampons dans le fichier sur le disque
+async function _writeStampsToDisk() {
+    const data = (window.stamps || []).map(s => ({
+        ...s,
+        pixels: toSparseFrame(s.pixels || [])
+    }));
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    try {
+        const writable = await _stampsFileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+    } catch (_) {}
+}
+
+function _loadStamps() {
+    // Sidebar vide au démarrage — les tampons viennent du fichier disque (bouton dossier)
+    localStorage.removeItem('pixelEditor_stamps');
+    window.stamps = [];
+    // Tenter de recharger silencieusement si on a déjà un handle connu
+    _loadStampsFileHandle().then(async handle => {
+        if (!handle) return;
+        try {
+            const perm = await handle.queryPermission({ mode: 'readwrite' });
+            if (perm !== 'granted') return; // ne pas demander au démarrage
+            _stampsFileHandle = handle;
+            const file = await handle.getFile();
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            if (!Array.isArray(parsed)) return;
+            window.stamps = parsed.map(s => ({
+                ...s,
+                pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
+            }));
+            renderStampsList();
+        } catch (_) {}
+    });
+}
+
+async function _saveStamps() {
+    if (!_stampsFileHandle) return; // pas encore de fichier disque choisi
+    await _writeStampsToDisk();
+}
+
+// Ouvre le dialogue Finder pour choisir/créer le fichier tampons, puis charge les tampons existants
+async function loadStampsFromDisk() {
+    if (!window.showSaveFilePicker && !window.showOpenFilePicker) {
+        // Fallback : input file
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.pixelstamps,.json';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const parsed = JSON.parse(await file.text());
+                if (!Array.isArray(parsed)) throw new Error('Format invalide');
+                window.stamps = parsed.map(s => ({
+                    ...s,
+                    pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
+                }));
+                renderStampsList();
+                showToast(`✅ ${window.stamps.length} tampon(s) chargé(s)`, { type: 'success' });
+            } catch (err) {
+                showToast(`❌ ${err.message}`, { type: 'error' });
+            }
+        };
+        input.click();
+        return;
+    }
+
+    // Si pas encore de handle → demander où sauvegarder le fichier tampons
+    if (!_stampsFileHandle) {
+        _stampsFileHandle = await _loadStampsFileHandle();
+        // Vérifier permission
+        if (_stampsFileHandle) {
+            try {
+                const perm = await _stampsFileHandle.requestPermission({ mode: 'readwrite' });
+                if (perm !== 'granted') _stampsFileHandle = null;
+            } catch (_) { _stampsFileHandle = null; }
+        }
+    }
+
+    if (!_stampsFileHandle) {
+        try {
+            _stampsFileHandle = await window.showSaveFilePicker({
+                suggestedName: 'stamps.pixelstamps',
+                types: [{ description: 'Pixel Art Stamps', accept: { 'application/json': ['.pixelstamps'] } }]
+            });
+            await _storeStampsFileHandle(_stampsFileHandle);
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+            throw e;
+        }
+    }
+
+    // Lire le contenu existant du fichier
+    try {
+        const file = await _stampsFileHandle.getFile();
+        const text = await file.text();
+        if (text.trim()) {
+            const parsed = JSON.parse(text);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                window.stamps = parsed.map(s => ({
+                    ...s,
+                    pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
+                }));
+                renderStampsList();
+                showToast(`✅ ${window.stamps.length} tampon(s) chargé(s)`, { type: 'success' });
+                return;
+            }
+        }
+    } catch (_) {}
+
+    showToast('Fichier tampons prêt — ajoute des tampons avec +', { type: 'info' });
 }
 
 function saveCurrentDrawingAsStamp() {
@@ -11480,11 +11621,11 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStampsList();
 
     document.getElementById('saveStampBtn')?.addEventListener('click', saveCurrentDrawingAsStamp);
-    document.getElementById('importStampBtn')?.addEventListener('click', showImportStampModal);
+    document.getElementById('importStampBtn')?.addEventListener('click', loadStampsFromDisk);
 
     // Boutons mobiles
     document.getElementById('saveStampBtnMobile')?.addEventListener('click', saveCurrentDrawingAsStamp);
-    document.getElementById('importStampBtnMobile')?.addEventListener('click', showImportStampModal);
+    document.getElementById('importStampBtnMobile')?.addEventListener('click', loadStampsFromDisk);
     document.getElementById('copyFrameBtnMobile')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtnMobile')?.addEventListener('click', pasteFrame);
     document.getElementById('addFrameBtnMobile')?.addEventListener('click', addFrame);
