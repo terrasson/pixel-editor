@@ -3862,6 +3862,7 @@ function applyProjectData(data, projectName) {
     if (title) title.textContent = data.name || data.projectTitle || projectName;
 
     window.currentProjectName = projectName;
+    _currentFileHandle = null; // Reset handle — le projet chargé a son propre fichier source
 
     updateFramesList();
     loadFrame(currentFrame);
@@ -8066,67 +8067,50 @@ async function loadFromServerMobile() {
     }
 }
 
-// Sauvegarde locale directe en IndexedDB (calques + frames + couleurs + tout)
 let _saveInProgress = false;
-async function saveProjectSmart() {
-    if (_saveInProgress) return;
-    _saveInProgress = true;
+
+// ========================================
+// SAUVEGARDE FICHIER DISQUE (File System Access API)
+// ========================================
+// FileHandle stocké en IndexedDB pour sauvegardes silencieuses (Ctrl+S sans dialogue)
+// Fallback : téléchargement classique si l'API n'est pas disponible
+
+let _currentFileHandle = null; // FileSystemFileHandle en mémoire pour la session
+
+// Persiste le FileHandle dans IndexedDB (les handles survivent aux rechargements)
+async function _storeFileHandle(handle, projectName) {
     try {
-        // Si projet déjà nommé, sauvegarder sans dialog
-        let fileName = window.currentProjectName || null;
-        if (!fileName) {
-            fileName = await showSaveDialog();
-            if (!fileName) return;
-        }
-
-        // Sauvegarder la frame courante dans le buffer
-        saveCurrentFrame();
-
-        showToast('💾 Sauvegarde en cours…', { type: 'info', duration: 5000, id: 'save-progress' });
-
-        // Construire les données complètes du projet
-        const projectData = {
-            name: fileName,
-            frames: frames.map(toSparseFrame),
-            frameLayers: compressFrameLayers(frameLayers),
-            _nextLayerId: _nextLayerId,
-            currentFrame: currentFrame,
-            fps: animationFPS || 24,
-            customPalette: customPalette,
-            customColors: customColors,
-            gridSize: { width: currentGridSize, height: currentGridSize },
-            signature: 'pixel-art-editor-v2'
-        };
-
-        const result = await window.localDB.saveProject(projectData);
-        dismissToast('save-progress');
-
-        if (!result.success) throw new Error(result.error);
-
-        window.currentProjectName = fileName;
-        modifiedPixels = modifiedPixels.map(() => new Set());
-
-        // Mettre à jour le titre affiché
-        const titleEl = document.getElementById('projectTitle');
-        if (titleEl) titleEl.textContent = fileName;
-
-        showToast(`✅ "${fileName}" sauvegardé`, { type: 'success' });
-        
-    } catch (err) {
-        console.error('❌ Erreur lors de la sauvegarde:', err);
-        await showSaveResultDialog({
-            title: tL('saveErrorTitle'),
-            message: tL('saveErrorUnexpected', err.message),
-            type: 'error'
+        const db = await new Promise((resolve, reject) => {
+            const req = indexedDB.open('pixelEditorFileHandles', 1);
+            req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
+            req.onsuccess = e => resolve(e.target.result);
+            req.onerror = reject;
         });
-    } finally {
-        _saveInProgress = false;
-    }
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction('handles', 'readwrite');
+            tx.objectStore('handles').put(handle, projectName);
+            tx.oncomplete = resolve;
+            tx.onerror = reject;
+        });
+    } catch (_) {}
 }
 
-// ========================================
-// SAUVEGARDE / OUVERTURE FICHIER DISQUE
-// ========================================
+async function _loadFileHandle(projectName) {
+    try {
+        const db = await new Promise((resolve, reject) => {
+            const req = indexedDB.open('pixelEditorFileHandles', 1);
+            req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
+            req.onsuccess = e => resolve(e.target.result);
+            req.onerror = reject;
+        });
+        return await new Promise((resolve, reject) => {
+            const tx = db.transaction('handles', 'readonly');
+            const req = tx.objectStore('handles').get(projectName);
+            req.onsuccess = e => resolve(e.target.result || null);
+            req.onerror = reject;
+        });
+    } catch (_) { return null; }
+}
 
 // Construit l'objet projet complet (frames + calques + tampons + palette)
 function buildProjectFileData(projectName) {
@@ -8150,69 +8134,90 @@ function buildProjectFileData(projectName) {
     };
 }
 
-// Sauvegarde le projet comme fichier .pixelart sur le disque dur
-async function saveProjectToFile() {
-    const name = window.currentProjectName || 'sans-titre';
-    const data = buildProjectFileData(name);
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-
-    // File System Access API (Chrome, Edge, Safari 15.2+)
-    if (window.showSaveFilePicker) {
-        try {
-            const handle = await window.showSaveFilePicker({
-                suggestedName: name.replace(/[^a-z0-9_\-]/gi, '_') + '.pixelart',
-                types: [{ description: 'Pixel Art Project', accept: { 'application/json': ['.pixelart'] } }]
-            });
-            const writable = await handle.createWritable();
-            await writable.write(blob);
-            await writable.close();
-            showToast(`✅ "${name}.pixelart" sauvegardé sur le disque`, { type: 'success' });
-            return;
-        } catch (e) {
-            if (e.name === 'AbortError') return; // utilisateur a annulé
-            console.warn('showSaveFilePicker échoué, fallback download:', e);
-        }
-    }
-
-    // Fallback : téléchargement classique (Firefox, anciens navigateurs)
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = name.replace(/[^a-z0-9_\-]/gi, '_') + '.pixelart';
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast(`✅ "${name}.pixelart" téléchargé`, { type: 'success' });
+// Écrit le blob dans un FileHandle (silencieux) ou demande où sauvegarder (dialogue)
+async function _writeToHandle(handle, blob) {
+    const writable = await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
 }
 
-// Ouvre un fichier .pixelart depuis le disque dur
-async function openProjectFromFile() {
-    // File System Access API
-    if (window.showOpenFilePicker) {
-        try {
-            const [handle] = await window.showOpenFilePicker({
-                types: [{ description: 'Pixel Art Project', accept: { 'application/json': ['.pixelart', '.json'] } }],
-                multiple: false
-            });
-            const file = await handle.getFile();
-            await _applyProjectFile(file);
-            return;
-        } catch (e) {
-            if (e.name === 'AbortError') return;
-            console.warn('showOpenFilePicker échoué, fallback input:', e);
+// Point d'entrée unique : remplace saveProjectSmart pour la sauvegarde fichier
+async function saveProjectSmart() {
+    if (_saveInProgress) return;
+    _saveInProgress = true;
+    try {
+        // 1. Déterminer le nom du projet
+        let projectName = window.currentProjectName || null;
+        if (!projectName) {
+            projectName = await showSaveDialog();
+            if (!projectName) return;
+            window.currentProjectName = projectName;
         }
-    }
 
-    // Fallback : input file classique
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.pixelart,.json';
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (file) await _applyProjectFile(file);
-    };
-    input.click();
+        const titleEl = document.getElementById('projectTitle');
+        if (titleEl) titleEl.textContent = projectName;
+
+        const data = buildProjectFileData(projectName);
+        const json = JSON.stringify(data);
+        const blob = new Blob([json], { type: 'application/json' });
+        const safeName = projectName.replace(/[^a-z0-9_\-]/gi, '_') + '.pixelart';
+
+        // 2. File System Access API disponible → sauvegarde sur disque
+        if (window.showSaveFilePicker) {
+            // Réutiliser le handle existant si possible (pas de dialogue)
+            if (!_currentFileHandle) {
+                _currentFileHandle = await _loadFileHandle(projectName);
+            }
+            // Vérifier la permission sur le handle récupéré
+            if (_currentFileHandle) {
+                try {
+                    const perm = await _currentFileHandle.queryPermission({ mode: 'readwrite' });
+                    if (perm !== 'granted') {
+                        const req = await _currentFileHandle.requestPermission({ mode: 'readwrite' });
+                        if (req !== 'granted') _currentFileHandle = null;
+                    }
+                } catch (_) { _currentFileHandle = null; }
+            }
+            // Pas de handle valide → ouvrir le dialogue Finder
+            if (!_currentFileHandle) {
+                try {
+                    _currentFileHandle = await window.showSaveFilePicker({
+                        suggestedName: safeName,
+                        types: [{ description: 'Pixel Art Project', accept: { 'application/json': ['.pixelart'] } }]
+                    });
+                    await _storeFileHandle(_currentFileHandle, projectName);
+                } catch (e) {
+                    if (e.name === 'AbortError') return;
+                    throw e;
+                }
+            }
+            await _writeToHandle(_currentFileHandle, blob);
+            // Aussi sauvegarder dans IndexedDB comme cache de secours
+            window.localDB.saveProject(data).catch(() => {});
+            modifiedPixels = modifiedPixels.map(() => new Set());
+            showToast(`✅ "${projectName}" sauvegardé`, { type: 'success' });
+            return;
+        }
+
+        // 3. Fallback : IndexedDB + téléchargement
+        const result = await window.localDB.saveProject(data);
+        if (!result.success) throw new Error(result.error);
+        // Télécharger le fichier en bonus (Firefox, anciens navigateurs)
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = safeName; a.click();
+        URL.revokeObjectURL(url);
+        modifiedPixels = modifiedPixels.map(() => new Set());
+        showToast(`✅ "${projectName}" sauvegardé`, { type: 'success' });
+
+    } catch (err) {
+        console.error('❌ Erreur sauvegarde:', err);
+        showToast(`❌ Erreur : ${err.message}`, { type: 'error', duration: 5000 });
+    } finally {
+        _saveInProgress = false;
+    }
 }
+
 
 async function _applyProjectFile(file) {
     // Réutilise importSharedProject qui gère tout (frames, calques, tampons, palette)
@@ -8293,12 +8298,6 @@ function initEventListeners() {
     document.getElementById('loadBtn')?.addEventListener('click', loadFromFile);
     document.getElementById('loadLocalBtn')?.addEventListener('click', showLocalProjects);
     // Sauvegarde / ouverture fichier disque
-    document.getElementById('saveFileBtn')?.addEventListener('click', saveProjectToFile);
-    document.getElementById('saveFileBtn2')?.addEventListener('click', saveProjectToFile);
-    document.getElementById('saveFileBtnDropdown')?.addEventListener('click', saveProjectToFile);
-    document.getElementById('openFileBtn')?.addEventListener('click', openProjectFromFile);
-    document.getElementById('openFileBtn2')?.addEventListener('click', openProjectFromFile);
-    document.getElementById('openFileBtnDropdown')?.addEventListener('click', openProjectFromFile);
     document.getElementById('shareProjectBtn')?.addEventListener('click', () => {
         if (typeof handleShareButtonClick === 'function') handleShareButtonClick();
         else shareProject();
