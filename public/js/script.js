@@ -11146,30 +11146,17 @@ function _stampThumbnailDataURL(pixels, gs) {
 }
 
 function showImportStampModal() {
-    // Lire les projets locaux immédiatement (synchrone)
-    const localProjects = _getLocalProjects();
-
-    // Ouvrir la modal tout de suite avec les projets locaux
-    const allProjects = localProjects.map(p => ({ ...p, _source: 'local' }));
+    const allProjects = [];
     const dialog = _buildImportStampDialog(allProjects);
 
-    // Charger les projets cloud en arrière-plan et mettre à jour la liste
-    if (window.dbService) {
-        const list = dialog.querySelector('#importStampProjectList');
-        if (list && allProjects.length === 0) {
-            list.innerHTML = '<div style="padding:12px;color:rgba(255,255,255,0.4);font-size:0.85rem;">Chargement des projets cloud…</div>';
-        }
-        window.dbService.getAllProjects().then(result => {
-            if (!result?.success || !dialog.isConnected) return;
-            const cloud = (result.data || []).map(p => ({ ...p, _source: 'cloud' }));
-            if (cloud.length === 0) return;
-            // Ajouter en tête sans dupliquer
-            const merged = [...cloud, ...allProjects];
-            allProjects.length = 0;
-            merged.forEach(p => allProjects.push(p));
-            _refreshImportStampList(dialog, allProjects);
-        }).catch(() => {});
-    }
+    // Charger depuis IndexedDB en arrière-plan
+    window.localDB.getAllProjects().then(result => {
+        if (!dialog.isConnected) return;
+        const projects = (result.success && Array.isArray(result.data)) ? result.data : [];
+        if (projects.length === 0) return;
+        projects.forEach(p => allProjects.push({ ...p, _source: 'local' }));
+        _refreshImportStampList(dialog, allProjects);
+    }).catch(() => {});
 }
 
 function _getLocalProjects() {
@@ -11221,14 +11208,13 @@ function _buildImportStampDialog(allProjects) {
         const project = dialog._selectedProject;
         if (!project) return;
 
-        // getAllProjects() ne retourne plus les frames (optimisation Supabase)
-        // → charger le projet complet via loadProject() pour avoir les pixels
+        // Charger le projet complet pour avoir les pixels des frames
         let fullProject = project;
-        if (!Array.isArray(project.frames) && project.name && window.dbService) {
+        if (!Array.isArray(project.frames) && project.name) {
             const confirmBtn = dialog.querySelector('#importStampConfirmBtn');
             if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Chargement…'; }
             try {
-                const result = await window.dbService.loadProject(project.name);
+                const result = await window.localDB.loadProject(project.name);
                 if (result.success && result.data) fullProject = result.data;
             } catch (e) { /* utiliser les données partielles */ }
         }
