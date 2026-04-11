@@ -179,6 +179,7 @@ let isMovingSelection = false;
 let selectionMoveStart = null;   // {col, row} where move drag started
 // ── Mode Découper en tampon (ciseau) ──────────────────────────────────────────
 let isCropStampMode = false;
+window.stamps = window.stamps || [];
 let cropSelection = null;        // { startCol, startRow, endCol, endRow } en cours
 let cropRect = null;             // { minCol, minRow, maxCol, maxRow } final
 // ── Multi-couches ─────────────────────────────────────────────────────────────
