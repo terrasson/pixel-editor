@@ -11027,30 +11027,14 @@ function _photoAddColorsToPalette(colors) {
 window.stamps = window.stamps || [];
 
 function _loadStamps() {
-    try {
-        const saved = localStorage.getItem('pixelEditor_stamps');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            window.stamps = parsed.map(s => ({
-                ...s,
-                pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
-            }));
-        } else {
-            window.stamps = [];
-        }
-    } catch (_) {
-        window.stamps = [];
-    }
+    // Tampons session uniquement — sidebar vide au démarrage
+    localStorage.removeItem('pixelEditor_stamps');
+    window.stamps = [];
 }
 
 function _saveStamps() {
-    try {
-        const toSave = window.stamps.map(s => ({
-            ...s,
-            pixels: toSparseFrame(s.pixels || [])
-        }));
-        localStorage.setItem('pixelEditor_stamps', JSON.stringify(toSave));
-    } catch (_) {}
+    // Pas de persistance localStorage — les tampons vivent le temps de la session
+    // (ils sont inclus dans le fichier .pixelart lors d'une sauvegarde)
 }
 
 function saveCurrentDrawingAsStamp() {
