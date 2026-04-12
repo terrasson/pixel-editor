@@ -10550,10 +10550,10 @@ function showProfileMenu() {
                         <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">${tL('profileUsernameDesc')}</div>
                     </button>
 
-                    <button id="profileFolderBtn" style="padding: 15px; border: 2px solid rgba(255,115,0,0.4); border-radius: 8px; background: rgba(255,115,0,0.08); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; text-align: left;">
+                    ${window.showDirectoryPicker ? `<button id="profileFolderBtn" style="padding: 15px; border: 2px solid rgba(255,115,0,0.4); border-radius: 8px; background: rgba(255,115,0,0.08); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; text-align: left;">
                         <div style="font-size: 1.1em; margin-bottom: 4px;">📁 Dossier de sauvegarde</div>
                         <div id="profileFolderDesc" style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">Choisir le dossier où sauvegarder projets et tampons</div>
-                    </button>
+                    </button>` : ''}
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
