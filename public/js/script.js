@@ -3796,6 +3796,157 @@ function saveCustomColors() {
 let currentProjectId = null; // ID du projet actuel pour les mises à jour
 window.currentProjectName = null; // Nom du projet actif (pour le partage)
 
+// Affiche la liste des projets depuis workspaceDir/projets/
+async function _showWorkspaceProjects(workDir) {
+    let projetsDir;
+    try {
+        projetsDir = await workDir.getDirectoryHandle('projets', { create: true });
+    } catch (e) {
+        showToast(tL('noProjectsFound'), { type: 'warning' });
+        return;
+    }
+
+    // Lire tous les fichiers .pixelart
+    const projects = [];
+    try {
+        for await (const [name, handle] of projetsDir.entries()) {
+            if (handle.kind !== 'file' || !name.endsWith('.pixelart')) continue;
+            try {
+                const file = await handle.getFile();
+                const text = await file.text();
+                const data = JSON.parse(text);
+                projects.push({
+                    ...data,
+                    _fileHandle: handle,
+                    _fileName: name,
+                    lastModified: data.lastModified || new Date(file.lastModified).toISOString()
+                });
+            } catch (_) {}
+        }
+    } catch (_) {}
+
+    if (projects.length === 0) {
+        showToast(tL('noProjectsFound'), { type: 'warning' });
+        return;
+    }
+
+    // Trier par date décroissante
+    projects.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+
+    const projectsList = projects.map((p, index) => {
+        const projectName = p.name || tL('untitledProject');
+        const lastModified = p.lastModified;
+        const hasMultipleFrames = Array.isArray(p.frames) && p.frames.length > 1;
+        let previewHTML = '';
+        if (hasMultipleFrames) {
+            previewHTML = `<canvas data-project-index="${index}" width="48" height="48" style="width:48px;height:48px;border-radius:4px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);image-rendering:pixelated;"></canvas>`;
+        } else if (p.thumbnail) {
+            previewHTML = `<img src="${p.thumbnail}" alt="${projectName}" style="width:48px;height:48px;object-fit:contain;border-radius:4px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);">`;
+        } else {
+            previewHTML = `<div style="width:48px;height:48px;background:rgba(255,255,255,0.1);border-radius:4px;border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;">🎨</div>`;
+        }
+        return `<div class="project-item" data-index="${index}">
+            <div class="project-preview-container" style="display:flex;align-items:center;gap:12px;">
+                ${previewHTML}
+                <div class="project-info" style="flex:1;min-width:0;">
+                    <div class="project-name">${projectName}</div>
+                    <div class="project-date">${new Date(lastModified).toLocaleDateString(tL('dateLocale'))} ${tL('at')} ${new Date(lastModified).toLocaleTimeString(tL('dateLocale'), {hour:'2-digit',minute:'2-digit'})}</div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    const dialog = createMobileDialog(tL('myProjects'), `
+        <div style="margin-bottom:12px;padding:8px;background:rgba(255,255,255,0.1);border-radius:8px;">
+            <p style="margin:0;font-size:0.9rem;color:rgba(255,255,255,0.8);">${tL('clickProject')}</p>
+        </div>
+        <div class="projects-list">${projectsList}</div>
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="wsLoadProjectBtn" class="dialog-button" disabled>${tL('loadBtn')}</button>
+            <button id="wsDeleteProjectBtn" class="dialog-button secondary" disabled>${tL('deleteBtn')}</button>
+            <button id="wsCancelBtn" class="dialog-button secondary">${tL('closeBtn')}</button>
+        </div>
+    `);
+
+    // Animer les thumbnails multi-frames
+    const thumbnailIntervals = [];
+    projects.forEach((p, idx) => {
+        if (!Array.isArray(p.frames) || p.frames.length <= 1) return;
+        const canvas = dialog.querySelector(`canvas[data-project-index="${idx}"]`);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const fps = p.fps || 4;
+        let frameIndex = 0;
+        const drawFrame = (frame) => {
+            if (!Array.isArray(frame)) return;
+            const gs = Math.sqrt(frame.length);
+            const ps = canvas.width / gs;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            frame.forEach((pixel, i) => {
+                if (!pixel || pixel.isEmpty) return;
+                ctx.fillStyle = pixel.color || '#FFFFFF';
+                ctx.fillRect((i % gs) * ps, Math.floor(i / gs) * ps, ps, ps);
+            });
+        };
+        drawFrame(p.frames[0]);
+        thumbnailIntervals.push(setInterval(() => {
+            frameIndex = (frameIndex + 1) % p.frames.length;
+            drawFrame(p.frames[frameIndex]);
+        }, 1000 / fps));
+    });
+
+    const origRemove = dialog.remove.bind(dialog);
+    dialog.remove = () => { thumbnailIntervals.forEach(clearInterval); origRemove(); };
+
+    let selectedIndex = null;
+    const loadBtn = dialog.querySelector('#wsLoadProjectBtn');
+    const deleteBtn = dialog.querySelector('#wsDeleteProjectBtn');
+
+    dialog.querySelectorAll('.project-item').forEach(item => {
+        item.addEventListener('click', () => {
+            dialog.querySelectorAll('.project-item').forEach(p => p.classList.remove('selected'));
+            item.classList.add('selected');
+            selectedIndex = parseInt(item.dataset.index, 10);
+            loadBtn.disabled = false;
+            deleteBtn.disabled = false;
+        });
+    });
+
+    loadBtn.addEventListener('click', async () => {
+        if (selectedIndex === null) return;
+        const project = projects[selectedIndex];
+        try {
+            const frames = Array.isArray(project.frames)
+                ? normaliseFrames(project.frames)
+                : project.frames;
+            applyProjectData({ ...project, frames }, project.name);
+            // Mémoriser le handle pour les futures sauvegardes sans dialogue
+            _currentFileHandle = project._fileHandle;
+            dialog.remove();
+            showToast(tL('projectLoaded', project.name), { type: 'success' });
+        } catch (err) {
+            showToast(tL('projectLoadErrorDetail'), { type: 'error', duration: 5000 });
+        }
+    });
+
+    deleteBtn.addEventListener('click', async () => {
+        if (selectedIndex === null) return;
+        const project = projects[selectedIndex];
+        if (!confirm(tL('confirmDelete'))) return;
+        try {
+            await projetsDir.removeEntry(project._fileName);
+            window.localDB.deleteProject(project.name).catch(() => {});
+            showToast(tL('deleteSuccess'), { type: 'success' });
+            dialog.remove();
+            showLocalProjects();
+        } catch (err) {
+            showToast(tL('deleteError', err.message), { type: 'error', duration: 5000 });
+        }
+    });
+
+    dialog.querySelector('#wsCancelBtn').addEventListener('click', () => dialog.remove());
+}
+
 // Applique les données d'un projet chargé à l'état de l'app.
 // Utilisé par showLocalProjects, loadFromServer, et tout futur point de chargement.
 function applyProjectData(data, projectName) {
@@ -3931,6 +4082,13 @@ function autoSaveProjectLocal(name) {
 }
 
 async function showLocalProjects() {
+
+    // Essayer workspace en priorité
+    const workDir = await _getWorkspaceDir(true);
+    if (workDir) {
+        await _showWorkspaceProjects(workDir);
+        return;
+    }
 
     // Charger depuis IndexedDB (stockage local, pas de Supabase)
     const projectSource = 'local';
@@ -8111,6 +8269,102 @@ async function _loadFileHandle(projectName) {
     } catch (_) { return null; }
 }
 
+// ─── Workspace (dossier de travail) ─────────────────────────────────────────
+// Dossier racine choisi par l'utilisateur via showDirectoryPicker().
+// Contient deux sous-dossiers : projets/ et tampons/
+
+let _workspaceDir = null; // FileSystemDirectoryHandle en mémoire
+
+// Helpers génériques IndexedDB pour stocker des handles (fichiers et dossiers)
+async function _idbGet(key) {
+    try {
+        const db = await new Promise((resolve, reject) => {
+            const req = indexedDB.open('pixelEditorFileHandles', 1);
+            req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
+            req.onsuccess = e => resolve(e.target.result);
+            req.onerror = reject;
+        });
+        return await new Promise((resolve, reject) => {
+            const tx = db.transaction('handles', 'readonly');
+            const r = tx.objectStore('handles').get(key);
+            r.onsuccess = e => resolve(e.target.result || null);
+            r.onerror = reject;
+        });
+    } catch (_) { return null; }
+}
+
+async function _idbSet(key, handle) {
+    try {
+        const db = await new Promise((resolve, reject) => {
+            const req = indexedDB.open('pixelEditorFileHandles', 1);
+            req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
+            req.onsuccess = e => resolve(e.target.result);
+            req.onerror = reject;
+        });
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction('handles', 'readwrite');
+            tx.objectStore('handles').put(handle, key);
+            tx.oncomplete = resolve;
+            tx.onerror = reject;
+        });
+    } catch (_) {}
+}
+
+// Tente de récupérer silencieusement le workspace depuis IndexedDB (sans dialog)
+async function _ensureWorkspaceDir() {
+    if (_workspaceDir) return _workspaceDir;
+    const handle = await _idbGet('__workspace__');
+    if (!handle) return null;
+    try {
+        const perm = await handle.queryPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
+            _workspaceDir = handle;
+            await _workspaceDir.getDirectoryHandle('projets', { create: true });
+            await _workspaceDir.getDirectoryHandle('tampons', { create: true });
+        }
+    } catch (_) {}
+    return _workspaceDir;
+}
+
+// Retourne le workspace handle si permission ok. askIfNeeded=true → demande permission si nécessaire.
+async function _getWorkspaceDir(askIfNeeded = false) {
+    const handle = _workspaceDir || await _idbGet('__workspace__');
+    if (!handle) return null;
+    try {
+        let perm = await handle.queryPermission({ mode: 'readwrite' });
+        if (perm !== 'granted' && askIfNeeded) {
+            perm = await handle.requestPermission({ mode: 'readwrite' });
+        }
+        if (perm === 'granted') {
+            _workspaceDir = handle;
+            return handle;
+        }
+    } catch (_) {}
+    return null;
+}
+
+// Ouvre le sélecteur de dossier, crée projets/ et tampons/, persiste dans IndexedDB
+async function chooseWorkspaceFolder() {
+    if (!window.showDirectoryPicker) {
+        showToast('Votre navigateur ne supporte pas la sélection de dossier', { type: 'error', duration: 5000 });
+        return null;
+    }
+    try {
+        const dir = await window.showDirectoryPicker({ mode: 'readwrite', startIn: 'documents' });
+        await dir.getDirectoryHandle('projets', { create: true });
+        await dir.getDirectoryHandle('tampons', { create: true });
+        _workspaceDir = dir;
+        await _idbSet('__workspace__', dir);
+        showToast(`✅ Dossier "${dir.name}" configuré (projets/ et tampons/ créés)`, { type: 'success', duration: 4000 });
+        return dir;
+    } catch (e) {
+        if (e.name !== 'AbortError') showToast(`❌ Erreur : ${e.message}`, { type: 'error', duration: 5000 });
+        return null;
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+
 // Construit l'objet projet complet (frames + calques + tampons + palette)
 function buildProjectFileData(projectName) {
     saveCurrentFrame();
@@ -8140,7 +8394,7 @@ async function _writeToHandle(handle, blob) {
     await writable.close();
 }
 
-// Point d'entrée unique : remplace saveProjectSmart pour la sauvegarde fichier
+// Point d'entrée unique pour la sauvegarde projet
 async function saveProjectSmart() {
     if (_saveInProgress) return;
     _saveInProgress = true;
@@ -8161,13 +8415,24 @@ async function saveProjectSmart() {
         const blob = new Blob([json], { type: 'application/json' });
         const safeName = projectName.replace(/[^a-z0-9_\-]/gi, '_') + '.pixelart';
 
-        // 2. File System Access API disponible → sauvegarde sur disque
+        // 2. Essayer le dossier de travail (workspace) en priorité
+        const workDir = await _getWorkspaceDir(true);
+        if (workDir) {
+            const projetsDir = await workDir.getDirectoryHandle('projets', { create: true });
+            const fileHandle = await projetsDir.getFileHandle(safeName, { create: true });
+            await _writeToHandle(fileHandle, blob);
+            _currentFileHandle = fileHandle;
+            window.localDB.saveProject(data).catch(() => {});
+            modifiedPixels = modifiedPixels.map(() => new Set());
+            showToast(`✅ "${projectName}" sauvegardé`, { type: 'success' });
+            return;
+        }
+
+        // 3. Fallback : showSaveFilePicker par fichier
         if (window.showSaveFilePicker) {
-            // Réutiliser le handle existant si possible (pas de dialogue)
             if (!_currentFileHandle) {
                 _currentFileHandle = await _loadFileHandle(projectName);
             }
-            // Vérifier la permission sur le handle récupéré
             if (_currentFileHandle) {
                 try {
                     const perm = await _currentFileHandle.queryPermission({ mode: 'readwrite' });
@@ -8177,7 +8442,6 @@ async function saveProjectSmart() {
                     }
                 } catch (_) { _currentFileHandle = null; }
             }
-            // Pas de handle valide → ouvrir le dialogue Finder
             if (!_currentFileHandle) {
                 try {
                     _currentFileHandle = await window.showSaveFilePicker({
@@ -8191,17 +8455,15 @@ async function saveProjectSmart() {
                 }
             }
             await _writeToHandle(_currentFileHandle, blob);
-            // Aussi sauvegarder dans IndexedDB comme cache de secours
             window.localDB.saveProject(data).catch(() => {});
             modifiedPixels = modifiedPixels.map(() => new Set());
             showToast(`✅ "${projectName}" sauvegardé`, { type: 'success' });
             return;
         }
 
-        // 3. Fallback : IndexedDB + téléchargement
+        // 4. Fallback final : IndexedDB + téléchargement
         const result = await window.localDB.saveProject(data);
         if (!result.success) throw new Error(result.error);
-        // Télécharger le fichier en bonus (Firefox, anciens navigateurs)
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; a.download = safeName; a.click();
@@ -8494,6 +8756,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initGrid();
     initEventListeners();
+    // Réacquérir silencieusement le dossier de travail s'il a déjà été choisi
+    _ensureWorkspaceDir().catch(() => {});
 
     // Réinitialiser les couleurs personnalisées au démarrage pour toujours avoir les couleurs de base
     customColors = [];
@@ -10264,50 +10528,59 @@ function populateProfileForm(profile = {}) {
 
 // Affiche un menu pour choisir entre profil créatif et gestion du pseudo
 function showProfileMenu() {
-    const menuContent = `
-        <div style="padding: 20px; color: rgba(255, 255, 255, 0.95);">
-            <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98);">${tL('profileTitle')}</h3>
-            <p style="text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85); font-size: 0.9em;">
-                ${tL('profileSubtitle')}
-            </p>
-
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <button id="profileCreativeBtn" style="padding: 15px; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; text-align: left;">
-                    <div style="font-size: 1.1em; margin-bottom: 4px;">${tL('profileCreativeTitle')}</div>
-                    <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">${tL('profileCreativeDesc')}</div>
-                </button>
-
-                <button id="profileUsernameBtn" style="padding: 15px; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; text-align: left;">
-                    <div style="font-size: 1.1em; margin-bottom: 4px;">${tL('profileUsernameTitle')}</div>
-                    <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">${tL('profileUsernameDesc')}</div>
-                </button>
-            </div>
-
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button id="cancelProfileMenuBtn" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
-                    ${tL('cancelBtn')}
-                </button>
-            </div>
-        </div>
-    `;
-    
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.display = 'flex';
     modal.innerHTML = `
         <div class="modal-content" style="max-width: 450px; width: 90%; background: linear-gradient(155deg, rgba(36, 48, 94, 0.98), rgba(28, 38, 80, 0.95)); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.95);">
-            ${menuContent}
+            <div style="padding: 20px; color: rgba(255, 255, 255, 0.95);">
+                <h3 style="margin-top: 0; text-align: center; color: rgba(255, 255, 255, 0.98);">${tL('profileTitle')}</h3>
+                <p style="text-align: center; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85); font-size: 0.9em;">
+                    ${tL('profileSubtitle')}
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <button id="profileCreativeBtn" style="padding: 15px; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; text-align: left;">
+                        <div style="font-size: 1.1em; margin-bottom: 4px;">${tL('profileCreativeTitle')}</div>
+                        <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">${tL('profileCreativeDesc')}</div>
+                    </button>
+
+                    <button id="profileUsernameBtn" style="padding: 15px; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; text-align: left;">
+                        <div style="font-size: 1.1em; margin-bottom: 4px;">${tL('profileUsernameTitle')}</div>
+                        <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">${tL('profileUsernameDesc')}</div>
+                    </button>
+
+                    <button id="profileFolderBtn" style="padding: 15px; border: 2px solid rgba(255,115,0,0.4); border-radius: 8px; background: rgba(255,115,0,0.08); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600; text-align: left;">
+                        <div style="font-size: 1.1em; margin-bottom: 4px;">📁 Dossier de sauvegarde</div>
+                        <div id="profileFolderDesc" style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7);">Choisir le dossier où sauvegarder projets et tampons</div>
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button id="cancelProfileMenuBtn" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255, 255, 255, 0.95); cursor: pointer; font-weight: 600;">
+                        ${tL('cancelBtn')}
+                    </button>
+                </div>
+            </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
-    document.getElementById('profileCreativeBtn')?.addEventListener('click', () => {
+
+    // Mettre à jour la description du dossier actuel
+    const folderDescEl = modal.querySelector('#profileFolderDesc');
+    _getWorkspaceDir(false).then(dir => {
+        if (dir && folderDescEl) {
+            folderDescEl.textContent = `Dossier actuel : ${dir.name} — Cliquer pour changer`;
+        }
+    });
+
+    modal.querySelector('#profileCreativeBtn')?.addEventListener('click', () => {
         modal.remove();
         window.initUserProfileFlow(true);
     });
-    
-    document.getElementById('profileUsernameBtn')?.addEventListener('click', () => {
+
+    modal.querySelector('#profileUsernameBtn')?.addEventListener('click', () => {
         modal.remove();
         if (typeof window.showUsernameDialog === 'function') {
             window.showUsernameDialog();
@@ -10315,15 +10588,18 @@ function showProfileMenu() {
             showToast(tL('profileUsernameNotLoaded'), { type: 'error', duration: 5000 });
         }
     });
-    
-    document.getElementById('cancelProfileMenuBtn')?.addEventListener('click', () => {
+
+    modal.querySelector('#profileFolderBtn')?.addEventListener('click', async () => {
+        modal.remove();
+        await chooseWorkspaceFolder();
+    });
+
+    modal.querySelector('#cancelProfileMenuBtn')?.addEventListener('click', () => {
         modal.remove();
     });
-    
+
     modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.remove();
-        }
+        if (e.target === modal) modal.remove();
     });
 }
 
@@ -11075,37 +11351,111 @@ async function _writeStampsToDisk() {
     } catch (_) {}
 }
 
+// Charge les tampons depuis le disque au démarrage (silencieux)
 function _loadStamps() {
-    // Sidebar vide au démarrage — les tampons viennent du fichier disque (bouton dossier)
     localStorage.removeItem('pixelEditor_stamps');
     window.stamps = [];
-    // Tenter de recharger silencieusement si on a déjà un handle connu
-    _loadStampsFileHandle().then(async handle => {
-        if (!handle) return;
-        try {
-            const perm = await handle.queryPermission({ mode: 'readwrite' });
-            if (perm !== 'granted') return; // ne pas demander au démarrage
-            _stampsFileHandle = handle;
-            const file = await handle.getFile();
-            const text = await file.text();
-            const parsed = JSON.parse(text);
-            if (!Array.isArray(parsed)) return;
-            window.stamps = parsed.map(s => ({
-                ...s,
-                pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
-            }));
-            renderStampsList();
-        } catch (_) {}
+    // Essayer workspace en priorité, puis handle dédié
+    _getWorkspaceDir(false).then(async workDir => {
+        if (workDir) {
+            try {
+                const tamponsDir = await workDir.getDirectoryHandle('tampons', { create: true });
+                const fileHandle = await tamponsDir.getFileHandle('stamps.pixelstamps', { create: false }).catch(() => null);
+                if (!fileHandle) return;
+                const file = await fileHandle.getFile();
+                const text = await file.text();
+                if (!text.trim()) return;
+                const parsed = JSON.parse(text);
+                if (!Array.isArray(parsed)) return;
+                window.stamps = parsed.map(s => ({
+                    ...s,
+                    pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
+                }));
+                renderStampsList();
+                return;
+            } catch (_) {}
+        }
+        // Fallback : handle dédié (ancien système)
+        _loadStampsFileHandle().then(async handle => {
+            if (!handle) return;
+            try {
+                const perm = await handle.queryPermission({ mode: 'readwrite' });
+                if (perm !== 'granted') return;
+                _stampsFileHandle = handle;
+                const file = await handle.getFile();
+                const text = await file.text();
+                const parsed = JSON.parse(text);
+                if (!Array.isArray(parsed)) return;
+                window.stamps = parsed.map(s => ({
+                    ...s,
+                    pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
+                }));
+                renderStampsList();
+            } catch (_) {}
+        });
     });
 }
 
+// Sauvegarde les tampons sur le disque (workspace ou handle dédié)
 async function _saveStamps() {
-    if (!_stampsFileHandle) return; // pas encore de fichier disque choisi
+    const data = (window.stamps || []).map(s => ({
+        ...s, pixels: toSparseFrame(s.pixels || [])
+    }));
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+
+    // Essayer workspace en priorité
+    const workDir = await _getWorkspaceDir(false);
+    if (workDir) {
+        try {
+            const tamponsDir = await workDir.getDirectoryHandle('tampons', { create: true });
+            const fileHandle = await tamponsDir.getFileHandle('stamps.pixelstamps', { create: true });
+            await _writeToHandle(fileHandle, blob);
+            return;
+        } catch (_) {}
+    }
+
+    // Fallback : handle dédié (ancien système)
+    if (!_stampsFileHandle) return;
     await _writeStampsToDisk();
 }
 
-// Ouvre le dialogue Finder pour choisir/créer le fichier tampons, puis charge les tampons existants
+// Ouvre le dialogue pour charger les tampons depuis le disque (ou depuis workspace si configuré)
 async function loadStampsFromDisk() {
+    // Si workspace configuré → lire directement depuis tampons/
+    const workDir = await _getWorkspaceDir(true);
+    if (workDir) {
+        try {
+            const tamponsDir = await workDir.getDirectoryHandle('tampons', { create: true });
+            let fileHandle;
+            try {
+                fileHandle = await tamponsDir.getFileHandle('stamps.pixelstamps', { create: false });
+            } catch (_) {
+                // Fichier n'existe pas encore : sera créé au prochain _saveStamps
+                showToast('Aucun tampon trouvé dans le dossier tampons/ — ajoute des tampons avec +', { type: 'info', duration: 4000 });
+                return;
+            }
+            const file = await fileHandle.getFile();
+            const text = await file.text();
+            if (text.trim()) {
+                const parsed = JSON.parse(text);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    window.stamps = parsed.map(s => ({
+                        ...s,
+                        pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
+                    }));
+                    renderStampsList();
+                    showToast(`✅ ${window.stamps.length} tampon(s) chargé(s)`, { type: 'success' });
+                    return;
+                }
+            }
+            showToast('Fichier tampons vide — ajoute des tampons avec +', { type: 'info' });
+            return;
+        } catch (e) {
+            if (e.name !== 'AbortError') showToast(`❌ Erreur : ${e.message}`, { type: 'error' });
+            return;
+        }
+    }
+
     if (!window.showSaveFilePicker && !window.showOpenFilePicker) {
         // Fallback : input file
         const input = document.createElement('input');
@@ -11131,10 +11481,9 @@ async function loadStampsFromDisk() {
         return;
     }
 
-    // Si pas encore de handle → demander où sauvegarder le fichier tampons
+    // Fallback : handle dédié (ancien système)
     if (!_stampsFileHandle) {
         _stampsFileHandle = await _loadStampsFileHandle();
-        // Vérifier permission
         if (_stampsFileHandle) {
             try {
                 const perm = await _stampsFileHandle.requestPermission({ mode: 'readwrite' });
@@ -11156,7 +11505,6 @@ async function loadStampsFromDisk() {
         }
     }
 
-    // Lire le contenu existant du fichier
     try {
         const file = await _stampsFileHandle.getFile();
         const text = await file.text();
