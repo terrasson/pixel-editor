@@ -8446,6 +8446,7 @@ async function saveProjectSmart() {
                 try {
                     _currentFileHandle = await window.showSaveFilePicker({
                         suggestedName: safeName,
+                        startIn: 'documents',
                         types: [{ description: 'Pixel Art Project', accept: { 'application/json': ['.pixelart'] } }]
                     });
                     await _storeFileHandle(_currentFileHandle, projectName);
@@ -11496,6 +11497,7 @@ async function loadStampsFromDisk() {
         try {
             _stampsFileHandle = await window.showSaveFilePicker({
                 suggestedName: 'stamps.pixelstamps',
+                startIn: 'documents',
                 types: [{ description: 'Pixel Art Stamps', accept: { 'application/json': ['.pixelstamps'] } }]
             });
             await _storeStampsFileHandle(_stampsFileHandle);
