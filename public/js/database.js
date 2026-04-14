@@ -1,6 +1,16 @@
 // Database Service for Pixel Art Projects
 // This module handles all database operations with Supabase
 
+// Converts [{color, isEmpty}] → ['#RRGGBB' | ''] for compact DB storage.
+// normaliseFrames/normalisePixel in script.js handles the reverse on load.
+function _compressFrames(frames) {
+    if (!Array.isArray(frames)) return frames;
+    return frames.map(frame => {
+        if (!Array.isArray(frame)) return frame;
+        return frame.map(p => (p && !p.isEmpty && p.color) ? p.color : '');
+    });
+}
+
 class DatabaseService {
     constructor() {
         this.supabase = null;
@@ -53,7 +63,8 @@ class DatabaseService {
 
             onProgress?.('storage');
 
-            const framesJson = JSON.stringify(frames);
+            const compressedFrames = _compressFrames(frames);
+            const framesJson = JSON.stringify(compressedFrames);
             const layersJson = frameLayers && Array.isArray(frameLayers) && frameLayers.length > 0
                 ? JSON.stringify(frameLayers) : null;
 
@@ -61,13 +72,13 @@ class DatabaseService {
             // En-dessous, on stocke directement en JSONB (plus simple, moins de bandwidth)
             const shouldUseStorage = framesJson.length > 20000 || (layersJson && layersJson.length > 20000);
 
-            let framesForDb = frames;
+            let framesForDb = compressedFrames;
             let frameLayersForDb = null;
 
             if (shouldUseStorage) {
                 const framesPath = `${userId}/${safeName}_frames.json`;
                 const layersPath = `${userId}/${safeName}_layers.json`;
-                const framesBlob = new Blob([framesJson], { type: 'application/json' });
+                const framesBlob = new Blob([framesJson], { type: 'application/json' }); // framesJson already compressed
                 const layersBlob = layersJson ? new Blob([layersJson], { type: 'application/json' }) : null;
 
                 const [framesResult, layersResult] = await Promise.all([

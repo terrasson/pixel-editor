@@ -608,6 +608,10 @@ function createEmptyFrame(width = currentGridSize, height = currentGridSize) {
 }
 
 function normalisePixel(pixel) {
+    // Compact string format: '#RRGGBB' = colored, '' = empty
+    if (typeof pixel === 'string') {
+        return pixel ? { color: pixel, isEmpty: false } : { color: '#FFFFFF', isEmpty: true };
+    }
     if (!pixel || typeof pixel !== 'object') {
         return { color: '#FFFFFF', isEmpty: true };
     }

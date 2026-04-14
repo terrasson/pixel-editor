@@ -500,11 +500,16 @@
             return frame;
         }
 
+        function normalisePixel(p) {
+            if (typeof p === 'string') return p ? { color: p, isEmpty: false } : { color: '#FFFFFF', isEmpty: true };
+            return p || { color: '#FFFFFF', isEmpty: true };
+        }
+
         function normaliseFrame(frame) {
             if (!frame) return null;
             if (frame._sparse === true) return fromSparseFrame(frame);
-            if (Array.isArray(frame)) return frame;
-            if (Array.isArray(frame.pixels)) return frame.pixels;
+            if (Array.isArray(frame)) return frame.map(normalisePixel);
+            if (Array.isArray(frame.pixels)) return frame.pixels.map(normalisePixel);
             return null;
         }
 
