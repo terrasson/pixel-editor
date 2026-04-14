@@ -53,42 +53,45 @@ class DatabaseService {
 
             onProgress?.('storage');
 
-            // Upload frames + frameLayers en parallèle vers Storage (évite le Disk IO JSONB sur PostgreSQL)
             const framesJson = JSON.stringify(frames);
-            const framesBlob = new Blob([framesJson], { type: 'application/json' });
-            const framesPath = `${userId}/${safeName}_frames.json`;
-
             const layersJson = frameLayers && Array.isArray(frameLayers) && frameLayers.length > 0
                 ? JSON.stringify(frameLayers) : null;
-            const layersBlob = layersJson ? new Blob([layersJson], { type: 'application/json' }) : null;
-            const layersPath = `${userId}/${safeName}_layers.json`;
 
-            const [framesResult, layersResult] = await Promise.all([
-                this._uploadWithTimeout('thumbnails', framesPath, framesBlob, 'application/json', 15000),
-                layersBlob
-                    ? this._uploadWithTimeout('thumbnails', layersPath, layersBlob, 'application/json', 15000)
-                    : Promise.resolve({ success: true })
-            ]);
+            // Upload vers Storage seulement si les données dépassent 20 Ko
+            // En-dessous, on stocke directement en JSONB (plus simple, moins de bandwidth)
+            const shouldUseStorage = framesJson.length > 20000 || (layersJson && layersJson.length > 20000);
 
-            // Les frames reçues sont déjà en format sparse (encodées par saveProjectSmart).
-            // Si Storage fonctionne → on stocke un pointeur { _url }.
-            // Si Storage échoue → on stocke les frames sparse directement en JSONB (léger, qq KB).
-            let framesForDb = frames; // fallback: sparse frames inline
-            if (framesResult.success) {
-                const { data: framesUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(framesPath);
-                if (framesUrlData?.publicUrl) framesForDb = { _url: framesUrlData.publicUrl };
-            } else {
-                console.warn('⚠️ Storage upload échoué — frames sparse stockées inline en DB');
-            }
-
+            let framesForDb = frames;
             let frameLayersForDb = null;
-            if (layersBlob) {
-                if (layersResult.success) {
+
+            if (shouldUseStorage) {
+                const framesPath = `${userId}/${safeName}_frames.json`;
+                const layersPath = `${userId}/${safeName}_layers.json`;
+                const framesBlob = new Blob([framesJson], { type: 'application/json' });
+                const layersBlob = layersJson ? new Blob([layersJson], { type: 'application/json' }) : null;
+
+                const [framesResult, layersResult] = await Promise.all([
+                    this._uploadWithTimeout('thumbnails', framesPath, framesBlob, 'application/json', 15000),
+                    layersBlob
+                        ? this._uploadWithTimeout('thumbnails', layersPath, layersBlob, 'application/json', 15000)
+                        : Promise.resolve({ success: true })
+                ]);
+
+                if (framesResult.success) {
+                    const { data: framesUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(framesPath);
+                    if (framesUrlData?.publicUrl) framesForDb = { _url: framesUrlData.publicUrl };
+                } else {
+                    console.warn('⚠️ Storage upload échoué — frames stockées inline en DB');
+                }
+
+                if (layersBlob && layersResult.success) {
                     const { data: layersUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(layersPath);
                     if (layersUrlData?.publicUrl) frameLayersForDb = { _url: layersUrlData.publicUrl };
-                } else {
-                    console.warn('Layers upload failed — calques non sauvegardés');
+                } else if (layersJson) {
+                    frameLayersForDb = JSON.parse(layersJson);
                 }
+            } else if (layersJson) {
+                frameLayersForDb = JSON.parse(layersJson);
             }
 
             // Upload thumbnail en arrière-plan (non-bloquant)
@@ -291,6 +294,14 @@ class DatabaseService {
 
             if (error) throw error;
 
+            // Nettoyage Storage (fire-and-forget)
+            const safeName = projectName.replace(/[^a-z0-9]/gi, '_');
+            this.supabase.storage.from('thumbnails').remove([
+                `${userId}/${safeName}_frames.json`,
+                `${userId}/${safeName}_layers.json`,
+                `${userId}/${safeName}.png`
+            ]).catch(() => {});
+
             return { success: true };
         } catch (error) {
             console.error('Delete project error:', error);
@@ -308,6 +319,14 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
+            // Récupérer le nom pour pouvoir nettoyer le Storage
+            const { data: proj } = await this.supabase
+                .from('pixel_projects')
+                .select('name')
+                .eq('id', projectId)
+                .eq('user_id', userId)
+                .single();
+
             const { error } = await this.supabase
                 .from('pixel_projects')
                 .delete()
@@ -315,6 +334,16 @@ class DatabaseService {
                 .eq('user_id', userId);
 
             if (error) throw error;
+
+            // Nettoyage Storage (fire-and-forget)
+            if (proj?.name) {
+                const safeName = proj.name.replace(/[^a-z0-9]/gi, '_');
+                this.supabase.storage.from('thumbnails').remove([
+                    `${userId}/${safeName}_frames.json`,
+                    `${userId}/${safeName}_layers.json`,
+                    `${userId}/${safeName}.png`
+                ]).catch(() => {});
+            }
 
             return { success: true };
         } catch (error) {
@@ -489,118 +518,6 @@ class DatabaseService {
         return 'Unknown';
     }
 
-    // Obtenir ou créer un session_id
-    getSessionId() {
-        let sessionId = sessionStorage.getItem('pixel_editor_session_id');
-        if (!sessionId) {
-            const arr = new Uint32Array(3);
-            crypto.getRandomValues(arr);
-            sessionId = `session_${arr[0].toString(36)}${arr[1].toString(36)}${arr[2].toString(36)}`;
-            sessionStorage.setItem('pixel_editor_session_id', sessionId);
-        }
-        return sessionId;
-    }
-
-    async logUsageEvent(_eventName, _payload = {}) {
-        return; // Désactivé — réduit les appels Supabase (compute Nano)
-        if (!this.supabase) this.init();
-
-        try {
-            const userId = this.getUserId();
-            if (!userId) {
-                throw new Error('User not authenticated');
-            }
-
-            // Collecter les métadonnées enrichies
-            const enrichedPayload = {
-                ...payload,
-                device_type: this.getDeviceType(),
-                browser: this.getBrowser(),
-                screen_resolution: `${window.screen.width}x${window.screen.height}`,
-                session_id: this.getSessionId(),
-                referrer: document.referrer || null,
-                user_agent: navigator.userAgent
-            };
-
-            const { error } = await this.supabase
-                .from('usage_events')
-                .insert({
-                    user_id: userId,
-                    event_name: eventName,
-                    payload: enrichedPayload,
-                    device_type: enrichedPayload.device_type,
-                    browser: enrichedPayload.browser,
-                    screen_resolution: enrichedPayload.screen_resolution,
-                    session_id: enrichedPayload.session_id,
-                    referrer: enrichedPayload.referrer,
-                    created_at: new Date().toISOString()
-                });
-
-            if (error) throw error;
-
-            return { success: true };
-        } catch (error) {
-            console.warn('Log event error:', error.message);
-            return { success: false, error: error.message };
-        }
-    }
-
-    // Créer ou mettre à jour une session utilisateur
-    async startUserSession() {
-        if (!this.supabase) this.init();
-
-        try {
-            const userId = this.getUserId();
-            if (!userId) return { success: false, error: 'Not authenticated' };
-
-            const sessionId = this.getSessionId();
-            const deviceType = this.getDeviceType();
-            const browser = this.getBrowser();
-
-            // Vérifier si la session existe déjà
-            const { data: existingSession } = await this.supabase
-                .from('user_sessions')
-                .select('id')
-                .eq('session_id', sessionId)
-                .single();
-
-            if (existingSession) {
-                // Mettre à jour la session existante
-                const { error } = await this.supabase
-                    .from('user_sessions')
-                    .update({
-                        updated_at: new Date().toISOString(),
-                        page_views: existingSession.page_views + 1
-                    })
-                    .eq('session_id', sessionId);
-
-                if (error) throw error;
-                return { success: true, sessionId };
-            }
-
-            // Créer une nouvelle session
-            const { error } = await this.supabase
-                .from('user_sessions')
-                .insert({
-                    user_id: userId,
-                    session_id: sessionId,
-                    device_type: deviceType,
-                    browser: browser,
-                    screen_resolution: `${window.screen.width}x${window.screen.height}`,
-                    referrer: document.referrer || null,
-                    first_page: window.location.pathname,
-                    started_at: new Date().toISOString()
-                });
-
-            if (error) throw error;
-
-            return { success: true, sessionId };
-        } catch (error) {
-            console.warn('Start session error:', error.message);
-            return { success: false, error: error.message };
-        }
-    }
-
     // Enregistrer un feedback utilisateur
     async submitFeedback(feedbackData) {
         if (!this.supabase) this.init();
@@ -760,13 +677,6 @@ class DatabaseService {
                 .single();
 
             if (error) throw error;
-
-            // Log the share event
-            await this.logUsageEvent('project_shared_public', {
-                project_id: project.id,
-                share_token: data.share_token,
-                allow_duplicate: data.allow_duplicate
-            });
 
             return { success: true, data, isNew: true };
         } catch (error) {
@@ -1089,7 +999,8 @@ class DatabaseService {
                 .single();
             
             if (error) throw error;
-            
+
+            this.invalidateTemplatesCache();
             return { success: true, data };
         } catch (error) {
             console.error('Publish template error:', error);
@@ -1099,51 +1010,61 @@ class DatabaseService {
     
     /**
      * Récupère tous les modèles publics avec filtres
+     * Ne charge PAS template_data ni preview_data (données pixel lourdes) — chargées à la demande via getTemplateById
      */
     async getTemplates(filters = {}) {
         if (!this.supabase) this.init();
-        
+
+        const cacheKey = JSON.stringify(filters);
+        const now = Date.now();
+        if (this._templatesCache?.[cacheKey] && (now - (this._templatesCacheTime?.[cacheKey] ?? 0)) < 300000) {
+            return { success: true, data: this._templatesCache[cacheKey] };
+        }
+
         try {
+            const COLUMNS = 'id, name, description, category, difficulty, style_tags, thumbnail, view_count, is_animation, is_animation_template, author_id, author_email, created_at';
             let query = this.supabase
                 .from('pixel_templates')
-                .select('*, author_id') // Inclure author_id pour récupérer les avatars
+                .select(COLUMNS)
                 .eq('is_public', true)
                 .eq('is_approved', true);
-            
-            // Filtre par catégorie
+
             if (filters.category) {
                 query = query.eq('category', filters.category);
             }
-            
-            // Filtre par tags de style
             if (filters.styleTags && filters.styleTags.length > 0) {
                 query = query.overlaps('style_tags', filters.styleTags);
             }
-            
-            // Filtre par difficulté
             if (filters.difficulty) {
                 query = query.eq('difficulty', filters.difficulty);
             }
-            
-            // Tri
+
             const orderBy = filters.orderBy || 'created_at';
             const orderDirection = filters.orderDirection || 'desc';
             query = query.order(orderBy, { ascending: orderDirection === 'asc' });
-            
-            // Limite
+
             if (filters.limit) {
                 query = query.limit(filters.limit);
             }
-            
+
             const { data, error } = await query;
-            
             if (error) throw error;
-            
+
+            this._templatesCache = this._templatesCache || {};
+            this._templatesCacheTime = this._templatesCacheTime || {};
+            this._templatesCache[cacheKey] = data || [];
+            this._templatesCacheTime[cacheKey] = now;
+
             return { success: true, data: data || [] };
         } catch (error) {
             console.error('Get templates error:', error);
             return { success: false, error: error.message, data: [] };
         }
+    }
+
+    invalidateTemplatesCache() {
+        this._templatesCache = null;
+        this._templatesCacheTime = null;
     }
     
     /**
@@ -1299,7 +1220,8 @@ class DatabaseService {
                 .eq('author_id', userId);
             
             if (error) throw error;
-            
+
+            this.invalidateTemplatesCache();
             return { success: true };
         } catch (error) {
             console.error('Delete template error:', error);

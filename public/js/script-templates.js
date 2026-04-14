@@ -496,57 +496,24 @@
                 });
 
                 if (result.success && result.data) {
-                    sharedTemplates = result.data.map(template => {
-                        // Détecter si c'est une animation "à réaliser" en vérifiant template_data
-                        // Pour les nouveaux modèles : template_data a isEmpty: true
-                        // Pour les anciens modèles : template_data = preview_data (pixels colorés)
-                        let isAnimationTemplate = false;
-                        if (template.is_animation && template.template_data) {
-                            const firstFrame = Array.isArray(template.template_data) ? template.template_data[0] : null;
-                            if (firstFrame && Array.isArray(firstFrame) && firstFrame.length > 0) {
-                                // Vérifier si tous les pixels non-vides ont isEmpty: true (nouveaux modèles)
-                                const nonEmptyPixels = firstFrame.filter(p => p && p.color && p.color !== '#FFFFFF');
-                                const allPixelsAreEmpty = nonEmptyPixels.length > 0 && nonEmptyPixels.every(p => p.isEmpty === true);
-
-                                // Pour les anciens modèles : si template_data et preview_data sont identiques,
-                                // on considère que c'est une animation complète (pas un modèle à réaliser)
-                                // Si template_data diffère de preview_data ou si les pixels ont isEmpty: true, c'est un modèle à réaliser
-                                const templateDataStr = JSON.stringify(template.template_data);
-                                const previewDataStr = JSON.stringify(template.preview_data || template.template_data);
-                                const areDifferent = templateDataStr !== previewDataStr;
-
-                                isAnimationTemplate = allPixelsAreEmpty || (areDifferent && nonEmptyPixels.length > 0);
-
-                                console.log('🔍 Détection type animation:', {
-                                    templateId: template.id,
-                                    templateName: template.name,
-                                    allPixelsAreEmpty,
-                                    areDifferent,
-                                    isAnimationTemplate
-                                });
-                            }
-                        }
-
-                        return {
-                            id: template.id,
-                            name: template.name,
-                            description: template.description,
-                            theme: template.category, // Utiliser category comme theme
-                            preview: template.preview_data || template.template_data,
-                            templateData: template.template_data, // Stocker aussi template_data pour charger les indicateurs
-                            difficulty: template.difficulty || 1,
-                            thumbnail: template.thumbnail,
-                            author_id: template.author_id, // ID de l'auteur pour récupérer l'avatar
-                            author_email: template.author_email, // Gardé pour l'identification du propriétaire
-                            author_username: template.author_username || template.author_email?.split('@')[0] || 'Anonyme', // Pseudo public
-                            view_count: template.view_count || 0,
-                            completion_count: template.completion_count || 0,
-                            style_tags: template.style_tags || [],
-                            isShared: true, // Marqueur pour identifier les modèles partagés
-                            isAnimation: template.is_animation || false, // Marqueur pour animation (complète ou à réaliser)
-                            isAnimationTemplate: isAnimationTemplate // Marqueur pour distinguer animation complète vs à réaliser
-                        };
-                    });
+                    // getTemplates ne retourne plus template_data/preview_data (données pixel lourdes).
+                    // La preview se fait via thumbnail ; les données pixel sont chargées à la demande par getTemplateById.
+                    sharedTemplates = result.data.map(template => ({
+                        id: template.id,
+                        name: template.name,
+                        description: template.description,
+                        theme: template.category,
+                        difficulty: template.difficulty || 1,
+                        thumbnail: template.thumbnail,
+                        author_id: template.author_id,
+                        author_email: template.author_email,
+                        author_username: template.author_email?.split('@')[0] || 'Anonyme',
+                        view_count: template.view_count || 0,
+                        style_tags: template.style_tags || [],
+                        isShared: true,
+                        isAnimation: template.is_animation || false,
+                        isAnimationTemplate: template.is_animation_template || false
+                    }));
                     console.log(`✅ ${sharedTemplates.length} modèles partagés chargés`);
                 } else {
                     console.warn('⚠️ Impossible de charger les modèles partagés:', result.error);
@@ -658,22 +625,21 @@
                 `;
 
                 templatesByTheme[theme].forEach(template => {
-                    // Utiliser la miniature si disponible, sinon générer un aperçu
+                    // Les modèles Supabase ont un thumbnail. Les modèles locaux ont template.preview (données pixel).
+                    // On ne charge plus les données pixel dans la liste Supabase pour économiser la bandwidth.
                     let previewHTML = '';
                     if (template.thumbnail) {
                         previewHTML = `<img src="${template.thumbnail}" style="width: 100%; height: 100%; object-fit: contain;" alt="${template.name}">`;
                     } else if (template.preview) {
-                        // Si c'est une animation (array de frames), utiliser la première frame pour l'aperçu
-                        let previewFrame = template.preview;
-                        if (template.isAnimation && Array.isArray(template.preview) && template.preview.length > 0 && Array.isArray(template.preview[0])) {
-                            previewFrame = template.preview[0]; // Utiliser la première frame
-                        }
+                        const previewFrame = (template.isAnimation && Array.isArray(template.preview) && Array.isArray(template.preview[0]))
+                            ? template.preview[0]
+                            : template.preview;
                         previewHTML = generateTemplatePreview(previewFrame);
                     } else {
                         previewHTML = '<div style="color: #999; text-align: center; padding: 20px;">Aperçu indisponible</div>';
                     }
 
-                    const isAnimationModel = template.isAnimation || (template.preview && Array.isArray(template.preview) && template.preview.length > 0 && Array.isArray(template.preview[0]));
+                    const isAnimationModel = template.isAnimation || template.isAnimationTemplate;
                     const animationBadge = isAnimationModel ? '<div style="font-size: 0.7em; color: #FFC107; margin-top: 4px; font-weight: 500;">🎬 Animation</div>' : '';
 
                     // Récupérer l'avatar depuis la map

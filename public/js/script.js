@@ -835,11 +835,6 @@ async function ensureAuthenticatedUser(retries = 10, delay = 200) {
     throw new Error('User not authenticated');
 }
 
-async function logUsageEvent(_eventName, _payload = {}) {
-    // Désactivé — réduit les appels Supabase (compute Nano plan gratuit)
-    return;
-    // eslint-disable-next-line no-unreachable
-}
 
 // Variables pour l'animation
 let isAnimationPlaying = false;
@@ -4016,7 +4011,7 @@ function applyProjectData(data, projectName) {
 
     updateFramesList();
     loadFrame(currentFrame);
-    logUsageEvent('project_loaded', { name: projectName, frames: frames.length, fps: animationFPS });
+
 }
 
 async function loadSupabaseProjects() {
@@ -6784,56 +6779,6 @@ async function clearAllFrames() {
     }
 }
 
-async function saveToFile() {
-    try {
-        // Demander le nom du projet avec une boîte de dialogue personnalisée
-        const projectName = await showSaveDialog();
-        if (!projectName) return; // Si l'utilisateur annule
-
-        const projectData = {
-            name: projectName,
-            frames: frames,
-            currentFrame: currentFrame,
-            customColors: customColors,
-            customPalette: customPalette,
-            gridSize: { width: currentGridSize, height: currentGridSize },
-            created: new Date().toISOString(),
-            version: '2.0'
-        };
-
-        // Sauvegarder localement (localStorage) - plus fiable
-        try {
-            autoSaveProjectLocal(projectName);
-        } catch (saveError) {
-            console.error('Erreur localStorage:', saveError);
-            showToast(tL('saveErrorShort'), { type: 'error', duration: 5000 });
-            // Plan B : Téléchargement direct du fichier
-            const blob = new Blob([JSON.stringify(projectData, null, 2)], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${projectName}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast(tL('savedDownloaded'), { type: 'success' });
-            return;
-        }
-        
-        // Mettre à jour le titre du projet
-        const titleElement = document.getElementById('projectTitle');
-        if (titleElement) {
-            titleElement.textContent = projectName;
-        }
-        
-        showToast(tL('savedLocally'), { type: 'success' });
-        
-    } catch (err) {
-        console.error('Erreur lors de la sauvegarde:', err);
-        showToast(tL('saveErrorShort'), { type: 'error', duration: 5000 });
-    }
-}
 
 function showSaveDialog() {
     return new Promise((resolve) => {
@@ -7530,7 +7475,6 @@ function handleKeyboardShortcuts(e) {
 
 // Fonction pour afficher l'aide complète
 function showHelp() {
-    logUsageEvent('help_opened');
     const helpContent = `
             <div class="help-section">
             <h3>${tL('helpStartTitle')}</h3>
@@ -7668,7 +7612,6 @@ function showHelp() {
 
 // Ajouter la fonction pour afficher les crédits
 function showCredits() {
-    logUsageEvent('credits_opened');
     const modal = document.createElement('div');
     modal.className = 'credits-modal';
     
@@ -10270,13 +10213,6 @@ function downloadGif(gifBlob, size, frameDelay) {
             showToast(tL('gifSuccessServer', fileName, frames.length, size, frameDelay), { type: 'success', duration: 5000 });
         }, 500);
         
-        logUsageEvent('gif_exported', {
-            name: projectName,
-            frames: frames.length,
-            size,
-            frameDelay
-        });
-        
     } catch (error) {
         console.error('❌ Erreur téléchargement:', error);
         showToast(tL('gifDownloadError'), { type: 'error', duration: 5000 });
@@ -10501,9 +10437,6 @@ function initProfileModal() {
 
     skipBtn?.addEventListener('click', () => {
         const shouldDismiss = profileModalContext === 'prompt';
-        if (shouldDismiss) {
-            logUsageEvent('profile_skipped');
-        }
         closeProfileModal(shouldDismiss);
     });
 
@@ -10618,7 +10551,6 @@ function openProfileModal(manual = false) {
     populateProfileForm(currentUserProfile || {});
     modal.style.display = 'flex';
 
-    logUsageEvent('profile_opened', { context: manual ? 'manual' : 'prompt' });
 }
 
 function closeProfileModal(dismiss = false) {
@@ -10657,12 +10589,6 @@ async function submitProfileForm(event) {
             } else {
                 showToast(tL('profileUpdated'), { type: 'success' });
             }
-            logUsageEvent('profile_saved', {
-                age_range: result.data.age_range,
-                gender: result.data.gender,
-                country: result.data.country,
-                region: result.data.region
-            });
         } else {
             throw new Error(result.error || 'Erreur inconnue');
         }
@@ -10710,7 +10636,6 @@ async function initUserProfileFlow(forceOpen = false) {
         profilePromptHasBeenShown = true;
         setTimeout(() => {
             openProfileModal(false);
-            logUsageEvent('profile_prompt_shown');
         }, 800);
     }
 
