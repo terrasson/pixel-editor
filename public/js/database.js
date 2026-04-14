@@ -949,7 +949,7 @@ class DatabaseService {
     getShareableUrl(shareToken) {
         // Get APP_URL from environment or use current origin
         const appUrl = window.APP_URL || window.location.origin;
-        return `${appUrl}/shared.html?token=${shareToken}`;
+        return `${appUrl}/shared/${shareToken}`;
     }
 
     // =====================================================

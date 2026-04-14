@@ -336,9 +336,10 @@
         // Initialize
         async function init() {
             try {
-                // Get token from URL
+                // Get token from URL path (/shared/:token) with fallback to ?token= for old links
+                const pathToken = window.location.pathname.split('/').filter(Boolean).pop();
                 const urlParams = new URLSearchParams(window.location.search);
-                const token = urlParams.get('token');
+                const token = (pathToken && pathToken !== 'shared.html') ? pathToken : urlParams.get('token');
 
                 if (!token) {
                     showError(t('notFound'), t('noToken'));
@@ -557,8 +558,9 @@
             btn.disabled = true;
 
             try {
+                const pathToken = window.location.pathname.split('/').filter(Boolean).pop();
                 const urlParams = new URLSearchParams(window.location.search);
-                const token = urlParams.get('token');
+                const token = (pathToken && pathToken !== 'shared.html') ? pathToken : urlParams.get('token');
 
                 const result = await window.dbService.duplicatePublicShare(token);
 

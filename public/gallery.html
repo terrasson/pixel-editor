@@ -394,7 +394,7 @@
 
             const card = document.createElement('a');
             card.className = 'gallery-card';
-            card.href = `/shared.html?token=${share.share_token}`;
+            card.href = `/shared/${share.share_token}`;
 
             const isOwner = currentUserId && share.owner_id && share.owner_id === currentUserId;
 
