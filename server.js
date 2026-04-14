@@ -12,6 +12,11 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Route pour les URLs de partage propres /shared/:token
+app.get('/shared/:token', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'shared.html'));
+});
+
 // Créer le dossier de sauvegarde s'il n'existe pas (seulement en local)
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
 const savesDir = path.join(__dirname, 'pixel-art-saves');
