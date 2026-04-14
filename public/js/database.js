@@ -87,11 +87,11 @@ class DatabaseService {
                 if (layersBlob && layersResult.success) {
                     const { data: layersUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(layersPath);
                     if (layersUrlData?.publicUrl) frameLayersForDb = { _url: layersUrlData.publicUrl };
-                } else if (layersJson) {
-                    frameLayersForDb = JSON.parse(layersJson);
+                } else if (frameLayers) {
+                    frameLayersForDb = frameLayers;
                 }
-            } else if (layersJson) {
-                frameLayersForDb = JSON.parse(layersJson);
+            } else if (frameLayers) {
+                frameLayersForDb = frameLayers;
             }
 
             // Upload thumbnail en arrière-plan (non-bloquant)
