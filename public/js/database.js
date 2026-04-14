@@ -1022,7 +1022,7 @@ class DatabaseService {
         }
 
         try {
-            const COLUMNS = 'id, name, description, category, difficulty, style_tags, thumbnail, view_count, is_animation, is_animation_template, author_id, author_email, created_at';
+            const COLUMNS = 'id, name, description, category, difficulty, style_tags, thumbnail, view_count, is_animation, is_animation_template, author_id, author_email, author_username, created_at';
             let query = this.supabase
                 .from('pixel_templates')
                 .select(COLUMNS)

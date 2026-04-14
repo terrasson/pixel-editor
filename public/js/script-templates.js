@@ -507,7 +507,7 @@
                         thumbnail: template.thumbnail,
                         author_id: template.author_id,
                         author_email: template.author_email,
-                        author_username: template.author_email?.split('@')[0] || 'Anonyme',
+                        author_username: template.author_username || template.author_email?.split('@')[0] || 'Anonyme',
                         view_count: template.view_count || 0,
                         style_tags: template.style_tags || [],
                         isShared: true,
