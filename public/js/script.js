@@ -11558,50 +11558,36 @@ async function _writeProjectDataToDisk(projectData) {
     showToast(`✅ "${projectData.name}" téléchargé`, { type: 'success' });
 }
 
+// Exporte un tampon individuel en fichier .pixelstamps (rechargeable via bouton dossier)
 async function _saveStampAsProject(stamp) {
-    const pixels = stamp.pixels || [];
-    const sqrtSize = Math.round(Math.sqrt(pixels.length));
-    const stored = stamp.gridSize;
-    // Accepter la gridSize stockée si elle divise exactement pixels.length (tampon rectangulaire valide)
-    // L'ancienne condition `stored <= sqrtSize * 2` rejetait les tampons larges et plats (ex: 32×6)
-    const gs = (stored && pixels.length % stored === 0 && stored <= pixels.length)
-        ? stored : (sqrtSize || currentGridSize);
+    const data = [{
+        ...stamp,
+        pixels: toSparseFrame(stamp.pixels || [])
+    }];
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const safeName = (stamp.name || 'tampon').replace(/[^a-z0-9_\-]/gi, '_') + '.pixelstamps';
 
-    // Demander le nom — pré-remplir avec le nom du tampon
-    const defaultName = stamp.name || `Tampon ${gs}x${Math.ceil(pixels.length / gs)}`;
-    const fileNamePromise = showSaveDialog();
-    // Pré-remplir le champ après que le dialog est injecté dans le DOM
-    requestAnimationFrame(() => {
-        const input = document.getElementById('saveFileName');
-        if (input) input.value = defaultName;
-    });
-    const fileName = await fileNamePromise;
-    if (!fileName) return;
+    if (window.showSaveFilePicker) {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: safeName,
+                startIn: 'documents',
+                types: [{ description: 'Pixel Art Stamp', accept: { 'application/json': ['.pixelstamps'] } }]
+            });
+            await _writeToHandle(handle, blob);
+            showToast(`✅ "${stamp.name}" exporté en .pixelstamps`, { type: 'success' });
+        } catch (e) {
+            if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
+        }
+        return;
+    }
 
-    // Construire un projet single-frame à la taille exacte du tampon
-    const normPx = pixels.map(px => {
-        if (!px) return { color: '#FFFFFF', isEmpty: true };
-        const color = px.color || '#FFFFFF';
-        return { color, isEmpty: color === '#FFFFFF' ? (px.isEmpty !== false) : false };
-    });
-
-    const projectData = {
-        name: fileName,
-        frames: [normPx],
-        _stampGridSize: gs,
-        currentFrame: 0,
-        fps: 24,
-        customPalette: [],
-        customColors: { _stampGridSize: gs },
-        thumbnail: _stampThumbnailDataURL(normPx, gs),
-        created: new Date().toISOString(),
-        updated: new Date().toISOString(),
-        version: '2.0',
-        signature: 'pixel-art-editor-v2'
-    };
-
-    // Sauvegarder sur disque (workspace → showSaveFilePicker → IndexedDB + téléchargement)
-    await _writeProjectDataToDisk(projectData);
+    // Fallback : téléchargement direct
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = safeName; a.click();
+    URL.revokeObjectURL(url);
+    showToast(`✅ "${stamp.name}" téléchargé`, { type: 'success' });
 }
 
 function _stampThumbnailDataURL(pixels, gs) {
