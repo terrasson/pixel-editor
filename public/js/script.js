@@ -2771,9 +2771,9 @@ function _cropExtractAndConfirm(rect) {
         ctx.fillRect(c * ps, r * ps, ps, ps);
     }
 
-    dialog.querySelector('#cropConfirmBtn').addEventListener('click', () => {
+    dialog.querySelector('#cropConfirmBtn').addEventListener('click', async () => {
         const name = dialog.querySelector('#cropStampName').value.trim() || `Découpe ${w}×${h}`;
-        const stamp = _addStamp(pixels, name, w);
+        const stamp = await _addStamp(pixels, name, w);
         dialog.remove();
         setCropStampState(false);
         activeStampId = stamp.id;
@@ -11350,11 +11350,17 @@ async function _saveStamps() {
     }
 
     // Priorité 2 : handle dédié déjà connu (rechargé depuis IndexedDB au démarrage)
+    // Sur Safari, la permission est 'prompt' après rechargement → la demander explicitement
     if (_stampsFileHandle) {
         try {
-            await _writeToHandle(_stampsFileHandle, blob);
-            return;
-        } catch (_) { _stampsFileHandle = null; }
+            let perm = await _stampsFileHandle.queryPermission({ mode: 'readwrite' });
+            if (perm === 'prompt') perm = await _stampsFileHandle.requestPermission({ mode: 'readwrite' });
+            if (perm === 'granted') {
+                await _writeToHandle(_stampsFileHandle, blob);
+                return;
+            }
+        } catch (_) {}
+        _stampsFileHandle = null; // handle invalide, on en choisira un nouveau
     }
 
     // Priorité 3 : demander à l'utilisateur où sauvegarder (première fois — Safari inclus)
@@ -11485,15 +11491,15 @@ function saveCurrentDrawingAsStamp() {
     const input = dialog.querySelector('#stampNameInput');
     setTimeout(() => { input?.focus(); input?.select(); }, 50);
     input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') dialog.querySelector('#stampNameConfirm').click(); });
-    dialog.querySelector('#stampNameConfirm').addEventListener('click', () => {
+    dialog.querySelector('#stampNameConfirm').addEventListener('click', async () => {
         const name = input.value.trim() || defaultName;
         dialog.remove();
-        _addStamp(pixels, name);
+        await _addStamp(pixels, name);
     });
     dialog.querySelector('#stampNameCancel').addEventListener('click', () => dialog.remove());
 }
 
-function _addStamp(pixels, nameHint, gridSize) {
+async function _addStamp(pixels, nameHint, gridSize) {
     // Détecter la vraie taille depuis le tableau si non fournie (évite currentGridSize incorrect)
     const detectedSize = Math.round(Math.sqrt((pixels || []).length));
     const stamp = {
@@ -11504,7 +11510,7 @@ function _addStamp(pixels, nameHint, gridSize) {
         hidden: false
     };
     window.stamps.unshift(stamp);
-    _saveStamps();
+    await _saveStamps();
     renderStampsList();
     showToast(`Tampon "${stamp.name}" sauvegardé`, { type: 'success' });
     return stamp;
