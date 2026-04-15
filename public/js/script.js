@@ -11558,36 +11558,59 @@ async function _writeProjectDataToDisk(projectData) {
     showToast(`✅ "${projectData.name}" téléchargé`, { type: 'success' });
 }
 
-// Exporte un tampon individuel en fichier .pixelstamps (rechargeable via bouton dossier)
+// Exporte un tampon en .pixelstamps — demande d'abord un nom, puis ouvre le Finder
 async function _saveStampAsProject(stamp) {
-    const data = [{
-        ...stamp,
-        pixels: toSparseFrame(stamp.pixels || [])
-    }];
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const safeName = (stamp.name || 'tampon').replace(/[^a-z0-9_\-]/gi, '_') + '.pixelstamps';
+    // 1. Demander le nom du fichier (pré-rempli avec le nom du tampon)
+    const dialog = createMobileDialog('Exporter le tampon', `
+        <p style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:10px;">Nom du fichier :</p>
+        <input id="exportStampName" type="text" value="${(stamp.name || 'tampon').replace(/[^a-z0-9_\-\s]/gi, '')}"
+            style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:0.95rem;margin-bottom:14px;"
+            placeholder="nom-du-tampon" />
+        <div style="display:flex;gap:8px;">
+            <button id="exportStampConfirm" class="dialog-button">Enregistrer</button>
+            <button id="exportStampCancel" class="dialog-button secondary">Annuler</button>
+        </div>
+    `);
 
-    if (window.showSaveFilePicker) {
-        try {
-            const handle = await window.showSaveFilePicker({
-                suggestedName: safeName,
-                startIn: 'documents',
-                types: [{ description: 'Pixel Art Stamp', accept: { 'application/json': ['.pixelstamps'] } }]
-            });
-            await _writeToHandle(handle, blob);
-            showToast(`✅ "${stamp.name}" exporté en .pixelstamps`, { type: 'success' });
-        } catch (e) {
-            if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
-        }
-        return;
-    }
+    const input = dialog.querySelector('#exportStampName');
+    setTimeout(() => { input?.focus(); input?.select(); }, 50);
 
-    // Fallback : téléchargement direct
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = safeName; a.click();
-    URL.revokeObjectURL(url);
-    showToast(`✅ "${stamp.name}" téléchargé`, { type: 'success' });
+    await new Promise((resolve) => {
+        const confirm = async () => {
+            const name = input.value.trim() || stamp.name || 'tampon';
+            const safeName = name.replace(/[^a-z0-9_\-\s]/gi, '_') + '.pixelstamps';
+            dialog.remove();
+
+            const data = [{ ...stamp, pixels: toSparseFrame(stamp.pixels || []) }];
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+
+            if (window.showSaveFilePicker) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: safeName,
+                        startIn: 'documents',
+                        types: [{ description: 'Pixel Art Stamp', accept: { 'application/json': ['.pixelstamps'] } }]
+                    });
+                    await _writeToHandle(handle, blob);
+                    showToast(`✅ "${name}" sauvegardé`, { type: 'success' });
+                } catch (e) {
+                    if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
+                }
+            } else {
+                // Safari : téléchargement direct avec le nom choisi
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = safeName; a.click();
+                URL.revokeObjectURL(url);
+                showToast(`✅ "${name}.pixelstamps" téléchargé dans Téléchargements`, { type: 'success' });
+            }
+            resolve();
+        };
+
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirm(); });
+        dialog.querySelector('#exportStampConfirm').addEventListener('click', confirm);
+        dialog.querySelector('#exportStampCancel').addEventListener('click', () => { dialog.remove(); resolve(); });
+    });
 }
 
 function _stampThumbnailDataURL(pixels, gs) {
