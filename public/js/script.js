@@ -6728,7 +6728,8 @@ function insertFrame(index) {
 // Ajouter la fonction deleteCurrentFrame
 async function deleteCurrentFrame() {
     if (frames.length <= 1) {
-        showToast(tL('cannotDeleteLast'), { type: 'warning' });
+        // Dernière frame : proposer de vider le canvas plutôt qu'un toast bloquant
+        clearAllFrames();
         return;
     }
 
