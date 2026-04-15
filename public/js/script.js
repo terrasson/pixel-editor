@@ -11469,7 +11469,28 @@ function saveCurrentDrawingAsStamp() {
         showToast('Le canvas est vide — dessine quelque chose d\'abord', { type: 'warning' });
         return;
     }
-    _addStamp(pixels, `Frame ${currentFrame + 1}`);
+    // Demander un nom
+    const defaultName = `Frame ${currentFrame + 1}`;
+    const dialog = createMobileDialog('Nommer le tampon', `
+        <div style="margin-bottom:12px;">
+            <input id="stampNameInput" type="text" value="${defaultName}"
+                style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:0.95rem;"
+                placeholder="Nom du tampon" />
+        </div>
+        <div style="display:flex;gap:8px;">
+            <button id="stampNameConfirm" class="dialog-button">Créer le tampon</button>
+            <button id="stampNameCancel" class="dialog-button secondary">Annuler</button>
+        </div>
+    `);
+    const input = dialog.querySelector('#stampNameInput');
+    setTimeout(() => { input?.focus(); input?.select(); }, 50);
+    input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') dialog.querySelector('#stampNameConfirm').click(); });
+    dialog.querySelector('#stampNameConfirm').addEventListener('click', () => {
+        const name = input.value.trim() || defaultName;
+        dialog.remove();
+        _addStamp(pixels, name);
+    });
+    dialog.querySelector('#stampNameCancel').addEventListener('click', () => dialog.remove());
 }
 
 function _addStamp(pixels, nameHint, gridSize) {
@@ -11487,6 +11508,49 @@ function _addStamp(pixels, nameHint, gridSize) {
     renderStampsList();
     showToast(`Tampon "${stamp.name}" sauvegardé`, { type: 'success' });
     return stamp;
+}
+
+// Écrire un objet projet sur disque sans toucher aux variables globales (workspace → picker → download)
+async function _writeProjectDataToDisk(projectData) {
+    const safeName = (projectData.name || 'projet').replace(/[^a-z0-9_\-]/gi, '_') + '.pixelart';
+    const blob = new Blob([JSON.stringify(projectData)], { type: 'application/json' });
+
+    // 1. Workspace configuré
+    if (_workspaceDir) {
+        try {
+            const projetsDir = await _workspaceDir.getDirectoryHandle('projets', { create: true });
+            const fileHandle = await projetsDir.getFileHandle(safeName, { create: true });
+            await _writeToHandle(fileHandle, blob);
+            window.localDB.saveProject(projectData).catch(() => {});
+            showToast(`✅ "${projectData.name}" sauvegardé dans le dossier projets/`, { type: 'success' });
+            return;
+        } catch (_) {}
+    }
+
+    // 2. showSaveFilePicker (Safari inclus)
+    if (window.showSaveFilePicker) {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: safeName,
+                startIn: 'documents',
+                types: [{ description: 'Pixel Art Project', accept: { 'application/json': ['.pixelart'] } }]
+            });
+            await _writeToHandle(handle, blob);
+            window.localDB.saveProject(projectData).catch(() => {});
+            showToast(`✅ "${projectData.name}" sauvegardé`, { type: 'success' });
+        } catch (e) {
+            if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
+        }
+        return;
+    }
+
+    // 3. Fallback : IndexedDB + téléchargement
+    window.localDB.saveProject(projectData).catch(() => {});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = safeName; a.click();
+    URL.revokeObjectURL(url);
+    showToast(`✅ "${projectData.name}" téléchargé`, { type: 'success' });
 }
 
 async function _saveStampAsProject(stamp) {
@@ -11531,25 +11595,8 @@ async function _saveStampAsProject(stamp) {
         signature: 'pixel-art-editor-v2'
     };
 
-    // Sauvegarder Supabase → fallback localStorage
-    let saved = false;
-    if (window.dbService) {
-        try {
-            const result = await window.dbService.saveProject(projectData);
-            if (result.success) {
-                saved = true;
-                showToast(`"${fileName}" sauvegardé dans le cloud ☁️`, { type: 'success' });
-            }
-        } catch (e) { /* fallback ci-dessous */ }
-    }
-    if (!saved) {
-        try {
-            localStorage.setItem(`pixelart_${fileName}`, JSON.stringify(projectData));
-            showToast(`"${fileName}" sauvegardé en local`, { type: 'success' });
-        } catch (e) {
-            showToast('Erreur lors de la sauvegarde', { type: 'error' });
-        }
-    }
+    // Sauvegarder sur disque (workspace → showSaveFilePicker → IndexedDB + téléchargement)
+    await _writeProjectDataToDisk(projectData);
 }
 
 function _stampThumbnailDataURL(pixels, gs) {
@@ -11773,8 +11820,8 @@ function _buildStampRow(stamp, index) {
 
     const saveBtn = document.createElement('button');
     saveBtn.className = 'stamp-row-del';
-    saveBtn.title = 'Sauvegarder comme projet';
-    saveBtn.innerHTML = '<i data-lucide="cloud-upload"></i>';
+    saveBtn.title = 'Exporter comme projet';
+    saveBtn.innerHTML = '<i data-lucide="save"></i>';
     saveBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         _saveStampAsProject(stamp);
