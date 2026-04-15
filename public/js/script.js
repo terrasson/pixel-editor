@@ -11305,11 +11305,17 @@ function _loadStamps() {
                 return;
             } catch (_) {}
         }
-        // Fallback : handle dédié (ancien système)
+        // Fallback : handle dédié sauvegardé en IndexedDB (Safari + Chrome sans workspace)
         _loadStampsFileHandle().then(async handle => {
             if (!handle) return;
             try {
-                const perm = await handle.queryPermission({ mode: 'readwrite' });
+                let perm = await handle.queryPermission({ mode: 'readwrite' });
+                // Sur Safari, la permission est 'prompt' au démarrage — ne pas demander ici (pas de geste utilisateur)
+                // On mémorise le handle pour que _saveStamps puisse l'utiliser dès le prochain geste
+                if (perm === 'prompt') {
+                    _stampsFileHandle = handle; // mémoriser pour réutilisation
+                    return; // les tampons seront rechargés au prochain loadStampsFromDisk()
+                }
                 if (perm !== 'granted') return;
                 _stampsFileHandle = handle;
                 const file = await handle.getFile();
@@ -11333,20 +11339,50 @@ async function _saveStamps() {
     }));
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
 
-    // Essayer workspace en priorité
-    const workDir = await _getWorkspaceDir(false);
-    if (workDir) {
+    // Priorité 1 : workspace déjà en cache (vérification synchrone — pas d'await qui casse le geste Safari)
+    if (_workspaceDir) {
         try {
-            const tamponsDir = await workDir.getDirectoryHandle('tampons', { create: true });
+            const tamponsDir = await _workspaceDir.getDirectoryHandle('tampons', { create: true });
             const fileHandle = await tamponsDir.getFileHandle('stamps.pixelstamps', { create: true });
             await _writeToHandle(fileHandle, blob);
             return;
         } catch (_) {}
     }
 
-    // Fallback : handle dédié (ancien système)
-    if (!_stampsFileHandle) return;
-    await _writeStampsToDisk();
+    // Priorité 2 : handle dédié déjà connu (rechargé depuis IndexedDB au démarrage)
+    if (_stampsFileHandle) {
+        try {
+            await _writeToHandle(_stampsFileHandle, blob);
+            return;
+        } catch (_) { _stampsFileHandle = null; }
+    }
+
+    // Priorité 3 : demander à l'utilisateur où sauvegarder (première fois — Safari inclus)
+    if (window.showSaveFilePicker) {
+        showToast('Choisissez où sauvegarder vos tampons (une seule fois)', { type: 'info', duration: 4000 });
+        try {
+            _stampsFileHandle = await window.showSaveFilePicker({
+                suggestedName: 'stamps.pixelstamps',
+                startIn: 'documents',
+                types: [{ description: 'Pixel Art Stamps', accept: { 'application/json': ['.pixelstamps'] } }]
+            });
+            await _storeStampsFileHandle(_stampsFileHandle);
+            await _writeToHandle(_stampsFileHandle, blob);
+            showToast('✅ Tampons sauvegardés sur le disque', { type: 'success' });
+        } catch (e) {
+            if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
+        }
+        return;
+    }
+
+    // Fallback ultime : téléchargement direct (Firefox sans File System Access API)
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'stamps.pixelstamps';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Tampons téléchargés — recharge ce fichier pour les restaurer', { type: 'info', duration: 5000 });
 }
 
 // Ouvre le dialogue pour charger les tampons depuis le disque (ou depuis workspace si configuré)
@@ -11384,12 +11420,29 @@ async function loadStampsFromDisk() {
         }
     };
 
+    // Si un handle connu existe (sauvegardé en IndexedDB) → le recharger directement
+    if (_stampsFileHandle) {
+        try {
+            let perm = await _stampsFileHandle.queryPermission({ mode: 'readwrite' });
+            if (perm === 'prompt') perm = await _stampsFileHandle.requestPermission({ mode: 'readwrite' });
+            if (perm === 'granted') {
+                await loadFromFile(await _stampsFileHandle.getFile());
+                return;
+            }
+        } catch (_) {}
+        // Handle invalide → on réinitialise et on ouvre le picker
+        _stampsFileHandle = null;
+    }
+
     if (window.showOpenFilePicker) {
         try {
             const [handle] = await window.showOpenFilePicker({
                 startIn: 'documents',
                 types: [{ description: 'Pixel Art Stamps / Projet', accept: { 'application/json': ['.pixelstamps', '.pixelart', '.json'] } }]
             });
+            // Mémoriser ce handle pour les prochaines sessions
+            _stampsFileHandle = handle;
+            await _storeStampsFileHandle(handle);
             await loadFromFile(await handle.getFile());
         } catch (e) {
             if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
@@ -11397,7 +11450,7 @@ async function loadStampsFromDisk() {
         return;
     }
 
-    // Fallback : input file (Safari, Firefox)
+    // Fallback : input file (navigateurs sans File System Access API)
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.pixelstamps,.pixelart,.json';
