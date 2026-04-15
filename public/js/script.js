@@ -11391,65 +11391,70 @@ async function _saveStamps() {
     showToast('Tampons téléchargés — recharge ce fichier pour les restaurer', { type: 'info', duration: 5000 });
 }
 
-// Ouvre le dialogue pour charger les tampons depuis le disque (ou depuis workspace si configuré)
+// Parse un fichier et retourne le tableau de stamps, ou null si invalide
+async function _parseStampsFile(file) {
+    const parsed = JSON.parse(await file.text());
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && Array.isArray(parsed.stamps)) return parsed.stamps;
+    return null; // fichier non reconnu (cloud project, etc.)
+}
+
+// Ouvre le dialogue pour charger les tampons depuis le disque
 async function loadStampsFromDisk() {
-    // Charger via showOpenFilePicker (Chrome/Edge) ou <input> fallback (Safari/Firefox)
-    const loadFromFile = async (file) => {
-        try {
-            const parsed = JSON.parse(await file.text());
-            let stampsArray = null;
-            if (Array.isArray(parsed)) {
-                // Format .pixelstamps (tableau direct)
-                stampsArray = parsed;
-            } else if (parsed && Array.isArray(parsed.stamps)) {
-                // Fichier projet local (.pixelart) — a une clé stamps
-                stampsArray = parsed.stamps;
-            } else if (parsed && (parsed.frame_layers !== undefined || parsed.frames !== undefined)) {
-                // Fichier projet cloud (Supabase) — pas de tampons dedans
-                showToast('❌ Les tampons ne sont pas sauvegardés dans les projets cloud. Utilise le bouton + pour créer des tampons.', { type: 'error', duration: 6000 });
-                return;
-            } else {
-                throw new Error('Format non reconnu');
-            }
-            if (stampsArray.length === 0) {
-                showToast('Ce fichier ne contient aucun tampon', { type: 'info' });
-                return;
-            }
-            window.stamps = stampsArray.map(s => ({
-                ...s,
-                pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
-            }));
-            renderStampsList();
-            showToast(`✅ ${window.stamps.length} tampon(s) chargé(s)`, { type: 'success' });
-        } catch (err) {
-            showToast(`❌ ${err.message}`, { type: 'error' });
+    const applyStamps = (stampsArray) => {
+        if (!stampsArray || stampsArray.length === 0) {
+            showToast('Ce fichier ne contient aucun tampon', { type: 'info' });
+            return false;
         }
+        window.stamps = stampsArray.map(s => ({
+            ...s,
+            pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
+        }));
+        renderStampsList();
+        showToast(`✅ ${window.stamps.length} tampon(s) chargé(s)`, { type: 'success' });
+        return true;
     };
 
-    // Si un handle connu existe (sauvegardé en IndexedDB) → le recharger directement
+    // Si un handle connu existe → tenter de recharger ce fichier
     if (_stampsFileHandle) {
         try {
             let perm = await _stampsFileHandle.queryPermission({ mode: 'readwrite' });
             if (perm === 'prompt') perm = await _stampsFileHandle.requestPermission({ mode: 'readwrite' });
             if (perm === 'granted') {
-                await loadFromFile(await _stampsFileHandle.getFile());
-                return;
+                const file = await _stampsFileHandle.getFile();
+                const stampsArray = await _parseStampsFile(file);
+                if (stampsArray !== null) {
+                    applyStamps(stampsArray);
+                    return;
+                }
+                // Fichier mémorisé n'est pas un fichier stamps valide → réinitialiser
+                _stampsFileHandle = null;
+                await _storeStampsFileHandle(null);
+                showToast('Fichier mémorisé invalide — choisissez votre fichier stamps.pixelstamps', { type: 'info', duration: 4000 });
             }
-        } catch (_) {}
-        // Handle invalide → on réinitialise et on ouvre le picker
-        _stampsFileHandle = null;
+        } catch (_) {
+            _stampsFileHandle = null;
+        }
     }
 
     if (window.showOpenFilePicker) {
         try {
             const [handle] = await window.showOpenFilePicker({
-                startIn: 'documents',
-                types: [{ description: 'Pixel Art Stamps / Projet', accept: { 'application/json': ['.pixelstamps', '.pixelart', '.json'] } }]
+                startIn: 'downloads',
+                types: [{ description: 'Pixel Art Stamps', accept: { 'application/json': ['.pixelstamps', '.json'] } }]
             });
-            // Mémoriser ce handle pour les prochaines sessions
-            _stampsFileHandle = handle;
-            await _storeStampsFileHandle(handle);
-            await loadFromFile(await handle.getFile());
+            const file = await handle.getFile();
+            const stampsArray = await _parseStampsFile(file);
+            if (stampsArray === null) {
+                showToast('❌ Ce fichier ne contient pas de tampons (.pixelstamps attendu)', { type: 'error', duration: 5000 });
+                return;
+            }
+            const ok = applyStamps(stampsArray);
+            if (ok) {
+                // Mémoriser ce handle uniquement si le fichier était valide
+                _stampsFileHandle = handle;
+                await _storeStampsFileHandle(handle);
+            }
         } catch (e) {
             if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
         }
