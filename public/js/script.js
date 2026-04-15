@@ -11355,11 +11355,24 @@ async function loadStampsFromDisk() {
     const loadFromFile = async (file) => {
         try {
             const parsed = JSON.parse(await file.text());
-            // Accepter tableau direct (.pixelstamps) ou fichier projet (.pixelart avec clé stamps)
-            const stampsArray = Array.isArray(parsed)
-                ? parsed
-                : (parsed && Array.isArray(parsed.stamps) ? parsed.stamps : null);
-            if (!stampsArray) throw new Error('Format invalide — fichier .pixelstamps ou .pixelart attendu');
+            let stampsArray = null;
+            if (Array.isArray(parsed)) {
+                // Format .pixelstamps (tableau direct)
+                stampsArray = parsed;
+            } else if (parsed && Array.isArray(parsed.stamps)) {
+                // Fichier projet local (.pixelart) — a une clé stamps
+                stampsArray = parsed.stamps;
+            } else if (parsed && (parsed.frame_layers !== undefined || parsed.frames !== undefined)) {
+                // Fichier projet cloud (Supabase) — pas de tampons dedans
+                showToast('❌ Les tampons ne sont pas sauvegardés dans les projets cloud. Utilise le bouton + pour créer des tampons.', { type: 'error', duration: 6000 });
+                return;
+            } else {
+                throw new Error('Format non reconnu');
+            }
+            if (stampsArray.length === 0) {
+                showToast('Ce fichier ne contient aucun tampon', { type: 'info' });
+                return;
+            }
             window.stamps = stampsArray.map(s => ({
                 ...s,
                 pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
