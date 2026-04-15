@@ -11355,8 +11355,12 @@ async function loadStampsFromDisk() {
     const loadFromFile = async (file) => {
         try {
             const parsed = JSON.parse(await file.text());
-            if (!Array.isArray(parsed)) throw new Error('Format invalide');
-            window.stamps = parsed.map(s => ({
+            // Accepter tableau direct (.pixelstamps) ou fichier projet (.pixelart avec clé stamps)
+            const stampsArray = Array.isArray(parsed)
+                ? parsed
+                : (parsed && Array.isArray(parsed.stamps) ? parsed.stamps : null);
+            if (!stampsArray) throw new Error('Format invalide — fichier .pixelstamps ou .pixelart attendu');
+            window.stamps = stampsArray.map(s => ({
                 ...s,
                 pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
             }));
@@ -11371,7 +11375,7 @@ async function loadStampsFromDisk() {
         try {
             const [handle] = await window.showOpenFilePicker({
                 startIn: 'documents',
-                types: [{ description: 'Pixel Art Stamps', accept: { 'application/json': ['.pixelstamps', '.json'] } }]
+                types: [{ description: 'Pixel Art Stamps / Projet', accept: { 'application/json': ['.pixelstamps', '.pixelart', '.json'] } }]
             });
             await loadFromFile(await handle.getFile());
         } catch (e) {
@@ -11383,7 +11387,7 @@ async function loadStampsFromDisk() {
     // Fallback : input file (Safari, Firefox)
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.pixelstamps,.json';
+    input.accept = '.pixelstamps,.pixelart,.json';
     input.onchange = async (e) => {
         const file = e.target.files[0];
         if (file) await loadFromFile(file);
