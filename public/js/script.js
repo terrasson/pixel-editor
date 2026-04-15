@@ -11386,74 +11386,44 @@ async function loadStampsFromDisk() {
         }
     }
 
-    if (!window.showSaveFilePicker && !window.showOpenFilePicker) {
-        // Fallback : input file
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.pixelstamps,.json';
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            try {
-                const parsed = JSON.parse(await file.text());
-                if (!Array.isArray(parsed)) throw new Error('Format invalide');
-                window.stamps = parsed.map(s => ({
-                    ...s,
-                    pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
-                }));
-                renderStampsList();
-                showToast(`✅ ${window.stamps.length} tampon(s) chargé(s)`, { type: 'success' });
-            } catch (err) {
-                showToast(`❌ ${err.message}`, { type: 'error' });
-            }
-        };
-        input.click();
+    // Charger via showOpenFilePicker (Chrome/Edge) ou <input> fallback (Safari/Firefox)
+    const loadFromFile = async (file) => {
+        try {
+            const parsed = JSON.parse(await file.text());
+            if (!Array.isArray(parsed)) throw new Error('Format invalide');
+            window.stamps = parsed.map(s => ({
+                ...s,
+                pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
+            }));
+            renderStampsList();
+            showToast(`✅ ${window.stamps.length} tampon(s) chargé(s)`, { type: 'success' });
+        } catch (err) {
+            showToast(`❌ ${err.message}`, { type: 'error' });
+        }
+    };
+
+    if (window.showOpenFilePicker) {
+        try {
+            const [handle] = await window.showOpenFilePicker({
+                startIn: 'documents',
+                types: [{ description: 'Pixel Art Stamps', accept: { 'application/json': ['.pixelstamps', '.json'] } }]
+            });
+            await loadFromFile(await handle.getFile());
+        } catch (e) {
+            if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
+        }
         return;
     }
 
-    // Fallback : handle dédié (ancien système)
-    if (!_stampsFileHandle) {
-        _stampsFileHandle = await _loadStampsFileHandle();
-        if (_stampsFileHandle) {
-            try {
-                const perm = await _stampsFileHandle.requestPermission({ mode: 'readwrite' });
-                if (perm !== 'granted') _stampsFileHandle = null;
-            } catch (_) { _stampsFileHandle = null; }
-        }
-    }
-
-    if (!_stampsFileHandle) {
-        try {
-            _stampsFileHandle = await window.showSaveFilePicker({
-                suggestedName: 'stamps.pixelstamps',
-                startIn: 'documents',
-                types: [{ description: 'Pixel Art Stamps', accept: { 'application/json': ['.pixelstamps'] } }]
-            });
-            await _storeStampsFileHandle(_stampsFileHandle);
-        } catch (e) {
-            if (e.name === 'AbortError') return;
-            throw e;
-        }
-    }
-
-    try {
-        const file = await _stampsFileHandle.getFile();
-        const text = await file.text();
-        if (text.trim()) {
-            const parsed = JSON.parse(text);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                window.stamps = parsed.map(s => ({
-                    ...s,
-                    pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
-                }));
-                renderStampsList();
-                showToast(`✅ ${window.stamps.length} tampon(s) chargé(s)`, { type: 'success' });
-                return;
-            }
-        }
-    } catch (_) {}
-
-    showToast('Fichier tampons prêt — ajoute des tampons avec +', { type: 'info' });
+    // Fallback : input file (Safari, Firefox)
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pixelstamps,.json';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) await loadFromFile(file);
+    };
+    input.click();
 }
 
 function saveCurrentDrawingAsStamp() {
