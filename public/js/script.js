@@ -11351,41 +11351,6 @@ async function _saveStamps() {
 
 // Ouvre le dialogue pour charger les tampons depuis le disque (ou depuis workspace si configuré)
 async function loadStampsFromDisk() {
-    // Si workspace configuré → lire directement depuis tampons/
-    const workDir = await _getWorkspaceDir(true);
-    if (workDir) {
-        try {
-            const tamponsDir = await workDir.getDirectoryHandle('tampons', { create: true });
-            let fileHandle;
-            try {
-                fileHandle = await tamponsDir.getFileHandle('stamps.pixelstamps', { create: false });
-            } catch (_) {
-                // Fichier n'existe pas encore : sera créé au prochain _saveStamps
-                showToast('Aucun tampon trouvé dans le dossier tampons/ — ajoute des tampons avec +', { type: 'info', duration: 4000 });
-                return;
-            }
-            const file = await fileHandle.getFile();
-            const text = await file.text();
-            if (text.trim()) {
-                const parsed = JSON.parse(text);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    window.stamps = parsed.map(s => ({
-                        ...s,
-                        pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
-                    }));
-                    renderStampsList();
-                    showToast(`✅ ${window.stamps.length} tampon(s) chargé(s)`, { type: 'success' });
-                    return;
-                }
-            }
-            showToast('Fichier tampons vide — ajoute des tampons avec +', { type: 'info' });
-            return;
-        } catch (e) {
-            if (e.name !== 'AbortError') showToast(`❌ Erreur : ${e.message}`, { type: 'error' });
-            return;
-        }
-    }
-
     // Charger via showOpenFilePicker (Chrome/Edge) ou <input> fallback (Safari/Firefox)
     const loadFromFile = async (file) => {
         try {
