@@ -7430,15 +7430,8 @@ function handleKeyboardShortcuts(e) {
                 scheduleRender();
                 return;
             }
-            // Supprimer la frame actuelle seulement si on n'est pas en train de dessiner
-            if (!isDrawing) {
-                e.preventDefault();
-                if (frames.length > 1) {
-                    deleteCurrentFrame();
-                } else {
-                    clearAllFrames();
-                }
-            }
+            // Ne pas supprimer de frame avec Delete/Backspace — trop risqué lors du dessin
+            // Utiliser le bouton poubelle dans la sidebar des frames à la place
             return;
             
         case 'arrowleft':
