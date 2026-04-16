@@ -11563,7 +11563,7 @@ async function _saveStampAsProject(stamp) {
     // 1. Demander le nom du fichier (pré-rempli avec le nom du tampon)
     const dialog = createMobileDialog('Exporter le tampon', `
         <p style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:10px;">Nom du fichier :</p>
-        <input id="exportStampName" type="text" value="${(stamp.name || 'tampon').replace(/[^a-z0-9_\-\s]/gi, '')}"
+        <input id="exportStampName" type="text" value="${(stamp.name || 'tampon').replace(/"/g, '')}"
             style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:0.95rem;margin-bottom:14px;"
             placeholder="nom-du-tampon" />
         <div style="display:flex;gap:8px;">
