@@ -11401,13 +11401,14 @@ async function loadStampsFromDisk() {
             showToast('Ce fichier ne contient aucun tampon', { type: 'info' });
             return false;
         }
-        window.stamps = stampsArray.map(s => ({
+        const newStamps = stampsArray.map(s => ({
             ...s,
             id: s.id || Date.now() + Math.random(),
             pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
         }));
+        window.stamps = [...newStamps, ...(window.stamps || [])];
         renderStampsList();
-        showToast(`✅ ${window.stamps.length} tampon(s) chargé(s)`, { type: 'success' });
+        showToast(`✅ ${newStamps.length} tampon(s) ajouté(s) — ${window.stamps.length} au total`, { type: 'success' });
         return true;
     };
 
