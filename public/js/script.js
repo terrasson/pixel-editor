@@ -11394,6 +11394,7 @@ async function _parseStampsFile(file) {
 }
 
 // Ouvre le dialogue pour charger les tampons depuis le disque
+// Toujours ouvre le Finder — ne réutilise jamais silencieusement un handle
 async function loadStampsFromDisk() {
     const applyStamps = (stampsArray) => {
         if (!stampsArray || stampsArray.length === 0) {
@@ -11402,34 +11403,13 @@ async function loadStampsFromDisk() {
         }
         window.stamps = stampsArray.map(s => ({
             ...s,
+            id: s.id || Date.now() + Math.random(),
             pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
         }));
         renderStampsList();
         showToast(`✅ ${window.stamps.length} tampon(s) chargé(s)`, { type: 'success' });
         return true;
     };
-
-    // Si un handle connu existe → tenter de recharger ce fichier
-    if (_stampsFileHandle) {
-        try {
-            let perm = await _stampsFileHandle.queryPermission({ mode: 'readwrite' });
-            if (perm === 'prompt') perm = await _stampsFileHandle.requestPermission({ mode: 'readwrite' });
-            if (perm === 'granted') {
-                const file = await _stampsFileHandle.getFile();
-                const stampsArray = await _parseStampsFile(file);
-                if (stampsArray !== null) {
-                    applyStamps(stampsArray);
-                    return;
-                }
-                // Fichier mémorisé n'est pas un fichier stamps valide → réinitialiser
-                _stampsFileHandle = null;
-                await _storeStampsFileHandle(null);
-                showToast('Fichier mémorisé invalide — choisissez votre fichier stamps.pixelstamps', { type: 'info', duration: 4000 });
-            }
-        } catch (_) {
-            _stampsFileHandle = null;
-        }
-    }
 
     if (window.showOpenFilePicker) {
         try {
@@ -11443,12 +11423,7 @@ async function loadStampsFromDisk() {
                 showToast('❌ Ce fichier ne contient pas de tampons (.pixelstamps attendu)', { type: 'error', duration: 5000 });
                 return;
             }
-            const ok = applyStamps(stampsArray);
-            if (ok) {
-                // Mémoriser ce handle uniquement si le fichier était valide
-                _stampsFileHandle = handle;
-                await _storeStampsFileHandle(handle);
-            }
+            applyStamps(stampsArray);
         } catch (e) {
             if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
         }
@@ -11458,10 +11433,16 @@ async function loadStampsFromDisk() {
     // Fallback : input file (navigateurs sans File System Access API)
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.pixelstamps,.pixelart,.json';
+    input.accept = '.pixelstamps,.json';
     input.onchange = async (e) => {
         const file = e.target.files[0];
-        if (file) await loadFromFile(file);
+        if (!file) return;
+        const stampsArray = await _parseStampsFile(file);
+        if (stampsArray === null) {
+            showToast('❌ Ce fichier ne contient pas de tampons', { type: 'error' });
+            return;
+        }
+        applyStamps(stampsArray);
     };
     input.click();
 }
