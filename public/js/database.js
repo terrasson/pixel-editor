@@ -793,19 +793,32 @@ class DatabaseService {
             }
 
             // Reconstruire project_snapshot depuis le JOIN pour préserver la shape consommée par shared.html / index.html
-            if (data.pixel_projects) {
-                data.project_snapshot = {
-                    name: data.project_name,
-                    frames: data.pixel_projects.frames,
-                    fps: data.pixel_projects.fps,
-                    current_frame: data.pixel_projects.current_frame,
-                    custom_palette: data.pixel_projects.custom_palette,
-                    custom_colors: data.pixel_projects.custom_colors,
-                    created_at: data.pixel_projects.created_at
-                };
-            } else {
+            if (!data.pixel_projects) {
                 throw new Error('Le projet partagé n\'existe plus');
             }
+
+            // Si les frames sont offloadées en Storage ({_url}), les fetcher inline
+            // pour que shared.html reçoive un array — même logique que loadProject().
+            let frames = data.pixel_projects.frames;
+            if (frames && typeof frames === 'object' && !Array.isArray(frames) && frames._url) {
+                try {
+                    const resp = await fetch(frames._url);
+                    if (resp.ok) frames = await resp.json();
+                } catch (e) {
+                    console.warn('Failed to fetch shared frames from Storage:', e);
+                    frames = null;
+                }
+            }
+
+            data.project_snapshot = {
+                name: data.project_name,
+                frames,
+                fps: data.pixel_projects.fps,
+                current_frame: data.pixel_projects.current_frame,
+                custom_palette: data.pixel_projects.custom_palette,
+                custom_colors: data.pixel_projects.custom_colors,
+                created_at: data.pixel_projects.created_at
+            };
 
             return { success: true, data };
         } catch (error) {
