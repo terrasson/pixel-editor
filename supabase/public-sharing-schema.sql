@@ -144,6 +144,21 @@ CREATE POLICY "Owners can delete their public shares"
     FOR DELETE
     USING (auth.uid() = owner_id);
 
+-- Policy sur pixel_projects : permettre la lecture quand un public_share
+-- pointe dessus. Indispensable depuis qu'on a supprimé la colonne
+-- project_snapshot : getPublicShare / getPublicGallery font un JOIN
+-- sur pixel_projects pour récupérer frames/fps/etc.
+DROP POLICY IF EXISTS "Anyone can view projects linked to a public share" ON pixel_projects;
+CREATE POLICY "Anyone can view projects linked to a public share"
+    ON pixel_projects
+    FOR SELECT
+    USING (
+        id IN (
+            SELECT project_id FROM public_shares
+            WHERE expires_at IS NULL OR expires_at > NOW()
+        )
+    );
+
 -- RLS pour public_share_analytics
 ALTER TABLE public_share_analytics ENABLE ROW LEVEL SECURITY;
 
