@@ -10935,12 +10935,6 @@ async function _saveStampToCloud(stamp) {
     });
 }
 
-// Supprime un tampon dans Supabase (fire-and-forget).
-function _deleteStampFromCloud(stampName) {
-    if (!window.dbService?.getUserId?.() || !stampName) return;
-    window.dbService.deleteProject(stampName, 'stamp').catch(() => {});
-}
-
 // Fetch un tampon unique depuis Supabase et l'ajoute à la sidebar.
 async function _fetchStampPixels(name) {
     const res = await window.dbService.loadProject(name, 'stamp');
@@ -11362,13 +11356,12 @@ function _buildStampRow(stamp, index) {
 
     const delBtn = document.createElement('button');
     delBtn.className = 'stamp-row-del';
-    delBtn.title = 'Supprimer';
+    delBtn.title = 'Retirer de la sidebar (le tampon reste sur Supabase)';
     delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
     delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const removed = window.stamps.splice(index, 1)[0];
+        window.stamps.splice(index, 1);
         renderStampsList();
-        if (removed?.name) _deleteStampFromCloud(removed.name);
     });
 
     row.append(handle, thumb, name, saveBtn, delBtn);
