@@ -1,0 +1,23 @@
+public/shared.html
+  497fe49de1f5c70b 7-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "74f997a719b2699fec1acfb7d21c9e8ca4e03652",
+  "prompts": {
+    "497fe49de1f5c70b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0f95a48-15b4-4fcf-a317-928c2d95dfd2",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Guillaume Gay",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
