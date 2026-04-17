@@ -3796,155 +3796,7 @@ let currentProjectId = null; // ID du projet actuel pour les mises à jour
 window.currentProjectName = null; // Nom du projet actif (pour le partage)
 
 // Affiche la liste des projets depuis workspaceDir/projets/
-async function _showWorkspaceProjects(workDir) {
-    let projetsDir;
-    try {
-        projetsDir = await workDir.getDirectoryHandle('projets', { create: true });
-    } catch (e) {
-        showToast(tL('noProjectsFound'), { type: 'warning' });
-        return;
-    }
 
-    // Lire tous les fichiers .pixelart
-    const projects = [];
-    try {
-        for await (const [name, handle] of projetsDir.entries()) {
-            if (handle.kind !== 'file' || !name.endsWith('.pixelart')) continue;
-            try {
-                const file = await handle.getFile();
-                const text = await file.text();
-                const data = JSON.parse(text);
-                projects.push({
-                    ...data,
-                    _fileHandle: handle,
-                    _fileName: name,
-                    lastModified: data.lastModified || new Date(file.lastModified).toISOString()
-                });
-            } catch (_) {}
-        }
-    } catch (_) {}
-
-    if (projects.length === 0) {
-        showToast(tL('noProjectsFound'), { type: 'warning' });
-        return;
-    }
-
-    // Trier par date décroissante
-    projects.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
-
-    const projectsList = projects.map((p, index) => {
-        const projectName = p.name || tL('untitledProject');
-        const lastModified = p.lastModified;
-        const hasMultipleFrames = Array.isArray(p.frames) && p.frames.length > 1;
-        let previewHTML = '';
-        if (hasMultipleFrames) {
-            previewHTML = `<canvas data-project-index="${index}" width="48" height="48" style="width:48px;height:48px;border-radius:4px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);image-rendering:pixelated;"></canvas>`;
-        } else if (p.thumbnail) {
-            previewHTML = `<img src="${p.thumbnail}" alt="${projectName}" style="width:48px;height:48px;object-fit:contain;border-radius:4px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);">`;
-        } else {
-            previewHTML = `<div style="width:48px;height:48px;background:rgba(255,255,255,0.1);border-radius:4px;border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;">🎨</div>`;
-        }
-        return `<div class="project-item" data-index="${index}">
-            <div class="project-preview-container" style="display:flex;align-items:center;gap:12px;">
-                ${previewHTML}
-                <div class="project-info" style="flex:1;min-width:0;">
-                    <div class="project-name">${projectName}</div>
-                    <div class="project-date">${new Date(lastModified).toLocaleDateString(tL('dateLocale'))} ${tL('at')} ${new Date(lastModified).toLocaleTimeString(tL('dateLocale'), {hour:'2-digit',minute:'2-digit'})}</div>
-                </div>
-            </div>
-        </div>`;
-    }).join('');
-
-    const dialog = createMobileDialog(tL('myProjects'), `
-        <div style="margin-bottom:12px;padding:8px;background:rgba(255,255,255,0.1);border-radius:8px;">
-            <p style="margin:0;font-size:0.9rem;color:rgba(255,255,255,0.8);">${tL('clickProject')}</p>
-        </div>
-        <div class="projects-list">${projectsList}</div>
-        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
-            <button id="wsLoadProjectBtn" class="dialog-button" disabled>${tL('loadBtn')}</button>
-            <button id="wsDeleteProjectBtn" class="dialog-button secondary" disabled>${tL('deleteBtn')}</button>
-            <button id="wsCancelBtn" class="dialog-button secondary">${tL('closeBtn')}</button>
-        </div>
-    `);
-
-    // Animer les thumbnails multi-frames
-    const thumbnailIntervals = [];
-    projects.forEach((p, idx) => {
-        if (!Array.isArray(p.frames) || p.frames.length <= 1) return;
-        const canvas = dialog.querySelector(`canvas[data-project-index="${idx}"]`);
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const fps = p.fps || 4;
-        let frameIndex = 0;
-        const drawFrame = (frame) => {
-            if (!Array.isArray(frame)) return;
-            const gs = Math.sqrt(frame.length);
-            const ps = canvas.width / gs;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            frame.forEach((pixel, i) => {
-                if (!pixel || pixel.isEmpty) return;
-                ctx.fillStyle = pixel.color || '#FFFFFF';
-                ctx.fillRect((i % gs) * ps, Math.floor(i / gs) * ps, ps, ps);
-            });
-        };
-        drawFrame(p.frames[0]);
-        thumbnailIntervals.push(setInterval(() => {
-            frameIndex = (frameIndex + 1) % p.frames.length;
-            drawFrame(p.frames[frameIndex]);
-        }, 1000 / fps));
-    });
-
-    const origRemove = dialog.remove.bind(dialog);
-    dialog.remove = () => { thumbnailIntervals.forEach(clearInterval); origRemove(); };
-
-    let selectedIndex = null;
-    const loadBtn = dialog.querySelector('#wsLoadProjectBtn');
-    const deleteBtn = dialog.querySelector('#wsDeleteProjectBtn');
-
-    dialog.querySelectorAll('.project-item').forEach(item => {
-        item.addEventListener('click', () => {
-            dialog.querySelectorAll('.project-item').forEach(p => p.classList.remove('selected'));
-            item.classList.add('selected');
-            selectedIndex = parseInt(item.dataset.index, 10);
-            loadBtn.disabled = false;
-            deleteBtn.disabled = false;
-        });
-    });
-
-    loadBtn.addEventListener('click', async () => {
-        if (selectedIndex === null) return;
-        const project = projects[selectedIndex];
-        try {
-            const frames = Array.isArray(project.frames)
-                ? normaliseFrames(project.frames)
-                : project.frames;
-            applyProjectData({ ...project, frames }, project.name);
-            // Mémoriser le handle pour les futures sauvegardes sans dialogue
-            _currentFileHandle = project._fileHandle;
-            dialog.remove();
-            showToast(tL('projectLoaded', project.name), { type: 'success' });
-        } catch (err) {
-            showToast(tL('projectLoadErrorDetail'), { type: 'error', duration: 5000 });
-        }
-    });
-
-    deleteBtn.addEventListener('click', async () => {
-        if (selectedIndex === null) return;
-        const project = projects[selectedIndex];
-        if (!confirm(tL('confirmDelete'))) return;
-        try {
-            await projetsDir.removeEntry(project._fileName);
-            window.localDB.deleteProject(project.name).catch(() => {});
-            showToast(tL('deleteSuccess'), { type: 'success' });
-            dialog.remove();
-            showLocalProjects();
-        } catch (err) {
-            showToast(tL('deleteError', err.message), { type: 'error', duration: 5000 });
-        }
-    });
-
-    dialog.querySelector('#wsCancelBtn').addEventListener('click', () => dialog.remove());
-}
 
 // Applique les données d'un projet chargé à l'état de l'app.
 // Utilisé par showLocalProjects, loadFromServer, et tout futur point de chargement.
@@ -4011,7 +3863,6 @@ function applyProjectData(data, projectName) {
     if (title) title.textContent = data.name || data.projectTitle || projectName;
 
     window.currentProjectName = projectName;
-    _currentFileHandle = null; // Reset handle — le projet chargé a son propre fichier source
 
     updateFramesList();
     loadFrame(currentFrame);
@@ -4029,77 +3880,32 @@ async function loadSupabaseProjects() {
         autoSaveProjects = result.data;
     } catch (error) {
         console.error('Erreur chargement projets:', error);
-        await loadAutoSaveProjects();
-        showToast(tL('cloudSyncOffline') || '⚠️ Cloud indisponible — projets locaux chargés', { type: 'warning', duration: 5000 });
+        showToast('⚠️ Impossible de charger les projets cloud', { type: 'warning', duration: 5000 });
     }
 }
 
-// Auto-save function removed - now using manual save only
 
-// Fallback IndexedDB (au cas où Supabase ne fonctionne pas)
-async function loadAutoSaveProjects() {
-    try {
-        const result = await window.localDB.getAllProjects();
-        if (result.success && result.data.length > 0) {
-            autoSaveProjects = result.data;
-            return;
-        }
-    } catch (_) {}
-    // Dernier recours : anciens projets localStorage
-    try {
-        const saved = localStorage.getItem('pixelEditor_autoSaveProjects');
-        if (saved) autoSaveProjects = JSON.parse(saved);
-    } catch (_) {}
-}
-
-function autoSaveProjectLocal(name) {
-    const projectName = name || `Local ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
-    
-    const projectData = {
-        id: Date.now().toString(),
-        name: projectName,
-        frames: frames,
-        frameLayers: frameLayers,
-        _nextLayerId: _nextLayerId,
-        currentFrame: currentFrame,
-        customColors: customColors,
-        customPalette: customPalette,
-        fps: animationFPS || 24,
-        gridSize: { width: currentGridSize, height: currentGridSize },
-        signature: 'pixel-art-editor-v2',
-        dateCreated: new Date().toISOString(),
-        lastModified: new Date().toISOString()
-    };
-    
-    autoSaveProjects.unshift(projectData);
-    
-    if (autoSaveProjects.length > maxAutoSaveProjects) {
-        autoSaveProjects = autoSaveProjects.slice(0, maxAutoSaveProjects);
-    }
-    
-    localStorage.setItem('pixelEditor_autoSaveProjects', JSON.stringify(autoSaveProjects));
-}
 
 async function showLocalProjects() {
 
-    // Essayer workspace en priorité
-    const workDir = await _getWorkspaceDir(true);
-    if (workDir) {
-        await _showWorkspaceProjects(workDir);
+    // Authentification obligatoire
+    const userId = window.dbService?.getUserId?.();
+    if (!userId) {
+        showToast(tL('loginRequired') || 'Connectez-vous pour accéder à vos projets', { type: 'warning' });
         return;
     }
 
-    // Charger depuis IndexedDB (stockage local, pas de Supabase)
-    const projectSource = 'local';
+    const projectSource = 'cloud';
     try {
-        const result = await window.localDB.getAllProjects();
-        if (result.success && result.data.length > 0) {
-            autoSaveProjects = result.data;
-        } else {
+        const result = await window.dbService.getAllProjects({ forceRefresh: true });
+        if (!result.success) throw new Error(result.error);
+        autoSaveProjects = result.data || [];
+        if (autoSaveProjects.length === 0) {
             showToast(tL('noProjectsFound'), { type: 'warning' });
             return;
         }
-    } catch (_) {
+    } catch (err) {
+        console.error('Erreur chargement projets Supabase:', err);
         showToast(tL('noProjectsFound'), { type: 'warning' });
         return;
     }
@@ -4218,17 +4024,9 @@ async function showLocalProjects() {
         if (!selectedProject) return;
         const projectMeta = autoSaveProjects[selectedProject.index];
         try {
-            let data;
-            if (projectSource === 'local') {
-                const result = await window.localDB.loadProject(projectMeta.name);
-                if (!result.success || !result.data) throw new Error(result.error || 'not found');
-                data = result.data;
-            } else {
-                const result = await window.dbService.loadProject(projectMeta.name);
-                if (!result.success) throw new Error(result.error);
-                data = result.data;
-            }
-            applyProjectData(data, projectMeta.name);
+            const result = await window.dbService.loadProject(projectMeta.name);
+            if (!result.success) throw new Error(result.error);
+            applyProjectData(result.data, projectMeta.name);
             dialog.remove();
             showToast(tL('projectLoaded', projectMeta.name), { type: 'success' });
         } catch (error) {
@@ -4243,18 +4041,10 @@ async function showLocalProjects() {
         const projectMeta = autoSaveProjects[selectedProject.index];
         showToast('⬇️ Téléchargement en cours…', { type: 'info', duration: 10000, id: 'download-progress' });
         try {
-            let data;
-            if (projectSource === 'local') {
-                const result = await window.localDB.loadProject(projectMeta.name);
-                if (!result.success || !result.data) throw new Error(result.error || 'not found');
-                data = result.data;
-            } else {
-                const result = await window.dbService.loadProject(projectMeta.name);
-                if (!result.success) throw new Error(result.error);
-                data = result.data;
-            }
+            const result = await window.dbService.loadProject(projectMeta.name);
+            if (!result.success) throw new Error(result.error);
             dismissToast('download-progress');
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -4275,13 +4065,8 @@ async function showLocalProjects() {
         if (selectedProject && confirm(tL('confirmDelete'))) {
             const project = autoSaveProjects[selectedProject.index];
             try {
-                let result;
-                if (projectSource === 'local') {
-                    result = await window.localDB.deleteProject(project.name);
-                } else {
-                    result = await window.dbService.deleteProjectById(project.id);
-                    if (result.success) window.dbService?.invalidateProjectsCache?.();
-                }
+                const result = await window.dbService.deleteProjectById(project.id);
+                if (result.success) window.dbService?.invalidateProjectsCache?.();
 
                 if (result.success) {
                     showToast(tL('deleteSuccess'), { type: 'success' });
@@ -8168,47 +7953,6 @@ async function loadFromServerMobile() {
 let _saveInProgress = false;
 
 // ========================================
-// SAUVEGARDE FICHIER DISQUE (File System Access API)
-// ========================================
-// FileHandle stocké en IndexedDB pour sauvegardes silencieuses (Ctrl+S sans dialogue)
-// Fallback : téléchargement classique si l'API n'est pas disponible
-
-let _currentFileHandle = null; // FileSystemFileHandle en mémoire pour la session
-
-// Persiste le FileHandle dans IndexedDB (les handles survivent aux rechargements)
-async function _storeFileHandle(handle, projectName) {
-    try {
-        const db = await new Promise((resolve, reject) => {
-            const req = indexedDB.open('pixelEditorFileHandles', 1);
-            req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
-            req.onsuccess = e => resolve(e.target.result);
-            req.onerror = reject;
-        });
-        await new Promise((resolve, reject) => {
-            const tx = db.transaction('handles', 'readwrite');
-            tx.objectStore('handles').put(handle, projectName);
-            tx.oncomplete = resolve;
-            tx.onerror = reject;
-        });
-    } catch (_) {}
-}
-
-async function _loadFileHandle(projectName) {
-    try {
-        const db = await new Promise((resolve, reject) => {
-            const req = indexedDB.open('pixelEditorFileHandles', 1);
-            req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
-            req.onsuccess = e => resolve(e.target.result);
-            req.onerror = reject;
-        });
-        return await new Promise((resolve, reject) => {
-            const tx = db.transaction('handles', 'readonly');
-            const req = tx.objectStore('handles').get(projectName);
-            req.onsuccess = e => resolve(e.target.result || null);
-            req.onerror = reject;
-        });
-    } catch (_) { return null; }
-}
 
 // ─── Workspace (dossier de travail) ─────────────────────────────────────────
 // Dossier racine choisi par l'utilisateur via showDirectoryPicker().
@@ -8351,67 +8095,34 @@ async function saveProjectSmart() {
         const titleEl = document.getElementById('projectTitle');
         if (titleEl) titleEl.textContent = projectName;
 
-        const data = buildProjectFileData(projectName);
-        const json = JSON.stringify(data);
-        const blob = new Blob([json], { type: 'application/json' });
-        const safeName = projectName.replace(/[^a-z0-9_\-]/gi, '_') + '.pixelart';
+        // 2. Supabase si l'utilisateur est connecté (chemin principal)
+        const userId = window.dbService?.getUserId?.();
+        if (userId) {
+            // Synchroniser le buffer canvas courant dans frameLayers + frames
+            saveCurrentFrame();
 
-        // 2. Essayer le dossier de travail (workspace) en priorité
-        const workDir = await _getWorkspaceDir(true);
-        if (workDir) {
-            const projetsDir = await workDir.getDirectoryHandle('projets', { create: true });
-            const fileHandle = await projetsDir.getFileHandle(safeName, { create: true });
-            await _writeToHandle(fileHandle, blob);
-            _currentFileHandle = fileHandle;
-            window.localDB.saveProject(data).catch(() => {});
+            const result = await window.dbService.saveProject({
+                name: projectName,
+                frames,                                      // raw — dbService applique _compressFrames
+                frameLayers: compressFrameLayers(frameLayers), // sparse pour réduire la taille en DB/Storage
+                _nextLayerId,
+                currentFrame,
+                fps: animationFPS || 24,
+                customPalette: customPalette || [],
+                customColors: customColors || [],
+                thumbnail: window.dbService.generateThumbnail()
+            });
+
+            if (!result.success) throw new Error(result.error);
+
+            window.dbService.invalidateProjectsCache?.();
             modifiedPixels = modifiedPixels.map(() => new Set());
             showToast(`✅ "${projectName}" sauvegardé`, { type: 'success' });
             return;
         }
 
-        // 3. Fallback : showSaveFilePicker par fichier
-        if (window.showSaveFilePicker) {
-            if (!_currentFileHandle) {
-                _currentFileHandle = await _loadFileHandle(projectName);
-            }
-            if (_currentFileHandle) {
-                try {
-                    const perm = await _currentFileHandle.queryPermission({ mode: 'readwrite' });
-                    if (perm !== 'granted') {
-                        const req = await _currentFileHandle.requestPermission({ mode: 'readwrite' });
-                        if (req !== 'granted') _currentFileHandle = null;
-                    }
-                } catch (_) { _currentFileHandle = null; }
-            }
-            if (!_currentFileHandle) {
-                try {
-                    _currentFileHandle = await window.showSaveFilePicker({
-                        suggestedName: safeName,
-                        startIn: 'documents',
-                        types: [{ description: 'Pixel Art Project', accept: { 'application/json': ['.pixelart'] } }]
-                    });
-                    await _storeFileHandle(_currentFileHandle, projectName);
-                } catch (e) {
-                    if (e.name === 'AbortError') return;
-                    throw e;
-                }
-            }
-            await _writeToHandle(_currentFileHandle, blob);
-            window.localDB.saveProject(data).catch(() => {});
-            modifiedPixels = modifiedPixels.map(() => new Set());
-            showToast(`✅ "${projectName}" sauvegardé`, { type: 'success' });
-            return;
-        }
-
-        // 4. Fallback final : IndexedDB + téléchargement
-        const result = await window.localDB.saveProject(data);
-        if (!result.success) throw new Error(result.error);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = safeName; a.click();
-        URL.revokeObjectURL(url);
-        modifiedPixels = modifiedPixels.map(() => new Set());
-        showToast(`✅ "${projectName}" sauvegardé`, { type: 'success' });
+        // Non-authentifié : impossible de sauvegarder
+        showToast(tL('loginRequired') || 'Connectez-vous pour sauvegarder', { type: 'warning' });
 
     } catch (err) {
         console.error('❌ Erreur sauvegarde:', err);
@@ -8734,25 +8445,8 @@ document.addEventListener('DOMContentLoaded', () => {
         initHistory();
     }, 100);
     
-    // Nettoyage unique du localStorage au démarrage pour libérer l'espace occupé par les anciennes données lourdes
-    try {
-        if (!localStorage.getItem('_lsCleanedV3')) {
-            localStorage.removeItem('pixelEditor_autoSaveProjects');
-            // Supprimer toutes les sauvegardes pixelart_* (peuvent être non-sparse et très lourdes)
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const k = localStorage.key(i);
-                if (k && k.startsWith('pixelart_')) keysToRemove.push(k);
-            }
-            keysToRemove.forEach(k => localStorage.removeItem(k));
-            localStorage.removeItem('_lsCleanedV2');
-            localStorage.setItem('_lsCleanedV3', '1');
-            console.log('🧹 localStorage nettoyé (migration V3)');
-        }
-    } catch (_) {}
-
-    // Charger les données (Supabase + localStorage en fallback)
-    loadSupabaseProjects().catch(() => loadAutoSaveProjects());
+    // Charger les projets depuis Supabase
+    loadSupabaseProjects().catch(err => console.error('Erreur chargement projets:', err));
     
     // Nettoyage initial pour s'assurer qu'aucun élément indésirable n'existe
     cleanUpOutsideElements();
@@ -11481,37 +11175,7 @@ async function _writeProjectDataToDisk(projectData) {
     const safeName = (projectData.name || 'projet').replace(/[^a-z0-9_\-]/gi, '_') + '.pixelart';
     const blob = new Blob([JSON.stringify(projectData)], { type: 'application/json' });
 
-    // 1. Workspace configuré
-    if (_workspaceDir) {
-        try {
-            const projetsDir = await _workspaceDir.getDirectoryHandle('projets', { create: true });
-            const fileHandle = await projetsDir.getFileHandle(safeName, { create: true });
-            await _writeToHandle(fileHandle, blob);
-            window.localDB.saveProject(projectData).catch(() => {});
-            showToast(`✅ "${projectData.name}" sauvegardé dans le dossier projets/`, { type: 'success' });
-            return;
-        } catch (_) {}
-    }
-
-    // 2. showSaveFilePicker (Safari inclus)
-    if (window.showSaveFilePicker) {
-        try {
-            const handle = await window.showSaveFilePicker({
-                suggestedName: safeName,
-                startIn: 'documents',
-                types: [{ description: 'Pixel Art Project', accept: { 'application/json': ['.pixelart'] } }]
-            });
-            await _writeToHandle(handle, blob);
-            window.localDB.saveProject(projectData).catch(() => {});
-            showToast(`✅ "${projectData.name}" sauvegardé`, { type: 'success' });
-        } catch (e) {
-            if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
-        }
-        return;
-    }
-
-    // 3. Fallback : IndexedDB + téléchargement
-    window.localDB.saveProject(projectData).catch(() => {});
+    // Téléchargement direct
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = safeName; a.click();
@@ -11595,40 +11259,16 @@ function showImportStampModal() {
     const allProjects = [];
     const dialog = _buildImportStampDialog(allProjects);
 
-    // Charger depuis IndexedDB en arrière-plan
-    window.localDB.getAllProjects().then(result => {
-        if (!dialog.isConnected) return;
-        const projects = (result.success && Array.isArray(result.data)) ? result.data : [];
-        if (projects.length === 0) return;
-        projects.forEach(p => allProjects.push({ ...p, _source: 'local' }));
-        _refreshImportStampList(dialog, allProjects);
-    }).catch(() => {});
-}
-
-function _getLocalProjects() {
-    const projects = [];
-    // Clés pixelart_* (sauvegardes manuelles)
-    try {
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('pixelart_')) {
-                const raw = localStorage.getItem(key);
-                if (raw) {
-                    const p = JSON.parse(raw);
-                    if (p && p.frames) projects.push({ ...p, name: p.name || key.replace('pixelart_', '') });
-                }
-            }
-        }
-    } catch (e) {}
-    // Auto-save array
-    try {
-        const saved = localStorage.getItem('pixelEditor_autoSaveProjects');
-        if (saved) {
-            const arr = JSON.parse(saved);
-            arr.forEach(p => { if (p && p.frames) projects.push(p); });
-        }
-    } catch (e) {}
-    return projects;
+    // Charger depuis Supabase — métadonnées seulement (frames chargées à la demande)
+    if (window.dbService?.getUserId?.()) {
+        window.dbService.getAllProjects().then(result => {
+            if (!dialog.isConnected) return;
+            const projects = (result.success && Array.isArray(result.data)) ? result.data : [];
+            if (projects.length === 0) return;
+            projects.forEach(p => allProjects.push({ ...p, _source: 'cloud' }));
+            _refreshImportStampList(dialog, allProjects);
+        }).catch(() => {});
+    }
 }
 
 function _buildImportStampDialog(allProjects) {
@@ -11654,13 +11294,13 @@ function _buildImportStampDialog(allProjects) {
         const project = dialog._selectedProject;
         if (!project) return;
 
-        // Charger le projet complet pour avoir les pixels des frames
+        // Charger le projet complet depuis Supabase pour avoir les pixels des frames
         let fullProject = project;
         if (!Array.isArray(project.frames) && project.name) {
             const confirmBtn = dialog.querySelector('#importStampConfirmBtn');
             if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Chargement…'; }
             try {
-                const result = await window.localDB.loadProject(project.name);
+                const result = await window.dbService.loadProject(project.name);
                 if (result.success && result.data) fullProject = result.data;
             } catch (e) { /* utiliser les données partielles */ }
         }
