@@ -1,0 +1,36 @@
+vercel.json
+  497fe49de1f5c70b 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "172111ab04f07fb0ed312858f6ff059c5f574986",
+  "prompts": {
+    "497fe49de1f5c70b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0f95a48-15b4-4fcf-a317-928c2d95dfd2",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Guillaume Gay",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "9bad6294ee5758ce": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2936fedd-86e4-40ee-b496-12aece25fa52",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Guillaume Gay",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    }
+  }
+}
