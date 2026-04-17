@@ -1,0 +1,23 @@
+supabase/public-sharing-schema.sql
+  9bad6294ee5758ce 147-161
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "a7e099b2c982c0f630399a37909439e43cc4506a",
+  "prompts": {
+    "9bad6294ee5758ce": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2936fedd-86e4-40ee-b496-12aece25fa52",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Guillaume Gay",
+      "messages": [],
+      "total_additions": 15,
+      "total_deletions": 0,
+      "accepted_lines": 23,
+      "overriden_lines": 0
+    }
+  }
+}
