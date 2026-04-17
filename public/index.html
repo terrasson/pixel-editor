@@ -627,39 +627,10 @@
         applyLang(currentLang);
 
         // ── Coverflow gallery ──
-        function fromSparse(sparse) {
-            const arr = Array.from({ length: sparse.size }, () => ({ color: '#FFFFFF', isEmpty: true }));
-            (sparse.data || []).forEach(({ i, c }) => { arr[i] = { color: c, isEmpty: false }; });
-            return arr;
-        }
-
-        function normaliseFrame(frame) {
-            if (!frame) return null;
-            if (frame._sparse) return fromSparse(frame);
-            if (Array.isArray(frame)) return frame;
-            if (frame && Array.isArray(frame.pixels)) return frame.pixels;
-            return null;
-        }
-
-        function drawPixelFrame(ctx, frame, size) {
-            if (!Array.isArray(frame) || frame.length === 0) return;
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, size, size);
-            const gridSize = Math.round(Math.sqrt(frame.length));
-            const px = size / gridSize;
-            frame.forEach((pixel, i) => {
-                if (!pixel || pixel.isEmpty) return;
-                ctx.fillStyle = pixel.color;
-                ctx.fillRect((i % gridSize) * px, Math.floor(i / gridSize) * px, px, px);
-            });
-        }
-
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         }
-
-        const cfIntervals = [];
 
         async function loadGalleryPreview() {
             try {
@@ -671,9 +642,6 @@
                 const dotsEl = document.getElementById('coverflowDots');
                 if (!track || !dotsEl) return;
 
-                cfIntervals.forEach(clearInterval);
-                cfIntervals.length = 0;
-
                 const shares = result.data.slice(0, 10);
                 const cards = [];
                 let currentIdx = 0;
@@ -681,9 +649,10 @@
 
                 shares.forEach((share, i) => {
                     const snapshot = share.project_snapshot || {};
-                    const rawFrames = (snapshot.frames || []).map(normaliseFrame).filter(Boolean);
-                    const fps = Math.max(1, snapshot.fps || 4);
-                    const isAnimated = rawFrames.length > 1;
+                    // Listing coverflow = thumbnail statique (pas de frames — egress).
+                    // L'animation est disponible au clic sur /shared/<token>.
+                    const frameCount = snapshot.frame_count || 1;
+                    const isAnimated = frameCount > 1;
 
                     const card = document.createElement('a');
                     card.className = 'cf-card';
@@ -691,7 +660,7 @@
                     card.innerHTML = `
                         <div style="position:relative">
                             <canvas width="200" height="200"></canvas>
-                            ${isAnimated ? `<span class="cf-badge">&#9654; ${rawFrames.length} frames</span>` : ''}
+                            ${isAnimated ? `<span class="cf-badge">&#9654; ${frameCount} frames</span>` : ''}
                         </div>
                         <div class="cf-card-body">
                             <div class="cf-card-name">${escapeHtml(share.project_name)}</div>
@@ -705,20 +674,13 @@
                     const canvas = card.querySelector('canvas');
                     const ctx = canvas.getContext('2d');
 
-                    if (rawFrames.length > 0) {
-                        drawPixelFrame(ctx, rawFrames[0], 200);
-                        if (isAnimated) {
-                            let idx = 0;
-                            const interval = setInterval(() => {
-                                idx = (idx + 1) % rawFrames.length;
-                                drawPixelFrame(ctx, rawFrames[idx], 200);
-                            }, 1000 / fps);
-                            cfIntervals.push(interval);
-                        }
-                    } else if (share.project_thumbnail) {
+                    if (share.project_thumbnail) {
                         const img = new Image();
                         img.onload = () => ctx.drawImage(img, 0, 0, 200, 200);
                         img.src = share.project_thumbnail;
+                    } else {
+                        ctx.fillStyle = '#222';
+                        ctx.fillRect(0, 0, 200, 200);
                     }
 
                     // Click on side card → focus it (don't navigate)

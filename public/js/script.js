@@ -9022,42 +9022,21 @@ async function publishToGallery() {
     showToast('⏳ Publication en cours…', { type: 'info', duration: 10000, id: 'publish-progress' });
 
     try {
-        // Le projet est en IndexedDB — on doit d'abord le synchroniser dans Supabase
-        // pour que la galerie puisse y accéder. On fait un upsert léger (frames sparse inline).
-        const thumbnail = window.dbService?.generateThumbnail?.() || null;
-        const syncData = {
+        // Synchroniser le projet dans Supabase via dbService (applique _compressFrames
+        // + offload Storage au-delà de 20KB). Sans ça, les frames sont stockées en
+        // format fat JSONB et la DB explose à quelques dizaines d'utilisateurs.
+        const syncResult = await window.dbService.saveProject({
             name: window.currentProjectName,
-            frames: frames.map(toSparseFrame),         // sparse = léger
-            frameLayers: null,                          // pas nécessaire pour la galerie
-            _nextLayerId: _nextLayerId,
+            frames,
+            frameLayers: null,
+            _nextLayerId,
             currentFrame,
             fps: animationFPS || 24,
             customPalette,
             customColors,
-            thumbnail
-        };
-
-        // Upsert dans Supabase (sans Storage — frames inline sparse)
-        const userId = window.dbService.getUserId();
-        if (!userId) throw new Error('Non authentifié');
-
-        const payload = {
-            frames: syncData.frames,
-            frame_layers: null,
-            current_frame: syncData.currentFrame,
-            fps: syncData.fps,
-            custom_palette: syncData.customPalette,
-            custom_colors: syncData.customColors ?? null,
-            updated_at: new Date().toISOString()
-        };
-        if (thumbnail) payload.thumbnail = thumbnail;
-
-        const supabase = window.dbService.supabase;
-        const { error: upsertError } = await supabase
-            .from('pixel_projects')
-            .upsert({ user_id: userId, name: window.currentProjectName, ...payload }, { onConflict: 'user_id,name' });
-
-        if (upsertError) throw upsertError;
+            thumbnail: window.dbService?.generateThumbnail?.() || null
+        });
+        if (!syncResult.success) throw new Error(syncResult.error || 'Sync échouée');
 
         // Maintenant créer/mettre à jour le partage galerie
         const result = await window.dbService.createPublicShare(window.currentProjectName, { publishToGallery: true });

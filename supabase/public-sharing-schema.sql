@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS public_shares (
     project_id UUID NOT NULL REFERENCES pixel_projects(id) ON DELETE CASCADE,
     owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
-    -- Métadonnées du projet (snapshot pour éviter les modifications)
-    project_snapshot JSONB NOT NULL,
+    -- Les données de projet sont lues via JOIN sur pixel_projects (project_id).
+    -- La colonne project_snapshot a été supprimée pour éviter la duplication.
     project_name TEXT NOT NULL,
     project_thumbnail TEXT,
 
@@ -144,6 +144,21 @@ CREATE POLICY "Owners can delete their public shares"
     FOR DELETE
     USING (auth.uid() = owner_id);
 
+-- Policy sur pixel_projects : permettre la lecture quand un public_share
+-- pointe dessus. Indispensable depuis qu'on a supprimé la colonne
+-- project_snapshot : getPublicShare / getPublicGallery font un JOIN
+-- sur pixel_projects pour récupérer frames/fps/etc.
+DROP POLICY IF EXISTS "Anyone can view projects linked to a public share" ON pixel_projects;
+CREATE POLICY "Anyone can view projects linked to a public share"
+    ON pixel_projects
+    FOR SELECT
+    USING (
+        id IN (
+            SELECT project_id FROM public_shares
+            WHERE expires_at IS NULL OR expires_at > NOW()
+        )
+    );
+
 -- RLS pour public_share_analytics
 ALTER TABLE public_share_analytics ENABLE ROW LEVEL SECURITY;
 
@@ -252,7 +267,6 @@ WHERE ps.expires_at IS NULL OR ps.expires_at > NOW();
 
 COMMENT ON TABLE public_shares IS 'Partages publics de projets via lien partageable';
 COMMENT ON COLUMN public_shares.share_token IS 'Token court pour l''URL (8 caractères)';
-COMMENT ON COLUMN public_shares.project_snapshot IS 'Snapshot JSON du projet au moment du partage';
 COMMENT ON COLUMN public_shares.allow_duplicate IS 'Autorise la duplication du projet';
 
 -- =====================================================

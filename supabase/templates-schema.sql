@@ -78,9 +78,6 @@ CREATE INDEX IF NOT EXISTS idx_pixel_templates_style_tags ON pixel_templates USI
 CREATE INDEX IF NOT EXISTS idx_pixel_templates_difficulty ON pixel_templates(difficulty);
 CREATE INDEX IF NOT EXISTS idx_pixel_templates_view_count ON pixel_templates(view_count DESC);
 
--- Index pour la recherche par tags
-CREATE INDEX IF NOT EXISTS idx_pixel_templates_tags_gin ON pixel_templates USING GIN(style_tags);
-
 -- Table pour les favoris des utilisateurs
 CREATE TABLE IF NOT EXISTS template_favorites (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
