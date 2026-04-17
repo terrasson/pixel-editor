@@ -2062,260 +2062,44 @@
     }
 
     /**
-     * Ajoute les indicateurs de template à la grille
+     * Ajoute les indicateurs de template — overlay canvas (moitié basse de chaque cellule).
+     * Remplit window.templateIndicators (tableau d'expected colors par index)
+     * et déclenche un re-render. Les indicateurs se cachent automatiquement
+     * quand l'utilisateur dessine la bonne couleur (vérifié dans renderCanvas).
      */
     function addTemplateIndicators(templatePreview) {
         try {
-            console.log('🎨 ===== DÉBUT addTemplateIndicators =====');
-
-            const pixels = document.querySelectorAll('.pixel');
-            const grid = document.getElementById('pixelGrid');
-
-            console.log('📊 Vérifications initiales:', {
-                pixelsCount: pixels ? pixels.length : 0,
-                gridExists: !!grid,
-                templatePreviewExists: !!templatePreview,
-                templatePreviewIsArray: Array.isArray(templatePreview),
-                templatePreviewLength: templatePreview ? templatePreview.length : 0
-            });
-
-            if (!pixels || pixels.length === 0) {
-                console.error('❌ Aucun pixel trouvé dans la grille');
-                return false;
-            }
-
-            if (!grid) {
-                console.error('❌ Grille non trouvée');
-                return false;
-            }
-
-            if (pixels.length < GRID_SIZE * GRID_SIZE) {
-                console.error('❌ Nombre de pixels insuffisant:', pixels.length, 'au lieu de', GRID_SIZE * GRID_SIZE);
-                return false;
-            }
-
             if (!templatePreview || !Array.isArray(templatePreview)) {
                 console.error('❌ Template preview invalide');
                 return false;
             }
-
-            // Pour les animations à réaliser, les pixels peuvent avoir isEmpty: true mais une couleur pour les indicateurs
-            // On vérifie donc la présence d'une couleur valide plutôt que !isEmpty
-            const pixelsAvecCouleur = templatePreview.filter(p => p && p.color && p.color !== '#FFFFFF').length;
-            const nonVides = templatePreview.filter(p => p && !p.isEmpty).length;
-            console.log('✅ Conditions remplies:', {
-                pixels: pixels.length,
-                templatePixels: templatePreview.length,
-                nonVides: nonVides,
-                pixelsAvecCouleur: pixelsAvecCouleur
-            });
-
-            // Vérifier qu'il y a au moins des pixels avec couleur (pour les indicateurs)
-            if (pixelsAvecCouleur === 0) {
-                console.error('❌ Aucun pixel avec couleur valide dans le template !');
-                return false;
+            const gs = (typeof window.currentGridSize === 'number' && window.currentGridSize > 0)
+                ? window.currentGridSize : GRID_SIZE;
+            const total = gs * gs;
+            const overlay = new Array(total).fill(null);
+            let count = 0;
+            const max = Math.min(templatePreview.length, total);
+            for (let i = 0; i < max; i++) {
+                const p = templatePreview[i];
+                if (p && p.color && p.color !== '#FFFFFF') {
+                    overlay[i] = p.color;
+                    count++;
+                }
             }
-
-            // Les pixels ont déjà position: relative dans le CSS (common.css), pas besoin de le modifier en JS
-            // Cela évite les erreurs de propriété en lecture seule
-
-            // Nettoyer les anciens indicateurs d'abord
-            let cleaned = 0;
-            pixels.forEach(pixel => {
-                const existingSvg = pixel.querySelector('svg.template-indicator-svg');
-                if (existingSvg) {
-                    existingSvg.remove();
-                    cleaned++;
-                }
-                pixel.classList.remove('has-template-indicator', 'template-completed');
-                delete pixel.dataset.expectedColor;
-            });
-
-            if (cleaned > 0) {
-                console.log('🧹 Anciens indicateurs nettoyés:', cleaned);
+            window.templateIndicators = overlay;
+            if (typeof window.renderCanvas === 'function') {
+                window.renderCanvas();
+            } else if (typeof window.scheduleRender === 'function') {
+                window.scheduleRender();
             }
-
-            let indicatorsAdded = 0;
-
-            console.log('🎨 Parcours des pixels pour ajouter les indicateurs...');
-            const pixelsAvecCouleurCount = templatePreview.filter(p => p && p.color && p.color !== '#FFFFFF').length;
-            console.log(`📊 Template contient ${pixelsAvecCouleurCount} pixels avec couleur (pour indicateurs)`);
-
-            pixels.forEach((pixel, index) => {
-                if (index >= templatePreview.length) return;
-
-                const templatePixel = templatePreview[index];
-
-                // Si le template a une couleur à cet endroit, afficher l'indicateur
-                // IMPORTANT : Pour les animations à réaliser, isEmpty peut être true mais on veut quand même afficher l'indicateur
-                // On vérifie seulement qu'il y a une couleur valide (pas blanche par défaut)
-                if (templatePixel && templatePixel.color && templatePixel.color !== '#FFFFFF') {
-                    const expectedColor = templatePixel.color;
-
-                    // Vérifier que le pixel est valide et dans le DOM
-                    if (!pixel || !pixel.parentNode) {
-                        return; // Sortir de cette itération du forEach
-                    }
-
-                    try {
-                        // Créer le SVG avec le triangle indicateur
-                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svg.setAttribute('width', '100%');
-                        svg.setAttribute('height', '100%');
-                        svg.setAttribute('viewBox', '0 0 100 100');
-                        svg.setAttribute('preserveAspectRatio', 'none');
-                        svg.setAttribute('class', 'template-indicator-svg');
-                        svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
-
-                        // Triangle du bas (coin inférieur gauche, coin inférieur droit, point milieu-haut)
-                        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-                        polygon.setAttribute('points', '0,100 100,100 50,35');
-                        polygon.setAttribute('fill', expectedColor);
-                        polygon.setAttribute('opacity', '0.85');
-                        polygon.setAttribute('stroke', 'rgba(0,0,0,0.4)');
-                        polygon.setAttribute('stroke-width', '1.5');
-
-                        svg.appendChild(polygon);
-
-                        // Ajouter le SVG au pixel
-                        try {
-                            pixel.appendChild(svg);
-                        } catch (e) {
-                            console.warn(`  ⚠️ Impossible d'ajouter le SVG au pixel ${index}:`, e);
-                            return; // Sortir de cette itération
-                        }
-
-                        // Ajouter les classes et attributs en utilisant setAttribute au lieu de classList
-                        // pour éviter les erreurs de propriété en lecture seule
-                        try {
-                            // Utiliser getAttribute et setAttribute au lieu de classList
-                            const currentClass = pixel.getAttribute('class') || '';
-                            const newClass = currentClass.includes('has-template-indicator')
-                                ? currentClass
-                                : currentClass + ' has-template-indicator';
-                            pixel.setAttribute('class', newClass.trim());
-                            pixel.setAttribute('data-expected-color', expectedColor);
-                        } catch (e) {
-                            console.warn(`  ⚠️ Impossible d'ajouter les classes au pixel ${index}:`, e);
-                            // Continuer quand même car le SVG est déjà ajouté
-                        }
-
-                        indicatorsAdded++;
-                    } catch (error) {
-                        console.error(`  ❌ Erreur lors de l'ajout de l'indicateur au pixel ${index}:`, error);
-                        console.error(`  📍 Détails de l'erreur:`, {
-                            errorName: error.name,
-                            errorMessage: error.message,
-                            pixelExists: !!pixel,
-                            pixelParent: !!pixel?.parentNode
-                        });
-                    }
-                }
-            });
-
-            console.log('✅ ===== FIN addTemplateIndicators =====');
-            console.log(`✅ ${indicatorsAdded} indicateurs ajoutés avec succès !`);
-
-            // Vérification immédiate dans le DOM
-            const pixelsWithIndicators = document.querySelectorAll('.pixel.has-template-indicator');
-            const svgsInDOM = document.querySelectorAll('svg.template-indicator-svg');
-
-            console.log('🔍 Vérification DOM:', {
-                pixelsAvecIndicateurs: pixelsWithIndicators.length,
-                svgsDansDOM: svgsInDOM.length,
-                indicatorsAdded: indicatorsAdded
-            });
-
-            if (indicatorsAdded > 0 && svgsInDOM.length === indicatorsAdded) {
-                console.log('✅✅✅ SUCCÈS COMPLET : Tous les indicateurs sont dans le DOM !');
-
-                // Vérifier visuellement le premier indicateur
-                if (svgsInDOM.length > 0) {
-                    const firstSvg = svgsInDOM[0];
-                    const computedStyle = window.getComputedStyle(firstSvg);
-                    console.log('🔍 Premier SVG:', {
-                        display: computedStyle.display,
-                        visibility: computedStyle.visibility,
-                        zIndex: computedStyle.zIndex,
-                        position: computedStyle.position,
-                        width: computedStyle.width,
-                        height: computedStyle.height
-                    });
-                }
-            } else {
-                console.error('❌ PROBLÈME : Les indicateurs ne sont pas tous dans le DOM !');
-            }
-
-            // Vérification différée pour s'assurer qu'ils restent
-            setTimeout(() => {
-                const svgsStillThere = document.querySelectorAll('svg.template-indicator-svg');
-                console.log('🔍 Vérification après 100ms:', svgsStillThere.length, 'SVG trouvés');
-
-                if (svgsStillThere.length !== indicatorsAdded) {
-                    console.error('❌ PROBLÈME : Des indicateurs ont disparu !');
-                }
-
-                // Si les nombres ne correspondent pas, il y a un problème
-                if (pixelsWithIndicators.length !== indicatorsAdded || svgsInDOM.length !== indicatorsAdded) {
-                    console.warn('⚠️ Incohérence détectée entre indicateurs ajoutés et éléments dans le DOM');
-
-                    // Essayer de réparer en réajoutant les indicateurs manquants
-                    if (svgsInDOM.length < indicatorsAdded) {
-                        console.log('🔧 Tentative de réparation : réajout des indicateurs manquants...');
-                        // Réajouter les indicateurs pour les pixels qui n'en ont pas
-                        pixelsWithIndicators.forEach(pixel => {
-                            if (!pixel.querySelector('svg.template-indicator-svg')) {
-                                const expectedColor = pixel.dataset.expectedColor;
-                                if (expectedColor) {
-                                    // Réajouter l'indicateur
-                                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                                    svg.setAttribute('width', '100%');
-                                    svg.setAttribute('height', '100%');
-                                    svg.setAttribute('viewBox', '0 0 100 100');
-                                    svg.setAttribute('preserveAspectRatio', 'none');
-                                    svg.className = 'template-indicator-svg';
-                                    svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;');
-
-                                    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-                                    polygon.setAttribute('points', '0,100 100,100 50,35');
-                                    polygon.setAttribute('fill', expectedColor);
-                                    polygon.setAttribute('opacity', '0.85');
-                                    polygon.setAttribute('stroke', 'rgba(0,0,0,0.4)');
-                                    polygon.setAttribute('stroke-width', '1.5');
-
-                                    svg.appendChild(polygon);
-                                    pixel.appendChild(svg);
-                                }
-                            }
-                        });
-                    }
-                }
-            }, 100);
-
-            if (indicatorsAdded === 0) {
-                console.error('❌ Aucun indicateur ajouté !');
-                console.error('Détails du template:', {
-                    templateLength: templatePreview.length,
-                    templatePixelsNonVides: templatePreview.filter(p => p && !p.isEmpty).length,
-                    premiersPixels: templatePreview.slice(0, 10).map((p, i) => ({
-                        index: i,
-                        isEmpty: p ? p.isEmpty : 'null',
-                        color: p ? p.color : 'null'
-                    }))
-                });
-                return false;
-            }
-
-            return true;
+            console.log(`🎨 Indicateurs template : ${count} triangles posés sur le canvas overlay`);
+            return count > 0;
         } catch (error) {
-            console.error('❌ ERREUR CRITIQUE lors de l\'ajout des indicateurs:', error);
-            console.error('📍 Type d\'erreur:', error.name);
-            console.error('📝 Message:', error.message);
-            console.error('📍 Stack trace:', error.stack);
-            console.error('📍 Ligne probable de l\'erreur:', error.lineNumber || 'inconnue');
+            console.error('❌ addTemplateIndicators:', error);
             return false;
         }
     }
+
 
     /**
      * Charge une frame avec les indicateurs de template (ancienne méthode - conservée pour compatibilité)
@@ -3338,15 +3122,10 @@
         exitTemplateMode: () => {
             isTemplateMode = false;
             currentTemplate = null;
-            // Retirer tous les indicateurs
-            document.querySelectorAll('.has-template-indicator, .template-indicator, .template-completed').forEach(el => {
-                if (el.classList) {
-                    el.classList.remove('has-template-indicator', 'template-completed');
-                }
-                if (el.tagName === 'svg' || el.classList?.contains('template-indicator')) {
-                    el.remove();
-                }
-            });
+            window.isTemplateMode = false;
+            window.currentTemplate = null;
+            window.templateIndicators = null;
+            if (typeof window.renderCanvas === 'function') window.renderCanvas();
         }
     };
 })();

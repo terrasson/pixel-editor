@@ -1453,6 +1453,35 @@ function renderCanvas() {
         });
     }
 
+    // Overlay indicateurs de template — triangles colorés dans la moitié basse de chaque cellule
+    // Se cache automatiquement quand l'utilisateur dessine la bonne couleur (auto-completion)
+    if (Array.isArray(window.templateIndicators) && window.templateIndicators.length > 0) {
+        const indicators = window.templateIndicators;
+        const gs = currentGridSize;
+        const max = Math.min(indicators.length, gs * gs);
+        pixelCtx.lineWidth = 1.5 / gridZoom;
+        pixelCtx.strokeStyle = 'rgba(0,0,0,0.4)';
+        for (let i = 0; i < max; i++) {
+            const expected = indicators[i];
+            if (!expected) continue;
+            const drawn = currentFrameBuffer[i];
+            if (drawn && !drawn.isEmpty && drawn.color
+                && drawn.color.toUpperCase() === expected.toUpperCase()) continue;
+            const col = i % gs, row = Math.floor(i / gs);
+            const x = col * cellSize, y = row * cellSize, s = cellSize;
+            pixelCtx.beginPath();
+            pixelCtx.moveTo(x, y + s);
+            pixelCtx.lineTo(x + s, y + s);
+            pixelCtx.lineTo(x + s * 0.5, y + s * 0.35);
+            pixelCtx.closePath();
+            pixelCtx.globalAlpha = 0.85;
+            pixelCtx.fillStyle = expected;
+            pixelCtx.fill();
+            pixelCtx.globalAlpha = 1.0;
+            pixelCtx.stroke();
+        }
+    }
+
     // Lignes de grille : dessinées APRÈS les pixels avec destination-over
     // → apparaissent uniquement sur les zones vides (transparentes), jamais sur les pixels colorés
     const screenCellPx = cellSize * gridZoom;
