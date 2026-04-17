@@ -16,7 +16,7 @@
     },
     {
       "source": "/shared/:token",
-      "destination": "/public/shared.html"
+      "destination": "/shared.html"
     },
     {
       "source": "/(.+)",
