@@ -371,6 +371,32 @@ class DatabaseService {
         }
     }
 
+    // Rename a project/stamp by ID (type and frames unchanged).
+    async renameProject(projectId, newName) {
+        if (!this.supabase) this.init();
+        try {
+            const userId = this.getUserId();
+            if (!userId) throw new Error('User not authenticated');
+            const trimmed = (newName || '').trim();
+            if (!trimmed) throw new Error('Nom vide');
+
+            const { data, error } = await this.supabase
+                .from('pixel_projects')
+                .update({ name: trimmed, updated_at: new Date().toISOString() })
+                .eq('id', projectId)
+                .eq('user_id', userId)
+                .select('id, name, type')
+                .single();
+            if (error) throw error;
+
+            this.invalidateProjectsCache?.();
+            return { success: true, data };
+        } catch (error) {
+            console.error('Rename project error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
     // Get project count for current user
     async getProjectCount() {
         if (!this.supabase) this.init();

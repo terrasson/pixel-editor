@@ -11105,74 +11105,54 @@ async function _addStamp(pixels, nameHint, gridSize) {
     return stamp;
 }
 
-// Duplique un tampon en tant que projet dans Supabase (appelé depuis l'icône save de la ligne tampon).
-// L'utilisateur peut ensuite ouvrir ce projet depuis "My projects" pour l'éditer en full canvas.
-async function _saveStampAsProject(stamp) {
+// Renomme un tampon dans Supabase (type='stamp' conservé).
+// Appelé depuis l'icône crayon de la ligne tampon dans la sidebar droite.
+async function _renameStampInCloud(stamp, index) {
     if (!window.dbService?.getUserId?.()) {
-        showToast(tL('loginRequired') || 'Connectez-vous pour enregistrer comme projet', { type: 'warning' });
+        showToast(tL('loginRequired') || 'Connectez-vous pour renommer', { type: 'warning' });
         return;
     }
-    const dialog = createMobileDialog('Enregistrer comme projet', `
-        <p style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:10px;">Nom du projet :</p>
-        <input id="exportStampName" type="text" value="${(stamp.name || 'tampon').replace(/"/g, '&quot;')}"
+    if (!stamp?.id) {
+        showToast('❌ Ce tampon n\'a pas d\'identifiant Supabase', { type: 'error' });
+        return;
+    }
+    const dialog = createMobileDialog('Renommer le tampon', `
+        <p style="font-size:0.85rem;color:rgba(0,0,0,0.6);margin-bottom:10px;">Nouveau nom :</p>
+        <input id="renameStampName" type="text" value="${(stamp.name || 'tampon').replace(/"/g, '&quot;')}"
             style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;color:#000;font-size:0.95rem;margin-bottom:14px;"
-            placeholder="nom-du-projet" />
+            placeholder="nom-du-tampon" />
         <div style="display:flex;gap:8px;">
-            <button id="exportStampConfirm" class="dialog-button">Enregistrer</button>
-            <button id="exportStampCancel" class="dialog-button secondary">Annuler</button>
+            <button id="renameStampConfirm" class="dialog-button">Renommer</button>
+            <button id="renameStampCancel" class="dialog-button secondary">Annuler</button>
         </div>
     `);
 
-    const input = dialog.querySelector('#exportStampName');
+    const input = dialog.querySelector('#renameStampName');
     setTimeout(() => { input?.focus(); input?.select(); }, 50);
 
     await new Promise((resolve) => {
         const confirm = async () => {
-            const name = input.value.trim() || stamp.name || 'tampon';
+            const newName = input.value.trim();
+            if (!newName || newName === stamp.name) { dialog.remove(); resolve(); return; }
             dialog.remove();
             try {
-                const gs = stamp.gridSize || Math.round(Math.sqrt((stamp.pixels || []).length)) || currentGridSize;
-                const result = await window.dbService.saveProject({
-                    name,
-                    type: 'project',
-                    frames: [stamp.pixels],
-                    frameLayers: null,
-                    _nextLayerId: 0,
-                    currentFrame: 0,
-                    fps: 24,
-                    customPalette: [],
-                    customColors: [],
-                    thumbnail: _stampThumbnailDataURL(stamp.pixels, gs)
-                });
+                const result = await window.dbService.renameProject(stamp.id, newName);
                 if (!result.success) throw new Error(result.error);
-                window.dbService.invalidateProjectsCache?.();
-                showToast(`✅ "${name}" ajouté à "Mes projets"`, { type: 'success' });
+                stamp.name = newName;
+                if (typeof index === 'number' && window.stamps?.[index]) {
+                    window.stamps[index].name = newName;
+                }
+                renderStampsList();
+                showToast(`✅ Tampon renommé "${newName}"`, { type: 'success' });
             } catch (e) {
                 showToast(`❌ ${e.message}`, { type: 'error' });
             }
             resolve();
         };
         input.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirm(); });
-        dialog.querySelector('#exportStampConfirm').addEventListener('click', confirm);
-        dialog.querySelector('#exportStampCancel').addEventListener('click', () => { dialog.remove(); resolve(); });
+        dialog.querySelector('#renameStampConfirm').addEventListener('click', confirm);
+        dialog.querySelector('#renameStampCancel').addEventListener('click', () => { dialog.remove(); resolve(); });
     });
-}
-
-function _stampThumbnailDataURL(pixels, gs) {
-    try {
-        const size = 64;
-        const c = document.createElement('canvas');
-        c.width = size; c.height = size;
-        const ctx = c.getContext('2d');
-        const h = Math.ceil(pixels.length / gs);
-        const ps = size / Math.max(gs, h);
-        pixels.forEach((px, i) => {
-            if (!px || px.isEmpty) return;
-            ctx.fillStyle = px.color;
-            ctx.fillRect((i % gs) * ps, Math.floor(i / gs) * ps, ps, ps);
-        });
-        return c.toDataURL('image/png');
-    } catch (e) { return ''; }
 }
 
 function showImportStampModal() {
@@ -11355,11 +11335,11 @@ function _buildStampRow(stamp, index) {
 
     const saveBtn = document.createElement('button');
     saveBtn.className = 'stamp-row-del';
-    saveBtn.title = 'Enregistrer comme projet';
-    saveBtn.innerHTML = '<i data-lucide="save"></i>';
+    saveBtn.title = 'Renommer le tampon';
+    saveBtn.innerHTML = '<i data-lucide="pencil"></i>';
     saveBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        _saveStampAsProject(stamp);
+        _renameStampInCloud(stamp, index);
     });
 
     const delBtn = document.createElement('button');
