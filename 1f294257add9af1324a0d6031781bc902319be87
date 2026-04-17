@@ -1,0 +1,31 @@
+public/index.html
+  9bad6294ee5758ce 652-655,663,677,681-683
+public/js/script.js
+  9bad6294ee5758ce 9025-9028,9030-9032,9037-9039
+public/gallery.html
+  9bad6294ee5758ce 345-348,373-381
+supabase/public-sharing-schema.sql
+  9bad6294ee5758ce 17-18
+public/js/database.js
+  9bad6294ee5758ce 611,614,711-712,715,723-733,736,784,795-807
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "1f294257add9af1324a0d6031781bc902319be87",
+  "prompts": {
+    "9bad6294ee5758ce": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2936fedd-86e4-40ee-b496-12aece25fa52",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Guillaume Gay",
+      "messages": [],
+      "total_additions": 73,
+      "total_deletions": 196,
+      "accepted_lines": 66,
+      "overriden_lines": 0
+    }
+  }
+}
