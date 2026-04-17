@@ -3873,7 +3873,7 @@ async function loadSupabaseProjects() {
     try {
         await ensureAuthenticatedUser();
 
-        const result = await window.dbService.getAllProjects();
+        const result = await window.dbService.getAllProjects({ type: 'project' });
         if (!result.success || !Array.isArray(result.data)) {
             throw new Error(result.error || 'Réponse Supabase invalide');
         }
@@ -3897,7 +3897,7 @@ async function showLocalProjects() {
 
     const projectSource = 'cloud';
     try {
-        const result = await window.dbService.getAllProjects({ forceRefresh: true });
+        const result = await window.dbService.getAllProjects({ forceRefresh: true, type: 'project' });
         if (!result.success) throw new Error(result.error);
         autoSaveProjects = result.data || [];
         if (autoSaveProjects.length === 0) {
@@ -8103,6 +8103,7 @@ async function saveProjectSmart() {
 
             const result = await window.dbService.saveProject({
                 name: projectName,
+                type: 'project',
                 frames,                                      // raw — dbService applique _compressFrames
                 frameLayers: compressFrameLayers(frameLayers), // sparse pour réduire la taille en DB/Storage
                 _nextLayerId,
@@ -8873,17 +8874,18 @@ async function importSharedProject(file) {
         }
         currentLayer = 0;
 
-        // Restaurer les tampons s'ils sont inclus dans le fichier
+        // Restaurer les tampons s'ils sont inclus dans le fichier — persister chacun dans Supabase
         if (Array.isArray(projectData.stamps) && projectData.stamps.length > 0) {
             const restoredStamps = projectData.stamps.map(s => ({
                 ...s,
                 pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
             }));
-            const existingIds = new Set((window.stamps || []).map(s => s.id));
-            const newStamps = restoredStamps.filter(s => !existingIds.has(s.id));
+            const existingNames = new Set((window.stamps || []).map(s => s.name));
+            const newStamps = restoredStamps.filter(s => !existingNames.has(s.name));
             window.stamps = [...newStamps, ...(window.stamps || [])];
-            _saveStamps();
             renderStampsList();
+            // fire-and-forget : persiste chaque nouveau tampon dans Supabase
+            newStamps.forEach(s => { _saveStampToCloud(s).catch(() => {}); });
         }
 
         // Mettre à jour l'interface
@@ -10895,230 +10897,152 @@ function _photoAddColorsToPalette(colors) {
 }
 
 // ─── Stamps / Tampons ────────────────────────────────────────────────────────
+// Stockage 100% Supabase : table pixel_projects avec type='stamp'.
+// Les tampons sont rechargés automatiquement au démarrage dans la sidebar.
 
 window.stamps = window.stamps || [];
-let _stampsFileHandle = null; // FileSystemFileHandle vers stamps.pixelstamps
 
-// Récupère le FileHandle du fichier tampons depuis IndexedDB
-async function _loadStampsFileHandle() {
-    try {
-        const db = await new Promise((resolve, reject) => {
-            const req = indexedDB.open('pixelEditorFileHandles', 1);
-            req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
-            req.onsuccess = e => resolve(e.target.result);
-            req.onerror = reject;
-        });
-        return await new Promise((resolve, reject) => {
-            const tx = db.transaction('handles', 'readonly');
-            const req = tx.objectStore('handles').get('__stamps__');
-            req.onsuccess = e => resolve(e.target.result || null);
-            req.onerror = reject;
-        });
-    } catch (_) { return null; }
-}
-
-async function _storeStampsFileHandle(handle) {
-    try {
-        const db = await new Promise((resolve, reject) => {
-            const req = indexedDB.open('pixelEditorFileHandles', 1);
-            req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
-            req.onsuccess = e => resolve(e.target.result);
-            req.onerror = reject;
-        });
-        await new Promise((resolve, reject) => {
-            const tx = db.transaction('handles', 'readwrite');
-            tx.objectStore('handles').put(handle, '__stamps__');
-            tx.oncomplete = resolve;
-            tx.onerror = reject;
-        });
-    } catch (_) {}
-}
-
-// Sérialise et écrit les tampons dans le fichier sur le disque
-async function _writeStampsToDisk() {
-    const data = (window.stamps || []).map(s => ({
-        ...s,
-        pixels: toSparseFrame(s.pixels || [])
-    }));
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    try {
-        const writable = await _stampsFileHandle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-    } catch (_) {}
-}
-
-// Charge les tampons depuis le disque au démarrage (silencieux)
-function _loadStamps() {
-    localStorage.removeItem('pixelEditor_stamps');
-    window.stamps = [];
-    // Essayer workspace en priorité, puis handle dédié
-    _getWorkspaceDir(false).then(async workDir => {
-        if (workDir) {
-            try {
-                const tamponsDir = await workDir.getDirectoryHandle('tampons', { create: true });
-                const fileHandle = await tamponsDir.getFileHandle('stamps.pixelstamps', { create: false }).catch(() => null);
-                if (!fileHandle) return;
-                const file = await fileHandle.getFile();
-                const text = await file.text();
-                if (!text.trim()) return;
-                const parsed = JSON.parse(text);
-                if (!Array.isArray(parsed)) return;
-                window.stamps = parsed.map(s => ({
-                    ...s,
-                    pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
-                }));
-                renderStampsList();
-                return;
-            } catch (_) {}
+// Convertit les pixels d'un tampon reçus de Supabase (format compressé string[] ou raw {color,isEmpty})
+// vers le format riche utilisé en mémoire.
+function _normaliseStampPixels(rawFrame) {
+    const arr = Array.isArray(rawFrame) ? rawFrame : (rawFrame?.pixels || []);
+    return arr.map(px => {
+        if (typeof px === 'string') {
+            return px ? { color: px, isEmpty: false } : { color: '#FFFFFF', isEmpty: true };
         }
-        // Fallback : handle dédié sauvegardé en IndexedDB (Safari + Chrome sans workspace)
-        _loadStampsFileHandle().then(async handle => {
-            if (!handle) return;
-            try {
-                let perm = await handle.queryPermission({ mode: 'readwrite' });
-                // Sur Safari, la permission est 'prompt' au démarrage — ne pas demander ici (pas de geste utilisateur)
-                // On mémorise le handle pour que _saveStamps puisse l'utiliser dès le prochain geste
-                if (perm === 'prompt') {
-                    _stampsFileHandle = handle; // mémoriser pour réutilisation
-                    return; // les tampons seront rechargés au prochain loadStampsFromDisk()
-                }
-                if (perm !== 'granted') return;
-                _stampsFileHandle = handle;
-                const file = await handle.getFile();
-                const text = await file.text();
-                const parsed = JSON.parse(text);
-                if (!Array.isArray(parsed)) return;
-                window.stamps = parsed.map(s => ({
-                    ...s,
-                    pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
-                }));
-                renderStampsList();
-            } catch (_) {}
-        });
+        if (!px) return { color: '#FFFFFF', isEmpty: true };
+        const color = px.color || '#FFFFFF';
+        const empty = color === '#FFFFFF' ? (px.isEmpty !== false) : false;
+        return { color, isEmpty: empty };
     });
 }
 
-// Sauvegarde les tampons sur le disque (workspace ou handle dédié)
-async function _saveStamps() {
-    const data = (window.stamps || []).map(s => ({
-        ...s, pixels: toSparseFrame(s.pixels || [])
-    }));
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+// Sauvegarde un tampon dans Supabase (type='stamp').
+async function _saveStampToCloud(stamp) {
+    if (!window.dbService?.getUserId?.()) return { success: false, error: 'not authenticated' };
+    const customColors = stamp.gridSize ? { _stampGridSize: stamp.gridSize } : [];
+    return window.dbService.saveProject({
+        name: stamp.name,
+        type: 'stamp',
+        frames: [stamp.pixels],
+        frameLayers: null,
+        _nextLayerId: 0,
+        currentFrame: 0,
+        fps: 24,
+        customPalette: [],
+        customColors,
+        thumbnail: null // les tampons sont rendus depuis pixels, pas besoin d'upload Storage
+    });
+}
 
-    // Priorité 1 : workspace déjà en cache (vérification synchrone — pas d'await qui casse le geste Safari)
-    if (_workspaceDir) {
-        try {
-            const tamponsDir = await _workspaceDir.getDirectoryHandle('tampons', { create: true });
-            const fileHandle = await tamponsDir.getFileHandle('stamps.pixelstamps', { create: true });
-            await _writeToHandle(fileHandle, blob);
-            return;
-        } catch (_) {}
-    }
+// Supprime un tampon dans Supabase (fire-and-forget).
+function _deleteStampFromCloud(stampName) {
+    if (!window.dbService?.getUserId?.() || !stampName) return;
+    window.dbService.deleteProject(stampName, 'stamp').catch(() => {});
+}
 
-    // Priorité 2 : handle dédié déjà connu (rechargé depuis IndexedDB au démarrage)
-    // Sur Safari, la permission est 'prompt' après rechargement → la demander explicitement
-    if (_stampsFileHandle) {
-        try {
-            let perm = await _stampsFileHandle.queryPermission({ mode: 'readwrite' });
-            if (perm === 'prompt') perm = await _stampsFileHandle.requestPermission({ mode: 'readwrite' });
-            if (perm === 'granted') {
-                await _writeToHandle(_stampsFileHandle, blob);
-                return;
-            }
-        } catch (_) {}
-        _stampsFileHandle = null; // handle invalide, on en choisira un nouveau
-    }
+// Fetch un tampon unique depuis Supabase et l'ajoute à la sidebar.
+async function _fetchStampPixels(name) {
+    const res = await window.dbService.loadProject(name, 'stamp');
+    if (!res?.success || !res.data) throw new Error(res?.error || 'load failed');
+    const d = res.data;
+    const rawFrame = Array.isArray(d.frames) && d.frames.length > 0 ? d.frames[0] : [];
+    const pixels = _normaliseStampPixels(rawFrame);
+    const cc = d.custom_colors;
+    const gridSize = (cc && typeof cc === 'object' && !Array.isArray(cc) && cc._stampGridSize)
+        || Math.round(Math.sqrt(pixels.length))
+        || currentGridSize;
+    return { id: d.id, name: d.name || name, pixels, gridSize, hidden: false };
+}
 
-    // Priorité 3 : demander à l'utilisateur où sauvegarder (première fois — Safari inclus)
-    if (window.showSaveFilePicker) {
-        showToast('Choisissez où sauvegarder vos tampons (une seule fois)', { type: 'info', duration: 4000 });
-        try {
-            _stampsFileHandle = await window.showSaveFilePicker({
-                suggestedName: 'stamps.pixelstamps',
-                startIn: 'documents',
-                types: [{ description: 'Pixel Art Stamps', accept: { 'application/json': ['.pixelstamps'] } }]
-            });
-            await _storeStampsFileHandle(_stampsFileHandle);
-            await _writeToHandle(_stampsFileHandle, blob);
-            showToast('✅ Tampons sauvegardés sur le disque', { type: 'success' });
-        } catch (e) {
-            if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
-        }
+// Ouvre une modale listant les tampons sauvegardés sur Supabase (metadata seulement).
+// L'utilisateur clique pour ajouter un tampon — les pixels ne sont fetchés qu'à ce moment-là.
+async function openStampsBrowser() {
+    if (!window.dbService?.getUserId?.()) {
+        showToast(tL('loginRequired') || 'Connectez-vous pour accéder aux tampons', { type: 'warning' });
         return;
     }
 
-    // Fallback ultime : téléchargement direct (Firefox sans File System Access API)
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'stamps.pixelstamps';
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Tampons téléchargés — recharge ce fichier pour les restaurer', { type: 'info', duration: 5000 });
-}
-
-// Parse un fichier et retourne le tableau de stamps, ou null si invalide
-async function _parseStampsFile(file) {
-    const parsed = JSON.parse(await file.text());
-    if (Array.isArray(parsed)) return parsed;
-    if (parsed && Array.isArray(parsed.stamps)) return parsed.stamps;
-    return null; // fichier non reconnu (cloud project, etc.)
-}
-
-// Ouvre le dialogue pour charger les tampons depuis le disque
-// Toujours ouvre le Finder — ne réutilise jamais silencieusement un handle
-async function loadStampsFromDisk() {
-    const applyStamps = (stampsArray) => {
-        if (!stampsArray || stampsArray.length === 0) {
-            showToast('Ce fichier ne contient aucun tampon', { type: 'info' });
-            return false;
-        }
-        const newStamps = stampsArray.map(s => ({
-            ...s,
-            id: s.id || Date.now() + Math.random(),
-            pixels: (s.pixels && s.pixels._sparse) ? fromSparseFrame(s.pixels) : (s.pixels || [])
-        }));
-        window.stamps = [...newStamps, ...(window.stamps || [])];
-        renderStampsList();
-        showToast(`✅ ${newStamps.length} tampon(s) ajouté(s) — ${window.stamps.length} au total`, { type: 'success' });
-        return true;
-    };
-
-    if (window.showOpenFilePicker) {
-        try {
-            const [handle] = await window.showOpenFilePicker({
-                startIn: 'downloads',
-                types: [{ description: 'Pixel Art Stamps', accept: { 'application/json': ['.pixelstamps', '.json'] } }]
-            });
-            const file = await handle.getFile();
-            const stampsArray = await _parseStampsFile(file);
-            if (stampsArray === null) {
-                showToast('❌ Ce fichier ne contient pas de tampons (.pixelstamps attendu)', { type: 'error', duration: 5000 });
-                return;
-            }
-            applyStamps(stampsArray);
-        } catch (e) {
-            if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
-        }
+    let stampsList = [];
+    try {
+        const result = await window.dbService.getAllProjects({ forceRefresh: true, type: 'stamp' });
+        if (!result.success) throw new Error(result.error);
+        stampsList = result.data || [];
+    } catch (e) {
+        console.warn('Erreur liste tampons:', e);
+        showToast('❌ Impossible de récupérer la liste', { type: 'error' });
         return;
     }
 
-    // Fallback : input file (navigateurs sans File System Access API)
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.pixelstamps,.json';
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const stampsArray = await _parseStampsFile(file);
-        if (stampsArray === null) {
-            showToast('❌ Ce fichier ne contient pas de tampons', { type: 'error' });
-            return;
-        }
-        applyStamps(stampsArray);
-    };
-    input.click();
+    if (stampsList.length === 0) {
+        showToast('Aucun tampon sauvegardé sur Supabase', { type: 'warning' });
+        return;
+    }
+
+    const loadedNames = new Set((window.stamps || []).map(s => s.name));
+
+    const itemsHTML = stampsList.map((s, i) => {
+        const date = s.updated_at || s.created_at;
+        const dateStr = date ? new Date(date).toLocaleDateString(tL('dateLocale')) : '';
+        const already = loadedNames.has(s.name);
+        return `<div class="stamp-cloud-item${already ? ' already-loaded' : ''}" data-index="${i}" style="padding:10px 12px;border-radius:8px;background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.1);margin-bottom:6px;cursor:${already ? 'default' : 'pointer'};display:flex;justify-content:space-between;align-items:center;gap:8px;opacity:${already ? '0.55' : '1'};">
+            <div style="min-width:0;flex:1;">
+                <div style="font-weight:500;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+                <div style="font-size:0.75rem;color:rgba(0,0,0,0.55);">${dateStr}</div>
+            </div>
+            <div class="stamp-cloud-action" style="font-size:0.8rem;color:${already ? '#2e9d4f' : '#555'};flex-shrink:0;">
+                ${already ? '✓ chargé' : 'Ajouter'}
+            </div>
+        </div>`;
+    }).join('');
+
+    const dialog = createMobileDialog('Tampons Supabase', `
+        <div style="margin-bottom:12px;padding:8px;background:rgba(0,0,0,0.05);border-radius:8px;">
+            <p style="margin:0;font-size:0.9rem;color:rgba(0,0,0,0.75);">
+                Cliquez sur un tampon pour l'ajouter à la sidebar.
+            </p>
+        </div>
+        <div class="stamps-cloud-list" style="max-height:50vh;overflow-y:auto;">
+            ${itemsHTML}
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="closeStampsBrowser" class="dialog-button secondary">${tL('closeBtn') || 'Fermer'}</button>
+        </div>
+    `);
+
+    dialog.querySelectorAll('.stamp-cloud-item').forEach(item => {
+        if (item.classList.contains('already-loaded')) return;
+        item.addEventListener('click', async () => {
+            const idx = parseInt(item.dataset.index, 10);
+            const meta = stampsList[idx];
+            if (!meta) return;
+            const actionEl = item.querySelector('.stamp-cloud-action');
+            item.style.pointerEvents = 'none';
+            if (actionEl) actionEl.textContent = '…';
+            try {
+                const stamp = await _fetchStampPixels(meta.name);
+                if (!(window.stamps || []).some(st => st.name === stamp.name)) {
+                    window.stamps = (window.stamps || []).concat(stamp);
+                    renderStampsList();
+                }
+                item.classList.add('already-loaded');
+                item.style.opacity = '0.55';
+                item.style.cursor = 'default';
+                if (actionEl) {
+                    actionEl.textContent = '✓ chargé';
+                    actionEl.style.color = '#2e9d4f';
+                }
+                showToast(`✅ Tampon "${meta.name}" ajouté`, { type: 'success', duration: 2000 });
+            } catch (e) {
+                console.warn('Stamp load error:', e);
+                item.style.pointerEvents = '';
+                if (actionEl) actionEl.textContent = 'Ajouter';
+                showToast('❌ Chargement échoué', { type: 'error' });
+            }
+        });
+    });
+
+    dialog.querySelector('#closeStampsBrowser').addEventListener('click', () => dialog.remove());
 }
 
 function saveCurrentDrawingAsStamp() {
@@ -11154,6 +11078,10 @@ function saveCurrentDrawingAsStamp() {
 }
 
 async function _addStamp(pixels, nameHint, gridSize) {
+    if (!window.dbService?.getUserId?.()) {
+        showToast(tL('loginRequired') || 'Connectez-vous pour créer un tampon', { type: 'warning' });
+        return null;
+    }
     // Détecter la vraie taille depuis le tableau si non fournie (évite currentGridSize incorrect)
     const detectedSize = Math.round(Math.sqrt((pixels || []).length));
     const stamp = {
@@ -11163,34 +11091,30 @@ async function _addStamp(pixels, nameHint, gridSize) {
         gridSize: gridSize || (detectedSize > 0 ? detectedSize : currentGridSize),
         hidden: false
     };
+    const result = await _saveStampToCloud(stamp);
+    if (!result.success) {
+        showToast(`❌ Impossible de sauvegarder le tampon : ${result.error || 'erreur Supabase'}`, { type: 'error' });
+        return null;
+    }
+    if (result.data?.id) stamp.id = result.data.id;
     window.stamps.unshift(stamp);
-    await _saveStamps();
     renderStampsList();
     showToast(`Tampon "${stamp.name}" sauvegardé`, { type: 'success' });
     return stamp;
 }
 
-// Écrire un objet projet sur disque sans toucher aux variables globales (workspace → picker → download)
-async function _writeProjectDataToDisk(projectData) {
-    const safeName = (projectData.name || 'projet').replace(/[^a-z0-9_\-]/gi, '_') + '.pixelart';
-    const blob = new Blob([JSON.stringify(projectData)], { type: 'application/json' });
-
-    // Téléchargement direct
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = safeName; a.click();
-    URL.revokeObjectURL(url);
-    showToast(`✅ "${projectData.name}" téléchargé`, { type: 'success' });
-}
-
-// Exporte un tampon en .pixelstamps — demande d'abord un nom, puis ouvre le Finder
+// Duplique un tampon en tant que projet dans Supabase (appelé depuis l'icône save de la ligne tampon).
+// L'utilisateur peut ensuite ouvrir ce projet depuis "My projects" pour l'éditer en full canvas.
 async function _saveStampAsProject(stamp) {
-    // 1. Demander le nom du fichier (pré-rempli avec le nom du tampon)
-    const dialog = createMobileDialog('Exporter le tampon', `
-        <p style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:10px;">Nom du fichier :</p>
+    if (!window.dbService?.getUserId?.()) {
+        showToast(tL('loginRequired') || 'Connectez-vous pour enregistrer comme projet', { type: 'warning' });
+        return;
+    }
+    const dialog = createMobileDialog('Enregistrer comme projet', `
+        <p style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:10px;">Nom du projet :</p>
         <input id="exportStampName" type="text" value="${(stamp.name || 'tampon').replace(/"/g, '&quot;')}"
             style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;color:#000;font-size:0.95rem;margin-bottom:14px;"
-            placeholder="nom-du-tampon" />
+            placeholder="nom-du-projet" />
         <div style="display:flex;gap:8px;">
             <button id="exportStampConfirm" class="dialog-button">Enregistrer</button>
             <button id="exportStampCancel" class="dialog-button secondary">Annuler</button>
@@ -11203,35 +11127,29 @@ async function _saveStampAsProject(stamp) {
     await new Promise((resolve) => {
         const confirm = async () => {
             const name = input.value.trim() || stamp.name || 'tampon';
-            const safeName = name.replace(/[^a-z0-9_\-\s]/gi, '_') + '.pixelstamps';
             dialog.remove();
-
-            const data = [{ ...stamp, pixels: toSparseFrame(stamp.pixels || []) }];
-            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-
-            if (window.showSaveFilePicker) {
-                try {
-                    const handle = await window.showSaveFilePicker({
-                        suggestedName: safeName,
-                        startIn: 'documents',
-                        types: [{ description: 'Pixel Art Stamp', accept: { 'application/json': ['.pixelstamps'] } }]
-                    });
-                    await _writeToHandle(handle, blob);
-                    showToast(`✅ "${name}" sauvegardé`, { type: 'success' });
-                } catch (e) {
-                    if (e.name !== 'AbortError') showToast(`❌ ${e.message}`, { type: 'error' });
-                }
-            } else {
-                // Safari : téléchargement direct avec le nom choisi
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = safeName; a.click();
-                URL.revokeObjectURL(url);
-                showToast(`✅ "${name}.pixelstamps" téléchargé dans Téléchargements`, { type: 'success' });
+            try {
+                const gs = stamp.gridSize || Math.round(Math.sqrt((stamp.pixels || []).length)) || currentGridSize;
+                const result = await window.dbService.saveProject({
+                    name,
+                    type: 'project',
+                    frames: [stamp.pixels],
+                    frameLayers: null,
+                    _nextLayerId: 0,
+                    currentFrame: 0,
+                    fps: 24,
+                    customPalette: [],
+                    customColors: [],
+                    thumbnail: _stampThumbnailDataURL(stamp.pixels, gs)
+                });
+                if (!result.success) throw new Error(result.error);
+                window.dbService.invalidateProjectsCache?.();
+                showToast(`✅ "${name}" ajouté à "Mes projets"`, { type: 'success' });
+            } catch (e) {
+                showToast(`❌ ${e.message}`, { type: 'error' });
             }
             resolve();
         };
-
         input.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirm(); });
         dialog.querySelector('#exportStampConfirm').addEventListener('click', confirm);
         dialog.querySelector('#exportStampCancel').addEventListener('click', () => { dialog.remove(); resolve(); });
@@ -11259,9 +11177,9 @@ function showImportStampModal() {
     const allProjects = [];
     const dialog = _buildImportStampDialog(allProjects);
 
-    // Charger depuis Supabase — métadonnées seulement (frames chargées à la demande)
+    // Charger uniquement les projets (pas les tampons) depuis Supabase — métadonnées seulement
     if (window.dbService?.getUserId?.()) {
-        window.dbService.getAllProjects().then(result => {
+        window.dbService.getAllProjects({ type: 'project' }).then(result => {
             if (!dialog.isConnected) return;
             const projects = (result.success && Array.isArray(result.data)) ? result.data : [];
             if (projects.length === 0) return;
@@ -11435,7 +11353,7 @@ function _buildStampRow(stamp, index) {
 
     const saveBtn = document.createElement('button');
     saveBtn.className = 'stamp-row-del';
-    saveBtn.title = 'Exporter comme projet';
+    saveBtn.title = 'Enregistrer comme projet';
     saveBtn.innerHTML = '<i data-lucide="save"></i>';
     saveBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -11448,9 +11366,9 @@ function _buildStampRow(stamp, index) {
     delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
     delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        window.stamps.splice(index, 1);
-        _saveStamps();
+        const removed = window.stamps.splice(index, 1)[0];
         renderStampsList();
+        if (removed?.name) _deleteStampFromCloud(removed.name);
     });
 
     row.append(handle, thumb, name, saveBtn, delBtn);
@@ -11506,7 +11424,6 @@ function _buildStampRow(stamp, index) {
         if (from !== index) {
             const moved = window.stamps.splice(from, 1)[0];
             window.stamps.splice(index, 0, moved);
-            _saveStamps();
             renderStampsList();
         }
     });
@@ -11540,7 +11457,6 @@ function renderStampsList() {
         _makeTouchSortable(mobileList, '.stamp-row', 'stampIndex', (from, to) => {
             const moved = window.stamps.splice(from, 1)[0];
             window.stamps.splice(to, 0, moved);
-            _saveStamps();
             renderStampsList();
         });
     }
@@ -11563,17 +11479,17 @@ function _applyStamp(stamp) {
     showToast(`Tampon "${stamp.name}" appliqué`, { type: 'success' });
 }
 
-// Initialisation des tampons au démarrage
+// Initialisation des tampons au démarrage — pas d'auto-load pour économiser l'egress Supabase.
+// L'utilisateur ouvre la modale via le bouton dossier pour parcourir ses tampons.
 document.addEventListener('DOMContentLoaded', () => {
-    _loadStamps();
-    renderStampsList();
+    renderStampsList(); // liste vide au démarrage
 
     document.getElementById('saveStampBtn')?.addEventListener('click', saveCurrentDrawingAsStamp);
-    document.getElementById('importStampBtn')?.addEventListener('click', loadStampsFromDisk);
+    document.getElementById('importStampBtn')?.addEventListener('click', openStampsBrowser);
 
     // Boutons mobiles
     document.getElementById('saveStampBtnMobile')?.addEventListener('click', saveCurrentDrawingAsStamp);
-    document.getElementById('importStampBtnMobile')?.addEventListener('click', loadStampsFromDisk);
+    document.getElementById('importStampBtnMobile')?.addEventListener('click', openStampsBrowser);
     document.getElementById('copyFrameBtnMobile')?.addEventListener('click', copyCurrentFrame);
     document.getElementById('pasteFrameBtnMobile')?.addEventListener('click', pasteFrame);
     document.getElementById('addFrameBtnMobile')?.addEventListener('click', addFrame);

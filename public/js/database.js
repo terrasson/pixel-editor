@@ -58,7 +58,8 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
-            const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail } = projectData;
+            const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail, type } = projectData;
+            const projectType = (type === 'stamp') ? 'stamp' : 'project';
             const safeName = name.replace(/[^a-z0-9]/gi, '_');
 
             onProgress?.('storage');
@@ -130,6 +131,7 @@ class DatabaseService {
                 fps: fps || 24,
                 custom_palette: customPalette,
                 custom_colors: customColors ?? null,
+                type: projectType,
                 updated_at: new Date().toISOString()
             };
             // Ne mettre à jour thumbnail que si on en a une — évite d'écraser l'existante avec null
@@ -147,7 +149,7 @@ class DatabaseService {
                 const { data, error } = await withDbTimeout(
                     this.supabase
                         .from('pixel_projects')
-                        .upsert({ user_id: userId, name, ...payload }, { onConflict: 'user_id,name' })
+                        .upsert({ user_id: userId, name, ...payload }, { onConflict: 'user_id,name,type' })
                         .select('id')
                         .single()
                 );
@@ -162,6 +164,7 @@ class DatabaseService {
                         .select('id')
                         .eq('user_id', userId)
                         .eq('name', name)
+                        .eq('type', projectType)
                         .maybeSingle()
                 );
 
@@ -195,7 +198,7 @@ class DatabaseService {
     }
 
     // Load a project by name
-    async loadProject(projectName) {
+    async loadProject(projectName, type = 'project') {
         if (!this.supabase) this.init();
 
         try {
@@ -209,6 +212,7 @@ class DatabaseService {
                 .select('*')
                 .eq('user_id', userId)
                 .eq('name', projectName)
+                .eq('type', type)
                 .single();
 
             if (error) throw error;
@@ -246,16 +250,19 @@ class DatabaseService {
         }
     }
 
-    // Get all projects for current user (avec cache TTL 30s)
-    async getAllProjects({ forceRefresh = false } = {}) {
+    // Get all projects for current user (avec cache TTL 30s, par type)
+    async getAllProjects({ forceRefresh = false, type = 'project' } = {}) {
         if (!this.supabase) this.init();
 
         const userId = this.getUserId();
         if (!userId) return { success: false, error: 'User not authenticated' };
 
         const now = Date.now();
-        if (!forceRefresh && this._projectsCache && this._projectsCacheUser === userId && (now - this._projectsCacheTime) < 30000) {
-            return { success: true, data: this._projectsCache };
+        this._projectsCache = this._projectsCache || {};
+        this._projectsCacheTime = this._projectsCacheTime || {};
+        const cacheKey = `${userId}:${type}`;
+        if (!forceRefresh && this._projectsCache[cacheKey] && (now - this._projectsCacheTime[cacheKey]) < 30000) {
+            return { success: true, data: this._projectsCache[cacheKey] };
         }
 
         try {
@@ -263,16 +270,16 @@ class DatabaseService {
             // Les frames sont chargées à la demande dans loadProject()
             const { data, error } = await this.supabase
                 .from('pixel_projects')
-                .select('id, name, thumbnail, created_at, updated_at, fps, current_frame, custom_colors')
+                .select('id, name, thumbnail, created_at, updated_at, fps, current_frame, custom_colors, type')
                 .eq('user_id', userId)
+                .eq('type', type)
                 .order('updated_at', { ascending: false })
                 .limit(50);
 
             if (error) throw error;
 
-            this._projectsCache = data;
-            this._projectsCacheUser = userId;
-            this._projectsCacheTime = now;
+            this._projectsCache[cacheKey] = data;
+            this._projectsCacheTime[cacheKey] = now;
 
             return { success: true, data };
         } catch (error) {
@@ -283,12 +290,12 @@ class DatabaseService {
 
     // Invalider le cache projets (à appeler après save/delete)
     invalidateProjectsCache() {
-        this._projectsCache = null;
-        this._projectsCacheTime = 0;
+        this._projectsCache = {};
+        this._projectsCacheTime = {};
     }
 
     // Delete a project
-    async deleteProject(projectName) {
+    async deleteProject(projectName, type = 'project') {
         if (!this.supabase) this.init();
 
         try {
@@ -301,7 +308,8 @@ class DatabaseService {
                 .from('pixel_projects')
                 .delete()
                 .eq('user_id', userId)
-                .eq('name', projectName);
+                .eq('name', projectName)
+                .eq('type', type);
 
             if (error) throw error;
 
@@ -614,6 +622,7 @@ class DatabaseService {
                 .select('id, name, thumbnail')
                 .eq('user_id', userId)
                 .eq('name', projectName)
+                .eq('type', 'project')
                 .maybeSingle();
 
             if (projectError) throw projectError;
@@ -885,6 +894,7 @@ class DatabaseService {
                     .select('id')
                     .eq('user_id', userId)
                     .eq('name', newName)
+                    .eq('type', 'project')
                     .single();
 
                 if (!existing) break;
@@ -898,6 +908,7 @@ class DatabaseService {
                 .insert({
                     user_id: userId,
                     name: newName,
+                    type: 'project',
                     frames: projectSnapshot.frames,
                     current_frame: projectSnapshot.current_frame,
                     fps: projectSnapshot.fps,
