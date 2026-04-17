@@ -2746,14 +2746,14 @@ function _cropExtractAndConfirm(rect) {
     const dialog = createMobileDialog('Découper en tampon', `
         <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
             <canvas id="cropPreviewCanvas" width="${w * ps}" height="${h * ps}"
-                style="image-rendering:pixelated;border:1px solid rgba(255,255,255,0.2);border-radius:6px;background:#1a1a2e;"></canvas>
-            <div style="color:rgba(255,255,255,0.7);font-size:0.85rem;">
+                style="image-rendering:pixelated;border:1px solid rgba(0,0,0,0.15);border-radius:6px;background:#1a1a2e;"></canvas>
+            <div style="color:rgba(0,0,0,0.7);font-size:0.85rem;">
                 <div><strong>${w} × ${h}</strong> pixels</div>
             </div>
         </div>
-        <label style="font-size:0.85rem;color:rgba(255,255,255,0.7);display:block;margin-bottom:6px;">Nom du tampon</label>
+        <label style="font-size:0.85rem;color:rgba(0,0,0,0.7);display:block;margin-bottom:6px;">Nom du tampon</label>
         <input id="cropStampName" type="text" value="Découpe ${w}×${h}"
-            style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:white;font-size:0.9rem;box-sizing:border-box;margin-bottom:16px;">
+            style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#000;font-size:0.9rem;box-sizing:border-box;margin-bottom:16px;">
         <div style="display:flex;gap:8px;">
             <button id="cropConfirmBtn" class="dialog-button">Ajouter comme tampon</button>
             <button id="cropCancelBtn" class="dialog-button secondary">Annuler</button>
@@ -2771,11 +2771,19 @@ function _cropExtractAndConfirm(rect) {
         ctx.fillRect(c * ps, r * ps, ps, ps);
     }
 
+    // Focus auto sur le champ nom + sélection → l'utilisateur peut taper immédiatement pour renommer
+    const nameInput = dialog.querySelector('#cropStampName');
+    setTimeout(() => { nameInput?.focus(); nameInput?.select(); }, 50);
+    nameInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') dialog.querySelector('#cropConfirmBtn').click();
+    });
+
     dialog.querySelector('#cropConfirmBtn').addEventListener('click', async () => {
-        const name = dialog.querySelector('#cropStampName').value.trim() || `Découpe ${w}×${h}`;
+        const name = nameInput.value.trim() || `Découpe ${w}×${h}`;
         const stamp = await _addStamp(pixels, name, w);
         dialog.remove();
         setCropStampState(false);
+        if (!stamp) return;
         activeStampId = stamp.id;
         enterStampMode(stamp.pixels, stamp.gridSize);
     });
@@ -11051,8 +11059,8 @@ function saveCurrentDrawingAsStamp() {
     const defaultName = `Frame ${currentFrame + 1}`;
     const dialog = createMobileDialog('Nommer le tampon', `
         <div style="margin-bottom:12px;">
-            <input id="stampNameInput" type="text" value="${defaultName}"
-                style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:0.95rem;"
+            <input id="stampNameInput" type="text" value="${defaultName.replace(/"/g, '&quot;')}"
+                style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;color:#000;font-size:0.95rem;"
                 placeholder="Nom du tampon" />
         </div>
         <div style="display:flex;gap:8px;">
