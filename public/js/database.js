@@ -799,15 +799,13 @@ class DatabaseService {
 
             // Si les frames sont offloadées en Storage ({_url}), les fetcher inline
             // pour que shared.html reçoive un array — même logique que loadProject().
+            // En cas d'échec on throw : retourner success avec frames=null casserait
+            // shared.html et corromprait les duplications downstream.
             let frames = data.pixel_projects.frames;
             if (frames && typeof frames === 'object' && !Array.isArray(frames) && frames._url) {
-                try {
-                    const resp = await fetch(frames._url);
-                    if (resp.ok) frames = await resp.json();
-                } catch (e) {
-                    console.warn('Failed to fetch shared frames from Storage:', e);
-                    frames = null;
-                }
+                const resp = await fetch(frames._url);
+                if (!resp.ok) throw new Error('Frames Storage unreachable (' + resp.status + ')');
+                frames = await resp.json();
             }
 
             data.project_snapshot = {
