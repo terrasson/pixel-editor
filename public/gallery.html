@@ -339,58 +339,13 @@
         const t = key => T[key][localStorage.getItem('lang') || 'en'];
 
         let currentSort = 'recent';
-        const activeIntervals = [];
-
-        function clearIntervals() {
-            activeIntervals.forEach(clearInterval);
-            activeIntervals.length = 0;
-        }
-
-        function drawFrame(ctx, frame, canvasSize) {
-            if (!Array.isArray(frame) || frame.length === 0) return;
-            const gridSize = Math.sqrt(frame.length);
-            const pixelSize = canvasSize / gridSize;
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, canvasSize, canvasSize);
-            frame.forEach((pixel, i) => {
-                if (!pixel || pixel.isEmpty) return;
-                ctx.fillStyle = pixel.color;
-                ctx.fillRect((i % gridSize) * pixelSize, Math.floor(i / gridSize) * pixelSize, pixelSize, pixelSize);
-            });
-        }
-
-        function fromSparseFrame(sparse) {
-            const size = sparse.size || 1024;
-            const frame = [];
-            for (let i = 0; i < size; i++) frame.push({ color: '#FFFFFF', isEmpty: true });
-            for (const entry of (sparse.data || [])) {
-                if (entry.i >= 0 && entry.i < size) frame[entry.i] = { color: entry.c, isEmpty: false };
-            }
-            return frame;
-        }
-
-        function normalisePixel(p) {
-            if (typeof p === 'string') return p ? { color: p, isEmpty: false } : { color: '#FFFFFF', isEmpty: true };
-            return p || { color: '#FFFFFF', isEmpty: true };
-        }
-
-        function normaliseFrame(frame) {
-            if (!frame) return null;
-            if (frame._sparse === true) return fromSparseFrame(frame);
-            if (Array.isArray(frame)) return frame.map(normalisePixel);
-            if (Array.isArray(frame.pixels)) return frame.pixels.map(normalisePixel);
-            return null;
-        }
 
         function renderCard(share, currentUserId) {
             const snapshot = share.project_snapshot || {};
-            const rawFrames = snapshot.frames || [];
-            const frames = Array.isArray(rawFrames)
-                ? rawFrames.map(normaliseFrame).filter(f => f !== null)
-                : [];
-            const fps = snapshot.fps || 4;
-            const isAnimated = frames.length > 1;
-            const frameCount = frames.length;
+            // Listing galerie = thumbnails uniquement (pas de frames — egress).
+            // L'animation complète est visible au clic sur /shared/<token>.
+            const frameCount = snapshot.frame_count || 1;
+            const isAnimated = frameCount > 1;
 
             const card = document.createElement('a');
             card.className = 'gallery-card';
@@ -415,43 +370,15 @@
 
             const canvas = card.querySelector('.card-canvas');
             const ctx = canvas.getContext('2d');
-            let cardInterval = null;
 
-            const startRender = () => {
-                if (frames.length === 0 && share.project_thumbnail) {
-                    const img = new Image();
-                    img.onload = () => ctx.drawImage(img, 0, 0, 128, 128);
-                    img.src = share.project_thumbnail;
-                } else if (frames.length > 0) {
-                    drawFrame(ctx, frames[0], 128);
-                    if (isAnimated && !cardInterval) {
-                        let idx = 0;
-                        cardInterval = setInterval(() => {
-                            idx = (idx + 1) % frames.length;
-                            drawFrame(ctx, frames[idx], 128);
-                        }, 1000 / fps);
-                        activeIntervals.push(cardInterval);
-                    }
-                }
-            };
-
-            const stopRender = () => {
-                if (cardInterval) {
-                    clearInterval(cardInterval);
-                    const i = activeIntervals.indexOf(cardInterval);
-                    if (i !== -1) activeIntervals.splice(i, 1);
-                    cardInterval = null;
-                }
-            };
-
-            // Lazy render : dessiner uniquement quand visible
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) startRender();
-                    else stopRender();
-                });
-            }, { rootMargin: '100px' });
-            observer.observe(card);
+            if (share.project_thumbnail) {
+                const img = new Image();
+                img.onload = () => ctx.drawImage(img, 0, 0, 128, 128);
+                img.src = share.project_thumbnail;
+            } else {
+                ctx.fillStyle = '#222';
+                ctx.fillRect(0, 0, 128, 128);
+            }
 
             if (isOwner) {
                 const deleteBtn = card.querySelector('.card-delete-btn');
@@ -483,7 +410,6 @@
         }
 
         async function loadGallery(sort = 'recent') {
-            clearIntervals();
             const container = document.getElementById('galleryContainer');
             container.innerHTML = `<div class="gallery-loading"><div class="spinner"></div><p>${t('loading')}</p></div>`;
 

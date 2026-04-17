@@ -608,27 +608,16 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
-            // Get project data
+            // Get project (metadata only — le snapshot n'existe plus, on lit depuis pixel_projects via JOIN au read)
             const { data: project, error: projectError } = await this.supabase
                 .from('pixel_projects')
-                .select('*')
+                .select('id, name, thumbnail')
                 .eq('user_id', userId)
                 .eq('name', projectName)
                 .maybeSingle();
 
             if (projectError) throw projectError;
             if (!project) throw new Error('Project not found');
-
-            // Create snapshot of project data (always fresh)
-            const projectSnapshot = {
-                name: project.name,
-                frames: project.frames,
-                current_frame: project.current_frame,
-                fps: project.fps,
-                custom_palette: project.custom_palette,
-                custom_colors: project.custom_colors,
-                created_at: project.created_at
-            };
 
             // Get all existing shares for this project
             const { data: existingShares } = await this.supabase
@@ -646,11 +635,9 @@ class DatabaseService {
                     await this.supabase.from('public_shares').delete().in('id', idsToDelete);
                 }
 
-                // Update the kept share with fresh snapshot
                 const { data: updated, error: updateError } = await this.supabase
                     .from('public_shares')
                     .update({
-                        project_snapshot: projectSnapshot,
                         project_thumbnail: project.thumbnail,
                         project_name: project.name,
                         is_public_gallery: options.publishToGallery === true
@@ -677,7 +664,6 @@ class DatabaseService {
                 .insert({
                     project_id: project.id,
                     owner_id: userId,
-                    project_snapshot: projectSnapshot,
                     project_name: project.name,
                     project_thumbnail: project.thumbnail,
                     allow_duplicate: options.allowDuplicate !== false,
@@ -722,9 +708,11 @@ class DatabaseService {
         try {
             const orderColumn = sortBy === 'popular' ? 'view_count' : 'created_at';
 
+            // Lazy load : ne ramène PAS frames (trop gros pour un listing).
+            // Le front affiche project_thumbnail et fetch les frames au clic via /shared/<token>.
             const { data, error } = await this.supabase
                 .from('public_shares')
-                .select('id, project_id, share_token, project_name, project_thumbnail, project_snapshot, view_count, duplicate_count, created_at, owner_id')
+                .select('id, project_id, share_token, project_name, project_thumbnail, view_count, duplicate_count, created_at, owner_id, pixel_projects:project_id(fps, frame_count, created_at)')
                 .eq('is_public_gallery', true)
                 .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
                 .order(orderColumn, { ascending: false })
@@ -732,9 +720,20 @@ class DatabaseService {
 
             if (error) throw error;
 
+            // Reconstruire project_snapshot sans frames (le front tombe en fallback thumbnail)
+            const withSnapshot = (data || []).map(share => ({
+                ...share,
+                project_snapshot: share.pixel_projects ? {
+                    name: share.project_name,
+                    fps: share.pixel_projects.fps,
+                    frame_count: share.pixel_projects.frame_count || 1,
+                    created_at: share.pixel_projects.created_at
+                } : null
+            })).filter(s => s.project_snapshot); // drop orphelins
+
             // Deduplicate: keep only the most recent share per project
             const seen = new Set();
-            const deduped = data.filter(share => {
+            const deduped = withSnapshot.filter(share => {
                 const key = share.project_id || share.project_name;
                 if (seen.has(key)) return false;
                 seen.add(key);
@@ -782,7 +781,7 @@ class DatabaseService {
         try {
             const { data, error } = await this.supabase
                 .from('public_shares')
-                .select('*')
+                .select('id, project_id, share_token, project_name, project_thumbnail, view_count, duplicate_count, allow_duplicate, is_public_gallery, expires_at, created_at, updated_at, owner_id, pixel_projects:project_id(frames, fps, current_frame, custom_palette, custom_colors, created_at)')
                 .eq('share_token', shareToken)
                 .single();
 
@@ -791,6 +790,21 @@ class DatabaseService {
             // Check if expired
             if (data.expires_at && new Date(data.expires_at) < new Date()) {
                 throw new Error('This share link has expired');
+            }
+
+            // Reconstruire project_snapshot depuis le JOIN pour préserver la shape consommée par shared.html / index.html
+            if (data.pixel_projects) {
+                data.project_snapshot = {
+                    name: data.project_name,
+                    frames: data.pixel_projects.frames,
+                    fps: data.pixel_projects.fps,
+                    current_frame: data.pixel_projects.current_frame,
+                    custom_palette: data.pixel_projects.custom_palette,
+                    custom_colors: data.pixel_projects.custom_colors,
+                    created_at: data.pixel_projects.created_at
+                };
+            } else {
+                throw new Error('Le projet partagé n\'existe plus');
             }
 
             return { success: true, data };
