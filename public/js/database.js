@@ -89,18 +89,26 @@ class DatabaseService {
                         : Promise.resolve({ success: true })
                 ]);
 
-                if (framesResult.success) {
-                    const { data: framesUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(framesPath);
-                    if (framesUrlData?.publicUrl) framesForDb = { _url: framesUrlData.publicUrl };
-                } else {
-                    console.warn('⚠️ Storage upload échoué — frames stockées inline en DB');
+                // Frames upload raté → on arrête net. Retomber sur un insert inline
+                // d'un payload >20KB épuise le Disk IO et déclenche un DB timeout à coup sûr.
+                if (!framesResult.success) {
+                    throw new Error('Storage upload failed — bucket "thumbnails" manquant ou mal configuré.');
                 }
+                const { data: framesUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(framesPath);
+                if (!framesUrlData?.publicUrl) {
+                    throw new Error('Impossible d\'obtenir l\'URL publique des frames depuis Storage.');
+                }
+                framesForDb = { _url: framesUrlData.publicUrl };
 
-                if (layersBlob && layersResult.success) {
-                    const { data: layersUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(layersPath);
-                    if (layersUrlData?.publicUrl) frameLayersForDb = { _url: layersUrlData.publicUrl };
-                } else if (frameLayers) {
-                    frameLayersForDb = frameLayers;
+                if (layersBlob) {
+                    if (layersResult.success) {
+                        const { data: layersUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(layersPath);
+                        if (layersUrlData?.publicUrl) frameLayersForDb = { _url: layersUrlData.publicUrl };
+                    } else if (layersJson.length < 20000) {
+                        frameLayersForDb = frameLayers;
+                    } else {
+                        throw new Error('Storage upload des calques raté — bucket "thumbnails" manquant ou mal configuré.');
+                    }
                 }
             } else if (frameLayers) {
                 frameLayersForDb = frameLayers;
@@ -138,7 +146,7 @@ class DatabaseService {
             if (thumbnailUrl) payload.thumbnail = thumbnailUrl;
 
             // Helper : exécute une requête Supabase avec timeout strict
-            const withDbTimeout = (query, ms = 10000) => Promise.race([
+            const withDbTimeout = (query, ms = 20000) => Promise.race([
                 query,
                 new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), ms))
             ]);
