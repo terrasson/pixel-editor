@@ -3845,7 +3845,12 @@ function applyProjectData(data, projectName) {
         if (typeof cleanUpMarkers === 'function') cleanUpMarkers();
     }
 
-    // Restaurer la taille de grille
+    // Les calques sont la source de vérité pour les projets récents (frames peut être
+    // un tableau vide sentinelle [] quand les pixels vivent uniquement dans frame_layers).
+    const rawLayers = data.frame_layers || data.frameLayers;
+    const hasLayers = Array.isArray(rawLayers) && rawLayers.length > 0;
+
+    // Restaurer la taille de grille : gridSize explicite > layers > frames
     if (data.gridSize) {
         const savedSize = data.gridSize.width || data.gridSize.height || DEFAULT_GRID_SIZE;
         if (VALID_GRID_SIZES.includes(savedSize) && savedSize !== currentGridSize) {
@@ -3854,27 +3859,44 @@ function applyProjectData(data, projectName) {
             updateGridSizeIndicator(savedSize);
             updateGridSizeBtnStates(savedSize);
         }
+    } else if (hasLayers) {
+        // Taille détectée depuis le premier calque sparse (frames peut être vide)
+        const firstLayer = Array.isArray(rawLayers[0]) ? rawLayers[0][0] : null;
+        const sparseSize = firstLayer?.pixels?.size;
+        const flatSize = Array.isArray(firstLayer?.pixels) ? firstLayer.pixels.length : 0;
+        const pixelCount = sparseSize || flatSize;
+        if (pixelCount) {
+            const detected = Math.round(Math.sqrt(pixelCount));
+            if (VALID_GRID_SIZES.includes(detected) && detected !== currentGridSize) {
+                currentGridSize = detected;
+                initGrid(detected);
+                updateGridSizeIndicator(detected);
+                updateGridSizeBtnStates(detected);
+            }
+        }
     } else {
         autoDetectAndResizeGrid(data.frames);
     }
 
-    // Normaliser et appliquer les frames
-    const rawFrames = typeof data.frames === 'string' ? JSON.parse(data.frames) : data.frames;
-    frames = normaliseFrames(rawFrames);
-    currentFrame = data.current_frame ?? data.currentFrame ?? 0;
-    if (currentFrame >= frames.length) currentFrame = Math.max(0, frames.length - 1);
-
-    // Restaurer les calques
-    const rawLayers = data.frame_layers || data.frameLayers;
-    if (rawLayers && Array.isArray(rawLayers)) {
+    // Restaurer calques + frames (frames dérivé si on a des calques)
+    if (hasLayers) {
         const parsed = typeof rawLayers === 'string' ? JSON.parse(rawLayers) : rawLayers;
         frameLayers = decompressFrameLayers(parsed);
         _nextLayerId = data.next_layer_id || data._nextLayerId ||
             frameLayers.flat().reduce((m, l) => Math.max(m, (l.id || 0) + 1), 0);
+        // Recalculer le cache composite à partir des calques
+        frames = frameLayers.map((_, i) => computeComposite(i));
     } else {
+        const rawFrames = typeof data.frames === 'string' ? JSON.parse(data.frames) : data.frames;
+        frames = normaliseFrames(rawFrames);
         initLayersFromFrames();
     }
+    currentFrame = data.current_frame ?? data.currentFrame ?? 0;
+    if (currentFrame >= frames.length) currentFrame = Math.max(0, frames.length - 1);
     currentLayer = 0;
+
+    // Mémoriser l'id pour que les saves suivants utilisent un chemin Storage stable
+    window.currentProjectId = data.id || null;
 
     // Restaurer les couleurs personnalisées
     const colors = data.custom_colors || data.customColors;
@@ -8139,6 +8161,7 @@ async function saveProjectSmart() {
             saveCurrentFrame();
 
             const result = await window.dbService.saveProject({
+                id: window.currentProjectId || undefined, // chemin Storage stable cross-rename
                 name: projectName,
                 type: 'project',
                 frames,                                      // raw — dbService applique _compressFrames
@@ -8152,6 +8175,7 @@ async function saveProjectSmart() {
             });
 
             if (!result.success) throw new Error(result.error);
+            if (result.data?.id) window.currentProjectId = result.data.id;
 
             window.dbService.invalidateProjectsCache?.();
             modifiedPixels = modifiedPixels.map(() => new Set());
@@ -8758,9 +8782,10 @@ async function publishToGallery() {
         // + offload Storage au-delà de 20KB). Sans ça, les frames sont stockées en
         // format fat JSONB et la DB explose à quelques dizaines d'utilisateurs.
         const syncResult = await window.dbService.saveProject({
+            id: window.currentProjectId || undefined,
             name: window.currentProjectName,
             frames,
-            frameLayers: null,
+            frameLayers: compressFrameLayers(frameLayers), // préserver les calques côté DB
             _nextLayerId,
             currentFrame,
             fps: animationFPS || 24,
@@ -8768,6 +8793,7 @@ async function publishToGallery() {
             customColors,
             thumbnail: window.dbService?.generateThumbnail?.() || null
         });
+        if (syncResult.success && syncResult.data?.id) window.currentProjectId = syncResult.data.id;
         if (!syncResult.success) throw new Error(syncResult.error || 'Sync échouée');
 
         // Maintenant créer/mettre à jour le partage galerie

@@ -49,6 +49,11 @@ class DatabaseService {
     }
 
     // Save a project (create or update)
+    // Source de vérité unique :
+    //  - projet avec calques → on stocke UNIQUEMENT frame_layers (frames dérivé au load)
+    //  - stamp / projet legacy sans calque → frames uniquement
+    // Chemin Storage stable par id (immuable à travers les renommages) :
+    //  ${userId}/projects/${id}/layers.json  ou  /frames.json
     async saveProject(projectData, onProgress = null) {
         if (!this.supabase) this.init();
 
@@ -58,76 +63,122 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
-            const { name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail, type } = projectData;
+            const { id: passedId, name, frames, frameLayers, _nextLayerId, currentFrame, fps, customPalette, customColors, thumbnail, type } = projectData;
             const projectType = (type === 'stamp') ? 'stamp' : 'project';
-            const safeName = name.replace(/[^a-z0-9]/gi, '_');
+
+            const hasLayers = Array.isArray(frameLayers) && frameLayers.length > 0;
+
+            // Helper : Supabase request avec timeout strict
+            const withDbTimeout = (query, ms = 20000) => Promise.race([
+                query,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), ms))
+            ]);
+
+            // 1. Résoudre un id stable (pour chemin Storage immuable)
+            let projectId = passedId || null;
+            if (!projectId) {
+                try {
+                    const { data: existing } = await withDbTimeout(
+                        this.supabase
+                            .from('pixel_projects')
+                            .select('id')
+                            .eq('user_id', userId)
+                            .eq('name', name)
+                            .eq('type', projectType)
+                            .maybeSingle(),
+                        8000
+                    );
+                    projectId = existing?.id || null;
+                } catch (_) { /* timeout ou erreur RLS → fallback UUID */ }
+            }
+            if (!projectId) {
+                projectId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                    ? crypto.randomUUID()
+                    : null;
+            }
+            if (!projectId) throw new Error('Impossible de déterminer un id projet stable');
 
             onProgress?.('storage');
 
-            const compressedFrames = _compressFrames(frames);
-            const framesJson = JSON.stringify(compressedFrames);
-            const layersJson = frameLayers && Array.isArray(frameLayers) && frameLayers.length > 0
-                ? JSON.stringify(frameLayers) : null;
+            // 2. Sérialiser la SEULE source de vérité (layers OU frames, jamais les deux)
+            let framesForDb;
+            let frameLayersForDb;
+            let bigBlobJson = null;
+            let bigBlobPath = null;
+            let bigBlobTarget = null; // 'frames' | 'frame_layers'
 
-            // Upload vers Storage seulement si les données dépassent 20 Ko
-            // En-dessous, on stocke directement en JSONB (plus simple, moins de bandwidth)
-            const shouldUseStorage = framesJson.length > 20000 || (layersJson && layersJson.length > 20000);
-
-            let framesForDb = compressedFrames;
-            let frameLayersForDb = null;
-
-            if (shouldUseStorage) {
-                const framesPath = `${userId}/${safeName}_frames.json`;
-                const layersPath = `${userId}/${safeName}_layers.json`;
-                const framesBlob = new Blob([framesJson], { type: 'application/json' }); // framesJson already compressed
-                const layersBlob = layersJson ? new Blob([layersJson], { type: 'application/json' }) : null;
-
-                const [framesResult, layersResult] = await Promise.all([
-                    this._uploadWithTimeout('thumbnails', framesPath, framesBlob, 'application/json', 15000),
-                    layersBlob
-                        ? this._uploadWithTimeout('thumbnails', layersPath, layersBlob, 'application/json', 15000)
-                        : Promise.resolve({ success: true })
-                ]);
-
-                // Frames upload raté → on arrête net. Retomber sur un insert inline
-                // d'un payload >20KB épuise le Disk IO et déclenche un DB timeout à coup sûr.
-                if (!framesResult.success) {
-                    throw new Error('Storage upload failed — bucket "thumbnails" manquant ou mal configuré.');
+            if (hasLayers) {
+                // frames est dérivé au load via computeComposite → valeur sentinelle [] en DB
+                framesForDb = [];
+                const layersJson = JSON.stringify(frameLayers);
+                if (layersJson.length > 20000) {
+                    bigBlobJson = layersJson;
+                    bigBlobPath = `${userId}/projects/${projectId}/layers.json`;
+                    bigBlobTarget = 'frame_layers';
+                    frameLayersForDb = null; // sera remplacé par { _url } après upload
+                } else {
+                    frameLayersForDb = frameLayers;
                 }
-                const { data: framesUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(framesPath);
-                if (!framesUrlData?.publicUrl) {
-                    throw new Error('Impossible d\'obtenir l\'URL publique des frames depuis Storage.');
+            } else {
+                // Stamps et projets legacy : frames uniquement
+                frameLayersForDb = null;
+                const compressedFrames = _compressFrames(frames);
+                const framesJson = JSON.stringify(compressedFrames);
+                if (framesJson.length > 20000) {
+                    bigBlobJson = framesJson;
+                    bigBlobPath = `${userId}/projects/${projectId}/frames.json`;
+                    bigBlobTarget = 'frames';
+                    framesForDb = null; // sera remplacé par { _url } après upload
+                } else {
+                    framesForDb = compressedFrames;
                 }
-                framesForDb = { _url: framesUrlData.publicUrl };
-
-                if (layersBlob) {
-                    if (layersResult.success) {
-                        const { data: layersUrlData } = this.supabase.storage.from('thumbnails').getPublicUrl(layersPath);
-                        if (layersUrlData?.publicUrl) frameLayersForDb = { _url: layersUrlData.publicUrl };
-                    } else if (layersJson.length < 20000) {
-                        frameLayersForDb = frameLayers;
-                    } else {
-                        throw new Error('Storage upload des calques raté — bucket "thumbnails" manquant ou mal configuré.');
-                    }
-                }
-            } else if (frameLayers) {
-                frameLayersForDb = frameLayers;
             }
 
-            // Upload thumbnail en arrière-plan (non-bloquant)
+            // 3. Upload Storage (un seul blob max, au lieu de deux)
+            if (bigBlobJson) {
+                const blob = new Blob([bigBlobJson], { type: 'application/json' });
+                const { success } = await this._uploadWithTimeout(
+                    'thumbnails', bigBlobPath, blob, 'application/json', 15000
+                );
+                if (!success) {
+                    throw new Error('Storage upload failed — bucket "thumbnails" manquant ou mal configuré.');
+                }
+                const { data: urlData } = this.supabase.storage.from('thumbnails').getPublicUrl(bigBlobPath);
+                if (!urlData?.publicUrl) {
+                    throw new Error('Impossible d\'obtenir l\'URL publique depuis Storage.');
+                }
+                if (bigBlobTarget === 'frames') framesForDb = { _url: urlData.publicUrl };
+                else frameLayersForDb = { _url: urlData.publicUrl };
+            }
+
+            // 4. Thumbnail en arrière-plan (non-bloquant) — chemin stable par id
             let thumbnailUrl = (thumbnail && !thumbnail.startsWith('data:')) ? thumbnail : null;
             if (thumbnail && thumbnail.startsWith('data:')) {
+                const thumbPath = `${userId}/projects/${projectId}/thumb.png`;
                 fetch(thumbnail).then(r => r.blob()).then(blob => {
-                    this._uploadWithTimeout('thumbnails', `${userId}/${safeName}.png`, blob, 'image/png', 7000)
+                    this._uploadWithTimeout('thumbnails', thumbPath, blob, 'image/png', 7000)
                         .then(({ success }) => {
                             if (success) {
                                 const { data: urlData } = this.supabase.storage
-                                    .from('thumbnails').getPublicUrl(`${userId}/${safeName}.png`);
-                                if (urlData?.publicUrl) thumbnailUrl = urlData.publicUrl;
+                                    .from('thumbnails').getPublicUrl(thumbPath);
+                                if (urlData?.publicUrl) {
+                                    // Fire-and-forget : mettre à jour la colonne thumbnail seule
+                                    this.supabase.from('pixel_projects')
+                                        .update({ thumbnail: urlData.publicUrl })
+                                        .eq('id', projectId).eq('user_id', userId)
+                                        .then(() => {});
+                                }
                             }
                         }).catch(() => {});
                 }).catch(() => {});
             }
+
+            // 5. Nettoyage best-effort des anciens blobs safeName (migration, non-bloquant)
+            const safeName = name.replace(/[^a-z0-9]/gi, '_');
+            this.supabase.storage.from('thumbnails').remove([
+                `${userId}/${safeName}_frames.json`,
+                `${userId}/${safeName}_layers.json`
+            ]).catch(() => {});
 
             onProgress?.('database');
 
@@ -142,22 +193,16 @@ class DatabaseService {
                 type: projectType,
                 updated_at: new Date().toISOString()
             };
-            // Ne mettre à jour thumbnail que si on en a une — évite d'écraser l'existante avec null
             if (thumbnailUrl) payload.thumbnail = thumbnailUrl;
 
-            // Helper : exécute une requête Supabase avec timeout strict
-            const withDbTimeout = (query, ms = 20000) => Promise.race([
-                query,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), ms))
-            ]);
-
-            // Try upsert first (requires unique constraint on user_id+name)
-            // Falls back to SELECT+INSERT/UPDATE if constraint doesn't exist yet
+            // 6. Upsert avec id explicite. En cas de conflit (user_id,name,type), l'id
+            //    existant est conservé — notre chemin Storage peut donc différer, mais
+            //    l'URL est embarquée dans la row, donc le load reste correct.
             try {
                 const { data, error } = await withDbTimeout(
                     this.supabase
                         .from('pixel_projects')
-                        .upsert({ user_id: userId, name, ...payload }, { onConflict: 'user_id,name,type' })
+                        .upsert({ id: projectId, user_id: userId, name, ...payload }, { onConflict: 'user_id,name,type' })
                         .select('id')
                         .single()
                 );
@@ -165,7 +210,7 @@ class DatabaseService {
                 return { success: true, data, isUpdate: true, layersDropped: false };
             } catch (upsertError) {
                 if (upsertError.message === 'DB timeout') throw upsertError;
-                // Fallback: unique constraint not yet added → SELECT + INSERT/UPDATE
+                // Fallback: unique constraint absente → SELECT + INSERT/UPDATE
                 const { data: existing } = await withDbTimeout(
                     this.supabase
                         .from('pixel_projects')
@@ -191,7 +236,7 @@ class DatabaseService {
                     const { data, error } = await withDbTimeout(
                         this.supabase
                             .from('pixel_projects')
-                            .insert({ user_id: userId, name, ...payload })
+                            .insert({ id: projectId, user_id: userId, name, ...payload })
                             .select('id')
                             .single()
                     );
@@ -302,6 +347,30 @@ class DatabaseService {
         this._projectsCacheTime = {};
     }
 
+    // Supprime tous les blobs Storage associés à un projet (fire-and-forget).
+    // Couvre le nouveau chemin par id ET l'ancien chemin par safeName (compat).
+    _cleanupStorageForProject(userId, projectId, projectName) {
+        const paths = [];
+        if (projectId) {
+            paths.push(
+                `${userId}/projects/${projectId}/layers.json`,
+                `${userId}/projects/${projectId}/frames.json`,
+                `${userId}/projects/${projectId}/thumb.png`
+            );
+        }
+        if (projectName) {
+            const safeName = projectName.replace(/[^a-z0-9]/gi, '_');
+            paths.push(
+                `${userId}/${safeName}_frames.json`,
+                `${userId}/${safeName}_layers.json`,
+                `${userId}/${safeName}.png`
+            );
+        }
+        if (paths.length) {
+            this.supabase.storage.from('thumbnails').remove(paths).catch(() => {});
+        }
+    }
+
     // Delete a project
     async deleteProject(projectName, type = 'project') {
         if (!this.supabase) this.init();
@@ -312,6 +381,15 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
+            // Récupérer l'id pour nettoyer le chemin Storage id-based
+            const { data: existing } = await this.supabase
+                .from('pixel_projects')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('name', projectName)
+                .eq('type', type)
+                .maybeSingle();
+
             const { error } = await this.supabase
                 .from('pixel_projects')
                 .delete()
@@ -321,13 +399,7 @@ class DatabaseService {
 
             if (error) throw error;
 
-            // Nettoyage Storage (fire-and-forget)
-            const safeName = projectName.replace(/[^a-z0-9]/gi, '_');
-            this.supabase.storage.from('thumbnails').remove([
-                `${userId}/${safeName}_frames.json`,
-                `${userId}/${safeName}_layers.json`,
-                `${userId}/${safeName}.png`
-            ]).catch(() => {});
+            this._cleanupStorageForProject(userId, existing?.id, projectName);
 
             return { success: true };
         } catch (error) {
@@ -346,7 +418,7 @@ class DatabaseService {
                 throw new Error('User not authenticated');
             }
 
-            // Récupérer le nom pour pouvoir nettoyer le Storage
+            // Récupérer le nom pour nettoyer aussi l'ancien chemin safeName
             const { data: proj } = await this.supabase
                 .from('pixel_projects')
                 .select('name')
@@ -362,15 +434,7 @@ class DatabaseService {
 
             if (error) throw error;
 
-            // Nettoyage Storage (fire-and-forget)
-            if (proj?.name) {
-                const safeName = proj.name.replace(/[^a-z0-9]/gi, '_');
-                this.supabase.storage.from('thumbnails').remove([
-                    `${userId}/${safeName}_frames.json`,
-                    `${userId}/${safeName}_layers.json`,
-                    `${userId}/${safeName}.png`
-                ]).catch(() => {});
-            }
+            this._cleanupStorageForProject(userId, projectId, proj?.name);
 
             return { success: true };
         } catch (error) {
