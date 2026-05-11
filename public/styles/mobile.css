@@ -2760,6 +2760,11 @@ body.drag-over .grid-container {
 .mobile-panel-hdr .frames-hdr-btn { width: 34px; height: 34px; }
 .mobile-panel-hdr .frames-hdr-btn svg { width: 14px; height: 14px; }
 
+/* .modal-overlay doit passer au-dessus de .tools-compact (z-index: 1100) */
+.modal-overlay {
+    z-index: 2000;
+}
+
 /* ============================================================
    Modal de couleur personnalisée (non chargé via desktop.css)
    ============================================================ */
