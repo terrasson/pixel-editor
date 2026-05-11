@@ -971,8 +971,8 @@ window.addEventListener('resize', debounce(() => {
     // Phase 1 : redimensionner le canvas et recalculer cellSize
     if (pixelCanvas) {
         const grid = document.getElementById('pixelGrid');
+        if (grid) grid.style.height = ''; // laisser CSS aspect-ratio:1/1 calculer la hauteur
         const rawGw = grid ? grid.clientWidth : 512;
-        grid.style.height = rawGw + 'px'; // keep container square after resize
         const gw = Math.max(currentGridSize, Math.round(rawGw / currentGridSize) * currentGridSize);
         pixelCanvas.width  = gw;
         pixelCanvas.height = gw;
@@ -7714,7 +7714,23 @@ function initMobileFeatures() {
     window.addEventListener('orientationchange', () => {
         setTimeout(() => {
             adjustForOrientation();
-        }, 100);
+            // Forcer le recalcul du canvas après stabilisation du layout
+            if (pixelCanvas) {
+                const grid = document.getElementById('pixelGrid');
+                if (grid) {
+                    grid.style.height = '';
+                    const rawGw = grid.clientWidth;
+                    if (rawGw > 0) {
+                        const gw = Math.max(currentGridSize, Math.round(rawGw / currentGridSize) * currentGridSize);
+                        pixelCanvas.width  = gw;
+                        pixelCanvas.height = gw;
+                        cellSize = gw / currentGridSize;
+                        canvasCssScale = gw / rawGw;
+                        renderCanvas();
+                    }
+                }
+            }
+        }, 300);
     });
     
     window.addEventListener('resize', debounce(() => {
